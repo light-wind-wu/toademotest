@@ -1,0 +1,809 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import Shell from "@/components/layout/shell";
+import {
+  Settings,
+  TrendingUp,
+  CheckCircle,
+  Clock,
+  UserCheck,
+  X,
+  Users,
+  History,
+  Repeat,
+  UserPlus,
+  Mail,
+  MessageSquare,
+  Inbox,
+  FileCheck2,
+  AlertTriangle,
+  Send,
+  BookOpen,
+  Folder,
+  Zap,
+  ChevronDown,
+  type LucideIcon,
+} from "lucide-react";
+import { COHORT_DATA, WIDGET_DEFS, INTERN_CATEGORIES } from "@/lib/data";
+import { loadSubmissions, loadProgrammes, loadRequests } from "@/lib/storage";
+import ProgToggle from "@/components/ui-legacy/prog-toggle";
+import DashboardCards from "@/components/ui-legacy/dashboard-cards";
+import CreateProjectChooser from "@/components/ui-legacy/create-project-chooser";
+import { useRole } from "@/lib/role";
+import { cn, deriveAppStatus } from "@/lib/utils";
+import type {
+  ProjectSubmissionBatch,
+  ProjectRequest,
+  Programme,
+} from "@/lib/types";
+
+function loadWidgetState(): Record<string, boolean> {
+  if (typeof window === "undefined")
+    return Object.fromEntries(WIDGET_DEFS.map((w) => [w.id, w.defaultOn]));
+  try {
+    const raw = localStorage.getItem("dsta-widget-state");
+    if (raw) {
+      const saved = JSON.parse(raw);
+      // Only trust saved state if it contains all current widget ids
+      const allPresent = WIDGET_DEFS.every((w) => w.id in saved);
+      if (allPresent) return saved;
+    }
+  } catch {}
+  const defaults = Object.fromEntries(
+    WIDGET_DEFS.map((w) => [w.id, w.defaultOn]),
+  );
+  localStorage.setItem("dsta-widget-state", JSON.stringify(defaults));
+  return defaults;
+}
+
+function saveWidgetState(s: Record<string, boolean>) {
+  localStorage.setItem("dsta-widget-state", JSON.stringify(s));
+}
+
+type LiveFunnel = {
+  total: number;
+  eligible: number;
+  inProgress: number;
+  interviewCompleted: number;
+  offerExtended: number;
+  accepted: number;
+  rejected: number;
+};
+const EMPTY_FUNNEL: LiveFunnel = {
+  total: 0,
+  eligible: 0,
+  inProgress: 0,
+  interviewCompleted: 0,
+  offerExtended: 0,
+  accepted: 0,
+  rejected: 0,
+};
+
+export default function DashboardPage() {
+  const router = useRouter();
+  // `cohort` holds the selected intern category (or 'all') — IOs work by intern category.
+  const [cohort, setCohort] = useState("all");
+  const { role } = useRole();
+  const [widgets, setWidgets] = useState<Record<string, boolean>>({});
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [newMenuOpen, setNewMenuOpen] = useState(false);
+  const [createChooserOpen, setCreateChooserOpen] = useState(false);
+  const newMenuRef = useRef<HTMLDivElement>(null);
+  const [liveFunnel, setLiveFunnel] = useState<LiveFunnel>(EMPTY_FUNNEL);
+
+  type LiveTask = {
+    icon: LucideIcon;
+    color: string;
+    bg: string;
+    label: string;
+    sub: string;
+    tag: string;
+    tagCls: string;
+    href: string;
+  };
+  const [liveTasks, setLiveTasks] = useState<LiveTask[]>([]);
+
+  useEffect(() => {
+    setWidgets(loadWidgetState());
+  }, []);
+
+  // Close the "New" menu on an outside click.
+  useEffect(() => {
+    if (!newMenuOpen) return;
+    function handler(e: MouseEvent) {
+      if (newMenuRef.current && !newMenuRef.current.contains(e.target as Node)) {
+        setNewMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [newMenuOpen]);
+
+  // Quick actions for IO roles — surfaced via the header "New" menu. "Create Project"
+  // opens the same upload-vs-create chooser as the Projects page (not a direct link).
+  const quickActions: { label: string; icon: LucideIcon; href?: string; onClick?: () => void }[] = [
+    ...(role === "io-admin"
+      ? [{ label: "Create Project Request", icon: Send, href: "/requests/new" }]
+      : []),
+    { label: "Create Programme", icon: BookOpen, href: "/programmes/new" },
+    { label: "Create Project", icon: Folder, onClick: () => setCreateChooserOpen(true) },
+  ];
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("dsta_applications");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const all: any[] = raw ? JSON.parse(raw) : [];
+      const apps =
+        cohort === "all" ? all : all.filter((a) => a.internCategory === cohort);
+      setLiveFunnel({
+        total: apps.length,
+        eligible: apps.filter(
+          (a) => a.status === "Pending Review" && a.eligibilityPass,
+        ).length,
+        inProgress: apps.filter(
+          (a) =>
+            a.status === "Shortlisted for Interview" ||
+            a.status === "Interview Scheduled",
+        ).length,
+        interviewCompleted: apps.filter(
+          (a) => a.status === "Interview Completed",
+        ).length,
+        offerExtended: apps.filter((a) => a.status === "Offer Extended").length,
+        accepted: apps.filter((a) => a.status === "Accepted").length,
+        rejected: apps.filter(
+          (a) => a.status === "Rejected" || a.status === "Auto-rejected",
+        ).length,
+      });
+    } catch {
+      setLiveFunnel(EMPTY_FUNNEL);
+    }
+  }, [cohort]);
+
+  function goToApps(filter: string) {
+    localStorage.setItem("dsta_app_pending_filter", filter);
+    router.push("/applications");
+  }
+
+  useEffect(() => {
+    const tasks: LiveTask[] = [];
+    try {
+      const subs: ProjectSubmissionBatch[] = loadSubmissions();
+      const pendingProjects = subs.reduce(
+        (n, b) => n + b.projects.filter((p) => p.status === "pending").length,
+        0,
+      );
+      if (pendingProjects > 0) {
+        tasks.push({
+          icon: FileCheck2,
+          color: "text-warning",
+          bg: "hover:bg-warning/5",
+          label: `${pendingProjects} project submission${pendingProjects > 1 ? "s" : ""} awaiting review`,
+          sub: "Approve or reject from Project Requests → Project Submissions",
+          tag: `${pendingProjects} pending`,
+          tagCls: "bg-warning-bg text-warning",
+          href: "/requests?tab=submissions",
+        });
+      }
+
+      const progs: Programme[] = loadProgrammes();
+      const reqs: ProjectRequest[] = loadRequests();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      progs
+        .filter((p) => p.status === "Active" && p.appOpen)
+        .forEach((p) => {
+          const daysUntilOpen = Math.ceil(
+            (new Date(p.appOpen).getTime() - today.getTime()) / 86_400_000,
+          );
+          if (daysUntilOpen > 14 || daysUntilOpen < 0) return;
+          const progLevel = p.educationLevel;
+          const unresolved = reqs.filter(
+            (r) =>
+              r.educationLevel === progLevel &&
+              ["pending", "partial", "overdue"].includes(r.status),
+          ).length;
+          if (unresolved === 0) return;
+          const urgent = daysUntilOpen <= 3;
+          tasks.push({
+            icon: AlertTriangle,
+            color: urgent ? "text-danger" : "text-warning",
+            bg: urgent ? "hover:bg-danger/5" : "hover:bg-warning/5",
+            label: `${p.title} — ${unresolved} unresolved request${unresolved > 1 ? "s" : ""}`,
+            sub: `App window opens in ${daysUntilOpen === 0 ? "today" : `${daysUntilOpen} day${daysUntilOpen > 1 ? "s" : ""}`}`,
+            tag: daysUntilOpen === 0 ? "Today" : `${daysUntilOpen}d`,
+            tagCls: urgent
+              ? "bg-danger/10 text-danger"
+              : "bg-warning-bg text-warning",
+            href: `/programmes/${p.id}`,
+          });
+        });
+    } catch {}
+    setLiveTasks(tasks);
+  }, []);
+
+  const EMPTY_DATA = {
+    funnel: {
+      total: 0,
+      shortlisted: 0,
+      interview: 0,
+      offersMade: 0,
+      offersAccepted: 0,
+      withdrawals: 0,
+    },
+    kpi: {
+      total: "0",
+      acceptance: "—",
+      response: "—",
+      headcount: "—",
+      totalTrend: ["No data yet", "neu"] as [string, "neu"],
+      acceptanceTrend: ["No data yet", "neu"] as [string, "neu"],
+      responseTrend: ["No data yet", "neu"] as [string, "neu"],
+      headcountSub: ["No data yet", "neu"] as [string, "neu"],
+    },
+    schools: [],
+  };
+  const data = COHORT_DATA[cohort] ?? EMPTY_DATA;
+
+  function toggleWidget(id: string) {
+    setWidgets((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      saveWidgetState(next);
+      return next;
+    });
+  }
+
+  const trendCls = (t: string) =>
+    t === "pos"
+      ? "text-success"
+      : t === "neg"
+        ? "text-danger"
+        : "text-fg-muted";
+
+  const maxSchool = Math.max(...data.schools.map((s) => s.count), 1);
+
+  const hasData = liveFunnel.total > 0;
+
+  return (
+    <Shell activeRoute="/dashboard">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <h1 className="text-headline-lg text-fg">Dashboard</h1>
+        <div className="flex items-center gap-2">
+          {(role === "io-admin" || role === "io") && (
+            <div className="relative" ref={newMenuRef}>
+              <button
+                onClick={() => setNewMenuOpen((o) => !o)}
+                aria-haspopup="menu"
+                aria-expanded={newMenuOpen}
+                className="flex items-center gap-1.5 bg-accent text-accent-fg font-bold text-label-md px-4 py-2 rounded-lg hover:bg-accent/90 transition-all"
+              >
+                <Zap size={18} />
+                Quick actions
+                <ChevronDown
+                  size={15}
+                  className={cn("transition-transform", newMenuOpen && "rotate-180")}
+                />
+              </button>
+              {newMenuOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 mt-2 w-72 rounded-xl border border-border bg-surface shadow-xl z-50 p-1.5"
+                >
+                  {quickActions.map((a) => (
+                    <button
+                      key={a.label}
+                      role="menuitem"
+                      onClick={() => {
+                        setNewMenuOpen(false);
+                        if (a.onClick) a.onClick();
+                        else if (a.href) router.push(a.href);
+                      }}
+                      className="group flex w-full items-center gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-bg-subtle"
+                    >
+                      <span className="grid place-items-center w-9 h-9 rounded-lg bg-accent/10 text-accent shrink-0">
+                        <a.icon size={17} />
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-body-sm font-semibold text-fg">{a.label}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="flex items-center gap-2 text-accent font-bold text-label-md hover:bg-accent/5 px-4 py-2 rounded-lg border border-accent/20 transition-all"
+          >
+            <Settings size={18} />
+            Customize
+          </button>
+        </div>
+      </div>
+
+      {/* Per-role action cards — "needs your attention" (hidden for IO roles) */}
+      {role !== "io" && role !== "io-admin" && <DashboardCards />}
+
+      {/* Intern-category filter — scopes the application data below */}
+      <div className="mb-4">
+        <ProgToggle
+          options={[{ value: "all", label: "All categories" }, ...INTERN_CATEGORIES.map((c) => ({ value: c, label: c }))]}
+          value={cohort}
+          onChange={setCohort}
+        />
+      </div>
+
+      {/* Grid */}
+      <div className="grid grid-cols-12 gap-4">
+        {/* Application Overview bar chart */}
+        <div className="col-span-12 lg:col-span-6 card p-4">
+          <h2 className="text-headline-md text-fg mb-4">
+            Application Overview
+          </h2>
+          {!hasData ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
+              <Inbox size={32} className="text-fg-subtle" />
+              <p className="text-body-md font-medium text-fg-muted">
+                No applications yet
+              </p>
+              <p className="text-body-sm text-fg-subtle">
+                Data will appear once this programme receives applications.
+              </p>
+            </div>
+          ) : (
+            (() => {
+              const ROWS = [
+                {
+                  label: "Total Applications",
+                  val: liveFunnel.total,
+                  filter: "All",
+                },
+                {
+                  label: "Eligible",
+                  val: liveFunnel.eligible,
+                  filter: "Eligible",
+                },
+                {
+                  label: "In Progress",
+                  val: liveFunnel.inProgress,
+                  filter: "In Progress",
+                },
+                {
+                  label: "Interview Completed",
+                  val: liveFunnel.interviewCompleted,
+                  filter: "Interview Completed",
+                },
+                {
+                  label: "Offer Extended",
+                  val: liveFunnel.offerExtended,
+                  filter: "Offer Extended",
+                },
+                {
+                  label: "Accepted",
+                  val: liveFunnel.accepted,
+                  filter: "Closed",
+                },
+                {
+                  label: "Rejected",
+                  val: liveFunnel.rejected,
+                  filter: "Closed",
+                },
+              ];
+              const barMax = Math.max(...ROWS.map((r) => r.val), 1);
+              return (
+                <div className="space-y-2.5 mt-1">
+                  {ROWS.map((r) => (
+                    <button
+                      key={r.label}
+                      onClick={() => goToApps(r.filter)}
+                      className="w-full flex items-center gap-3 group text-left"
+                    >
+                      <span className="text-[13px] text-fg-muted w-36 shrink-0 text-right">
+                        {r.label}
+                      </span>
+                      <div className="flex-1 bg-bg-subtle rounded-full h-5 overflow-hidden">
+                        <div
+                          className={cn(
+                            "h-full rounded-full flex items-center justify-end pr-2 transition-all duration-500",
+                            r.label === "Rejected"
+                              ? "bg-danger/70"
+                              : r.label === "Accepted"
+                                ? "bg-success"
+                                : "bg-accent",
+                          )}
+                          style={{
+                            width: `${Math.max((r.val / barMax) * 100, r.val > 0 ? 4 : 0)}%`,
+                          }}
+                        >
+                          {r.val > 0 && (
+                            <span className="text-[12px] font-bold text-white leading-none">
+                              {r.val}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {r.val === 0 && (
+                        <span className="text-[13px] text-fg-subtle w-4 shrink-0">
+                          0
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()
+          )}
+        </div>
+
+        {/* Tasks */}
+        <div className="col-span-12 lg:col-span-6 card p-4 flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <h2 className="text-headline-md text-fg">Tasks</h2>
+              {liveTasks.length > 0 && (
+                <span className="bg-warning-bg text-warning text-caption-bold px-2.5 py-1 rounded-full">
+                  {liveTasks.length} Open
+                </span>
+              )}
+            </div>
+          </div>
+          {liveTasks.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center gap-2">
+              <CheckCircle size={28} className="text-success" />
+              <p className="text-body-md font-medium text-fg">All caught up</p>
+              <p className="text-body-sm text-fg-muted">
+                No pending project submissions or approaching windows with open
+                requests.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {liveTasks.map((t, i) => (
+                <a
+                  key={i}
+                  href={t.href}
+                  className={`flex items-center gap-3 px-3 py-3 rounded-lg ${t.bg} cursor-pointer border border-border/50 transition-colors no-underline`}
+                >
+                  <t.icon size={18} className={`${t.color} shrink-0`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-body-md font-semibold text-fg truncate">
+                      {t.label}
+                    </p>
+                    <p className="text-body-sm text-fg-muted mt-0.5">{t.sub}</p>
+                  </div>
+                  <span
+                    className={`text-caption-bold px-2 py-0.5 rounded shrink-0 ${t.tagCls}`}
+                  >
+                    {t.tag}
+                  </span>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* KPI Cards */}
+        {widgets["kpi-cards"] && (
+          <div className="col-span-12">
+            <p className="text-table-header uppercase tracking-wider text-fg-muted mb-3">
+              KPI Summary
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                {
+                  icon: Users,
+                  label: "Total Applicants",
+                  val: data.kpi.total,
+                  trend: data.kpi.totalTrend,
+                },
+                {
+                  icon: CheckCircle,
+                  label: "Acceptance Rate",
+                  val: data.kpi.acceptance,
+                  trend: data.kpi.acceptanceTrend,
+                },
+                {
+                  icon: Clock,
+                  label: "Avg. Response Time",
+                  val: data.kpi.response,
+                  trend: data.kpi.responseTrend,
+                },
+                {
+                  icon: UserCheck,
+                  label: "Headcount Filled",
+                  val: data.kpi.headcount,
+                  trend: data.kpi.headcountSub,
+                },
+              ].map(({ icon: Icon, label, val, trend }) => (
+                <div key={label} className="card p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center shrink-0">
+                      <Icon size={20} className="text-accent" />
+                    </div>
+                    <p className="text-body-md font-medium text-fg-muted">
+                      {label}
+                    </p>
+                  </div>
+                  <p className="text-metric text-fg">{val}</p>
+                  <p
+                    className={`text-body-sm mt-2 font-medium ${trendCls(trend[1])}`}
+                  >
+                    {trend[0]}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Upcoming Interviews */}
+        {widgets["upcoming-interviews"] && (
+          <div className="col-span-12 lg:col-span-6 card p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-headline-md text-fg">Upcoming Interviews</h2>
+              <span className="bg-accent/10 text-accent text-caption-bold px-2.5 py-1 rounded-full">
+                4 This Week
+              </span>
+            </div>
+            <div className="space-y-2">
+              {[
+                {
+                  month: "May",
+                  day: 20,
+                  name: "Jenny Aw",
+                  type: "Technical Interview",
+                  time: "2:00 PM",
+                  tagCls: "bg-danger/10 text-danger",
+                  tag: "Today",
+                },
+                {
+                  month: "May",
+                  day: 21,
+                  name: "Marcus Wong",
+                  type: "Behavioural Interview",
+                  time: "10:30 AM",
+                  tagCls: "bg-warning-bg text-warning",
+                  tag: "Tomorrow",
+                },
+                {
+                  month: "May",
+                  day: 22,
+                  name: "Sarah Lim",
+                  type: "Final Interview",
+                  time: "3:00 PM",
+                  tagCls: "bg-bg-muted text-fg-muted",
+                  tag: "22 May",
+                },
+                {
+                  month: "May",
+                  day: 23,
+                  name: "Ahmad Bin Rahim",
+                  type: "Technical Interview",
+                  time: "11:00 AM",
+                  tagCls: "bg-bg-muted text-fg-muted",
+                  tag: "23 May",
+                },
+              ].map((iv, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-accent/30 hover:bg-bg-subtle transition-all cursor-pointer"
+                >
+                  <div className="w-10 h-10 bg-accent/5 rounded-lg flex flex-col items-center justify-center shrink-0">
+                    <span className="text-[12px] font-bold text-accent uppercase">
+                      {iv.month}
+                    </span>
+                    <span className="text-base font-bold text-accent leading-none">
+                      {iv.day}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-fg text-body-md">
+                      {iv.name}
+                    </p>
+                    <p className="text-body-sm text-fg-muted mt-0.5">
+                      {iv.type} · {iv.time}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-caption-bold px-2 py-0.5 rounded shrink-0 ${iv.tagCls}`}
+                  >
+                    {iv.tag}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Top Schools */}
+        {widgets["top-schools"] && (
+          <div className="col-span-12 lg:col-span-6 card p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-headline-md text-fg">Top Schools</h2>
+              <span className="text-body-sm text-fg-muted font-medium">
+                By applicant count
+              </span>
+            </div>
+            <div className="space-y-4">
+              {data.schools.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center gap-2">
+                  <Inbox size={28} className="text-fg-subtle" />
+                  <p className="text-body-sm text-fg-muted">
+                    No applicant data yet.
+                  </p>
+                </div>
+              ) : (
+                data.schools.map((s) => (
+                  <div key={s.name} className="flex items-center gap-3">
+                    <span className="text-body-sm font-medium text-fg-muted w-36 shrink-0 truncate">
+                      {s.name}
+                    </span>
+                    <div className="flex-1 h-8 bg-bg-subtle rounded overflow-hidden relative">
+                      <div
+                        className="absolute left-0 top-0 h-full bg-accent/15 flex items-center px-3 transition-all duration-500"
+                        style={{ width: `${(s.count / maxSchool) * 100}%` }}
+                      >
+                        <span className="text-body-sm font-bold text-accent">
+                          {s.count}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Recent Activity */}
+        {widgets["recent-activity"] && (
+          <div className="col-span-12 card p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-headline-md text-fg">Recent Activity</h2>
+              <a
+                href="#"
+                className="text-accent font-bold text-body-md hover:underline"
+              >
+                View All
+              </a>
+            </div>
+            <div className="divide-y divide-border">
+              {[
+                {
+                  icon: Repeat,
+                  bg: "bg-accent/10",
+                  ico: "text-accent",
+                  text: (
+                    <>
+                      Jenny Aw moved to{" "}
+                      <strong className="text-accent">Interview stage</strong>
+                    </>
+                  ),
+                  sub: "University (Summer 2026) · 2 hours ago",
+                },
+                {
+                  icon: UserPlus,
+                  bg: "bg-success-bg",
+                  ico: "text-success",
+                  text: (
+                    <>
+                      New application from{" "}
+                      <strong className="text-accent">Marcus Tan</strong>
+                    </>
+                  ),
+                  sub: "University (Summer 2026) · 5 hours ago",
+                },
+                {
+                  icon: Mail,
+                  bg: "bg-accent/10",
+                  ico: "text-accent",
+                  text: (
+                    <>
+                      Offer sent to{" "}
+                      <strong className="text-accent">Daniel Lee</strong>
+                    </>
+                  ),
+                  sub: "University (Summer 2026) · Yesterday",
+                },
+                {
+                  icon: MessageSquare,
+                  bg: "bg-warning-bg",
+                  ico: "text-warning",
+                  text: (
+                    <>
+                      Interview feedback submitted for{" "}
+                      <strong className="text-accent">Alicia Tan</strong>
+                    </>
+                  ),
+                  sub: "University (Summer 2026) · Yesterday",
+                },
+                {
+                  icon: Inbox,
+                  bg: "bg-success-bg",
+                  ico: "text-success",
+                  text: (
+                    <>
+                      <strong className="text-accent">
+                        3 new applications
+                      </strong>{" "}
+                      received
+                    </>
+                  ),
+                  sub: "Polytechnic (Summer 2026) · 2 days ago",
+                },
+              ].map((a, i) => (
+                <div key={i} className="flex items-center gap-3 py-3">
+                  <div
+                    className={`w-7 h-7 ${a.bg} rounded-full flex items-center justify-center shrink-0`}
+                  >
+                    <a.icon size={14} className={a.ico} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-body-md text-fg">{a.text}</p>
+                    <p className="text-body-sm text-fg-muted mt-0.5">{a.sub}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Customize overlay */}
+      {drawerOpen && (
+        <div
+          className="fixed inset-0 bg-fg/30 z-[60]"
+          onClick={() => setDrawerOpen(false)}
+        />
+      )}
+
+      {/* Customize drawer */}
+      <div
+        className={`fixed right-0 top-0 h-full w-[360px] bg-surface border-l border-border z-[70] flex flex-col shadow-2xl transition-transform duration-300 ${drawerOpen ? "translate-x-0" : "translate-x-full"}`}
+      >
+        <div className="flex justify-between items-center px-6 py-5 border-b border-border shrink-0">
+          <div>
+            <h2 className="text-headline-md text-fg">Customize Dashboard</h2>
+            <p className="text-body-sm text-fg-muted mt-0.5">
+              Personalise your view
+            </p>
+          </div>
+          <button
+            onClick={() => setDrawerOpen(false)}
+            className="p-2 rounded-full hover:bg-bg-subtle transition-colors text-fg-muted"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-6 py-8 flex flex-col items-center text-center gap-5">
+          <div className="w-14 h-14 rounded-full bg-bg-subtle flex items-center justify-center">
+            <Settings size={22} className="text-fg-subtle" />
+          </div>
+          <div>
+            <p className="text-headline-sm text-fg font-semibold">
+              Coming Soon
+            </p>
+            <p className="text-body-sm text-fg-muted mt-1.5 max-w-[260px]">
+              Widget customisation is being planned. Check back soon.
+            </p>
+          </div>
+        </div>
+        <div className="px-6 py-4 border-t border-border shrink-0">
+          <button
+            onClick={() => setDrawerOpen(false)}
+            className="w-full btn-outline justify-center"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+
+      <CreateProjectChooser open={createChooserOpen} onClose={() => setCreateChooserOpen(false)} />
+    </Shell>
+  );
+}

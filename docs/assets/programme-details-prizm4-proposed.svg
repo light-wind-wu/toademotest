@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="900" viewBox="0 0 1280 900" role="img" aria-labelledby="title desc">
+  <title id="title">Programme Details PRIZM 4 proposed state</title>
+  <desc id="desc">Static mock showing a PRIZM 4 aligned Programme Details form with semantic surfaces, compact fields, radio cards, and a compliant eligibility criteria summary control.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .surface { fill: #ffffff; }
+      .muted { fill: #f1f5f9; }
+      .border { stroke: #e2e8f0; }
+      .strong { stroke: #cbd5e1; }
+      .fg { fill: #0f172a; }
+      .fg-muted { fill: #475569; }
+      .fg-subtle { fill: #64748b; }
+      .accent { fill: #2563eb; }
+      .accent-stroke { stroke: #2563eb; }
+      .accent-soft { fill: #eff6ff; }
+      .success-soft { fill: #ecfdf5; }
+      .success { fill: #059669; }
+      .text { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .headline { font-size: 24px; font-weight: 600; }
+      .label { font-size: 14px; font-weight: 600; }
+      .body { font-size: 14px; font-weight: 400; }
+      .caption { font-size: 12px; font-weight: 400; }
+      .caption-strong { font-size: 12px; font-weight: 600; }
+      .nav { font-size: 11px; font-weight: 600; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1280" height="900"/>
+
+  <rect class="surface border" x="0.5" y="0.5" width="104" height="899" rx="0"/>
+  <rect class="surface border" x="104.5" y="0.5" width="1175" height="64" rx="0"/>
+
+  <rect class="muted" x="16" y="18" width="72" height="32" rx="6"/>
+  <text class="text label fg" x="34" y="39">DSTA</text>
+
+  <g transform="translate(0 96)">
+    <rect class="accent-soft" x="10" y="84" width="84" height="58" rx="8"/>
+    <circle class="accent" cx="52" cy="24" r="13"/>
+    <circle class="accent" cx="52" cy="112" r="13"/>
+    <text class="text nav fg-muted" x="52" y="54" text-anchor="middle">Dashboard</text>
+    <text class="text nav accent" x="52" y="142" text-anchor="middle">Programmes</text>
+    <circle class="fg-subtle" cx="52" cy="202" r="13"/>
+    <text class="text nav fg-muted" x="52" y="232" text-anchor="middle">Projects</text>
+    <circle class="fg-subtle" cx="52" cy="292" r="13"/>
+    <text class="text nav fg-muted" x="52" y="322" text-anchor="middle">Requests</text>
+  </g>
+
+  <text class="text label fg-muted" x="136" y="40">Talent Outreach &amp; Acquisition</text>
+  <rect class="muted border" x="760" y="16" width="260" height="34" rx="8"/>
+  <text class="text caption fg-subtle" x="790" y="38">Search across TOA...</text>
+  <circle class="accent" cx="1120" cy="33" r="18"/>
+  <text class="text caption-strong" fill="#ffffff" x="1120" y="37" text-anchor="middle">DT</text>
+  <text class="text caption-strong fg" x="1150" y="30">Davina Tan</text>
+  <text class="text caption fg-muted" x="1150" y="46">IO Admin</text>
+
+  <g transform="translate(144 98)">
+    <text class="text caption fg-muted" x="0" y="0">Programmes / Create Programme</text>
+
+    <g transform="translate(0 34)">
+      <circle class="accent" cx="12" cy="12" r="12"/>
+      <text class="text caption-strong" fill="#ffffff" x="12" y="16" text-anchor="middle">1</text>
+      <text class="text caption-strong fg" x="34" y="16">Programme Details</text>
+      <line class="strong" x1="178" y1="12" x2="238" y2="12"/>
+      <circle class="muted border" cx="258" cy="12" r="12"/>
+      <text class="text caption-strong fg-subtle" x="258" y="16" text-anchor="middle">2</text>
+      <text class="text caption-strong fg-muted" x="280" y="16">Intake Windows</text>
+      <line class="strong" x1="402" y1="12" x2="462" y2="12"/>
+      <circle class="muted border" cx="482" cy="12" r="12"/>
+      <text class="text caption-strong fg-subtle" x="482" y="16" text-anchor="middle">3</text>
+      <text class="text caption-strong fg-muted" x="504" y="16">Attach Projects</text>
+      <line class="strong" x1="626" y1="12" x2="686" y2="12"/>
+      <circle class="muted border" cx="706" cy="12" r="12"/>
+      <text class="text caption-strong fg-subtle" x="706" y="16" text-anchor="middle">4</text>
+      <text class="text caption-strong fg-muted" x="728" y="16">Review and Confirm</text>
+    </g>
+
+    <text class="text headline fg" x="0" y="126">Programme Details</text>
+
+    <g transform="translate(0 158)">
+      <text class="text label fg" x="0" y="0">Programme Title</text>
+      <text class="text label" fill="#dc2626" x="116" y="0">*</text>
+      <rect class="surface border" x="0.5" y="12.5" width="420" height="38" rx="8"/>
+      <text class="text body fg-subtle" x="14" y="37">e.g. UG Intern 2027</text>
+      <text class="text caption fg-muted" x="0" y="70">Use a concise title that maps to the intake and applicant audience.</text>
+    </g>
+
+    <g transform="translate(0 258)">
+      <text class="text label fg" x="0" y="0">Education Level</text>
+      <text class="text label" fill="#dc2626" x="112" y="0">*</text>
+      <text class="text caption fg-muted" x="0" y="22">Choose one level. This drives eligibility defaults and available project pools.</text>
+
+      <g transform="translate(0 42)">
+        <rect class="surface border" x="0.5" y="0.5" width="222" height="44" rx="8"/>
+        <circle class="border" cx="20" cy="22" r="8" fill="none"/>
+        <text class="text body fg" x="38" y="27">Junior College</text>
+      </g>
+      <g transform="translate(238 42)">
+        <rect class="surface border" x="0.5" y="0.5" width="330" height="44" rx="8"/>
+        <circle class="border" cx="20" cy="22" r="8" fill="none"/>
+        <text class="text body fg" x="38" y="27">Post JC / Post Polytechnic</text>
+      </g>
+      <g transform="translate(584 42)">
+        <rect class="surface border" x="0.5" y="0.5" width="210" height="44" rx="8"/>
+        <circle class="border" cx="20" cy="22" r="8" fill="none"/>
+        <text class="text body fg" x="38" y="27">Polytechnic</text>
+      </g>
+      <g transform="translate(0 100)">
+        <rect class="accent-soft accent-stroke" x="0.5" y="0.5" width="222" height="44" rx="8"/>
+        <circle class="accent-stroke" cx="20" cy="22" r="8" fill="none" stroke-width="2"/>
+        <circle class="accent" cx="20" cy="22" r="4"/>
+        <text class="text body fg" x="38" y="27">University</text>
+      </g>
+      <g transform="translate(238 100)">
+        <rect class="surface border" x="0.5" y="0.5" width="376" height="44" rx="8"/>
+        <circle class="border" cx="20" cy="22" r="8" fill="none"/>
+        <text class="text body fg" x="38" y="27">Young Defence Scientists Programme</text>
+      </g>
+    </g>
+
+    <g transform="translate(0 458)">
+      <text class="text label fg" x="0" y="0">Eligibility Criteria</text>
+      <rect class="surface border" x="0.5" y="12.5" width="420" height="58" rx="8"/>
+      <circle class="accent-soft" cx="30" cy="42" r="15"/>
+      <path d="M24 42 l4 4 l8 -10" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <text class="text caption-strong fg" x="58" y="36">3 criteria configured</text>
+      <text class="text caption fg-muted" x="58" y="54">View or edit eligibility criteria</text>
+      <text class="text body fg-subtle" x="392" y="48">›</text>
+      <text class="text caption fg-muted" x="0" y="92">Presented as a PRIZM field control: semantic border, compact radius, caption token.</text>
+    </g>
+
+    <g transform="translate(0 594)">
+      <text class="text label fg" x="0" y="0">Programme Description</text>
+      <rect class="surface border" x="0.5" y="12.5" width="680" height="108" rx="8"/>
+      <text class="text body fg-subtle" x="14" y="38">Briefly describe the programme...</text>
+      <rect class="accent-soft" x="520" y="-18" width="160" height="28" rx="8"/>
+      <text class="text caption-strong accent" x="600" y="1" text-anchor="middle">Summarise with AI</text>
+    </g>
+
+    <g transform="translate(420 780)">
+      <rect class="surface border" x="0.5" y="0.5" width="94" height="38" rx="8"/>
+      <text class="text caption-strong fg" x="47" y="24" text-anchor="middle">Cancel</text>
+      <rect class="surface border" x="110.5" y="0.5" width="126" height="38" rx="8"/>
+      <text class="text caption-strong fg" x="173" y="24" text-anchor="middle">Save as Draft</text>
+      <rect class="accent" x="252" y="0" width="166" height="38" rx="8"/>
+      <text class="text caption-strong" fill="#ffffff" x="335" y="24" text-anchor="middle">Next: Intake Windows</text>
+    </g>
+  </g>
+</svg>

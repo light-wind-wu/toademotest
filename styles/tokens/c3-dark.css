@@ -1,0 +1,50 @@
+/* ============================================================
+   C3 — Dark mode
+   ------------------------------------------------------------
+   Aesthetic: very dark surfaces, high contrast, cyan accent.
+   Optimized for operator stations and low-light environments.
+   ============================================================ */
+
+[data-zone="c3"][data-mode="dark"] {
+  --prizm-color-bg: oklch(9.8% 0.03 264.7);
+  --prizm-color-bg-subtle: var(--prizm-slate-950);
+  --prizm-color-bg-muted: oklch(15.5% 0.04 264.7);
+
+  --prizm-color-surface: var(--prizm-slate-900);
+  --prizm-color-surface-elevated: var(--prizm-slate-800);
+
+  --prizm-color-border: var(--prizm-slate-700);
+  --prizm-color-border-strong: var(--prizm-slate-600);
+
+  --prizm-color-fg: oklch(99.0% 0.002 247.84);
+  --prizm-color-fg-muted: var(--prizm-slate-300);
+  --prizm-color-fg-subtle: var(--prizm-slate-400);
+
+  --prizm-color-accent: var(--prizm-cyan-400);
+  --prizm-color-accent-fg: var(--prizm-slate-950);
+  --prizm-color-accent-hover: var(--prizm-cyan-300);
+
+  --prizm-color-danger: var(--prizm-red-600);
+  --prizm-color-danger-fg: var(--prizm-slate-50);
+  --prizm-color-success: var(--prizm-green-500);
+  --prizm-color-warning: var(--prizm-amber-500);
+  --prizm-color-info: var(--prizm-sky-500);
+
+  /* ---- Liquid Glass (C3-only surface treatment) ----
+     In dark mode glass picks up a LIGHTER tint to contrast the dark backdrop.
+     Tint is intentionally subtle (~6-10% opacity); the inner hairline border
+     and top-inset highlight give the "rim-lit edge of glass" feel. */
+  --prizm-glass-chrome-bg: oklch(85% 0.015 220 / 0.06);
+  --prizm-glass-chrome-border: oklch(100% 0 0 / 0.08);
+  --prizm-glass-chrome-blur: 8px;
+  --prizm-glass-chrome-saturate: 180%;
+  --prizm-glass-chrome-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.1);
+
+  --prizm-glass-panel-bg: oklch(85% 0.015 220 / 0.1);
+  --prizm-glass-panel-border: oklch(100% 0 0 / 0.1);
+  --prizm-glass-panel-blur: 12px;
+  --prizm-glass-panel-saturate: 180%;
+  --prizm-glass-panel-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.15), 0 12px 32px oklch(0% 0 0 / 0.5);
+
+  --prizm-glass-noise-opacity: 0.04;
+}

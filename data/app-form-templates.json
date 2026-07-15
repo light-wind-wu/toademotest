@@ -1,0 +1,2296 @@
+[
+  {
+    "id": "AFT-001",
+    "name": "UG Scholar Application Form",
+    "description": "Application form for university scholarship candidates. Covers academic standing, course of study, GPA, and scholarship bonding status.",
+    "updatedAt": "2026-05-27",
+    "fields": [
+      {
+        "id": "name",
+        "section": "Personal Particulars",
+        "label": "Name",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true,
+        "maxChars": 255
+      },
+      {
+        "id": "photo",
+        "section": "Personal Particulars",
+        "label": "Photo",
+        "type": "upload",
+        "required": true,
+        "mandatory": false,
+        "remarks": "Passport-sized photo"
+      },
+      {
+        "id": "nric",
+        "section": "Personal Particulars",
+        "label": "NRIC",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "nationality",
+        "section": "Personal Particulars",
+        "label": "Nationality",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "country_of_birth",
+        "section": "Personal Particulars",
+        "label": "Country of Birth",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "date_of_birth",
+        "section": "Personal Particulars",
+        "label": "Date of Birth",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "sex",
+        "section": "Personal Particulars",
+        "label": "Sex",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true,
+        "options": [
+          "Male",
+          "Female"
+        ]
+      },
+      {
+        "id": "mobile",
+        "section": "Personal Particulars",
+        "label": "Mobile",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "email",
+        "section": "Personal Particulars",
+        "label": "Email",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_start_date",
+        "section": "Personal Particulars",
+        "label": "Preferred Start Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_end_date",
+        "section": "Personal Particulars",
+        "label": "Preferred End Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "internship_category",
+        "section": "Personal Particulars",
+        "label": "Education Level",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "cv_upload",
+        "section": "Academic Information",
+        "label": "Curriculum Vitae (CV)",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "transcript_upload",
+        "section": "Academic Information",
+        "label": "Academic Transcript",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "Most recent official or unofficial transcript \u00b7 PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "name_of_institution",
+        "section": "Academic Information",
+        "label": "Name of Institution",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "year_of_study",
+        "section": "Academic Information",
+        "label": "Year of Study",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "N/A",
+          "Year 1",
+          "Year 2",
+          "Year 3",
+          "Year 4",
+          "Year 5",
+          "Year 6",
+          "JC1",
+          "JC2"
+        ]
+      },
+      {
+        "id": "expected_graduation",
+        "section": "Academic Information",
+        "label": "Expected Graduation",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "course_of_study",
+        "section": "Academic Information",
+        "label": "Intended/Current Course of Study",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "gpa_cap_rank_points",
+        "section": "Academic Information",
+        "label": "CAP / GPA",
+        "type": "number",
+        "required": false,
+        "mandatory": false,
+        "remarks": "e.g. 4.5 (NUS/NTU out of 5.0) or 3.8 (SMU/SIT out of 4.0)"
+      },
+      {
+        "id": "achievements",
+        "section": "Academic Information",
+        "label": "Achievements & Activities",
+        "type": "textbox",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true
+      },
+      {
+        "id": "bonded_scholarship",
+        "section": "Additional Information",
+        "label": "Are you a bonded scholarship recipient?",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "Yes",
+          "No"
+        ]
+      },
+      {
+        "id": "scholarship_name",
+        "section": "Additional Information",
+        "label": "If yes, name of scholarship",
+        "type": "textbox",
+        "required": true,
+        "mandatory": false,
+        "remarks": "Required only if bonded scholarship recipient"
+      },
+      {
+        "id": "tech_domain",
+        "section": "Additional Information",
+        "label": "Tech Domain",
+        "type": "checkbox",
+        "required": false,
+        "mandatory": false,
+        "options": [
+          "Aerospace Engineering",
+          "Naval and Maritime Engineering",
+          "Armoured Vehicles and Armament Engineering",
+          "Sensors and Guided Weapon Systems",
+          "Simulation and Immersive Technologies",
+          "Robotics and Autonomous Systems",
+          "Building and Protective Infrastructure",
+          "Artificial Intelligence and Data Analytics",
+          "Application Development",
+          "Command, Control, and Communication (C3) Systems",
+          "Cybersecurity",
+          "Information Intelligence Systems",
+          "Network and Connectivity",
+          "Sustainable Technologies and Energy Systems"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "AFT-002",
+    "name": "IP Scholar Application Form",
+    "description": "Application form for IP scholarship candidates. Covers course of study and interest in DSTA scholarship opportunities.",
+    "updatedAt": "2026-05-27",
+    "fields": [
+      {
+        "id": "name",
+        "section": "Personal Particulars",
+        "label": "Name",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true,
+        "maxChars": 255
+      },
+      {
+        "id": "photo",
+        "section": "Personal Particulars",
+        "label": "Photo",
+        "type": "upload",
+        "required": true,
+        "mandatory": false,
+        "remarks": "Passport-sized photo"
+      },
+      {
+        "id": "nric",
+        "section": "Personal Particulars",
+        "label": "NRIC",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "nationality",
+        "section": "Personal Particulars",
+        "label": "Nationality",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "country_of_birth",
+        "section": "Personal Particulars",
+        "label": "Country of Birth",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "date_of_birth",
+        "section": "Personal Particulars",
+        "label": "Date of Birth",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "sex",
+        "section": "Personal Particulars",
+        "label": "Sex",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true,
+        "options": [
+          "Male",
+          "Female"
+        ]
+      },
+      {
+        "id": "mobile",
+        "section": "Personal Particulars",
+        "label": "Mobile",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "email",
+        "section": "Personal Particulars",
+        "label": "Email",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_start_date",
+        "section": "Personal Particulars",
+        "label": "Preferred Start Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_end_date",
+        "section": "Personal Particulars",
+        "label": "Preferred End Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "internship_category",
+        "section": "Personal Particulars",
+        "label": "Education Level",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "cv_upload",
+        "section": "Academic Information",
+        "label": "Curriculum Vitae (CV)",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "transcript_upload",
+        "section": "Academic Information",
+        "label": "Academic Transcript",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "Most recent official or unofficial transcript \u00b7 PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "name_of_institution",
+        "section": "Academic Information",
+        "label": "Name of Institution",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "year_of_study",
+        "section": "Academic Information",
+        "label": "Year of Study",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "N/A",
+          "Year 1",
+          "Year 2",
+          "Year 3",
+          "Year 4",
+          "Year 5",
+          "Year 6",
+          "JC1",
+          "JC2"
+        ]
+      },
+      {
+        "id": "course_of_study",
+        "section": "Academic Information",
+        "label": "Intended/Current Course of Study",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "achievements",
+        "section": "Academic Information",
+        "label": "Achievements & Activities",
+        "type": "textbox",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true
+      },
+      {
+        "id": "dsta_scholarship_interest",
+        "section": "Additional Information",
+        "label": "Are you interested in DSTA scholarships?",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "Yes",
+          "No"
+        ]
+      },
+      {
+        "id": "tech_domain",
+        "section": "Additional Information",
+        "label": "Tech Domain",
+        "type": "checkbox",
+        "required": false,
+        "mandatory": false,
+        "options": [
+          "Aerospace Engineering",
+          "Naval and Maritime Engineering",
+          "Armoured Vehicles and Armament Engineering",
+          "Sensors and Guided Weapon Systems",
+          "Simulation and Immersive Technologies",
+          "Robotics and Autonomous Systems",
+          "Building and Protective Infrastructure",
+          "Artificial Intelligence and Data Analytics",
+          "Application Development",
+          "Command, Control, and Communication (C3) Systems",
+          "Cybersecurity",
+          "Information Intelligence Systems",
+          "Network and Connectivity",
+          "Sustainable Technologies and Energy Systems"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "AFT-003",
+    "name": "IP Application Form",
+    "description": "Application form for the Youth Development STEM Programme. Covers school details, area of interest, DSTA scholarship interest, and referral source.",
+    "updatedAt": "2026-05-27",
+    "fields": [
+      {
+        "id": "name",
+        "section": "Personal Particulars",
+        "label": "Name",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true,
+        "maxChars": 255
+      },
+      {
+        "id": "photo",
+        "section": "Personal Particulars",
+        "label": "Photo",
+        "type": "upload",
+        "required": true,
+        "mandatory": false,
+        "remarks": "Passport-sized photo"
+      },
+      {
+        "id": "nric",
+        "section": "Personal Particulars",
+        "label": "NRIC",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "nationality",
+        "section": "Personal Particulars",
+        "label": "Nationality",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "country_of_birth",
+        "section": "Personal Particulars",
+        "label": "Country of Birth",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "date_of_birth",
+        "section": "Personal Particulars",
+        "label": "Date of Birth",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "sex",
+        "section": "Personal Particulars",
+        "label": "Sex",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true,
+        "options": [
+          "Male",
+          "Female"
+        ]
+      },
+      {
+        "id": "mobile",
+        "section": "Personal Particulars",
+        "label": "Mobile",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "email",
+        "section": "Personal Particulars",
+        "label": "Email",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_start_date",
+        "section": "Personal Particulars",
+        "label": "Preferred Start Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_end_date",
+        "section": "Personal Particulars",
+        "label": "Preferred End Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "internship_category",
+        "section": "Personal Particulars",
+        "label": "Education Level",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "cv_upload",
+        "section": "Academic Information",
+        "label": "Curriculum Vitae (CV)",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "transcript_upload",
+        "section": "Academic Information",
+        "label": "Academic Transcript",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "Most recent official or unofficial transcript \u00b7 PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "name_of_institution",
+        "section": "Academic Information",
+        "label": "Name of Institution",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "year_of_study",
+        "section": "Academic Information",
+        "label": "Year of Study",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "N/A",
+          "Year 1",
+          "Year 2",
+          "Year 3",
+          "Year 4",
+          "Year 5",
+          "Year 6",
+          "JC1",
+          "JC2"
+        ]
+      },
+      {
+        "id": "achievements",
+        "section": "Academic Information",
+        "label": "Achievements & Activities",
+        "type": "textbox",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true
+      },
+      {
+        "id": "dsta_scholarship_interest",
+        "section": "Additional Information",
+        "label": "Are you interested in DSTA scholarships?",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "Yes",
+          "No"
+        ]
+      },
+      {
+        "id": "tech_domain",
+        "section": "Additional Information",
+        "label": "Tech Domain",
+        "type": "checkbox",
+        "required": false,
+        "mandatory": false,
+        "options": [
+          "Aerospace Engineering",
+          "Naval and Maritime Engineering",
+          "Armoured Vehicles and Armament Engineering",
+          "Sensors and Guided Weapon Systems",
+          "Simulation and Immersive Technologies",
+          "Robotics and Autonomous Systems",
+          "Building and Protective Infrastructure",
+          "Artificial Intelligence and Data Analytics",
+          "Application Development",
+          "Command, Control, and Communication (C3) Systems",
+          "Cybersecurity",
+          "Information Intelligence Systems",
+          "Network and Connectivity",
+          "Sustainable Technologies and Energy Systems"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "AFT-004",
+    "name": "Tech UP Application Form",
+    "description": "Application form for the Tech UP mid-career attachment programme. Covers current course, expected graduation, GPA, and interest in DSTA scholarships.",
+    "updatedAt": "2026-05-27",
+    "fields": [
+      {
+        "id": "name",
+        "section": "Personal Particulars",
+        "label": "Name",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true,
+        "maxChars": 255
+      },
+      {
+        "id": "photo",
+        "section": "Personal Particulars",
+        "label": "Photo",
+        "type": "upload",
+        "required": true,
+        "mandatory": false,
+        "remarks": "Passport-sized photo"
+      },
+      {
+        "id": "nric",
+        "section": "Personal Particulars",
+        "label": "NRIC",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "nationality",
+        "section": "Personal Particulars",
+        "label": "Nationality",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "country_of_birth",
+        "section": "Personal Particulars",
+        "label": "Country of Birth",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "date_of_birth",
+        "section": "Personal Particulars",
+        "label": "Date of Birth",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "sex",
+        "section": "Personal Particulars",
+        "label": "Sex",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true,
+        "options": [
+          "Male",
+          "Female"
+        ]
+      },
+      {
+        "id": "mobile",
+        "section": "Personal Particulars",
+        "label": "Mobile",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "email",
+        "section": "Personal Particulars",
+        "label": "Email",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_start_date",
+        "section": "Personal Particulars",
+        "label": "Preferred Start Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_end_date",
+        "section": "Personal Particulars",
+        "label": "Preferred End Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "internship_category",
+        "section": "Personal Particulars",
+        "label": "Education Level",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "cv_upload",
+        "section": "Academic Information",
+        "label": "Curriculum Vitae (CV)",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "transcript_upload",
+        "section": "Academic Information",
+        "label": "Academic Transcript",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "Most recent official or unofficial transcript \u00b7 PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "name_of_institution",
+        "section": "Academic Information",
+        "label": "Name of Institution",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "year_of_study",
+        "section": "Academic Information",
+        "label": "Year of Study",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "N/A",
+          "Year 1",
+          "Year 2",
+          "Year 3",
+          "Year 4",
+          "Year 5",
+          "Year 6",
+          "JC1",
+          "JC2"
+        ]
+      },
+      {
+        "id": "expected_graduation",
+        "section": "Academic Information",
+        "label": "Expected Graduation",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "course_of_study",
+        "section": "Academic Information",
+        "label": "Intended/Current Course of Study",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "gpa_cap_rank_points",
+        "section": "Academic Information",
+        "label": "CAP / GPA",
+        "type": "number",
+        "required": false,
+        "mandatory": false,
+        "remarks": "e.g. 4.5 (NUS/NTU out of 5.0) or 3.8 (SMU/SIT out of 4.0)"
+      },
+      {
+        "id": "achievements",
+        "section": "Academic Information",
+        "label": "Achievements & Activities",
+        "type": "textbox",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true
+      },
+      {
+        "id": "dsta_scholarship_interest",
+        "section": "Additional Information",
+        "label": "Are you interested in DSTA scholarships?",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "Yes",
+          "No"
+        ]
+      },
+      {
+        "id": "tech_domain",
+        "section": "Additional Information",
+        "label": "Tech Domain",
+        "type": "checkbox",
+        "required": false,
+        "mandatory": false,
+        "options": [
+          "Aerospace Engineering",
+          "Naval and Maritime Engineering",
+          "Armoured Vehicles and Armament Engineering",
+          "Sensors and Guided Weapon Systems",
+          "Simulation and Immersive Technologies",
+          "Robotics and Autonomous Systems",
+          "Building and Protective Infrastructure",
+          "Artificial Intelligence and Data Analytics",
+          "Application Development",
+          "Command, Control, and Communication (C3) Systems",
+          "Cybersecurity",
+          "Information Intelligence Systems",
+          "Network and Connectivity",
+          "Sustainable Technologies and Energy Systems"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "AFT-005",
+    "name": "UG Intern Application Form",
+    "description": "Application form for university internship candidates. Covers course of study, GPA, expected graduation, achievements, and referral source.",
+    "updatedAt": "2026-05-27",
+    "fields": [
+      {
+        "id": "name",
+        "section": "Personal Particulars",
+        "label": "Name",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true,
+        "maxChars": 255
+      },
+      {
+        "id": "photo",
+        "section": "Personal Particulars",
+        "label": "Photo",
+        "type": "upload",
+        "required": true,
+        "mandatory": false,
+        "remarks": "Passport-sized photo"
+      },
+      {
+        "id": "nric",
+        "section": "Personal Particulars",
+        "label": "NRIC",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "nationality",
+        "section": "Personal Particulars",
+        "label": "Nationality",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "country_of_birth",
+        "section": "Personal Particulars",
+        "label": "Country of Birth",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "date_of_birth",
+        "section": "Personal Particulars",
+        "label": "Date of Birth",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "sex",
+        "section": "Personal Particulars",
+        "label": "Sex",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true,
+        "options": [
+          "Male",
+          "Female"
+        ]
+      },
+      {
+        "id": "mobile",
+        "section": "Personal Particulars",
+        "label": "Mobile",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "email",
+        "section": "Personal Particulars",
+        "label": "Email",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true,
+        "fullWidth": true
+      },
+      {
+        "id": "preferred_start_date",
+        "section": "Personal Particulars",
+        "label": "Preferred Start Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_end_date",
+        "section": "Personal Particulars",
+        "label": "Preferred End Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "internship_category",
+        "section": "Personal Particulars",
+        "label": "Education Level",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "scholar_type",
+        "section": "Personal Particulars",
+        "label": "Scholar Type",
+        "type": "dropdown",
+        "required": false,
+        "mandatory": false,
+        "options": [
+          "PSC Scholar",
+          "Merit Scholar",
+          "UG Scholar"
+        ],
+        "showWhen": {
+          "fieldId": "internship_category",
+          "value": "Uni Scholar"
+        }
+      },
+      {
+        "id": "cv_upload",
+        "section": "Academic Information",
+        "label": "Curriculum Vitae (CV)",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "transcript_upload",
+        "section": "Academic Information",
+        "label": "Academic Transcript",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "Most recent official or unofficial transcript \u00b7 PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "name_of_institution",
+        "section": "Academic Information",
+        "label": "Name of Institution",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "year_of_study",
+        "section": "Academic Information",
+        "label": "Year of Study",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "N/A",
+          "Year 1",
+          "Year 2",
+          "Year 3",
+          "Year 4",
+          "Year 5",
+          "Year 6",
+          "JC1",
+          "JC2"
+        ]
+      },
+      {
+        "id": "expected_graduation",
+        "section": "Academic Information",
+        "label": "Expected Graduation",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "course_of_study",
+        "section": "Academic Information",
+        "label": "Intended/Current Course of Study",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "gpa_cap_rank_points",
+        "section": "Academic Information",
+        "label": "CAP / GPA",
+        "type": "number",
+        "required": false,
+        "mandatory": false,
+        "remarks": "e.g. 4.5 (NUS/NTU out of 5.0) or 3.8 (SMU/SIT out of 4.0)"
+      },
+      {
+        "id": "achievements",
+        "section": "Academic Information",
+        "label": "Achievements & Activities",
+        "type": "textbox",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true
+      },
+      {
+        "id": "tech_domain",
+        "section": "Additional Information",
+        "label": "Tech Domain",
+        "type": "checkbox",
+        "required": false,
+        "mandatory": false,
+        "options": [
+          "Aerospace Engineering",
+          "Naval and Maritime Engineering",
+          "Armoured Vehicles and Armament Engineering",
+          "Sensors and Guided Weapon Systems",
+          "Simulation and Immersive Technologies",
+          "Robotics and Autonomous Systems",
+          "Building and Protective Infrastructure",
+          "Artificial Intelligence and Data Analytics",
+          "Application Development",
+          "Command, Control, and Communication (C3) Systems",
+          "Cybersecurity",
+          "Information Intelligence Systems",
+          "Network and Connectivity",
+          "Sustainable Technologies and Energy Systems"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "AFT-006",
+    "name": "Poly Scholar Application Form",
+    "description": "Application form for polytechnic scholarship candidates. Covers course of study, subject grades, GPA, achievements, and scholarship bonding status.",
+    "updatedAt": "2026-05-27",
+    "fields": [
+      {
+        "id": "name",
+        "section": "Personal Particulars",
+        "label": "Name",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true,
+        "maxChars": 255
+      },
+      {
+        "id": "photo",
+        "section": "Personal Particulars",
+        "label": "Photo",
+        "type": "upload",
+        "required": true,
+        "mandatory": false,
+        "remarks": "Passport-sized photo"
+      },
+      {
+        "id": "nric",
+        "section": "Personal Particulars",
+        "label": "NRIC",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "nationality",
+        "section": "Personal Particulars",
+        "label": "Nationality",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "country_of_birth",
+        "section": "Personal Particulars",
+        "label": "Country of Birth",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "date_of_birth",
+        "section": "Personal Particulars",
+        "label": "Date of Birth",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "sex",
+        "section": "Personal Particulars",
+        "label": "Sex",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true,
+        "options": [
+          "Male",
+          "Female"
+        ]
+      },
+      {
+        "id": "mobile",
+        "section": "Personal Particulars",
+        "label": "Mobile",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "email",
+        "section": "Personal Particulars",
+        "label": "Email",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_start_date",
+        "section": "Personal Particulars",
+        "label": "Preferred Start Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_end_date",
+        "section": "Personal Particulars",
+        "label": "Preferred End Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "internship_category",
+        "section": "Personal Particulars",
+        "label": "Education Level",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "cv_upload",
+        "section": "Academic Information",
+        "label": "Curriculum Vitae (CV)",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "transcript_upload",
+        "section": "Academic Information",
+        "label": "Academic Transcript",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "Most recent official or unofficial transcript \u00b7 PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "name_of_institution",
+        "section": "Academic Information",
+        "label": "Name of Institution",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "year_of_study",
+        "section": "Academic Information",
+        "label": "Year of Study",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "N/A",
+          "Year 1",
+          "Year 2",
+          "Year 3",
+          "Year 4",
+          "Year 5",
+          "Year 6",
+          "JC1",
+          "JC2"
+        ]
+      },
+      {
+        "id": "course_of_study",
+        "section": "Academic Information",
+        "label": "Intended/Current Course of Study",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "subject_grades",
+        "section": "Academic Information",
+        "label": "Module Grades",
+        "type": "subject-grade-table",
+        "required": false,
+        "mandatory": false,
+        "remarks": "Add each module and its grade",
+        "options": [
+          "A+",
+          "A",
+          "B+",
+          "B",
+          "C+",
+          "C",
+          "D+",
+          "D",
+          "F"
+        ]
+      },
+      {
+        "id": "gpa_cap_rank_points",
+        "section": "Academic Information",
+        "label": "Cumulative GPA",
+        "type": "number",
+        "required": false,
+        "mandatory": false,
+        "remarks": "e.g. 3.8 (out of 4.0)"
+      },
+      {
+        "id": "achievements",
+        "section": "Academic Information",
+        "label": "Achievements & Activities",
+        "type": "textbox",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true
+      },
+      {
+        "id": "bonded_scholarship",
+        "section": "Additional Information",
+        "label": "Are you a bonded scholarship recipient?",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "Yes",
+          "No"
+        ]
+      },
+      {
+        "id": "scholarship_name",
+        "section": "Additional Information",
+        "label": "If yes, name of scholarship",
+        "type": "textbox",
+        "required": true,
+        "mandatory": false,
+        "remarks": "Required only if bonded scholarship recipient"
+      },
+      {
+        "id": "tech_domain",
+        "section": "Additional Information",
+        "label": "Tech Domain",
+        "type": "checkbox",
+        "required": false,
+        "mandatory": false,
+        "options": [
+          "Aerospace Engineering",
+          "Naval and Maritime Engineering",
+          "Armoured Vehicles and Armament Engineering",
+          "Sensors and Guided Weapon Systems",
+          "Simulation and Immersive Technologies",
+          "Robotics and Autonomous Systems",
+          "Building and Protective Infrastructure",
+          "Artificial Intelligence and Data Analytics",
+          "Application Development",
+          "Command, Control, and Communication (C3) Systems",
+          "Cybersecurity",
+          "Information Intelligence Systems",
+          "Network and Connectivity",
+          "Sustainable Technologies and Energy Systems"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "AFT-007",
+    "name": "JC Scholar Application Form",
+    "description": "Application form for Junior College scholarship candidates. Covers subject grades, A-Level results, and key achievements.",
+    "updatedAt": "2026-05-27",
+    "fields": [
+      {
+        "id": "name",
+        "section": "Personal Particulars",
+        "label": "Name",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true,
+        "maxChars": 255
+      },
+      {
+        "id": "photo",
+        "section": "Personal Particulars",
+        "label": "Photo",
+        "type": "upload",
+        "required": true,
+        "mandatory": false,
+        "remarks": "Passport-sized photo"
+      },
+      {
+        "id": "nric",
+        "section": "Personal Particulars",
+        "label": "NRIC",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "nationality",
+        "section": "Personal Particulars",
+        "label": "Nationality",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "country_of_birth",
+        "section": "Personal Particulars",
+        "label": "Country of Birth",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "date_of_birth",
+        "section": "Personal Particulars",
+        "label": "Date of Birth",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "sex",
+        "section": "Personal Particulars",
+        "label": "Sex",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true,
+        "options": [
+          "Male",
+          "Female"
+        ]
+      },
+      {
+        "id": "mobile",
+        "section": "Personal Particulars",
+        "label": "Mobile",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "email",
+        "section": "Personal Particulars",
+        "label": "Email",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_start_date",
+        "section": "Personal Particulars",
+        "label": "Preferred Start Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_end_date",
+        "section": "Personal Particulars",
+        "label": "Preferred End Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "internship_category",
+        "section": "Personal Particulars",
+        "label": "Education Level",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "cv_upload",
+        "section": "Academic Information",
+        "label": "Curriculum Vitae (CV)",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "transcript_upload",
+        "section": "Academic Information",
+        "label": "Academic Transcript",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "Most recent official or unofficial transcript \u00b7 PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "name_of_institution",
+        "section": "Academic Information",
+        "label": "Name of Institution",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "year_of_study",
+        "section": "Academic Information",
+        "label": "Year of Study",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "N/A",
+          "Year 1",
+          "Year 2",
+          "Year 3",
+          "Year 4",
+          "Year 5",
+          "Year 6",
+          "JC1",
+          "JC2"
+        ]
+      },
+      {
+        "id": "subject_grades",
+        "section": "Academic Information",
+        "label": "A-Level Subjects & Grades",
+        "type": "subject-grade-table",
+        "required": false,
+        "mandatory": false,
+        "remarks": "Add each H1/H2/H3 subject and its grade",
+        "options": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E",
+          "S",
+          "U"
+        ]
+      },
+      {
+        "id": "achievements",
+        "section": "Academic Information",
+        "label": "Achievements & Activities",
+        "type": "textbox",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true
+      },
+      {
+        "id": "tech_domain",
+        "section": "Additional Information",
+        "label": "Tech Domain",
+        "type": "checkbox",
+        "required": false,
+        "mandatory": false,
+        "options": [
+          "Aerospace Engineering",
+          "Naval and Maritime Engineering",
+          "Armoured Vehicles and Armament Engineering",
+          "Sensors and Guided Weapon Systems",
+          "Simulation and Immersive Technologies",
+          "Robotics and Autonomous Systems",
+          "Building and Protective Infrastructure",
+          "Artificial Intelligence and Data Analytics",
+          "Application Development",
+          "Command, Control, and Communication (C3) Systems",
+          "Cybersecurity",
+          "Information Intelligence Systems",
+          "Network and Connectivity",
+          "Sustainable Technologies and Energy Systems"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "AFT-008",
+    "name": "JC Intern Application Form",
+    "description": "Application form for Junior College internship candidates. Covers subject grades, DSTA scholarship interest, and referral source.",
+    "updatedAt": "2026-05-27",
+    "fields": [
+      {
+        "id": "name",
+        "section": "Personal Particulars",
+        "label": "Name",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true,
+        "maxChars": 255
+      },
+      {
+        "id": "photo",
+        "section": "Personal Particulars",
+        "label": "Photo",
+        "type": "upload",
+        "required": true,
+        "mandatory": false,
+        "remarks": "Passport-sized photo"
+      },
+      {
+        "id": "nric",
+        "section": "Personal Particulars",
+        "label": "NRIC",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "nationality",
+        "section": "Personal Particulars",
+        "label": "Nationality",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "country_of_birth",
+        "section": "Personal Particulars",
+        "label": "Country of Birth",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "date_of_birth",
+        "section": "Personal Particulars",
+        "label": "Date of Birth",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "sex",
+        "section": "Personal Particulars",
+        "label": "Sex",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true,
+        "options": [
+          "Male",
+          "Female"
+        ]
+      },
+      {
+        "id": "mobile",
+        "section": "Personal Particulars",
+        "label": "Mobile",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "email",
+        "section": "Personal Particulars",
+        "label": "Email",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_start_date",
+        "section": "Personal Particulars",
+        "label": "Preferred Start Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_end_date",
+        "section": "Personal Particulars",
+        "label": "Preferred End Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "internship_category",
+        "section": "Personal Particulars",
+        "label": "Education Level",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "cv_upload",
+        "section": "Academic Information",
+        "label": "Curriculum Vitae (CV)",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "transcript_upload",
+        "section": "Academic Information",
+        "label": "Academic Transcript",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "Most recent official or unofficial transcript \u00b7 PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "name_of_institution",
+        "section": "Academic Information",
+        "label": "Name of Institution",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "year_of_study",
+        "section": "Academic Information",
+        "label": "Year of Study",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "N/A",
+          "Year 1",
+          "Year 2",
+          "Year 3",
+          "Year 4",
+          "Year 5",
+          "Year 6",
+          "JC1",
+          "JC2"
+        ]
+      },
+      {
+        "id": "subject_grades",
+        "section": "Academic Information",
+        "label": "A-Level Subjects & Grades",
+        "type": "subject-grade-table",
+        "required": false,
+        "mandatory": false,
+        "remarks": "Add each H1/H2/H3 subject and its grade",
+        "options": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E",
+          "S",
+          "U"
+        ]
+      },
+      {
+        "id": "achievements",
+        "section": "Academic Information",
+        "label": "Achievements & Activities",
+        "type": "textbox",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true
+      },
+      {
+        "id": "dsta_scholarship_interest",
+        "section": "Additional Information",
+        "label": "Are you interested in DSTA scholarships?",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "Yes",
+          "No"
+        ]
+      },
+      {
+        "id": "tech_domain",
+        "section": "Additional Information",
+        "label": "Tech Domain",
+        "type": "checkbox",
+        "required": false,
+        "mandatory": false,
+        "options": [
+          "Aerospace Engineering",
+          "Naval and Maritime Engineering",
+          "Armoured Vehicles and Armament Engineering",
+          "Sensors and Guided Weapon Systems",
+          "Simulation and Immersive Technologies",
+          "Robotics and Autonomous Systems",
+          "Building and Protective Infrastructure",
+          "Artificial Intelligence and Data Analytics",
+          "Application Development",
+          "Command, Control, and Communication (C3) Systems",
+          "Cybersecurity",
+          "Information Intelligence Systems",
+          "Network and Connectivity",
+          "Sustainable Technologies and Energy Systems"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "AFT-009",
+    "name": "Post-JC/Post-Poly Application Form",
+    "description": "Application form for Post-JC/Post-Poly candidates. Covers scholarship bonding, DSTA scholarship interest, subject grades, course of study, and referral source.",
+    "updatedAt": "2026-05-27",
+    "fields": [
+      {
+        "id": "name",
+        "section": "Personal Particulars",
+        "label": "Name",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true,
+        "maxChars": 255
+      },
+      {
+        "id": "photo",
+        "section": "Personal Particulars",
+        "label": "Photo",
+        "type": "upload",
+        "required": true,
+        "mandatory": false,
+        "remarks": "Passport-sized photo"
+      },
+      {
+        "id": "nric",
+        "section": "Personal Particulars",
+        "label": "NRIC",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "nationality",
+        "section": "Personal Particulars",
+        "label": "Nationality",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "country_of_birth",
+        "section": "Personal Particulars",
+        "label": "Country of Birth",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "date_of_birth",
+        "section": "Personal Particulars",
+        "label": "Date of Birth",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "sex",
+        "section": "Personal Particulars",
+        "label": "Sex",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true,
+        "options": [
+          "Male",
+          "Female"
+        ]
+      },
+      {
+        "id": "mobile",
+        "section": "Personal Particulars",
+        "label": "Mobile",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "email",
+        "section": "Personal Particulars",
+        "label": "Email",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_start_date",
+        "section": "Personal Particulars",
+        "label": "Preferred Start Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_end_date",
+        "section": "Personal Particulars",
+        "label": "Preferred End Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "internship_category",
+        "section": "Personal Particulars",
+        "label": "Education Level",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "cv_upload",
+        "section": "Academic Information",
+        "label": "Curriculum Vitae (CV)",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "transcript_upload",
+        "section": "Academic Information",
+        "label": "Academic Transcript",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "Most recent official or unofficial transcript \u00b7 PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "name_of_institution",
+        "section": "Academic Information",
+        "label": "Name of Institution",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "year_of_study",
+        "section": "Academic Information",
+        "label": "Year of Study",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "N/A",
+          "Year 1",
+          "Year 2",
+          "Year 3",
+          "Year 4",
+          "Year 5",
+          "Year 6",
+          "JC1",
+          "JC2"
+        ]
+      },
+      {
+        "id": "course_of_study",
+        "section": "Academic Information",
+        "label": "Intended/Current Course of Study",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "subject_grades",
+        "section": "Academic Information",
+        "label": "Module Grades",
+        "type": "subject-grade-table",
+        "required": false,
+        "mandatory": false,
+        "remarks": "Add each module and its grade",
+        "options": [
+          "A+",
+          "A",
+          "B+",
+          "B",
+          "C+",
+          "C",
+          "D+",
+          "D",
+          "F"
+        ]
+      },
+      {
+        "id": "achievements",
+        "section": "Academic Information",
+        "label": "Achievements & Activities",
+        "type": "textbox",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true
+      },
+      {
+        "id": "bonded_scholarship",
+        "section": "Additional Information",
+        "label": "Are you a bonded scholarship recipient?",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "Yes",
+          "No"
+        ]
+      },
+      {
+        "id": "scholarship_name",
+        "section": "Additional Information",
+        "label": "If yes, name of scholarship",
+        "type": "textbox",
+        "required": true,
+        "mandatory": false,
+        "remarks": "Required only if bonded scholarship recipient"
+      },
+      {
+        "id": "dsta_scholarship_interest",
+        "section": "Additional Information",
+        "label": "Are you interested in DSTA scholarships?",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "Yes",
+          "No"
+        ]
+      },
+      {
+        "id": "tech_domain",
+        "section": "Additional Information",
+        "label": "Tech Domain",
+        "type": "checkbox",
+        "required": false,
+        "mandatory": false,
+        "options": [
+          "Aerospace Engineering",
+          "Naval and Maritime Engineering",
+          "Armoured Vehicles and Armament Engineering",
+          "Sensors and Guided Weapon Systems",
+          "Simulation and Immersive Technologies",
+          "Robotics and Autonomous Systems",
+          "Building and Protective Infrastructure",
+          "Artificial Intelligence and Data Analytics",
+          "Application Development",
+          "Command, Control, and Communication (C3) Systems",
+          "Cybersecurity",
+          "Information Intelligence Systems",
+          "Network and Connectivity",
+          "Sustainable Technologies and Energy Systems"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "AFT-010",
+    "name": "SCI Application Form",
+    "description": "Application form for Singapore Citizens Internship candidates. Covers scholarship bonding status and current course of study.",
+    "updatedAt": "2026-05-27",
+    "fields": [
+      {
+        "id": "name",
+        "section": "Personal Particulars",
+        "label": "Name",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true,
+        "maxChars": 255
+      },
+      {
+        "id": "photo",
+        "section": "Personal Particulars",
+        "label": "Photo",
+        "type": "upload",
+        "required": true,
+        "mandatory": false,
+        "remarks": "Passport-sized photo"
+      },
+      {
+        "id": "nric",
+        "section": "Personal Particulars",
+        "label": "NRIC",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "nationality",
+        "section": "Personal Particulars",
+        "label": "Nationality",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "country_of_birth",
+        "section": "Personal Particulars",
+        "label": "Country of Birth",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "date_of_birth",
+        "section": "Personal Particulars",
+        "label": "Date of Birth",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true
+      },
+      {
+        "id": "sex",
+        "section": "Personal Particulars",
+        "label": "Sex",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "myInfo": true,
+        "options": [
+          "Male",
+          "Female"
+        ]
+      },
+      {
+        "id": "mobile",
+        "section": "Personal Particulars",
+        "label": "Mobile",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "email",
+        "section": "Personal Particulars",
+        "label": "Email",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_start_date",
+        "section": "Personal Particulars",
+        "label": "Preferred Start Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "preferred_end_date",
+        "section": "Personal Particulars",
+        "label": "Preferred End Date",
+        "type": "calendar",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "internship_category",
+        "section": "Personal Particulars",
+        "label": "Education Level",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "cv_upload",
+        "section": "Academic Information",
+        "label": "Curriculum Vitae (CV)",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "transcript_upload",
+        "section": "Academic Information",
+        "label": "Academic Transcript",
+        "type": "upload",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true,
+        "remarks": "Most recent official or unofficial transcript \u00b7 PDF \u00b7 max 5 MB"
+      },
+      {
+        "id": "name_of_institution",
+        "section": "Academic Information",
+        "label": "Name of Institution",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "year_of_study",
+        "section": "Academic Information",
+        "label": "Year of Study",
+        "type": "dropdown",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "N/A",
+          "Year 1",
+          "Year 2",
+          "Year 3",
+          "Year 4",
+          "Year 5",
+          "Year 6",
+          "JC1",
+          "JC2"
+        ]
+      },
+      {
+        "id": "course_of_study",
+        "section": "Academic Information",
+        "label": "Intended/Current Course of Study",
+        "type": "textbox",
+        "required": true,
+        "mandatory": true
+      },
+      {
+        "id": "achievements",
+        "section": "Academic Information",
+        "label": "Achievements & Activities",
+        "type": "textbox",
+        "required": false,
+        "mandatory": false,
+        "fullWidth": true
+      },
+      {
+        "id": "bonded_scholarship",
+        "section": "Additional Information",
+        "label": "Are you a bonded scholarship recipient?",
+        "type": "radio",
+        "required": true,
+        "mandatory": true,
+        "options": [
+          "Yes",
+          "No"
+        ]
+      },
+      {
+        "id": "scholarship_name",
+        "section": "Additional Information",
+        "label": "If yes, name of scholarship",
+        "type": "textbox",
+        "required": true,
+        "mandatory": false,
+        "remarks": "Required only if bonded scholarship recipient"
+      },
+      {
+        "id": "tech_domain",
+        "section": "Additional Information",
+        "label": "Tech Domain",
+        "type": "checkbox",
+        "required": false,
+        "mandatory": false,
+        "options": [
+          "Aerospace Engineering",
+          "Naval and Maritime Engineering",
+          "Armoured Vehicles and Armament Engineering",
+          "Sensors and Guided Weapon Systems",
+          "Simulation and Immersive Technologies",
+          "Robotics and Autonomous Systems",
+          "Building and Protective Infrastructure",
+          "Artificial Intelligence and Data Analytics",
+          "Application Development",
+          "Command, Control, and Communication (C3) Systems",
+          "Cybersecurity",
+          "Information Intelligence Systems",
+          "Network and Connectivity",
+          "Sustainable Technologies and Energy Systems"
+        ]
+      }
+    ]
+  }
+]

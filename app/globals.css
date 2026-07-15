@@ -1,0 +1,471 @@
+@import "tailwindcss";
+
+/* PRIZM design tokens — primitives + the four semantic themes. */
+@import "../styles/tokens/baseline.css";
+@import "../styles/tokens/enterprise-light.css";
+@import "../styles/tokens/enterprise-dark.css";
+@import "../styles/tokens/c3-light.css";
+@import "../styles/tokens/c3-dark.css";
+
+/* ── PRIZM 4.0 fonts — self-hosted, air-gap safe (no CDN/Google Fonts) ───── */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src:
+    url("/fonts/InterVariable.woff2") format("woff2"),
+    url("/fonts/InterVariable.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src:
+    url("/fonts/InterVariable-Italic.woff2") format("woff2"),
+    url("/fonts/InterVariable-Italic.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src:
+    url("/fonts/JetBrainsMono_wght_.woff2") format("woff2"),
+    url("/fonts/JetBrainsMono_wght_.ttf") format("truetype");
+}
+
+/* ── Tailwind v4 theme — wires PRIZM semantic tokens to utilities ───────── */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  --color-bg: var(--prizm-color-bg);
+  --color-bg-subtle: var(--prizm-color-bg-subtle);
+  --color-bg-muted: var(--prizm-color-bg-muted);
+  --color-surface: var(--prizm-color-surface);
+  --color-surface-elevated: var(--prizm-color-surface-elevated);
+  --color-border: var(--prizm-color-border);
+  --color-border-strong: var(--prizm-color-border-strong);
+  --color-fg: var(--prizm-color-fg);
+  --color-fg-muted: var(--prizm-color-fg-muted);
+  --color-fg-subtle: var(--prizm-color-fg-subtle);
+  --color-accent: var(--prizm-color-accent);
+  --color-accent-fg: var(--prizm-color-accent-fg);
+  --color-accent-hover: var(--prizm-color-accent-hover);
+  --color-danger: var(--prizm-color-danger);
+  --color-danger-fg: var(--prizm-color-danger-fg);
+  --color-success: var(--prizm-color-success);
+  --color-warning: var(--prizm-color-warning);
+  --color-info: var(--prizm-color-info);
+
+  --radius-xs: var(--prizm-radius-xs);
+  --radius-sm: var(--prizm-radius-sm);
+  --radius-md: var(--prizm-radius-md);
+  --radius-lg: var(--prizm-radius-lg);
+  --radius-xl: var(--prizm-radius-xl);
+
+  --shadow-sm: var(--prizm-shadow-sm);
+  --shadow-md: var(--prizm-shadow-md);
+  --shadow-lg: var(--prizm-shadow-lg);
+
+  --spacing-sidebar-w: 100px;
+  --spacing-topbar-h: 64px;
+}
+
+/* Custom type scale carried over from the original TOA design tokens. */
+@utility text-headline-lg { font-size: 1.875rem; line-height: 2.25rem; font-weight: 600; }
+@utility text-headline-md { font-size: 1.5rem; line-height: 2rem; font-weight: 600; }
+@utility text-headline-sm { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; }
+@utility text-body-lg { font-size: 1.125rem; line-height: 1.75rem; font-weight: 400; }
+@utility text-body-md { font-size: 1rem; line-height: 1.5rem; font-weight: 400; }
+@utility text-body-sm { font-size: 0.875rem; line-height: 1.25rem; font-weight: 400; }
+@utility text-label-md { font-size: 0.875rem; line-height: 1.25rem; letter-spacing: 0.01em; font-weight: 500; }
+@utility text-label-sm { font-size: 0.75rem; line-height: 1rem; font-weight: 500; }
+@utility text-metric { font-size: 2rem; line-height: 2.25rem; font-weight: 700; }
+@utility text-table-header { font-size: 0.75rem; line-height: 1rem; font-weight: 600; letter-spacing: 0.04em; }
+@utility text-caption { font-size: 0.75rem; line-height: 1rem; font-weight: 400; }
+@utility text-caption-bold { font-size: 0.75rem; line-height: 1rem; font-weight: 700; }
+@utility text-nav-label { font-size: 0.6875rem; line-height: 0.875rem; font-weight: 600; }
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    font-size: clamp(13.5px, 0.34vw + 11px, 16px);
+    overscroll-behavior: none;
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-fg);
+    min-height: 100vh;
+  }
+
+  svg {
+    stroke-width: 1.5;
+  }
+
+  /* DSTA brand atmosphere — kept as the original TOA layer. */
+  :root,
+  [data-zone="enterprise"] {
+    --toa-blue: 68 128 219;
+    --toa-teal: 54 209 181;
+    --toa-green: 91 203 133;
+    --toa-navy: 20 28 74;
+    --toa-brand-gradient: linear-gradient(135deg, rgb(27 67 146), rgb(0 148 121));
+    --toa-hero-gradient: linear-gradient(
+      150deg,
+      #141c4a 0%,
+      #1b4392 42%,
+      #17685a 84%,
+      #2c6f45 120%
+    );
+  }
+
+  [data-zone="enterprise"][data-mode="light"] body {
+    background-image:
+      radial-gradient(
+        1200px 680px at 100% -8%,
+        rgb(var(--toa-blue) / 0.26),
+        transparent 62%
+      ),
+      radial-gradient(
+        950px 640px at -8% 6%,
+        rgb(var(--toa-teal) / 0.22),
+        transparent 60%
+      ),
+      radial-gradient(
+        1100px 720px at 60% 116%,
+        rgb(var(--toa-green) / 0.2),
+        transparent 62%
+      );
+    background-size: auto, auto, auto, cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+
+  /* PRIZM — keyboard-only focus ring. */
+  :where(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [tabindex]
+  ):focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* Strong-lead engagement gauge: a soft, slow breathing halo. */
+  .gauge-pulse {
+    position: absolute;
+    inset: -5px;
+    border-radius: 9999px;
+    filter: blur(5px);
+    pointer-events: none;
+    animation: gaugePulse 2.6s ease-in-out infinite;
+  }
+
+  @keyframes gaugePulse {
+    0%,
+    100% {
+      transform: scale(0.9);
+      opacity: 0.22;
+    }
+    50% {
+      transform: scale(1.08);
+      opacity: 0.5;
+    }
+  }
+
+  /* PRIZM AI-card "Animated Border". */
+  .ai-anim-border {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    background: conic-gradient(
+      from var(--ab-angle),
+      rgb(var(--toa-blue) / 0.2) 0deg,
+      rgb(var(--toa-blue) / 0.2) 200deg,
+      rgb(var(--toa-teal) / 0.95) 290deg,
+      rgb(var(--toa-blue) / 1) 330deg,
+      rgb(var(--toa-teal) / 0.95) 360deg
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    animation:
+      abSpin 2.4s cubic-bezier(0.4, 0, 0.2, 1) forwards,
+      abGlow 2.4s ease-out forwards;
+  }
+
+  @keyframes abSpin {
+    from { --ab-angle: 0deg; }
+    to { --ab-angle: 720deg; }
+  }
+
+  @keyframes abGlow {
+    0% {
+      box-shadow: 0 0 0 0 rgb(var(--toa-teal) / 0);
+    }
+    35% {
+      box-shadow: 0 0 16px 1px rgb(var(--toa-teal) / 0.45);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgb(var(--toa-blue) / 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ai-anim-border {
+      animation: none;
+      opacity: 0;
+    }
+  }
+
+  /* PRIZM — honour prefers-reduced-motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-surface border border-border rounded-xl shadow-sm;
+  }
+
+  .btn-primary {
+    @apply flex items-center gap-2 px-5 py-2.5 bg-accent text-accent-fg font-semibold
+           rounded-lg hover:bg-accent-hover transition-all active:scale-95 shadow-sm;
+  }
+
+  .btn-outline {
+    @apply flex items-center gap-2 px-5 py-2.5 border border-border text-fg-muted font-semibold
+           rounded-lg hover:bg-bg-subtle transition-all active:scale-95;
+  }
+
+  .input {
+    @apply w-full border border-border rounded-lg px-4 py-2.5 text-body-md bg-surface
+           focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all;
+  }
+
+  .select {
+    @apply appearance-none bg-surface border border-border rounded-lg px-4 py-2.5 pr-9
+           text-body-md focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none
+           cursor-pointer transition-all;
+  }
+
+  .table-header {
+    @apply text-table-header tracking-wider text-fg-muted;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-caption-bold font-semibold;
+  }
+
+  .prog-tab {
+    @apply flex items-center gap-2 px-4 py-2.5 text-label-md text-fg-muted bg-transparent
+           border-b-2 border-transparent cursor-pointer transition-colors whitespace-nowrap
+           hover:text-fg;
+  }
+  .prog-tab.active {
+    @apply text-accent border-b-accent;
+  }
+}
+
+/* ── Modal animation ─────────────────────────────────────────────────────── */
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+.modal-animate {
+  animation: modal-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Drawer animation ────────────────────────────────────────────────────── */
+.drawer-enter {
+  transform: translateX(100%);
+}
+.drawer-open {
+  transform: translateX(0);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.drawer-closed {
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── react-day-picker: PRIZM theme overrides ─────────────────────────── */
+.rdp-root {
+  --rdp-accent-color: var(--color-accent);
+  --rdp-accent-background-color: color-mix(in oklch, var(--color-accent) 8%, transparent);
+  --rdp-today-color: var(--color-accent);
+  --rdp-selected-border: 2px solid transparent;
+  --rdp-day-height: 26px;
+  --rdp-day-width: 26px;
+  --rdp-day_button-height: 24px;
+  --rdp-day_button-width: 24px;
+  --rdp-day_button-border-radius: 4px;
+  --rdp-nav_button-height: 22px;
+  --rdp-nav_button-width: 22px;
+  --rdp-nav-height: 26px;
+  color: var(--color-fg);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.rdp-caption_label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-fg);
+  gap: 3px;
+  cursor: pointer;
+}
+
+.rdp-chevron {
+  fill: currentColor;
+  color: var(--color-fg-muted);
+}
+
+.rdp-weekday {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-fg-subtle);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rdp-focusable:not(.rdp-selected):not(.rdp-disabled) .rdp-day_button:hover {
+  background-color: color-mix(in oklch, var(--color-accent) 8%, transparent);
+  color: var(--color-accent);
+  border-color: transparent;
+}
+
+.rdp-selected .rdp-day_button {
+  background-color: var(--color-accent);
+  color: var(--color-accent-fg);
+  border-color: transparent;
+  font-weight: 600;
+}
+.rdp-selected .rdp-day_button:hover {
+  background-color: var(--color-accent);
+  color: var(--color-accent-fg);
+}
+
+.rdp-today:not(.rdp-outside):not(.rdp-selected) .rdp-day_button {
+  font-weight: 700;
+  border-color: color-mix(in oklch, var(--color-accent) 50%, transparent);
+}
+
+.rdp-button_previous,
+.rdp-button_next {
+  border-radius: 6px;
+}
+.rdp-button_previous:not([aria-disabled="true"]):hover,
+.rdp-button_next:not([aria-disabled="true"]):hover {
+  background-color: var(--color-bg-subtle);
+  color: var(--color-fg);
+}
+
+/* ── PRIZM Slider ─────────────────────────────────────────────────────────── */
+.prizm-slider-track {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--color-border);
+  cursor: pointer;
+  touch-action: none;
+}
+.prizm-slider-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  pointer-events: none;
+}
+.prizm-slider-thumb {
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgb(255 255 255);
+  border: 2.5px solid var(--color-accent);
+  box-shadow:
+    0 1px 4px rgb(0 0 0 / 0.18),
+    0 0 0 0 color-mix(in oklch, var(--color-accent) 25%, transparent);
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  transition: box-shadow 0.15s ease;
+  outline: none;
+}
+.prizm-slider-thumb:hover {
+  box-shadow:
+    0 1px 4px rgb(0 0 0 / 0.18),
+    0 0 0 4px color-mix(in oklch, var(--color-accent) 15%, transparent);
+}
+.prizm-slider-thumb:focus-visible {
+  box-shadow:
+    0 1px 4px rgb(0 0 0 / 0.18),
+    0 0 0 4px color-mix(in oklch, var(--color-accent) 30%, transparent);
+}
+.prizm-slider-thumb:active {
+  cursor: grabbing;
+}
+.prizm-slider-track[data-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.prizm-slider-track[data-disabled="true"] .prizm-slider-thumb {
+  cursor: not-allowed;
+}
+
+/* ── Horizontal scrollers must not trap vertical scroll (Safari/WebKit fix) ────── */
+.overflow-x-auto:not(.overflow-y-auto):not(.overflow-y-scroll):not(
+    .overflow-y-visible
+  ) {
+  overflow-y: hidden;
+}
+
+@property --ab-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 1024" fill="none" preserveAspectRatio="xMidYMid slice">
+  <!-- DSTA "Dynamic Minimalism" — faint orbital trajectories + orbit rings.
+       Brand hues baked in (Vista #4480DB, Teal #36D1B5) at low opacity; this is a
+       decorative brand-layer asset, intentionally not token-driven. -->
+  <g fill="none" stroke-linecap="round" stroke-width="1.5">
+    <!-- top-right orbit -->
+    <ellipse cx="1190" cy="110" rx="540" ry="372" transform="rotate(-18 1190 110)" stroke="#4480DB" stroke-opacity="0.30"/>
+    <!-- sweeping trajectories across the canvas -->
+    <path d="M-60 250 C 360 110, 720 430, 1080 250 S 1520 70, 1720 230" stroke="#36D1B5" stroke-opacity="0.30"/>
+    <path d="M-90 770 C 300 650, 560 910, 980 790 S 1440 700, 1660 850" stroke="#4480DB" stroke-opacity="0.24"/>
+    <!-- bottom-left orbit -->
+    <ellipse cx="120" cy="960" rx="372" ry="248" transform="rotate(12 120 960)" stroke="#36D1B5" stroke-opacity="0.24"/>
+  </g>
+  <!-- trajectory nodes — tiny luminous points where curves resolve -->
+  <g fill="#36D1B5" fill-opacity="0.5">
+    <circle cx="1080" cy="250" r="3"/>
+  </g>
+  <g fill="#4480DB" fill-opacity="0.45">
+    <circle cx="980" cy="790" r="3"/>
+  </g>
+</svg>

@@ -1,0 +1,202 @@
+[
+  {
+    "id": "PROG-0007",
+    "title": "University Internship 2025",
+    "educationLevel": "University",
+    "status": "Completed",
+    "appOpen": "2025-07-01",
+    "appDeadline": "2025-10-31",
+    "start": "2025-12-01",
+    "end": "2026-02-27",
+    "timeline": "Dec 2025 – Feb 2026",
+    "daysLeft": 0,
+    "description": "Winter internship programme for university undergraduates attached to DSTA divisions.",
+    "formTemplate": "UG Intern Application Form",
+    "requirements": [
+      {
+        "id": 1,
+        "matchType": "ALL",
+        "rules": [
+          {
+            "id": 2,
+            "type": "citizenship",
+            "operator": "is any of",
+            "value": [
+              "Singapore Citizen",
+              "Singapore PR"
+            ]
+          },
+          {
+            "id": 3,
+            "type": "education",
+            "operator": "is",
+            "value": "University (Year 2)"
+          },
+          {
+            "id": 4,
+            "type": "major",
+            "operator": "contains",
+            "value": "Engineering, Computer Science, Data Science, Cybersecurity, or related STEM disciplines"
+          },
+          {
+            "id": 5,
+            "type": "age",
+            "operator": "at least",
+            "value": "18"
+          }
+        ],
+        "pathways": []
+      },
+      {
+        "id": 6,
+        "matchType": "ANY",
+        "rules": [],
+        "pathways": [
+          {
+            "id": 7,
+            "rules": [
+              {
+                "id": 8,
+                "type": "gpa",
+                "operator": "at least",
+                "value": "3.5",
+                "institutions": [
+                  "NUS",
+                  "NTU",
+                  "SUTD",
+                  "SIT"
+                ]
+              },
+              {
+                "id": 9,
+                "type": "institution",
+                "operator": "is any of",
+                "value": [
+                  "National University of Singapore (NUS)",
+                  "Nanyang Technological University (NTU)",
+                  "Singapore University of Technology and Design (SUTD)",
+                  "Singapore Institute of Technology (SIT)"
+                ]
+              }
+            ]
+          },
+          {
+            "id": 10,
+            "rules": [
+              {
+                "id": 11,
+                "type": "gpa",
+                "operator": "at least",
+                "value": "3.4",
+                "institutions": [
+                  "SMU"
+                ]
+              },
+              {
+                "id": 12,
+                "type": "institution",
+                "operator": "is any of",
+                "value": [
+                  "Singapore Management University (SMU)"
+                ]
+              }
+            ]
+          },
+          {
+            "id": 13,
+            "rules": [
+              {
+                "id": 14,
+                "type": "gpa",
+                "operator": "at least",
+                "value": "3.6"
+              },
+              {
+                "id": 15,
+                "type": "major",
+                "operator": "contains",
+                "value": "AI, robotics, systems engineering, or cybersecurity"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "PROG-0009",
+    "title": "University Internship 2026",
+    "educationLevel": "University",
+    "status": "Active",
+    "appOpen": "2026-02-01",
+    "appDeadline": "2026-06-30",
+    "start": "2026-05-04",
+    "end": "2026-08-28",
+    "timeline": "May – Aug 2026",
+    "daysLeft": 37,
+    "description": "Summer internship for university undergraduates attached to DSTA divisions across engineering, AI/ML, cybersecurity, and systems research.",
+    "formTemplate": "UG Intern Application Form",
+    "requirements": [
+      {
+        "id": 1,
+        "matchType": "ALL",
+        "rules": [
+          {
+            "id": 1,
+            "type": "citizenship",
+            "operator": "is any of",
+            "value": [
+              "Singapore Citizen",
+              "Singapore PR"
+            ]
+          },
+          {
+            "id": 2,
+            "type": "education",
+            "operator": "is",
+            "value": "University (Year 2)"
+          },
+          {
+            "id": 3,
+            "type": "gpa",
+            "operator": "at least",
+            "value": "3.0"
+          },
+          {
+            "id": 4,
+            "type": "major",
+            "operator": "contains",
+            "value": "Engineering, Computing, Cybersecurity, Data Science, or related STEM disciplines"
+          }
+        ],
+        "pathways": []
+      }
+    ],
+    "intakeWindows": [
+      {
+        "id": "INT-0009-1",
+        "intakeTitle": "University 2026 (Jan – Jun)",
+        "appOpen": "2026-02-01",
+        "appClose": "2026-06-30",
+        "start": "2026-01-01",
+        "end": "2026-06-30"
+      },
+      {
+        "id": "INT-0009-2",
+        "intakeTitle": "University 2026 (May – Sep)",
+        "appOpen": "2026-02-01",
+        "appClose": "2026-06-30",
+        "start": "2026-05-01",
+        "end": "2026-09-30"
+      },
+      {
+        "id": "INT-0009-3",
+        "intakeTitle": "University 2026 (Jul – Dec)",
+        "appOpen": "2026-02-01",
+        "appClose": "2026-06-30",
+        "start": "2026-07-01",
+        "end": "2026-12-31"
+      }
+    ]
+  }
+]

@@ -1,0 +1,1946 @@
+<!doctype html>
+<html lang="en-SG">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <title>Prototype updates with UX feedback · Lifecycle</title>
+  <style>
+    :root {
+      --blue: #5e9eff;
+      --amber: #ffc266;
+      --amber-soft: #ffd591;
+      --ink: #f5f5f7;
+      --ink-soft: #aeaeb4;
+      --bg: #000;
+      --card: rgba(255,255,255,.055);
+      --line: rgba(255,255,255,.12);
+      --radius: 26px;
+      --ease: cubic-bezier(.2,.8,.2,1);
+      --font: -apple-system, "SF Pro Display", "SF Pro Text", system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+    html, body { min-height: 100%; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    body {
+      min-height: 100dvh;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font);
+      color-scheme: dark;
+    }
+
+    .wash { position: fixed; inset: -25%; opacity: .85; filter: blur(80px); pointer-events: none; }
+    .blob { position: absolute; border-radius: 50%; mix-blend-mode: screen; animation: drift 26s var(--ease) infinite alternate; }
+    .b1 { left: -6vw; top: -10vw; width: 48vw; height: 48vw; background: radial-gradient(circle at 30% 30%, rgba(46,86,196,.55), transparent 70%); }
+    .b2 { right: -10vw; top: 2vw; width: 44vw; height: 44vw; background: radial-gradient(circle at 60% 40%, rgba(245,166,35,.32), transparent 70%); animation-delay: -8s; }
+    .b3 { left: 16vw; bottom: -20vw; width: 54vw; height: 54vw; background: radial-gradient(circle at 50% 50%, rgba(60,110,230,.4), transparent 70%); animation-delay: -15s; }
+    @keyframes drift { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(4vw,3vh,0) scale(1.12); } }
+
+    .stage {
+      position: relative;
+      z-index: 1;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(24px,6vw,92px);
+      text-align: center;
+      transition: opacity .45s var(--ease), transform .5s var(--ease), filter .45s var(--ease);
+    }
+    body.detail-open .stage { opacity: .2; transform: scale(.97); filter: blur(6px); pointer-events: none; }
+
+    .num {
+      border: 1px solid rgba(245,166,35,.3);
+      background: rgba(245,166,35,.12);
+      color: var(--amber);
+      border-radius: 999px;
+      padding: 7px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin-top: 28px;
+      font-size: clamp(34px,5.4vw,72px);
+      line-height: 1.04;
+      font-weight: 700;
+      letter-spacing: -.022em;
+    }
+    .grad {
+      background: linear-gradient(110deg, var(--amber), var(--amber-soft));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .lead {
+      margin-top: 24px;
+      max-width: 54ch;
+      color: var(--ink-soft);
+      font-size: clamp(15px,1.8vw,20px);
+      line-height: 1.45;
+    }
+
+    .flowcols {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(14px,1.8vw,22px);
+      margin-top: 40px;
+      width: min(1080px, 95vw);
+      text-align: left;
+    }
+    .glass {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 24px 70px -34px rgba(0,0,0,.85);
+    }
+    .fcol { padding: 24px 22px; }
+    .fst {
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line);
+      font-size: clamp(16px,1.8vw,21px);
+      font-weight: 700;
+      letter-spacing: -.01em;
+    }
+    .fareas { display: flex; flex-direction: column; gap: 11px; margin-top: 16px; }
+    .farea {
+      min-height: 58px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 15px 16px;
+      border: 1px solid rgba(255,194,102,.26);
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(245,166,35,.12), rgba(245,166,35,.035));
+      color: var(--ink);
+      font: inherit;
+      cursor: pointer;
+      text-align: left;
+      transition: .3s var(--ease);
+    }
+    .farea:hover, .farea:focus-visible {
+      outline: none;
+      border-color: rgba(255,194,102,.6);
+      background: linear-gradient(135deg, rgba(245,166,35,.22), rgba(245,166,35,.07));
+      transform: translateY(-2px);
+      box-shadow: 0 16px 34px -22px rgba(245,166,35,.7);
+    }
+    .fic {
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: rgba(245,166,35,.16);
+      color: var(--amber);
+    }
+    .fic svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .fic.fcode { font-weight: 800; font-size: 13px; letter-spacing: .5px; }
+    .fan {
+      min-width: 0;
+      flex: 1;
+      color: var(--ink);
+      font-size: clamp(14px,1.5vw,16.5px);
+      font-weight: 650;
+      letter-spacing: -.01em;
+    }
+    .chev {
+      flex: none;
+      width: 7px;
+      height: 7px;
+      border-right: 2px solid var(--amber);
+      border-top: 2px solid var(--amber);
+      transform: rotate(45deg);
+      opacity: .6;
+      transition: .3s var(--ease);
+    }
+    .farea:hover .chev, .farea:focus-visible .chev { opacity: 1; transform: rotate(45deg) translate(2px,-2px); }
+
+    .detail {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      opacity: 0;
+      transform: scale(.96);
+      pointer-events: none;
+      transition: opacity .5s var(--ease), transform .55s var(--ease);
+    }
+    body.detail-open .detail { opacity: 1; transform: none; pointer-events: auto; }
+    .detail-stack {
+      width: 100%;
+      height: calc(100dvh - 36px);
+      max-width: none;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .detail-grid {
+      width: 100%;
+      min-height: 0;
+      flex: 1;
+      display: grid;
+      grid-template-columns: minmax(300px, 30%) minmax(0, 1fr);
+      gap: 0;
+      align-items: stretch;
+      overflow: hidden;
+      border-radius: var(--radius);
+    }
+    .detail-card {
+      max-height: none;
+      overflow: auto;
+      padding: clamp(22px,3vw,34px);
+      text-align: left;
+      border-radius: var(--radius) 0 0 var(--radius);
+      border-right: 0;
+    }
+    .detail-aside {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      align-content: stretch;
+      gap: 14px;
+      min-height: 0;
+      min-width: 0;
+      max-height: 100%;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: clamp(18px,2.4vw,28px);
+      text-align: left;
+      background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.025));
+      border-radius: 0 var(--radius) var(--radius) 0;
+    }
+    .phase {
+      color: var(--amber);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+    }
+    .detail h2 {
+      margin-top: 16px;
+      color: var(--ink);
+      font-size: clamp(27px,4vw,44px);
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -.02em;
+    }
+    .detail-title-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .detail-tabs {
+      display: flex;
+      gap: 8px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+    .detail-tabs[hidden] { display: none; }
+    .tab-btn {
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,.045);
+      color: var(--ink-soft);
+      padding: 0 13px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: .22s var(--ease);
+    }
+    .tab-btn:hover, .tab-btn:focus-visible {
+      outline: none;
+      border-color: rgba(255,194,102,.48);
+      color: var(--ink);
+    }
+    .tab-btn.active {
+      border-color: rgba(255,194,102,.68);
+      background: rgba(245,166,35,.14);
+      color: var(--amber);
+    }
+    .flow-list { margin-top: 28px; list-style: none; }
+    .flow-list li {
+      position: relative;
+      display: flex;
+      gap: 16px;
+      padding-bottom: 20px;
+      color: var(--ink);
+      font-size: clamp(14px,1.6vw,17px);
+      line-height: 1.45;
+    }
+    .flow-list li:last-child { padding-bottom: 0; }
+    .flow-list li:not(:last-child)::before {
+      content: "";
+      position: absolute;
+      left: 15px;
+      top: 31px;
+      bottom: -1px;
+      width: 2px;
+      background: linear-gradient(180deg, rgba(245,166,35,.55), rgba(245,166,35,.12));
+      transform: translateX(-50%);
+    }
+    .kn {
+      position: relative;
+      z-index: 1;
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      color: #2a1800;
+      background: linear-gradient(135deg, var(--amber-soft), var(--amber));
+      box-shadow: 0 4px 12px -4px rgba(245,166,35,.7);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .kt { padding-top: 5px; }
+
+    .flow-meta {
+      margin-top: 10px;
+      color: var(--ink-soft);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    .step-list { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+    .substep-head {
+      margin: 14px 0 2px; padding: 0 2px;
+      font-size: 12px; font-weight: 800; letter-spacing: .4px;
+      color: var(--amber); text-transform: none;
+    }
+    .substep-head:first-child { margin-top: 0; }
+    /* Backlog items captured per screen — shown as cards under the screen (right panel) */
+    .backlog-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: start; }
+    .bk-card {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      padding: 13px 15px; border-radius: 12px;
+      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.10);
+      border-left-width: 3px;
+      font-size: 14px; line-height: 1.5; color: #e7ebf2;
+    }
+    .bk-card .bk-text { flex: 1; }
+    .bk-pill {
+      flex: none; font-size: 11px; font-weight: 800; letter-spacing: .3px;
+      padding: 3px 10px; border-radius: 999px; margin-top: 1px;
+      max-width: 118px; text-align: center; line-height: 1.3;
+    }
+    .bk-card.bk-built { border-left-color: #2fbf71; }
+    .bk-card.bk-built .bk-pill { background: rgba(47,191,113,.16); color: #46d488; }
+    .bk-card.bk-uat { border-left-color: #9aa3b2; opacity: .92; }
+    .bk-card.bk-uat .bk-pill { background: rgba(154,163,178,.18); color: #b3bbc9; }
+    .step-item {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,.045);
+      color: var(--ink);
+      padding: 13px 14px;
+      text-align: left;
+      font: inherit;
+      cursor: pointer;
+      transition: .22s var(--ease);
+    }
+    .step-item:hover, .step-item:focus-visible {
+      outline: none;
+      border-color: rgba(255,194,102,.45);
+      background: rgba(255,194,102,.09);
+    }
+    .step-item.active {
+      border-color: rgba(255,194,102,.72);
+      background: linear-gradient(135deg, rgba(245,166,35,.18), rgba(245,166,35,.055));
+      box-shadow: 0 14px 32px -28px rgba(245,166,35,.8);
+    }
+    .step-item small {
+      display: block;
+      color: var(--amber);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .step-item strong {
+      display: block;
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.35;
+    }
+    .step-item span {
+      display: block;
+      margin-top: 5px;
+      color: var(--ink-soft);
+      font-size: 12.5px;
+      line-height: 1.45;
+    }
+    .shot-frame {
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(0,0,0,.26);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(14px,2vw,22px);
+      overflow: hidden;
+    }
+    /* Backlog tab: match the UX-feedback stage size — full width, 16:9. */
+    .shot-frame:not(.is-feedback) {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+    }
+    .shot-frame img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 12px;
+      background: #fff;
+      display: block;
+      box-shadow: 0 18px 52px -28px rgba(0,0,0,.85);
+    }
+    .shot-frame img.is-error { display: none; }
+    .shot-frame img.is-error + .shot-missing { display: flex; }
+    /* No-screenshot backlog view: cards fill the frame */
+    .shot-frame.backlog-fill { display: block; overflow-y: auto; padding: clamp(18px,2.4vw,26px); }
+    .backlog-fill-inner { display: flex; flex-direction: column; gap: 12px; }
+    .bk-screen-title { font-size: 13px; font-weight: 800; letter-spacing: .3px; color: var(--amber); margin-bottom: 2px; }
+    .shot-frame.is-feedback {
+      display: block;
+      align-items: stretch;
+      justify-content: stretch;
+      height: auto;
+      overflow: visible;
+    }
+    .shot-missing {
+      width: 100%;
+      min-height: 320px;
+      border: 1px dashed rgba(255,255,255,.22);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 12px;
+      padding: 28px;
+      color: var(--ink-soft);
+      background: radial-gradient(circle at 50% 20%, rgba(94,158,255,.16), transparent 42%), rgba(255,255,255,.035);
+    }
+    img + .shot-missing { display: none; }
+    .shot-missing strong { color: var(--ink); font-size: 20px; letter-spacing: -.01em; }
+    .shot-caption {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,.055);
+      color: var(--ink-soft);
+      padding: 14px 16px;
+      font-size: 14px;
+      line-height: 1.55;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    .shot-caption[hidden] { display: none; }
+    .shot-caption b { color: var(--ink); }
+    .feedback-board {
+      width: 100%;
+      min-height: 320px;
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+    .feedback-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,.055);
+      padding: 12px 14px;
+      color: var(--ink-soft);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .reset-compare {
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 32px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,.065);
+      color: var(--ink);
+      padding: 0 12px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 750;
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .reset-compare svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .feedback-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .annotation-toggle {
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 32px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,.055);
+      color: var(--ink);
+      padding: 0 11px;
+      font-size: 12px;
+      font-weight: 750;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .annotation-toggle input {
+      width: 14px;
+      height: 14px;
+      accent-color: var(--blue);
+      cursor: pointer;
+    }
+    .figma-comments-cta {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      border: 1px solid rgba(255,194,102,.48);
+      border-radius: 12px;
+      background: rgba(245,166,35,.12);
+      color: var(--amber);
+      padding: 0 12px;
+      font-size: 12px;
+      font-weight: 800;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: .2s var(--ease);
+    }
+    .figma-comments-cta:hover, .figma-comments-cta:focus-visible {
+      outline: none;
+      border-color: rgba(255,194,102,.78);
+      color: var(--ink);
+      transform: translateY(-1px);
+    }
+    .ux-compare-stage {
+      --pos: 50%;
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      overflow: hidden;
+      background: rgba(0,0,0,.34);
+      cursor: ew-resize;
+      user-select: none;
+      touch-action: none;
+    }
+    /* Backlog-tab compare slider (two views of the same screen, no before/after labels). */
+    .shot-frame .flow-compare { border: 0; background: transparent; box-shadow: 0 18px 52px -28px rgba(0,0,0,.85); }
+    .ux-compare-stage .layer {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+    .ux-compare-stage .after-layer {
+      clip-path: inset(0 calc(100% - var(--pos)) 0 0);
+      z-index: 2;
+      will-change: clip-path;
+    }
+    .ux-compare-stage .before-layer { z-index: 1; }
+    .ux-compare-image {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      pointer-events: none;
+      background: #f8fafc;
+    }
+    .ux-compare-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 18px 44px rgba(0,0,0,.18);
+    }
+    .compare-chip {
+      position: absolute;
+      z-index: 6;
+      left: var(--chip-x);
+      top: var(--chip-y);
+      display: inline-grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border: 2px solid rgba(255,255,255,.72);
+      border-radius: 999px;
+      background: rgba(78,88,108,.86);
+      color: rgba(255,255,255,.9);
+      font-size: 12px;
+      font-weight: 850;
+      line-height: 1;
+      box-shadow: 0 10px 24px rgba(0,0,0,.3);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .18s var(--ease), background .18s var(--ease), box-shadow .18s var(--ease), transform .18s var(--ease);
+    }
+    .ux-compare-stage.show-annotations .compare-chip { opacity: 1; }
+    .ux-compare-stage.show-annotations.active-annotation-1 .compare-chip[data-feedback-index="1"],
+    .ux-compare-stage.show-annotations.active-annotation-2 .compare-chip[data-feedback-index="2"],
+    .ux-compare-stage.show-annotations.active-annotation-3 .compare-chip[data-feedback-index="3"],
+    .ux-compare-stage.show-annotations.active-annotation-4 .compare-chip[data-feedback-index="4"] {
+      background: #1683ff;
+      color: #fff;
+      box-shadow: 0 0 0 4px rgba(22,131,255,.22), 0 14px 30px rgba(0,0,0,.32);
+      transform: translate(-50%, -50%) scale(1.12);
+    }
+    .ux-compare-card {
+      position: absolute;
+      inset: 20px;
+      display: grid;
+      align-content: center;
+      gap: 18px;
+      border: 1px solid rgba(255,255,255,.13);
+      border-radius: 18px;
+      padding: clamp(22px,3vw,42px);
+      background:
+        radial-gradient(circle at 18% 18%, rgba(94,158,255,.18), transparent 38%),
+        linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.028));
+    }
+    .after-layer .ux-compare-card {
+      background:
+        radial-gradient(circle at 25% 18%, rgba(46,101,246,.28), transparent 34%),
+        linear-gradient(135deg, rgba(94,158,255,.18), rgba(255,194,102,.045));
+    }
+    .ux-compare-card small {
+      color: var(--amber);
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    .ux-compare-card strong {
+      color: var(--ink);
+      font-size: clamp(24px,3vw,38px);
+      line-height: 1.06;
+      letter-spacing: -.02em;
+    }
+    .ux-compare-card span {
+      max-width: 58ch;
+      color: var(--ink-soft);
+      font-size: clamp(15px,1.4vw,19px);
+      line-height: 1.5;
+    }
+    .compare-label {
+      position: absolute;
+      top: 18px;
+      z-index: 4;
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 18px;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+    .label-after { left: 24px; background: var(--blue); }
+    .label-before { right: 24px; background: rgba(20,24,34,.86); }
+    .compare-handle {
+      position: absolute;
+      inset-block: 0;
+      left: var(--pos);
+      z-index: 5;
+      width: 0;
+      pointer-events: none;
+    }
+    .compare-handle::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 3px;
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.15), 0 0 18px rgba(255,255,255,.16);
+      transform: translateX(-50%);
+    }
+    .handle-knob {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 64px;
+      height: 64px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.2);
+      background: rgba(245,245,247,.95);
+      color: #2364ff;
+      font-size: 26px;
+      font-weight: 900;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 16px 36px rgba(0,0,0,.32);
+    }
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .compare-card, .comment-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,.045);
+      padding: 18px;
+      color: var(--ink-soft);
+      line-height: 1.5;
+    }
+    .compare-card small, .comment-card small {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--amber);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .compare-card strong, .comment-card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--ink);
+      font-size: 18px;
+      line-height: 1.25;
+    }
+    .feedback-card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .feedback-card-head strong { margin-bottom: 0; }
+    .lofi-cta {
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 32px;
+      border: 1px solid rgba(94,158,255,.46);
+      border-radius: 12px;
+      background: rgba(94,158,255,.11);
+      color: var(--ink);
+      padding: 0 12px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: .2s var(--ease);
+    }
+    .lofi-cta:hover, .lofi-cta:focus-visible {
+      outline: none;
+      border-color: rgba(94,158,255,.82);
+      background: rgba(94,158,255,.2);
+      transform: translateY(-1px);
+    }
+    .lofi-cta svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .lofi-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      background: rgba(0,0,0,.42);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .22s var(--ease);
+    }
+    .lofi-backdrop.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .lofi-drawer {
+      position: fixed;
+      z-index: 21;
+      top: 18px;
+      right: 18px;
+      bottom: 18px;
+      width: min(430px, calc(100vw - 36px));
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      border: 1px solid rgba(94,158,255,.42);
+      border-radius: 20px;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(94,158,255,.2), transparent 38%),
+        linear-gradient(145deg, rgba(16,24,39,.98), rgba(8,10,14,.98));
+      box-shadow: -24px 0 60px rgba(0,0,0,.42);
+      transform: translateX(calc(100% + 32px));
+      transition: transform .28s var(--ease);
+      overflow: hidden;
+    }
+    .lofi-drawer.is-open { transform: none; }
+    .lofi-drawer-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+      padding: 18px;
+    }
+    .lofi-drawer-head small {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--amber);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .lofi-drawer-head strong {
+      color: var(--ink);
+      font-size: 18px;
+      line-height: 1.2;
+    }
+    .lofi-close {
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255,255,255,.06);
+      color: var(--ink);
+      font: inherit;
+      cursor: pointer;
+    }
+    .lofi-body {
+      min-height: 0;
+      overflow: auto;
+      padding: 18px;
+    }
+    .lofi-wireframe {
+      --lofi-surface-1: rgba(255,255,255,.045);
+      --lofi-surface-2: rgba(255,255,255,.075);
+      --lofi-border: rgba(255,255,255,.16);
+      --lofi-border-strong: rgba(226,232,240,.42);
+      --lofi-danger: #ff8a80;
+      --lofi-on-danger: #1b0f0f;
+      --lofi-radius: 12px;
+      color: var(--ink-soft);
+    }
+    .lofi-wireframe .lofi-sk {
+      background: var(--lofi-border-strong);
+      border-radius: 4px;
+    }
+    .lofi-wireframe .lofi-bx {
+      border: 1px dashed var(--lofi-border-strong);
+      border-radius: var(--lofi-radius);
+      background: var(--lofi-surface-1);
+    }
+    .lofi-wireframe .lofi-ann {
+      position: relative;
+      border-radius: 8px;
+      outline: 1.5px dashed rgba(255,138,128,.82);
+      outline-offset: 2px;
+    }
+    .lofi-wireframe .lofi-tag {
+      position: absolute;
+      top: -11px;
+      left: 8px;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #111827;
+      padding: 0 5px;
+      white-space: nowrap;
+    }
+    .lofi-wireframe .lofi-num {
+      width: 15px;
+      height: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: var(--lofi-danger);
+      color: var(--lofi-on-danger);
+      font-size: 9px;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .lofi-wireframe .lofi-lab {
+      color: var(--lofi-danger);
+      font-size: 10px;
+      font-weight: 650;
+    }
+    .lofi-legend {
+      max-width: 640px;
+      margin: 20px auto 0;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .lofi-legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--ink-soft);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .feedback-detail-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .feedback-detail-list.feedback-detail-list--compact {
+      grid-template-columns: minmax(180px, 260px);
+      align-items: start;
+    }
+    .feedback-detail-list li {
+      position: relative;
+      min-height: 133px;
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+      border: 2px solid transparent;
+      border-radius: 3px;
+      background: #e7e7e4;
+      color: #2f3033;
+      padding: 25px 13px 13px;
+      line-height: 1.25;
+      box-shadow: 0 13px 21px rgba(0,0,0,.2);
+      cursor: pointer;
+      transform: rotate(var(--tilt, -1deg));
+      transition: border-color .18s var(--ease), box-shadow .18s var(--ease), transform .18s var(--ease);
+    }
+    .feedback-detail-list.feedback-detail-list--compact li {
+      min-height: 112px;
+      padding: 22px 16px 14px;
+    }
+    .feedback-detail-list li:nth-child(2n) { --tilt: 1deg; }
+    .feedback-detail-list li:nth-child(3n) { --tilt: -.5deg; }
+    .feedback-detail-list.feedback-detail-list--yellow-tail li:nth-child(3),
+    .feedback-detail-list.feedback-detail-list--yellow-tail li:nth-child(4) {
+      background: #fff4c7;
+    }
+    .feedback-detail-list li:focus-visible {
+      outline: none;
+      border-color: var(--blue);
+    }
+    .feedback-detail-list li:hover,
+    .feedback-detail-list li.active-feedback {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(94,158,255,.22), 0 15px 25px rgba(0,0,0,.26);
+      transform: rotate(0deg) translateY(-2px);
+    }
+    .feedback-chip {
+      position: absolute;
+      left: 10px;
+      top: 8px;
+      display: inline-grid;
+      place-items: center;
+      width: 17px;
+      height: 17px;
+      border: 1px solid rgba(0,0,0,.18);
+      border-radius: 999px;
+      background: rgba(255,255,255,.55);
+      color: #2f3033;
+      font-size: 9px;
+      font-weight: 850;
+      line-height: 1;
+    }
+    .feedback-copy {
+      display: flex;
+      min-height: 100%;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .feedback-date {
+      width: fit-content;
+      margin-top: auto;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: #2f3033;
+      padding: 0;
+      font-size: 14px;
+      font-weight: 650;
+      letter-spacing: 0;
+    }
+    .feedback-text {
+      color: #2f3033;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .aside-title {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--amber);
+      font-size: 12.5px;
+      font-weight: 800;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .aside-title svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .edge-list { display: flex; flex-direction: column; gap: 14px; margin-top: 20px; list-style: none; }
+    .edge-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      color: var(--ink-soft);
+      font-size: clamp(13px,1.45vw,15px);
+      line-height: 1.42;
+    }
+    .bang {
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      margin-top: 1px;
+      border-radius: 7px;
+      background: rgba(245,166,35,.18);
+      color: var(--amber);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .empty { margin-top: 20px; color: var(--ink-soft); font-size: 15px; line-height: 1.5; }
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--card);
+      color: var(--ink-soft);
+      padding: 12px 20px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: .25s var(--ease);
+    }
+    .back:hover, .back:focus-visible { outline: none; color: var(--ink); border-color: rgba(255,194,102,.4); }
+    .back svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+    @media (max-width: 980px) {
+      body { overflow: auto; }
+      .stage { justify-content: flex-start; padding-top: 48px; }
+      .flowcols { grid-template-columns: 1fr; }
+      .detail { align-items: flex-start; overflow: auto; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .detail-stack { height: auto; min-height: calc(100dvh - 36px); }
+      .detail-card, .detail-aside { border-radius: var(--radius); border-right: 1px solid var(--line); }
+      .detail-aside { min-height: 60vh; }
+      .backlog-list { grid-template-columns: 1fr; }
+      .compare-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wash" aria-hidden="true">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+  </div>
+
+  <main>
+    <section class="stage">
+      <div class="num">Lifecycle</div>
+      <h1>Prototype updates <span class="grad">with UX feedback.</span></h1>
+
+      <div class="flowcols" id="flowcols" aria-label="Internship lifecycle"></div>
+    </section>
+
+    <section class="detail" id="detail" aria-hidden="true">
+      <div class="detail-stack">
+        <div class="detail-grid">
+          <article class="glass detail-card">
+            <div class="phase" id="detailPhase"></div>
+            <div class="detail-title-row">
+              <h2 id="detailTitle"></h2>
+            </div>
+            <p class="flow-meta" id="detailMeta"></p>
+            <div class="detail-tabs" id="detailTabs" hidden>
+              <button class="tab-btn active" type="button" data-panel="flow">Backlog-Driven Screen Updates</button>
+              <button class="tab-btn" type="button" data-panel="feedback">UX Feedback</button>
+            </div>
+            <div class="step-list" id="detailSteps"></div>
+          </article>
+          <aside class="glass detail-aside" id="detailAside">
+            <div class="shot-frame" id="shotFrame"></div>
+            <div class="shot-caption" id="shotCaption"></div>
+          </aside>
+        </div>
+        <button class="back" id="back" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>
+          Back
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const ICONS = {
+      file: '<svg viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v6h6"/><path d="M10 13h4"/><path d="m12 11 2 2-2 2"/></svg>',
+      cap: '<svg viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg>',
+      check: '<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v4h6V3"/><path d="m9 14 2 2 4-4"/></svg>',
+      spark: '<svg viewBox="0 0 24 24"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8Z"/><path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8Z"/></svg>',
+      msg: '<svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 9h8M8 13h5"/></svg>',
+      send: '<svg viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>'
+    };
+
+    const AREAS = [
+      {
+        id: "project-creation",
+        phase: "Preparation",
+        title: "Project creation",
+        icon: "file",
+        keys: [
+          "IO Admin creates the request by selecting Programme Centre, Programme, Intake, target, deadline, and required fields.",
+          "IO Admin sends the request to AD (P&C), with optional PC Head visibility.",
+          "System sends transactional email and in-system notification with the submission link.",
+          "AD (P&C) adds or updates project items under the linked Project Request Submission page.",
+          "IO Admin reviews submitted project items and decides whether to approve, reject, extend, or close.",
+          "System records sent email, system notice, submission updates, comments, and decisions in audit history.",
+          "If the deadline expires, System marks the request as Expired and prompts IO Admin to extend, close, or cancel.",
+          "If extended, System notifies AD (P&C) again and reopens submission editing.",
+          "If rejected, AD (P&C) modifies project items using IO Admin comments and resubmits.",
+          "If needed, AD (P&C) withdraws a project item; approved items require reason and IO Admin confirmation.",
+          "IO Admin ends the request by marking it Completed, Closed, or Cancelled.",
+          "After closure, AD (P&C) can no longer edit or submit project items."
+        ],
+        edgeTitle: "Decision points",
+        edgeCases: [
+          "Approve: accepted project items enter the approved project pool for matching / allocation.",
+          "Reject / Revision required: not a final closure state; AD (P&C) can modify and resubmit.",
+          "Extend deadline: use when target is not met or request expired but collection should continue.",
+          "Close / Complete / Cancel: only IO Admin can end the overall request."
+        ]
+      },
+      {
+        id: "programme-creation",
+        phase: "Preparation",
+        title: "Programme creation",
+        icon: "cap",
+        keys: ["Set up the programme eligibility criteria.", "Set up the intake.", "Attach projects."],
+        edgeCases: ["Projects spanning across programme intakes."]
+      },
+      {
+        id: "application",
+        phase: "Programme",
+        title: "Application",
+        icon: "check",
+        keys: [
+          "Application journey.",
+          "Suitable projects are surfaced from the CV and responses, matched on discipline, interests and more.",
+          "Rank up to five preferred projects."
+        ],
+        edgeCases: ["SCI applicants."]
+      },
+      {
+        id: "screening",
+        phase: "Programme",
+        title: "Applicant shortlisting",
+        icon: "spark",
+        keys: [
+          "Auto screened against the programme's eligibility criteria.",
+          "Automatically scored for suitability against each project.",
+          "Rich context surfaced for the IO at a glance, including prior DSTA touchpoints, achievements and leadership roles.",
+          "IO shortlists the applicant for interview with a project mentor."
+        ],
+        edgeTitle: "Considerations",
+        edgeCases: [
+          "Suitability scoring normalises across qualifications: IB, IP, NUS High, Poly and University.",
+          "It weighs discipline, grades and, for JC, STEM subjects.",
+          "Schools name subjects differently, so subjects must be mapped."
+        ]
+      },
+      {
+        id: "interview",
+        phase: "Programme",
+        title: "Interview",
+        icon: "msg",
+        keys: [
+          "Mentor receives the applicant profile with a summary, similar to what the IO sees at shortlisting.",
+          "Schedule the interview.",
+          "Evaluate the applicant based on the interview and submit a decision to the IO."
+        ],
+        edgeTitle: "Considerations",
+        edgeCases: [
+          "Transcript uploaded to the system after the interview.",
+          "Or interview conducted via an integrated comms channel, with the transcript captured immediately."
+        ]
+      },
+      {
+        id: "offer",
+        phase: "Programme",
+        title: "Offer",
+        icon: "send",
+        keys: ["IO extends an offer to the chosen applicant.", "Applicant accepts and the placement is confirmed."],
+        edgeCases: ["Applicant requests a change in start date."]
+      },
+      {
+        id: "onboard",
+        phase: "Programme",
+        title: "Onboard",
+        icon: "cap",
+        keys: ["Send welcome letter.", "Internship begins."]
+      },
+      {
+        id: "offboard",
+        phase: "Post Internship",
+        title: "Offboard",
+        icon: "check",
+        keys: [
+          "Start exit clearance.",
+          "Mentor submits evaluation.",
+          "Intern provides feedback, used to generate sentiment analysis across calibration, mentorship and work environment.",
+          "Complete.",
+          "Certificate of completion sent."
+        ],
+        edgeCases: ["Withdrawal.", "Request for extension.", "Dismissed.", "Early completion."]
+      }
+    ];
+
+    const SCREENSHOT_FLOWS = {
+      "project-creation": {
+        meta: "A1 Project Request · IO and AD(P&C) screens, aligned with UX feedback and review decisions.",
+        feedback: true,
+        steps: [
+          {sub:"A1.1 HQ creates a project request for AD (P&C)",step:"Screen 1",title:"Build Requests — Step 1",desc:"HQ sets the request context: select a Programme Centre (auto-fills PC Head + AD (P&C)), set the response deadline, and add one row per Intern Category with its calendar period, duration and placements.",url:"/requests/new",screenshot:"./assets/a1-1-build-requests-step-1.png",backlog:[
+            {t:"Request fields: Intern Category, Calendar Period, Duration (1/2/3/6/12 mo), Placements",s:"built"},
+            {t:"Select Programme Centre → auto-fills PC Head + AD (P&C) from the mapping table",s:"built"},
+            {t:"DSO & CSIT selectable as Programme Centres",s:"built"},
+            {t:"Response deadline; save request as draft",s:"built"},
+            {t:"Send one request across many (20+) Programme Centres conveniently",s:"uat"}
+          ]},
+          {sub:"A1.1 HQ creates a project request for AD (P&C)",step:"Screen 2",title:"Build Requests — Step 2 (Review & email)",desc:"HQ reviews the request and the editable email preview (with the Excel template attachment) before sending.",url:"/requests/new?step=2",backlog:[
+            {t:"Email To AD (P&C), Cc PC Head + HQ; message body is editable",s:"built"},
+            {t:"Email carries portal link, instructions, Excel template, and clearance + PC Head approval note",s:"built"},
+            {t:"Sent from a configurable Internship HQ system address",s:"uat"},
+            {t:"Automatic reminders 14 & 7 days before the deadline",s:"uat"}
+          ],screenshot:"./assets/a1-1-build-requests-step-2.png",screenshotAlt:"./assets/a1-1-build-requests-step-2-alt.png"},
+          {sub:"A1.2 HQ tracks project request",step:"Screen 1",title:"Project Requests list",desc:"HQ monitors sent requests grouped by Programme Centre with status (Draft / Pending / Incomplete / Fulfilled, over-target flag), sends reminders and extends deadlines.",url:"/requests",backlog:[
+            {t:"Columns: Programme Centre, Intern Category, AD (P&C), Placements Requested, Request Date, Deadline, Status",s:"built"},
+            {t:"Status: Draft / Pending / Incomplete / Fulfilled + over-target flag",s:"built"},
+            {t:"Row actions: Send reminder, Extend deadline, Edit/Delete (drafts only), View",s:"built"},
+            {t:"Pagination + rows per page (8/16/24)",s:"built"},
+            {t:"Reminders only for unfulfilled lines; extend +7 days up to 3× with audit trail + auto email",s:"uat"}
+          ],screenshot:"./assets/a1-2-project-requests-list.png"},
+          {sub:"A1.3 AD (P&C) responds — uploads projects as Excel",step:"Screen 1",title:"AD (P&C): request inbox",desc:"AD (P&C) sees the requests to respond to, with deadlines and submission state.",url:"/submissions",backlog:[
+            {t:"AD (P&C) sees requests to respond to, with deadline and submission state",s:"built"},
+            {t:"AD (P&C) can only submit against a received request",s:"built"}
+          ],screenshot:""},
+          {sub:"A1.3 AD (P&C) responds — uploads projects as Excel",step:"Screen 2",title:"Respond — download, fill & upload",desc:"AD (P&C) downloads the Excel template, fills it in and uploads it; submitted projects appear as editable cards and are submitted back for review.",url:"/submissions/respond",backlog:[
+            {t:"Excel template: PC (auto), Title, Scope, Tech Competency ×3, Discipline ×3, Primary/Secondary Mentor, Placements",s:"built"},
+            {t:"Tabs per Intern Category, segmented by Calendar Period & Duration, with a live placement tally",s:"built"},
+            {t:"Upload the completed Excel; projects appear as editable cards",s:"built"},
+            {t:"Submit confirmation showing submitted vs requested (variance)",s:"uat"},
+            {t:"AI tick/cross check of scope vs Intern Category + suggested edits",s:"uat"},
+            {t:"Submission disclaimer / declaration",s:"uat"}
+          ],screenshot:""},
+          {sub:"A1.4 HQ reviews project submission",step:"Screen 1",title:"Review submitted projects",desc:"HQ reviews submitted projects against the request, approves or rejects with remarks (with an AI scope check), and views the audit history.",url:"/requests",backlog:[
+            {t:"HQ reviews submitted projects, approves or rejects with remarks",s:"built"},
+            {t:"AI quick check (grammar, spelling, suitable for publishing)",s:"uat"},
+            {t:"Lighter check for DSO / CSIT submissions (info only, no full review)",s:"uat"}
+          ],screenshot:""}
+        ],
+        feedbackItems: [
+          {sub:"A1.1 HQ creates a project request for AD (P&C)",step:"Screen 1",title:"[L3]Build Requests — Step 1",desc:"HQ sets the request context: select a Programme Centre (auto-fills PC Head + AD (P&C)), set the response deadline, and add one row per Intern Category with its calendar period, duration and placements.",url:"/requests/new",screenshot:"./assets/a1-1-build-requests-step-1.png",backlog:[{t:"Request fields: Intern Category, Calendar Period, Duration (1/2/3/6/12 mo), Placements",s:"built"},{t:"Select Programme Centre → auto-fills PC Head + AD (P&C) from the mapping table",s:"built"},{t:"DSO & CSIT selectable as Programme Centres",s:"built"},{t:"Response deadline; save request as draft",s:"built"},{t:"Send one request across many (20+) Programme Centres conveniently",s:"uat"}],beforeImage:"./assets/[Before]Build Requests — Step 1.jpg",afterImage:"./assets/[After]Build Requests — Step 1.jpg",before:"The first screen should answer who is asking, for what programme, and who needs to respond.",after:"Use a two-step request builder and keep role/routing fields before detailed project content.",comment:"The first screen should answer who is asking, for what programme, and who needs to respond.",feedbackDetails:["3 July 2026: The whole experience when using this page is not very intuitive. Not very clear what these components represent: Collapse all sections buttons, Numbered circles, Checkbox.","3 July 2026: Do not think putting the buttons in the white section below is complying to PRIZM 4.0 - NTT to rethink about how the L1 L2 L3 looks and ensure consistent throughout TOA.","3 July 2026: Having 1 request . 2 slots below seems redundant.","3 July 2026: Position of delete button when selecting multiple projects is not intuitive."],compareChips:[{label:"2",x:11,y:79}],lofiSkeleton:{variant:"l3-appshell",title:"L3 Page Lofi Skeleton"},decision:"We submitted two proposals: Proposal 1 uses a split layout, with “Add Request” on the left and “Edit Request Details” on the right; Proposal 2 stays closer to the Before version, but adds guidance indicators on the right side."},
+          {sub:"A1.1 HQ creates a project request for AD (P&C)",step:"Screen 2",title:"Build Requests — Step 2 (Review & email)",desc:"HQ reviews the request and the editable email preview (with the Excel template attachment) before sending.",url:"/requests/new?step=2",backlog:[{t:"Email To AD (P&C), Cc PC Head + HQ; message body is editable",s:"built"},{t:"Email carries portal link, instructions, Excel template, and clearance + PC Head approval note",s:"built"},{t:"Sent from a configurable Internship HQ system address",s:"uat"},{t:"Automatic reminders 14 & 7 days before the deadline",s:"uat"}],screenshot:"",beforeImage:"./assets/[Before]Build Requests — Step 2-email.jpg",afterImage:"./assets/[After]Build Requests — Step 2-email.jpg",before:"Deadline, requested information, and send confirmation were not clearly separated from setup fields.",after:"Move completion details into step 2 so IO reviews requested content, due date, and recipient before sending.",comment:"Before sending, users need a final chance to check the ask and deadline.",feedbackDetails:["3 July 2026: Should be able to edit email."],forceSticky:true,decision:"Create a confirmation-oriented second step with explicit requested information and submission expectation."},
+          {sub:"A1.2 HQ tracks project request",step:"Screen 1",title:"[L2]Project Requests list",desc:"HQ monitors sent requests grouped by Programme Centre with status (Draft / Pending / Incomplete / Fulfilled, over-target flag), sends reminders and extends deadlines.",url:"/requests",backlog:[{t:"Columns: Programme Centre, Intern Category, AD (P&C), Placements Requested, Request Date, Deadline, Status",s:"built"},{t:"Status: Draft / Pending / Incomplete / Fulfilled + over-target flag",s:"built"},{t:"Row actions: Send reminder, Extend deadline, Edit/Delete (drafts only), View",s:"built"},{t:"Pagination + rows per page (8/16/24)",s:"built"},{t:"Reminders only for unfulfilled lines; extend +7 days up to 3× with audit trail + auto email",s:"uat"}],screenshot:"",beforeImage:"./assets/po-project-requests-before.png",afterImage:"./assets/po-project-requests-after.png",before:"The earlier request list exposed fewer controls and made ownership/status scanning less direct.",after:"The updated Project Requests list separates Draft/Open states, makes Programme Centre the entry point, adds date range, export, row-count controls, pagination, and clearer grouped request rows.",comment:"Client feedback from 3 July 2026 focused on table controls and row-count configuration.",feedbackDetails:["3 July 2026: 'Columns' button naming and positioning could be clearer - not very obvious what its function is.","3 July 2026: Propose the maximum number of rows that should be presented in the table and configurations if applicable, e.g. 10, 50, 100 rows.","3 July 2026: Based on last Friday's discussion, users would like to see Project Requests first according to the workflow, so we updated the IO menu order accordingly.","3 July 2026: Use different background colours or visual treatments to distinguish parent rows from child rows in the table, so users can more clearly recognise the nested structure."],stickyTone:"yellow-tail",compareChips:[{label:"1",x:34,y:34},{label:"2",x:19,y:71},{label:"3",x:8,y:34},{label:"4",x:22,y:41}],lofiSkeleton:{title:"L2 Page Lofi Skeleton",notes:["Dedicated request-list page with toolbar, status tabs, and export controls.","Parent rows group requests by Programme Centre; child rows show intern category breakdowns.","Pagination and rows-per-page controls stay visible at the bottom of the table."]},decisionEyebrow:"Pending discussion",decisionTitle:"Chip 2: Rows per page recommendation",decision:"Based on screen testing, we recommend setting 8 rows as the default rows per page for the Project Requests table. Since this table contains expandable parent and child rows, the rows-per-page options should remain limited to support readability and hierarchy clarity. Recommended options are 8, 16, and 24 rows, with 24 as the maximum selectable value."},
+          {sub:"A1.3 AD (P&C) responds — uploads projects as Excel",step:"Screen 1",title:"AD (P&C): request inbox",desc:"AD (P&C) sees the requests to respond to, with deadlines and submission state.",url:"/submissions",backlog:[{t:"AD (P&C) sees requests to respond to, with deadline and submission state",s:"built"},{t:"AD (P&C) can only submit against a received request",s:"built"}],screenshot:"",beforeImage:"./assets/a1-project-request-before.png",afterImage:"./assets/a1-project-request-after.png",before:"AD(P&C) needed to infer which requests required upload action and which had already been submitted.",after:"Create an upload request list that makes assigned requests, deadline, and submission status scannable.",comment:"Queue review and upload submission are different jobs.",decision:"Separate AD(P&C)'s upload queue from the upload detail work area."},
+          {sub:"A1.3 AD (P&C) responds — uploads projects as Excel",step:"Screen 2",title:"Respond — download, fill & upload",desc:"AD (P&C) downloads the Excel template, fills it in and uploads it; submitted projects appear as editable cards and are submitted back for review.",url:"/submissions/respond",backlog:[{t:"Excel template: PC (auto), Title, Scope, Tech Competency ×3, Discipline ×3, Primary/Secondary Mentor, Placements",s:"built"},{t:"Tabs per Intern Category, segmented by Calendar Period & Duration, with a live placement tally",s:"built"},{t:"Upload the completed Excel; projects appear as editable cards",s:"built"},{t:"Submit confirmation showing submitted vs requested (variance)",s:"uat"},{t:"AI tick/cross check of scope vs Intern Category + suggested edits",s:"uat"},{t:"Submission disclaimer / declaration",s:"uat"}],screenshot:"",beforeImage:"./assets/a1-project-request-before.png",afterImage:"./assets/a1-project-request-after.png",before:"Upload work lacked a clear place for project item edits, submission readiness, and return/resubmission context.",after:"Use Upload request detail for editing project items, checking completeness, and submitting back to IO.",comment:"The upload screen should make it obvious what is missing and what will be submitted.",decision:"Treat upload detail as a task-focused workspace with completeness, comments, and submit affordance."},
+          {sub:"A1.4 HQ reviews project submission",step:"Screen 1",title:"Review submitted projects",desc:"HQ reviews submitted projects against the request, approves or rejects with remarks (with an AI scope check), and views the audit history.",url:"/requests",backlog:[{t:"HQ reviews submitted projects, approves or rejects with remarks",s:"built"},{t:"AI quick check (grammar, spelling, suitable for publishing)",s:"uat"},{t:"Lighter check for DSO / CSIT submissions (info only, no full review)",s:"uat"}],screenshot:"",beforeImage:"./assets/a1-project-request-before.png",afterImage:"./assets/a1-project-request-after.png",before:"Status, uploaded project items, comments, and audit history were scattered across list and submission views.",after:"Use detail as the single review surface for status, submitted project items, comments, audit history, and actions.",comment:"Reviewers need context and decision trail together before approving or returning.",decision:"Design Project Requests detail as the control point for review actions and comment history."}
+        ]
+      },
+      "programme-creation": {
+        meta: "Programme setup flow used before applications open.",
+        steps: [
+          {step:"Step 01",title:"Programme Details",desc:"Define title, category, description, application window, and form template.",url:"/programmes/new?step=details",screenshot:"./assets/blueprint-screenshots/programmes/create-programme-step-1-details.png"},
+          {step:"Step 02",title:"Eligibility Criteria",desc:"Configure eligibility rules such as nationality, institution, year of study, and programme constraints.",url:"/programmes/new?step=eligibility",screenshot:"./assets/blueprint-screenshots/programmes/create-programme-step-2-eligibility.png"},
+          {step:"Step 03",title:"Review and Confirm",desc:"Review all programme information, then save as draft or create Programme.",url:"/programmes/new?step=review",screenshot:"./assets/blueprint-screenshots/programmes/create-programme-step-3-review.png"},
+          {step:"Step 04",title:"Programme Created Detail",desc:"After creation, open the programme detail page to review status, dates, and application counts.",url:"/programmes",screenshot:"./assets/blueprint-screenshots/programmes/create-programme-step-4-created-detail.png"}
+        ]
+      },
+      "application": {
+        meta: "Applicant journey from published microsite to submitted application.",
+        steps: [
+          {step:"Step 01",title:"Browse Programme Microsite",desc:"Applicant reviews published content and enters the application from the Programme CTA.",url:"/apply/dashboard",screenshot:"./assets/blueprint-screenshots/applicant/00-programme-microsite.png"},
+          {step:"Step 02",title:"Singpass Sign-in",desc:"Applicant signs in before entering the applicant dashboard.",url:"/login",screenshot:"./assets/blueprint-screenshots/applicant/01a-sign-in-to-apply.png"},
+          {step:"Step 02A",title:"Guardian-assisted sign-in",desc:"For applicants under 16 without Singpass, a parent or guardian signs in on their behalf.",url:"/login",screenshot:"./assets/blueprint-screenshots/applicant/01b-under-16-guardian-sign-in.png"},
+          {step:"Step 03",title:"Personal Particulars",desc:"Applicant reviews pre-filled personal details and completes required fields.",url:"/apply/form",screenshot:"./assets/blueprint-screenshots/applicant/02-personal-particulars-0605.jpg"},
+          {step:"Step 04",title:"Academic Information",desc:"Applicant uploads CV and transcript, then completes institution, course, GPA, and achievements.",url:"/apply/form?step=academic",screenshot:"./assets/blueprint-screenshots/applicant/03-academic-information-0605.jpg"},
+          {step:"Step 05",title:"Additional Information",desc:"Applicant chooses tech domains and answers preference questions.",url:"/apply/form?step=additional",screenshot:"./assets/blueprint-screenshots/applicant/04-additional-information-0605.jpg"},
+          {step:"Step 06",title:"Project Preferences",desc:"Applicant builds a ranked project shortlist from available projects.",url:"/apply/form?step=projects",screenshot:"./assets/blueprint-screenshots/applicant/05-project-preferences-0605.jpg"},
+          {step:"Step 07",title:"Submit Application",desc:"After submission, the system creates or updates the Applications record.",url:"/apply/applications",screenshot:"./assets/blueprint-screenshots/applicant/06-submit-application-0605.jpg"}
+        ]
+      },
+      "screening": {
+        meta: "IO review flow after AI eligibility pre-screening.",
+        steps: [
+          {step:"Step 01",title:"Applications List",desc:"IO reviews the applicant pool by programme, including eligibility, pipeline status, and checks.",url:"/applications",screenshot:"./assets/blueprint-screenshots/applications/applications-list.png"},
+          {step:"Step 02",title:"Candidate 360",desc:"Review education, project preferences, eligibility checks, and AI suitability scores.",url:"/candidate360/APP-0001",screenshot:"./assets/blueprint-screenshots/applications/candidate-360-ranked-projects-0605.jpg"},
+          {step:"Step 03",title:"Status Update",desc:"IO updates the candidate to Pending Review, Shortlisted, Rejected, or Interview stage.",url:"/applications",screenshot:"./assets/blueprint-screenshots/applications/status-update-shortlisted-0605.jpg"}
+        ]
+      },
+      "interview": {
+        meta: "Interview scheduling and assessment flow.",
+        steps: [
+          {step:"Step 01",title:"Set Interview Availability",desc:"Mentor proposes available interview slots from the candidate/application context.",url:"/candidate360/APP-0030?from=mentor",screenshot:"./assets/blueprint-screenshots/mentor/02-mentor-interviews.png"},
+          {step:"Step 02",title:"Applicant Selects Slot",desc:"Applicant selects an available interview slot in My Applications.",url:"/apply/applications",screenshot:"./assets/blueprint-screenshots/applicant/02-my-applications.png"},
+          {step:"Step 03",title:"Mentor Submits Scorecard",desc:"Mentor submits the scorecard; IO reviews the consolidated result in Applications.",url:"/mentor/interviews",screenshot:"./assets/blueprint-screenshots/applications/candidate-360.png"}
+        ]
+      },
+      "offer": {
+        meta: "Offer generation, applicant response, and waitlist handling.",
+        steps: [
+          {step:"Step 01",title:"Generate and Send Offer",desc:"IO generates and sends offers from the confirmed shortlist.",url:"/applications",screenshot:"./assets/blueprint-screenshots/applications/candidate-360.png"},
+          {step:"Step 02",title:"Accept / Reject",desc:"Applicant accepts or rejects the offer; the response is written back to Applications.",url:"/apply/applications",screenshot:"./assets/blueprint-screenshots/applicant/02-my-applications.png"},
+          {step:"Step 03",title:"Collect Responses",desc:"IO collects accept/reject responses and confirms available places.",url:"/applications",screenshot:"./assets/blueprint-screenshots/applications/applications-list.png"},
+          {step:"Step 04",title:"Trigger Waitlist",desc:"If a candidate rejects, System triggers the waitlist flow and alerts IO.",url:"/applications",screenshot:"./assets/blueprint-screenshots/applications/applications-list.png"}
+        ]
+      }
+    };
+
+    const PHASES = ["Preparation", "Programme", "Post Internship"];
+    const flowcols = document.getElementById("flowcols");
+    const detail = document.getElementById("detail");
+    const detailPhase = document.getElementById("detailPhase");
+    const detailTitle = document.getElementById("detailTitle");
+    const detailMeta = document.getElementById("detailMeta");
+    const detailSteps = document.getElementById("detailSteps");
+    const detailTabs = document.getElementById("detailTabs");
+    const shotFrame = document.getElementById("shotFrame");
+    const shotCaption = document.getElementById("shotCaption");
+    const back = document.getElementById("back");
+    let lastFocus = null;
+    let activeFlow = null;
+    let activePanel = "flow";
+    let activeSteps = [];
+    let activeStepIndex = 0;
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"]/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;"
+      }[char]));
+    }
+
+    function flowForArea(area) {
+      const mapped = SCREENSHOT_FLOWS[area.id];
+      if (mapped) return mapped;
+      return {
+        meta: area.flowMeta || "No screenshot flow has been mapped for this item yet. Showing lifecycle detail as fallback.",
+        steps: area.keys.map((text, index) => ({
+          step: `Step ${index + 1}`,
+          title: text,
+          desc: area.edgeCases?.[index] || "Lifecycle detail captured from the functional specification.",
+          url: "",
+          screenshot: ""
+        }))
+      };
+    }
+
+    function setCompare(stage, value) {
+      if (!stage) return;
+      const v = Math.max(0, Math.min(100, Number(value)));
+      stage.style.setProperty("--pos", `${v}%`);
+      stage.dataset.slider = String(v);
+    }
+
+    function initCompareStage(stage) {
+      if (!stage) return;
+      setCompare(stage, stage.dataset.slider || 50);
+      let dragging = false;
+      const move = clientX => {
+        const rect = stage.getBoundingClientRect();
+        setCompare(stage, ((clientX - rect.left) / rect.width) * 100);
+      };
+      stage.addEventListener("pointerdown", event => {
+        dragging = true;
+        stage.setPointerCapture(event.pointerId);
+        move(event.clientX);
+      });
+      stage.addEventListener("pointermove", event => {
+        if (!dragging && event.buttons !== 1) return;
+        move(event.clientX);
+      });
+      stage.addEventListener("pointerup", event => {
+        dragging = false;
+        try { stage.releasePointerCapture(event.pointerId); } catch {}
+      });
+      stage.addEventListener("pointercancel", event => {
+        dragging = false;
+        try { stage.releasePointerCapture(event.pointerId); } catch {}
+      });
+      stage.addEventListener("dblclick", () => setCompare(stage, 50));
+    }
+
+    function renderActiveStep() {
+      const items = activePanel === "feedback" ? activeFlow?.feedbackItems : activeSteps;
+      const item = items?.[activeStepIndex] || items?.[0];
+      if (!item) return;
+      shotFrame.classList.toggle("is-feedback", activePanel === "feedback");
+      shotCaption.hidden = activePanel === "feedback";
+      const backlogCards = item.backlog?.length
+        ? `<ul class="backlog-list">${item.backlog.map(b => {
+            const built = b.s === "built";
+            return `<li class="bk-card bk-${built ? "built" : "uat"}"><span class="bk-text">${esc(b.t)}</span><span class="bk-pill">${built ? "Incorporated into prototype" : "Logged in backlog"}</span></li>`;
+          }).join("")}</ul>`
+        : "";
+
+      if (activePanel === "feedback") {
+        const formatFeedback = (feedback) => {
+          const match = feedback.match(/^([^:]+):\s*(.*)$/);
+          if (!match) return `<span class="feedback-text">${esc(feedback)}</span>`;
+          return `<span class="feedback-copy"><span class="feedback-text">${esc(match[2])}</span><span class="feedback-date">${esc(match[1])}</span></span>`;
+        };
+        const feedbackListClass = [
+          "feedback-detail-list",
+          item.stickyTone === "yellow-tail" ? "feedback-detail-list--yellow-tail" : "",
+          item.forceSticky && item.feedbackDetails?.length === 1 ? "feedback-detail-list--compact" : ""
+        ].filter(Boolean).join(" ");
+        const feedbackMarkup = item.feedbackDetails?.length > 1 || item.forceSticky
+          ? `<ul class="${feedbackListClass}">${item.feedbackDetails.map((feedback, index) => `<li data-feedback-index="${index + 1}" tabindex="0"><span class="feedback-chip">${index + 1}</span>${formatFeedback(feedback)}</li>`).join("")}</ul>`
+          : esc(item.feedbackDetails?.[0] || item.comment || "Pending discussion");
+        const compareChipMarkup = item.compareChips?.length
+          ? item.compareChips.map((chip) => `<span class="compare-chip" data-feedback-index="${esc(chip.label)}" style="--chip-x:${chip.x}%;--chip-y:${chip.y}%">${esc(chip.label)}</span>`).join("")
+          : "";
+        const lofiButtonLabel = item.lofiSkeleton?.variant === "l3-appshell" ? "L3 Page Lofi" : "L2 Page Lofi";
+        const lofiMarkup = item.lofiSkeleton ? `
+          <button class="lofi-cta" type="button" aria-haspopup="dialog">
+            ${lofiButtonLabel}
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7"/><path d="M9 7h8v8"/></svg>
+          </button>` : "";
+        const l3LofiDrawerMarkup = item.lofiSkeleton?.variant === "l3-appshell" ? `
+          <div class="lofi-backdrop" data-lofi-close></div>
+          <aside class="lofi-drawer" role="dialog" aria-modal="true" aria-label="${esc(item.lofiSkeleton.title)}">
+            <div class="lofi-drawer-head">
+              <div>
+                <small>Lofi skeleton</small>
+                <strong>${esc(item.lofiSkeleton.title)}</strong>
+              </div>
+              <button class="lofi-close" type="button" data-lofi-close aria-label="Close lofi skeleton">×</button>
+            </div>
+            <div class="lofi-body">
+              <div class="lofi-wireframe">
+                <h2 class="sr-only">Annotated lofi wireframe v3: app shell, breadcrumb, multi-step form directly below it, then proposal indicator and alert on one row, followed by accordion form and actions</h2>
+                <div style="max-width:640px;margin:24px auto 8px" class="lofi-ann">
+                  <div class="lofi-tag"><span class="lofi-num">1</span><span class="lofi-lab">App shell</span></div>
+                  <div style="border:0.5px solid var(--lofi-border);border-radius:12px;overflow:hidden;background:var(--lofi-surface-2)">
+                    <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:0.5px solid var(--lofi-border)">
+                      <div class="lofi-bx" style="width:24px;height:24px;flex-shrink:0"></div>
+                      <div class="lofi-sk" style="width:120px;height:10px"></div>
+                      <div style="flex:1"></div>
+                      <div class="lofi-bx" style="width:24px;height:24px;border-radius:50%;flex-shrink:0"></div>
+                    </div>
+                    <div style="display:flex">
+                      <div style="width:56px;border-right:0.5px solid var(--lofi-border);padding:14px 0;display:flex;flex-direction:column;align-items:center;gap:16px;flex-shrink:0">
+                        <div class="lofi-sk" style="width:20px;height:20px"></div>
+                        <div class="lofi-sk" style="width:20px;height:20px"></div>
+                        <div class="lofi-sk" style="width:20px;height:20px"></div>
+                        <div class="lofi-sk" style="width:20px;height:20px"></div>
+                      </div>
+                      <div style="flex:1;min-width:0;padding:28px 20px 20px;display:flex;flex-direction:column;gap:18px">
+                        <div class="lofi-ann" style="padding:6px 8px">
+                          <div class="lofi-tag"><span class="lofi-num">2</span><span class="lofi-lab">Breadcrumb</span></div>
+                          <div style="display:flex;align-items:center;gap:6px">
+                            <div class="lofi-sk" style="width:34px;height:8px;opacity:.6"></div>
+                            <div class="lofi-sk" style="width:6px;height:8px;opacity:.4"></div>
+                            <div class="lofi-sk" style="width:48px;height:8px;opacity:.6"></div>
+                            <div class="lofi-sk" style="width:6px;height:8px;opacity:.4"></div>
+                            <div class="lofi-sk" style="width:64px;height:8px;background:var(--ink)"></div>
+                          </div>
+                        </div>
+                        <div style="position:relative;padding-top:6px" class="lofi-ann">
+                          <div class="lofi-tag"><span class="lofi-num">3</span><span class="lofi-lab">Multi-step form (proposal)</span></div>
+                          <div style="display:flex;align-items:center">
+                            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:70px">
+                              <div class="lofi-sk" style="width:22px;height:22px;border-radius:50%"></div>
+                              <div class="lofi-sk" style="width:44px;height:7px"></div>
+                            </div>
+                            <div style="flex:1;height:1px;background:var(--lofi-border-strong)"></div>
+                            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:70px">
+                              <div class="lofi-bx" style="width:22px;height:22px;border-radius:50%;border-style:solid"></div>
+                              <div class="lofi-sk" style="width:44px;height:7px"></div>
+                            </div>
+                            <div style="flex:1;height:1px;background:var(--lofi-border-strong)"></div>
+                            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:70px">
+                              <div class="lofi-bx" style="width:22px;height:22px;border-radius:50%;border-style:solid"></div>
+                              <div class="lofi-sk" style="width:44px;height:7px"></div>
+                            </div>
+                          </div>
+                        </div>
+                        <div style="display:flex;align-items:stretch;gap:12px">
+                          <div class="lofi-ann" style="padding:8px;flex-shrink:0;display:flex;align-items:center">
+                            <div class="lofi-tag"><span class="lofi-num">4</span><span class="lofi-lab">Indicator · Proposal</span></div>
+                            <div class="lofi-bx" style="border-radius:999px;padding:4px 10px;display:flex;align-items:center;gap:5px">
+                              <div class="lofi-sk" style="width:6px;height:6px;border-radius:50%"></div>
+                              <div class="lofi-sk" style="width:44px;height:8px"></div>
+                            </div>
+                          </div>
+                          <div class="lofi-ann" style="padding:8px 8px 6px;flex:1;min-width:0">
+                            <div class="lofi-tag"><span class="lofi-num">5</span><span class="lofi-lab">Alert · First-time form hint</span></div>
+                            <div class="lofi-bx" style="border-style:solid;display:flex;align-items:flex-start;gap:10px;padding:12px 14px;height:100%">
+                              <div class="lofi-sk" style="width:18px;height:18px;border-radius:50%;flex-shrink:0;margin-top:1px"></div>
+                              <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+                                <div class="lofi-sk" style="width:70%;height:9px"></div>
+                                <div class="lofi-sk" style="width:90%;height:8px"></div>
+                              </div>
+                              <div class="lofi-sk" style="width:10px;height:10px;flex-shrink:0;margin-top:2px"></div>
+                            </div>
+                          </div>
+                        </div>
+                        <div style="position:relative;padding-top:6px" class="lofi-ann">
+                          <div class="lofi-tag"><span class="lofi-num">6</span><span class="lofi-lab">Form · Accordion</span></div>
+                          <div style="display:flex;flex-direction:column;gap:10px">
+                            <div class="lofi-bx" style="border-style:solid;padding:12px 14px;display:flex;flex-direction:column;gap:12px">
+                              <div style="display:flex;align-items:center;justify-content:space-between">
+                                <div class="lofi-sk" style="width:120px;height:11px"></div>
+                                <div class="lofi-sk" style="width:12px;height:12px"></div>
+                              </div>
+                              <div style="display:flex;flex-direction:column;gap:8px">
+                                <div class="lofi-sk" style="width:80px;height:8px"></div>
+                                <div class="lofi-bx" style="height:28px"></div>
+                                <div class="lofi-sk" style="width:80px;height:8px"></div>
+                                <div class="lofi-bx" style="height:28px"></div>
+                              </div>
+                            </div>
+                            <div class="lofi-bx" style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between">
+                              <div class="lofi-sk" style="width:110px;height:11px"></div>
+                              <div class="lofi-sk" style="width:12px;height:12px"></div>
+                            </div>
+                            <div class="lofi-bx" style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between">
+                              <div class="lofi-sk" style="width:130px;height:11px"></div>
+                              <div class="lofi-sk" style="width:12px;height:12px"></div>
+                            </div>
+                          </div>
+                        </div>
+                        <div style="position:relative;padding-top:6px" class="lofi-ann">
+                          <div class="lofi-tag"><span class="lofi-num">7</span><span class="lofi-lab">Actions · Medium</span></div>
+                          <div style="display:flex;justify-content:flex-end;gap:8px">
+                            <div class="lofi-bx" style="width:72px;height:32px"></div>
+                            <div style="width:72px;height:32px;border-radius:var(--lofi-radius);background:var(--ink)"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="lofi-legend">
+                  <div class="lofi-legend-row"><span class="lofi-num">1</span><span>App shell — top bar + side nav</span></div>
+                  <div class="lofi-legend-row"><span class="lofi-num">2</span><span>Breadcrumb — parent path + current page</span></div>
+                  <div class="lofi-legend-row"><span class="lofi-num">3</span><span>Multi-step form (proposal) — step progress indicator, directly under breadcrumb</span></div>
+                  <div class="lofi-legend-row"><span class="lofi-num">4</span><span>Indicator (proposal) — status pill, same row as alert</span></div>
+                  <div class="lofi-legend-row"><span class="lofi-num">5</span><span>Alert — shown once on first entry, explains the form</span></div>
+                  <div class="lofi-legend-row"><span class="lofi-num">6</span><span>Form · Accordion — collapsible form sections</span></div>
+                  <div class="lofi-legend-row"><span class="lofi-num">7</span><span>Actions · Medium — medium-sized action buttons</span></div>
+                </div>
+              </div>
+            </div>
+          </aside>` : "";
+        const lofiDrawerMarkup = l3LofiDrawerMarkup || (item.lofiSkeleton ? `
+          <div class="lofi-backdrop" data-lofi-close></div>
+          <aside class="lofi-drawer" role="dialog" aria-modal="true" aria-label="${esc(item.lofiSkeleton.title)}">
+            <div class="lofi-drawer-head">
+              <div>
+                <small>Lofi skeleton</small>
+                <strong>${esc(item.lofiSkeleton.title)}</strong>
+              </div>
+              <button class="lofi-close" type="button" data-lofi-close aria-label="Close lofi skeleton">×</button>
+            </div>
+            <div class="lofi-body">
+              <div class="lofi-wireframe">
+                <h2 class="sr-only">Annotated lofi wireframe for a list page: app shell, 2xl headline, solid action button, search and filter combobox, table with PRIZM primitives, and an expandable table row</h2>
+                <div style="max-width:640px;margin:24px auto 8px" class="lofi-ann">
+                  <div class="lofi-tag"><span class="lofi-num">1</span><span class="lofi-lab">App shell</span></div>
+                  <div style="border:0.5px solid var(--lofi-border);border-radius:12px;overflow:hidden;background:var(--lofi-surface-2)">
+                    <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:0.5px solid var(--lofi-border)">
+                      <div class="lofi-bx" style="width:24px;height:24px;flex-shrink:0"></div>
+                      <div class="lofi-sk" style="width:120px;height:10px"></div>
+                      <div style="flex:1"></div>
+                      <div class="lofi-bx" style="width:24px;height:24px;border-radius:50%;flex-shrink:0"></div>
+                    </div>
+                    <div style="display:flex">
+                      <div style="width:56px;border-right:0.5px solid var(--lofi-border);padding:14px 0;display:flex;flex-direction:column;align-items:center;gap:16px;flex-shrink:0">
+                        <div class="lofi-sk" style="width:20px;height:20px"></div>
+                        <div class="lofi-sk" style="width:20px;height:20px"></div>
+                        <div class="lofi-sk" style="width:20px;height:20px"></div>
+                        <div class="lofi-sk" style="width:20px;height:20px"></div>
+                      </div>
+                      <div style="flex:1;min-width:0;padding:28px 20px 20px;display:flex;flex-direction:column;gap:22px">
+                        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+                          <div class="lofi-ann" style="padding:8px 8px 6px;flex:1;min-width:0">
+                            <div class="lofi-tag"><span class="lofi-num">2</span><span class="lofi-lab">Text-headline (2xl)</span></div>
+                            <div class="lofi-sk" style="width:60%;height:18px;margin-bottom:8px"></div>
+                            <div class="lofi-sk" style="width:40%;height:9px"></div>
+                          </div>
+                          <div class="lofi-ann" style="padding:8px;flex-shrink:0;margin-top:2px">
+                            <div class="lofi-tag"><span class="lofi-num">3</span><span class="lofi-lab">Action (Solid)</span></div>
+                            <div style="width:90px;height:34px;border-radius:var(--lofi-radius);background:var(--ink)"></div>
+                          </div>
+                        </div>
+                        <div class="lofi-ann" style="padding:14px 10px 10px">
+                          <div class="lofi-tag"><span class="lofi-num">4</span><span class="lofi-lab">Search &amp; filter (Combobox)</span></div>
+                          <div style="display:flex;gap:8px">
+                            <div class="lofi-bx" style="flex:2;height:32px;display:flex;align-items:center;padding:0 10px;gap:6px">
+                              <div class="lofi-sk" style="width:12px;height:12px;border-radius:50%;flex-shrink:0"></div>
+                              <div class="lofi-sk" style="width:70px;height:8px"></div>
+                            </div>
+                            <div class="lofi-bx" style="flex:1;height:32px;display:flex;align-items:center;justify-content:space-between;padding:0 10px">
+                              <div class="lofi-sk" style="width:44px;height:8px"></div>
+                              <div class="lofi-sk" style="width:8px;height:8px"></div>
+                            </div>
+                            <div class="lofi-bx" style="flex:1;height:32px;display:flex;align-items:center;justify-content:space-between;padding:0 10px">
+                              <div class="lofi-sk" style="width:44px;height:8px"></div>
+                              <div class="lofi-sk" style="width:8px;height:8px"></div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="lofi-ann" style="padding:14px 0 0">
+                          <div class="lofi-tag"><span class="lofi-num">5</span><span class="lofi-lab">Table + PRIZM primitives (proposal)</span></div>
+                          <div class="lofi-bx" style="border-style:solid;overflow:hidden;padding:0">
+                            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:0.5px solid var(--lofi-border-strong)">
+                              <div class="lofi-sk" style="width:12px;height:12px;flex-shrink:0"></div>
+                              <div class="lofi-sk" style="flex:2;height:8px"></div>
+                              <div class="lofi-sk" style="flex:2;height:8px"></div>
+                              <div class="lofi-sk" style="flex:1;height:8px"></div>
+                              <div class="lofi-sk" style="width:16px;height:8px;flex-shrink:0"></div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:0.5px solid var(--lofi-border)">
+                              <div class="lofi-sk" style="width:12px;height:12px;flex-shrink:0"></div>
+                              <div class="lofi-sk" style="flex:2;height:9px"></div>
+                              <div class="lofi-sk" style="flex:2;height:9px"></div>
+                              <div class="lofi-sk" style="flex:1;height:9px"></div>
+                              <div class="lofi-sk" style="width:12px;height:12px;flex-shrink:0"></div>
+                            </div>
+                            <div class="lofi-ann" style="border-radius:0">
+                              <div class="lofi-tag" style="top:-10px;left:16px"><span class="lofi-num">6</span><span class="lofi-lab">Table row · expand</span></div>
+                              <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:0.5px solid var(--lofi-border);background:var(--lofi-surface-1)">
+                                <div class="lofi-sk" style="width:12px;height:12px;flex-shrink:0"></div>
+                                <div class="lofi-sk" style="width:9px;height:9px;flex-shrink:0;border-radius:2px"></div>
+                                <div class="lofi-sk" style="flex:2;height:9px"></div>
+                                <div class="lofi-sk" style="flex:2;height:9px"></div>
+                                <div class="lofi-sk" style="flex:1;height:9px"></div>
+                                <div class="lofi-sk" style="width:12px;height:12px;flex-shrink:0"></div>
+                              </div>
+                              <div style="padding:10px 12px 12px 42px;border-bottom:0.5px solid var(--lofi-border);background:var(--lofi-surface-1);display:flex;flex-direction:column;gap:7px">
+                                <div class="lofi-sk" style="width:60%;height:8px"></div>
+                                <div class="lofi-sk" style="width:45%;height:8px"></div>
+                              </div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px">
+                              <div class="lofi-sk" style="width:12px;height:12px;flex-shrink:0"></div>
+                              <div class="lofi-sk" style="flex:2;height:9px"></div>
+                              <div class="lofi-sk" style="flex:2;height:9px"></div>
+                              <div class="lofi-sk" style="flex:1;height:9px"></div>
+                              <div class="lofi-sk" style="width:12px;height:12px;flex-shrink:0"></div>
+                            </div>
+                            <div class="lofi-ann" style="border-radius:0">
+                              <div class="lofi-tag" style="top:-10px;left:16px"><span class="lofi-num">7</span><span class="lofi-lab">Pagination (Variant proposal)</span></div>
+                              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border-top:0.5px solid var(--lofi-border);background:var(--lofi-surface-1)">
+                                <div style="display:flex;align-items:center;gap:7px;min-width:0">
+                                  <div class="lofi-sk" style="width:54px;height:8px"></div>
+                                  <div class="lofi-bx" style="width:34px;height:24px;border-style:solid"></div>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+                                  <div class="lofi-sk" style="width:30px;height:8px"></div>
+                                  <div class="lofi-bx" style="width:24px;height:24px;border-style:solid"></div>
+                                  <div class="lofi-sk" style="width:22px;height:8px"></div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="lofi-legend">
+                  <div class="lofi-legend-row"><span class="lofi-num">1</span><span>App shell — top bar + side nav</span></div>
+                  <div class="lofi-legend-row"><span class="lofi-num">2</span><span>Text-headline (2xl) — page title + subtitle</span></div>
+                  <div class="lofi-legend-row"><span class="lofi-num">3</span><span>Action (Solid) — primary filled button</span></div>
+                  <div class="lofi-legend-row"><span class="lofi-num">4</span><span>Search &amp; filter (Combobox) — search input + filter dropdowns</span></div>
+                  <div class="lofi-legend-row"><span class="lofi-num">5</span><span>Table + PRIZM primitives (proposal) — header, rows, row actions</span></div>
+                  <div class="lofi-legend-row"><span class="lofi-num">6</span><span>Table row · expand — collapsible row detail panel</span></div>
+                  <div class="lofi-legend-row"><span class="lofi-num">7</span><span>Pagination (Variant proposal) — rows-per-page and page navigation</span></div>
+                </div>
+              </div>
+            </div>
+          </aside>` : "");
+        shotFrame.innerHTML = `
+          <div class="feedback-board">
+            <div class="feedback-toolbar">
+              <span>Drag the handle to compare Before and After.</span>
+              <div class="feedback-actions">
+                <label class="annotation-toggle"><input class="annotation-checkbox" type="checkbox" checked> Annotation</label>
+                <a class="figma-comments-cta" href="https://www.figma.com/board/V4jKcmxoubFP15ijqo89hc/DSTA-UX-Team-Comments?node-id=754-1834&t=UoNsxIKCihtlrMID-4" target="_blank" rel="noopener">DSTA UX Team Comments</a>
+                <a class="reset-compare" href="https://toaproject.vercel.app/requests" target="_blank" rel="noopener">Demo link <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7"/><path d="M9 7h8v8"/></svg></a>
+              </div>
+            </div>
+            <div class="ux-compare-stage show-annotations" data-slider="50" aria-label="Drag to compare before and after for ${esc(item.title)}">
+              <div class="compare-label label-after">After</div>
+              <div class="compare-label label-before">Before</div>
+              <div class="layer before-layer">
+                ${item.beforeImage ? `
+                <div class="ux-compare-image">
+                  <img src="${esc(item.beforeImage)}" alt="Before screenshot for ${esc(item.title)}">
+                </div>` : `
+                <div class="ux-compare-card">
+                  <small>Before</small>
+                  <strong>${esc(item.title)}</strong>
+                  <span>${esc(item.before)}</span>
+                </div>`}
+              </div>
+              <div class="layer after-layer">
+                ${item.afterImage ? `
+                <div class="ux-compare-image">
+                  <img src="${esc(item.afterImage)}" alt="After screenshot for ${esc(item.title)}">
+                </div>` : `
+                <div class="ux-compare-card">
+                  <small>After</small>
+                  <strong>${esc(item.title)}</strong>
+                  <span>${esc(item.after)}</span>
+                </div>`}
+                ${compareChipMarkup}
+              </div>
+              <div class="compare-handle" aria-hidden="true"><div class="handle-knob">↔</div></div>
+            </div>
+            <div class="comment-card"><small>UX Team Feedback</small><div class="feedback-card-head"><strong>${esc(item.title)}</strong>${lofiMarkup}</div>${feedbackMarkup}</div>
+            <div class="comment-card"><small>${esc(item.decisionEyebrow || "Pending discussion")}</small><strong>${esc(item.decisionTitle || "Design decision")}</strong>${esc(item.decision || "Pending discussion")}</div>
+            ${lofiDrawerMarkup}
+          </div>
+        `;
+        const compareStage = shotFrame.querySelector(".ux-compare-stage");
+        initCompareStage(compareStage);
+        const lofiDrawer = shotFrame.querySelector(".lofi-drawer");
+        const lofiBackdrop = shotFrame.querySelector(".lofi-backdrop");
+        const closeLofi = () => {
+          lofiDrawer?.classList.remove("is-open");
+          lofiBackdrop?.classList.remove("is-open");
+        };
+        shotFrame.querySelector(".lofi-cta")?.addEventListener("click", () => {
+          lofiDrawer?.classList.add("is-open");
+          lofiBackdrop?.classList.add("is-open");
+        });
+        shotFrame.querySelectorAll("[data-lofi-close]").forEach((control) => {
+          control.addEventListener("click", closeLofi);
+        });
+        shotFrame.querySelector(".annotation-checkbox")?.addEventListener("change", (event) => {
+          compareStage?.classList.toggle("show-annotations", event.currentTarget.checked);
+        });
+        const setActiveAnnotation = (feedbackIndex) => {
+          compareStage?.classList.remove("active-annotation-1", "active-annotation-2", "active-annotation-3", "active-annotation-4");
+          compareStage?.classList.add(`active-annotation-${feedbackIndex}`);
+          shotFrame.querySelectorAll(".feedback-detail-list li").forEach((row) => {
+            row.classList.toggle("active-feedback", row.dataset.feedbackIndex === feedbackIndex);
+          });
+        };
+        shotFrame.querySelectorAll(".feedback-detail-list li").forEach((row) => {
+          row.addEventListener("click", () => setActiveAnnotation(row.dataset.feedbackIndex));
+          row.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              setActiveAnnotation(row.dataset.feedbackIndex);
+            }
+          });
+        });
+      } else if (item.screenshot && item.screenshotAlt) {
+        shotFrame.innerHTML = `
+          <div class="ux-compare-stage flow-compare" data-slider="50" aria-label="Drag to compare screens for ${esc(item.title)}">
+            <div class="layer before-layer"><div class="ux-compare-image"><img src="${esc(item.screenshot)}" alt="${esc(item.title)} screenshot"></div></div>
+            <div class="layer after-layer"><div class="ux-compare-image"><img src="${esc(item.screenshotAlt)}" alt="${esc(item.title)} additional screen"></div></div>
+            <div class="compare-handle" aria-hidden="true"><div class="handle-knob">↔</div></div>
+          </div>
+        `;
+        initCompareStage(shotFrame.querySelector(".ux-compare-stage"));
+      } else if (item.screenshot) {
+        shotFrame.innerHTML = `
+          <img src="${esc(item.screenshot)}" alt="${esc(item.title)} screenshot" onerror="this.classList.add('is-error')">
+          <div class="shot-missing"><strong>${esc(item.title)}</strong><span>Screenshot to be added</span></div>
+        `;
+      } else {
+        shotFrame.innerHTML = `<div class="shot-missing"><strong>${esc(item.title)}</strong><span>Screenshot to be added</span></div>`;
+      }
+      if (activePanel !== "feedback") {
+        // Backlog cards sit below the screenshot area and fill the remaining space.
+        shotCaption.innerHTML = backlogCards || `<b>${esc(item.step)} · ${esc(item.title)}</b>`;
+      }
+      detailSteps.querySelectorAll(".step-item").forEach((button, index) => {
+        button.classList.toggle("active", index === activeStepIndex);
+        button.setAttribute("aria-pressed", index === activeStepIndex ? "true" : "false");
+      });
+    }
+
+    function renderPanelList() {
+      const items = activePanel === "feedback" ? activeFlow?.feedbackItems : activeSteps;
+      let lastSub = null;
+      detailSteps.innerHTML = (items || []).map((item, index) => {
+        // Group screens under their sub-step (A1.1, A1.2…) with a header, when defined.
+        const header = (item.sub && item.sub !== lastSub)
+          ? `<div class="substep-head">${esc(item.sub)}</div>` : "";
+        lastSub = item.sub;
+        const description = activePanel === "feedback" ? "" : `<span>${esc(item.desc)}</span>`;
+        return header + `
+          <button class="step-item${index === 0 ? " active" : ""}" type="button" data-index="${index}" aria-pressed="${index === 0 ? "true" : "false"}">
+            <small>${esc(item.step)}</small>
+            <strong>${esc(item.title)}</strong>
+            ${description}
+          </button>
+        `;
+      }).join("");
+      detailSteps.querySelectorAll(".step-item").forEach(button => {
+        button.addEventListener("click", () => {
+          activeStepIndex = Number(button.dataset.index) || 0;
+          renderActiveStep();
+        });
+      });
+      renderActiveStep();
+    }
+
+    function setPanel(panel) {
+      activePanel = panel;
+      activeStepIndex = 0;
+      detailTabs.querySelectorAll(".tab-btn").forEach(button => {
+        button.classList.toggle("active", button.dataset.panel === panel);
+      });
+      renderPanelList();
+    }
+
+    function renderColumns() {
+      flowcols.innerHTML = PHASES.map(phase => {
+        const letter = phase === "Preparation" ? "A" : phase === "Programme" ? "B" : "C";
+        const buttons = AREAS.filter(area => area.phase === phase).map((area, i) => `
+          <button class="farea" type="button" data-id="${area.id}">
+            <span class="fic fcode" aria-hidden="true">${letter}${i + 1}</span>
+            <span class="fan">${area.title}</span>
+            <span class="chev" aria-hidden="true"></span>
+          </button>
+        `).join("");
+        return `<div class="glass fcol"><div class="fst">${phase}</div><div class="fareas">${buttons}</div></div>`;
+      }).join("");
+
+      flowcols.querySelectorAll(".farea").forEach(button => {
+        button.addEventListener("click", () => openDetail(button.dataset.id, button));
+      });
+    }
+
+    function openDetail(id, source) {
+      const area = AREAS.find(item => item.id === id);
+      if (!area) return;
+      lastFocus = source || null;
+      const flow = flowForArea(area);
+      activeFlow = flow;
+      activePanel = "flow";
+      activeSteps = flow.steps;
+      activeStepIndex = 0;
+      detailPhase.textContent = area.phase;
+      const areaLetter = area.phase === "Preparation" ? "A" : area.phase === "Programme" ? "B" : "C";
+      const areaCode = areaLetter + (AREAS.filter(a => a.phase === area.phase).indexOf(area) + 1);
+      detailTitle.textContent = areaCode + " · " + area.title;
+      detailMeta.textContent = flow.meta;
+      if (flow.feedback) {
+        detailTabs.hidden = false;
+      } else {
+        detailTabs.hidden = true;
+      }
+      detailTabs.querySelectorAll(".tab-btn").forEach(button => {
+        button.classList.toggle("active", button.dataset.panel === "flow");
+      });
+      renderPanelList();
+      document.body.classList.add("detail-open");
+      detail.setAttribute("aria-hidden", "false");
+      back.focus();
+    }
+
+    function closeDetail() {
+      document.body.classList.remove("detail-open");
+      detail.setAttribute("aria-hidden", "true");
+      if (lastFocus) lastFocus.focus();
+    }
+
+    back.addEventListener("click", closeDetail);
+    detailTabs.querySelectorAll(".tab-btn").forEach(button => {
+      button.addEventListener("click", () => setPanel(button.dataset.panel));
+    });
+    detail.addEventListener("click", event => {
+      if (event.target === detail) closeDetail();
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && document.body.classList.contains("detail-open")) closeDetail();
+    });
+
+    renderColumns();
+  </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+[
+  {
+    "id": "COC-001",
+    "name": "Classic",
+    "trigger": "Internship Completed",
+    "style": "classic",
+    "body": "",
+    "updatedAt": "2026-05-31"
+  },
+  {
+    "id": "COC-002",
+    "name": "Modern",
+    "trigger": "Internship Completed",
+    "style": "modern",
+    "body": "",
+    "updatedAt": "2026-05-31"
+  },
+  {
+    "id": "COC-003",
+    "name": "Formal",
+    "trigger": "Internship Completed",
+    "style": "formal",
+    "body": "",
+    "updatedAt": "2026-05-31"
+  }
+]

@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="en-SG">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#000000" />
+<title>Programmes &amp; Projects · End to End</title>
+<style>
+  :root{
+    --blue:#5e9eff; --blue-2:#8ab4ff;
+    --amber:#ffc266; --amber-deep:#f5a623;
+    --ink:#f5f5f7; --ink-soft:#aeaeb4; --ink-faint:#86868b;
+    --bg:#000000; --card:rgba(255,255,255,.055); --line:rgba(255,255,255,.12);
+    --good:#2fd07e;
+    --radius:28px; --ease:cubic-bezier(.2,.8,.2,1);
+    --font:-apple-system,"SF Pro Display","SF Pro Text",system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  html,body{height:100%}
+  body{font-family:var(--font);color:var(--ink);background:var(--bg);color-scheme:dark;overflow:hidden;position:relative}
+
+  .wash{position:fixed;inset:-25%;z-index:0;filter:blur(80px);opacity:.85;pointer-events:none}
+  .blob{position:absolute;border-radius:50%;mix-blend-mode:screen;animation:drift 26s var(--ease) infinite alternate}
+  .b1{width:48vw;height:48vw;left:-6vw;top:-10vw;background:radial-gradient(circle at 30% 30%,rgba(46,86,196,.55),transparent 70%)}
+  .b2{width:44vw;height:44vw;right:-10vw;top:2vw;background:radial-gradient(circle at 60% 40%,rgba(36,70,170,.5),transparent 70%);animation-delay:-8s}
+  .b3{width:54vw;height:54vw;left:16vw;bottom:-20vw;background:radial-gradient(circle at 50% 50%,rgba(60,110,230,.4),transparent 70%);animation-delay:-15s}
+  @keyframes drift{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(4vw,3vh,0) scale(1.12)}}
+
+  .deck{position:fixed;inset:0;z-index:1}
+  .slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:clamp(24px,6vw,90px);opacity:0;transform:translateY(34px) scale(.985);transition:opacity .6s var(--ease),transform .7s var(--ease);pointer-events:none}
+  .slide.active{opacity:1;transform:none;pointer-events:auto}
+  .r{opacity:0;transform:translateY(26px)}
+  .slide.active .r{animation:rise .9s var(--ease) forwards;animation-delay:var(--d,0s)}
+  @keyframes rise{to{opacity:1;transform:none}}
+
+  .eyebrow{font-size:clamp(13px,1.5vw,17px);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);margin-bottom:22px}
+  h1{font-size:clamp(40px,7.4vw,104px);line-height:1.02;font-weight:700;letter-spacing:-.025em}
+  h2{font-size:clamp(30px,5vw,68px);line-height:1.05;font-weight:700;letter-spacing:-.022em}
+  .grad{background:linear-gradient(110deg,var(--blue),var(--blue-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hint{position:absolute;bottom:46px;left:0;right:0;font-size:14px;color:var(--ink-faint);font-weight:500}
+  .hint kbd{font-family:var(--font);background:rgba(255,255,255,.08);border:1px solid var(--line);border-radius:7px;padding:2px 8px;font-size:12px;color:var(--ink-soft)}
+  .num{font-size:13px;font-weight:700;letter-spacing:.16em;color:var(--blue);border:1px solid rgba(94,158,255,.3);background:rgba(94,158,255,.12);border-radius:999px;padding:7px 16px;margin-bottom:30px}
+  .note{margin:26px auto 0;color:var(--ink-soft);font-size:clamp(15px,1.8vw,19px);max-width:46ch;line-height:1.45}
+
+  .glass{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 24px 70px -34px rgba(0,0,0,.85)}
+  /* 3-phase internship-journey overview (static, ported from the vision deck) */
+  .jflow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(14px,1.8vw,22px);margin-top:34px;width:min(1040px,95vw);align-items:start;text-align:left}
+  .jcol{padding:24px 22px;display:flex;flex-direction:column;gap:15px}
+  .jst{font-size:clamp(15px,1.7vw,20px);font-weight:700;letter-spacing:-.01em;padding-bottom:13px;border-bottom:1px solid var(--line)}
+  .jareas{display:flex;flex-direction:column;gap:10px}
+  .jarea{padding:14px 16px;border-radius:14px;background:linear-gradient(135deg,rgba(245,166,35,.12),rgba(245,166,35,.035));border:1px solid rgba(255,194,102,.26)}
+  .jan{display:flex;align-items:center;gap:12px;font-size:clamp(13.5px,1.5vw,16px);font-weight:600;letter-spacing:-.01em;color:var(--ink)}
+  .jan::before{content:"";flex:none;width:9px;height:9px;border-radius:2px;background:var(--amber);box-shadow:0 0 0 4px rgba(245,166,35,.14);transform:rotate(45deg)}
+  /* highlight the active phase, grey out the rest */
+  .jcol{transition:opacity .5s var(--ease),box-shadow .5s var(--ease),border-color .5s var(--ease)}
+  .jcol.on{border-color:rgba(255,194,102,.45);box-shadow:0 0 0 1px rgba(255,194,102,.28),0 26px 64px -30px rgba(245,166,35,.55)}
+  .jcol.dim{opacity:.4}
+  .jcol.dim .jst{color:var(--ink-faint)}
+  .jcol.dim .jarea{background:rgba(255,255,255,.035);border-color:var(--line)}
+  .jcol.dim .jan{color:var(--ink-soft)}
+  .jcol.dim .jan::before{background:var(--ink-faint);box-shadow:none}
+  @media (max-width:640px){.jflow{grid-template-columns:1fr;width:100%}}
+  .ic{display:grid;place-items:center;width:64px;height:64px;border-radius:18px;background:rgba(94,158,255,.14);color:var(--blue)}
+  .ic svg{width:34px;height:34px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+  /* act divider */
+  .actlabel{font-size:13px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--blue);margin-bottom:20px}
+
+  /* five levels */
+  .row{display:flex;gap:clamp(14px,2vw,24px);flex-wrap:wrap;justify-content:center;align-items:stretch;margin-top:50px;max-width:1180px}
+  .level{width:208px;min-height:120px;display:flex;align-items:center;justify-content:center;padding:26px}
+  .level .lab{font-weight:650;font-size:clamp(19px,1.9vw,24px);line-height:1.18;letter-spacing:-.01em}
+
+  /* eligibility */
+  .check{margin-top:18px;width:min(660px,92vw);padding:clamp(24px,3vw,40px);text-align:left}
+  .check .t{font-weight:650;font-size:clamp(18px,2.1vw,24px);margin-bottom:12px}
+  .citem{display:flex;align-items:center;gap:14px;padding:16px 4px;border-top:1px solid var(--line);font-size:clamp(16px,1.9vw,20px)}
+  .citem:first-of-type{border-top:none}
+  .tick{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:rgba(47,208,126,.16);color:var(--good)}
+  .tick svg{width:17px;height:17px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+  /* gantt */
+  .gantt{margin-top:18px;width:min(960px,93vw);padding:clamp(24px,3vw,40px)}
+  .gantt .ghead{display:flex;align-items:center;gap:14px;margin-bottom:28px}
+  .gantt .ghead .ic{width:50px;height:50px}
+  .gantt .ghead h3{font-size:clamp(19px,2.3vw,26px);font-weight:650;letter-spacing:-.01em}
+  .plot{position:relative;background:repeating-linear-gradient(to right,transparent,transparent calc(100%/12 - 1px),rgba(255,255,255,.07) calc(100%/12 - 1px),rgba(255,255,255,.07) calc(100%/12));border-radius:12px;padding:6px 0}
+  .bars{position:relative;height:204px}
+  .gbar{position:absolute;height:54px;border-radius:14px;display:flex;flex-direction:column;justify-content:center;padding:0 18px;color:#01122e;box-shadow:0 14px 30px -16px rgba(0,0,0,.7);overflow:hidden;white-space:nowrap;transform:scaleX(.6);transform-origin:left center;opacity:0}
+  .slide.active .gbar{animation:grow .9s var(--ease) forwards}
+  @keyframes grow{to{transform:scaleX(1);opacity:1}}
+  .gbar b{font-size:clamp(15px,1.6vw,18px);font-weight:700}
+  .gbar span{font-size:12px;font-weight:600;opacity:.8}
+  .i1{top:8px;background:linear-gradient(120deg,#7db0ff,#a8c8ff)}
+  .i2{top:74px;background:linear-gradient(120deg,#5e9eff,#86b4ff);animation-delay:.12s!important}
+  .i3{top:140px;background:linear-gradient(120deg,#3f7fe6,#6ea2f5);animation-delay:.24s!important;color:#f5f8ff}
+  .axis{display:flex;margin-top:14px}
+  .axis span{flex:1;text-align:center;font-size:12px;font-weight:600;color:var(--ink-faint);letter-spacing:.02em}
+
+  /* flow / pool */
+  .flow{display:flex;align-items:center;gap:clamp(14px,2.4vw,34px);flex-wrap:wrap;justify-content:center;margin-top:20px}
+  .poolcard,.intakecard{padding:22px 24px;min-width:236px;text-align:left}
+  .mini-h{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:14px}
+  .pchip{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:12px;padding:11px 14px;font-weight:600;font-size:15px;margin-top:8px}
+  .pchip:first-of-type{margin-top:0}
+  .pchip .pdot{width:9px;height:9px;border-radius:50%;background:var(--blue);flex:none}
+  .intakecard{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:linear-gradient(135deg,rgba(94,158,255,.18),rgba(94,158,255,.06))}
+  .intakecard .big{font-size:clamp(20px,2.4vw,28px);font-weight:700;letter-spacing:-.01em}
+  .intakecard .small{font-size:14px;color:var(--ink-soft);margin-top:4px}
+  .flowarrow{display:grid;place-items:center;color:var(--blue)}
+  .flowarrow svg{width:64px;height:34px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .flowarrow .cap{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px}
+  .criteria{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:38px;max-width:760px}
+  .crit{display:inline-flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:13px 20px;font-weight:600;font-size:clamp(15px,1.7vw,18px)}
+  .crit .tick{width:26px;height:26px}.crit .tick svg{width:15px;height:15px}
+  .crit .pdot{width:9px;height:9px;border-radius:50%;background:var(--blue);flex:none}
+
+  /* review node + branch callouts */
+  .reviewcard{padding:22px 24px;min-width:236px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .reviewcard .ic{width:54px;height:54px;border-radius:15px;margin-bottom:5px}
+  .reviewcard .rvh{font-weight:650;font-size:clamp(17px,2vw,21px);letter-spacing:-.01em}
+  .reviewcard .rvs{font-size:13px;color:var(--ink-soft);max-width:23ch;line-height:1.35}
+  .branches{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:36px;max-width:920px}
+  .callout{display:flex;align-items:center;gap:13px;padding:15px 18px;text-align:left;font-size:clamp(14px,1.6vw,17px);font-weight:550;line-height:1.4;max-width:420px}
+  .callout .cic{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:10px}
+  .callout .cic svg{width:19px;height:19px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .callout.reject{background:rgba(245,166,35,.12);border-color:rgba(255,194,102,.35)}
+  .callout.reject .cic{background:rgba(255,194,102,.2);color:var(--amber)}
+  .callout.bypass{background:rgba(94,158,255,.1);border-color:rgba(94,158,255,.28)}
+  .callout.bypass .cic{background:rgba(94,158,255,.16);color:var(--blue)}
+
+  /* three ways */
+  .ways{display:flex;gap:clamp(14px,2vw,22px);flex-wrap:wrap;justify-content:center;align-items:stretch;margin-top:46px;max-width:1150px}
+  .way{width:330px;padding:28px 26px;text-align:left;display:flex;flex-direction:column;gap:13px}
+  .wtop{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .wnum{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:rgba(94,158,255,.14);color:var(--blue);font-weight:700;font-size:18px}
+  .badge{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:6px 12px;border-radius:999px;white-space:nowrap}
+  .badge.blue{background:rgba(94,158,255,.14);color:var(--blue);border:1px solid rgba(94,158,255,.32)}
+  .wt{font-weight:650;font-size:clamp(20px,2.2vw,25px);letter-spacing:-.01em}
+  .wrole{color:var(--ink-soft);font-size:clamp(14px,1.7vw,17px);line-height:1.42}
+
+  /* project anatomy */
+  .fields{margin-top:22px;width:min(720px,93vw);padding:clamp(22px,3vw,36px);text-align:left}
+  .field{display:flex;align-items:flex-start;gap:16px;padding:18px 4px;border-top:1px solid var(--line)}
+  .field:first-of-type{border-top:none}
+  .field .fic{flex:none;display:grid;place-items:center;width:46px;height:46px;border-radius:13px;background:rgba(94,158,255,.14);color:var(--blue)}
+  .field .fic svg{width:23px;height:23px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .field.warn .fic{background:rgba(255,194,102,.18);color:var(--amber)}
+  .field .fh{font-weight:650;font-size:clamp(17px,1.9vw,21px);letter-spacing:-.01em}
+  .field .fs{color:var(--ink-soft);font-size:clamp(14px,1.6vw,17px);margin-top:3px;line-height:1.4}
+
+  /* one project many intakes */
+  .fanflow{display:flex;align-items:center;gap:clamp(14px,3vw,40px);flex-wrap:wrap;justify-content:center;margin-top:20px}
+  .projcard{padding:26px 30px;text-align:center}
+  .projcard .pt{font-size:clamp(19px,2.1vw,25px);font-weight:700;letter-spacing:-.01em}
+  .projcard .ps{font-size:14px;color:var(--ink-soft);margin-top:5px}
+  .branch{color:var(--blue)}
+  .branch svg{width:104px;height:88px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .fancol{display:flex;flex-direction:column;gap:18px}
+  .ichip{padding:16px 28px;text-align:center;background:linear-gradient(135deg,rgba(94,158,255,.18),rgba(94,158,255,.06))}
+  .ichip .im{font-weight:700;font-size:clamp(16px,1.9vw,21px);letter-spacing:-.01em}
+  .ichip .is{font-size:13px;color:var(--ink-soft);margin-top:5px}
+  .ichip.muted{opacity:.6;background:rgba(255,255,255,.04)}
+  .ichip.muted .is{color:var(--amber)}
+
+  /* flagged comparison */
+  .cmp{margin-top:18px;width:min(720px,93vw);padding:clamp(24px,3vw,40px);text-align:left}
+  .cmprow{display:flex;align-items:center;gap:16px;margin-top:18px}
+  .cmprow:first-of-type{margin-top:0}
+  .cmplab{width:128px;flex:none;font-size:14px;font-weight:600;color:var(--ink-soft)}
+  .cmptrack{position:relative;flex:1;height:46px;background:repeating-linear-gradient(to right,transparent,transparent calc(100%/12 - 1px),rgba(255,255,255,.06) calc(100%/12 - 1px),rgba(255,255,255,.06) calc(100%/12));border-radius:10px}
+  .cb{position:absolute;top:5px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 14px;font-weight:650;font-size:14px;white-space:nowrap}
+  .cb.blue{background:linear-gradient(120deg,#5e9eff,#86b4ff);color:#01122e}
+  .cb.amberbar{background:linear-gradient(120deg,#ffc266,#ffd699);color:#3a2600}
+  .flag{display:flex;align-items:center;gap:12px;margin-top:26px;background:rgba(245,166,35,.13);border:1px solid rgba(255,194,102,.35);border-radius:16px;padding:16px 18px}
+  .flag .warn{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:rgba(255,194,102,.2);color:var(--amber)}
+  .flag .warn svg{width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .flag .ftxt{font-weight:600;font-size:clamp(15px,1.8vw,18px);color:var(--ink)}
+  .flag .act{margin-left:auto;flex:none;background:var(--amber);color:#2a1c00;border-radius:999px;padding:9px 16px;font-weight:700;font-size:14px}
+
+  /* any order */
+  .any{display:flex;align-items:center;gap:clamp(16px,3vw,46px);flex-wrap:wrap;justify-content:center;margin-top:14px}
+  .pill{padding:32px 42px;min-width:220px}
+  .pill .ic{width:72px;height:72px;margin:0 auto}
+  .pill h3{font-size:clamp(22px,2.6vw,32px);margin-top:18px;font-weight:650;letter-spacing:-.01em;text-align:center}
+  .swap{display:grid;place-items:center;width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--blue-2));box-shadow:0 18px 44px -14px rgba(94,158,255,.7);animation:pulse 2.6s var(--ease) infinite}
+  .swap svg{width:40px;height:40px;stroke:#001026;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+
+  /* demo CTA */
+  .cta{display:inline-flex;align-items:center;gap:10px;margin-top:34px;padding:15px 26px;border-radius:999px;background:linear-gradient(120deg,var(--blue),var(--blue-2));color:#001026;font-weight:700;font-size:17px;text-decoration:none;box-shadow:0 18px 44px -16px rgba(94,158,255,.7)}
+  .cta svg{width:19px;height:19px;stroke:#001026;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+  /* takeaways */
+  .takes{margin-top:40px;display:grid;gap:15px;width:min(760px,92vw)}
+  .take{display:flex;align-items:center;gap:18px;padding:19px 24px;text-align:left}
+  .take .tk{flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,var(--blue),var(--blue-2));color:#001026}
+  .take .tk svg{width:22px;height:22px;stroke:#001026;stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .take p{font-size:clamp(16px,2vw,21px);font-weight:550}
+
+  /* chrome */
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--blue),var(--blue-2));width:0;z-index:5;transition:width .5s var(--ease)}
+  .dots{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);display:flex;gap:9px;z-index:6;max-width:80vw;flex-wrap:wrap;justify-content:center}
+  .dots button{width:9px;height:9px;border-radius:50%;border:none;background:rgba(255,255,255,.25);cursor:pointer;padding:0;transition:.35s var(--ease)}
+  .dots button.on{background:var(--blue);width:26px;border-radius:6px}
+  .nav{position:fixed;bottom:24px;z-index:6;background:rgba(255,255,255,.08);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:50%;width:48px;height:48px;display:grid;place-items:center;cursor:pointer;color:var(--ink);transition:.25s var(--ease)}
+  .nav:hover{transform:scale(1.08);color:var(--blue)}
+  .nav svg{width:22px;height:22px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .nav.prev{left:24px}.nav.next{right:24px}
+  .nav[disabled]{opacity:.25;cursor:default;transform:none}
+  .scrollcue{display:none;color:var(--ink-faint)}
+  .scrollcue svg{width:26px;height:26px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+  @media (max-width:640px){
+    html,body{height:auto;overflow:visible}
+    .deck{position:static;height:auto}
+    .slide{position:relative;inset:auto;height:auto;min-height:100vh;min-height:100svh;opacity:1;transform:none;pointer-events:auto;justify-content:center;padding:78px 22px}
+    .slide .r{opacity:0;transform:translateY(22px)}
+    .slide.inview .r{animation:rise .9s var(--ease) forwards;animation-delay:var(--d,0s)}
+    .nav,.dots,.hint{display:none}
+    .scrollcue{display:block;margin-top:34px;animation:bob 1.8s var(--ease) infinite}
+    h1{font-size:clamp(36px,10vw,56px)}
+    h2{font-size:clamp(28px,7.8vw,42px)}
+    .num{margin-bottom:18px}
+    .row{margin-top:26px;gap:12px}
+    .level{width:100%;min-height:62px;padding:16px}
+    .any{flex-wrap:nowrap;gap:10px}
+    .pill{flex:1 1 0;min-width:0;padding:22px 10px}
+    .pill .ic{width:54px;height:54px}.pill .ic svg{width:26px;height:26px}
+    .pill h3{font-size:clamp(16px,4.6vw,24px)}
+    .swap{width:54px;height:54px}.swap svg{width:26px;height:26px}
+    .ways,.flow,.fanflow,.branches{flex-direction:column;align-items:stretch;gap:14px;margin-top:26px}
+    .way,.poolcard,.intakecard,.reviewcard,.callout,.projcard{width:100%;min-width:0;max-width:none}
+    .flowarrow svg{transform:rotate(90deg);width:34px}
+    .branch{transform:rotate(90deg)}
+    .branch svg{width:58px;height:50px}
+    .fancol{flex-direction:row;width:100%;gap:10px}
+    .ichip{flex:1 1 0;min-width:0;padding:12px 10px;text-align:center}
+    .ichip .im{font-size:clamp(13px,3.6vw,17px)}.ichip .is{font-size:11px}
+    .criteria{flex-direction:column;align-items:stretch;gap:10px;margin-top:24px}
+    .crit{justify-content:flex-start}
+    .fields{width:100%}
+    .gbar span{display:none}
+    .cmprow{flex-direction:column;align-items:stretch;gap:7px;margin-top:20px}
+    .cmplab{width:auto;font-size:13px}.cmptrack{width:100%}.cb{font-size:13px}
+    .flag{flex-wrap:wrap;margin-top:24px}.flag .ftxt{flex:1 1 0;min-width:130px}.flag .act{margin-left:46px}
+    .check,.gantt,.cmp,.takes{width:100%}
+    .slide.inview .gbar{animation:grow .9s var(--ease) forwards}
+    .wash{filter:blur(46px);opacity:.6}
+    .blob{animation:none}
+    body{--card:rgba(255,255,255,.085)}
+    .glass{backdrop-filter:none;-webkit-backdrop-filter:none}
+  }
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:opacity .2s linear!important}.slide{transform:none}.gbar{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<div class="wash"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<div class="bar" id="bar"></div>
+
+<main class="deck" id="deck">
+
+  <!-- HERO -->
+  <section class="slide active">
+    <div class="eyebrow r" style="--d:.05s">Talent Outreach &amp; Acquisition (Internship)</div>
+    <h1 class="r" style="--d:.15s">Projects &amp; Programmes,<br><span class="grad">end to end.</span></h1>
+    <div class="hint r" style="--d:.6s">Press <kbd>&rarr;</kbd> to begin &nbsp;·&nbsp; <kbd>&larr;</kbd> to go back</div>
+    <div class="scrollcue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div>
+  </section>
+
+  <!-- INTERNSHIP JOURNEY (three phases) -->
+  <section class="slide">
+    <div class="num r">Lifecycle</div>
+    <h2 class="r" style="--d:.1s">The <span class="grad">internship.</span></h2>
+    <div class="jflow">
+      <div class="glass jcol on r" style="--d:.24s">
+        <div class="jst">Preparation</div>
+        <div class="jareas">
+          <div class="jarea"><div class="jan">Project creation</div></div>
+          <div class="jarea"><div class="jan">Programme creation</div></div>
+        </div>
+      </div>
+      <div class="glass jcol dim r" style="--d:.34s">
+        <div class="jst">Programme</div>
+        <div class="jareas">
+          <div class="jarea"><div class="jan">Application</div></div>
+          <div class="jarea"><div class="jan">Applicant shortlisting</div></div>
+          <div class="jarea"><div class="jan">Interview</div></div>
+          <div class="jarea"><div class="jan">Offer</div></div>
+          <div class="jarea"><div class="jan">Onboard</div></div>
+        </div>
+      </div>
+      <div class="glass jcol dim r" style="--d:.44s">
+        <div class="jst">Post-Internship</div>
+        <div class="jareas">
+          <div class="jarea"><div class="jan">Offboard</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACT 1 DIVIDER -->
+  <section class="slide">
+    <div class="actlabel r" style="--d:.05s">Part One</div>
+    <h2 class="r" style="--d:.14s">Project <span class="grad">creation.</span></h2>
+    <p class="note r" style="--d:.4s">Three ways projects get into the portal, and what goes into each one.</p>
+  </section>
+
+  <!-- THREE WAYS -->
+  <section class="slide">
+    <div class="num r">Three ways</div>
+    <h2 class="r" style="--d:.1s">Three ways to <span class="grad">create a project.</span></h2>
+    <div class="ways">
+      <div class="glass way r" style="--d:.24s">
+        <div class="wtop"><span class="wnum">1</span><span class="badge blue">Most Common</span></div>
+        <div class="wt">Batch Submission by AD(P&amp;C)</div>
+      </div>
+      <div class="glass way r" style="--d:.34s">
+        <div class="wtop"><span class="wnum">2</span><span class="badge blue">Ad Hoc</span></div>
+        <div class="wt">Individual Submission by AD(P&amp;C)</div>
+      </div>
+      <div class="glass way r" style="--d:.44s">
+        <div class="wtop"><span class="wnum">3</span><span class="badge blue">Fast Track</span></div>
+        <div class="wt">Direct Creation by IO Admin</div>
+        <div class="wrole" style="margin-top:auto">Supported by batch and individual.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REVIEW TO POOL -->
+  <section class="slide">
+    <div class="num r">Whichever route</div>
+    <h2 class="r" style="--d:.1s">All roads lead to<br><span class="grad">one shared pool.</span></h2>
+    <div class="flow">
+      <div class="glass poolcard r" style="--d:.24s">
+        <div class="mini-h">AD(P&amp;C) submissions</div>
+        <div class="pchip"><span class="pdot"></span>Batch</div>
+        <div class="pchip"><span class="pdot"></span>Individual</div>
+      </div>
+      <div class="flowarrow r" style="--d:.34s"><svg viewBox="0 0 64 34"><path d="M2 17h54"/><path d="m48 8 10 9-10 9"/></svg></div>
+      <div class="glass reviewcard r" style="--d:.42s">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <div class="rvh">IO Admin review</div>
+        <div class="rvs">AI quality check: readability &amp; level fit</div>
+      </div>
+      <div class="flowarrow r" style="--d:.52s"><svg viewBox="0 0 64 34"><path d="M2 17h54"/><path d="m48 8 10 9-10 9"/></svg><div class="cap">Approved</div></div>
+      <div class="glass intakecard r" style="--d:.6s"><div class="big">Approved pool</div></div>
+    </div>
+    <div class="branches">
+      <div class="glass callout reject r" style="--d:.72s"><span class="cic"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-4"/></svg></span><span>Rejected projects route back to AD(P&amp;C) to fix and resubmit.</span></div>
+      <div class="glass callout bypass r" style="--d:.8s"><span class="cic"><svg viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg></span><span>Projects created by IO join the pool directly, no review needed.</span></div>
+    </div>
+  </section>
+
+  <!-- WHAT MAKES A PROJECT -->
+  <section class="slide">
+    <div class="num r">Anatomy</div>
+    <h2 class="r" style="--d:.1s">What makes a <span class="grad">project.</span></h2>
+    <div class="glass fields r" style="--d:.28s">
+      <div class="field">
+        <span class="fic"><svg viewBox="0 0 24 24"><path d="M3 8l9-4 9 4-9 4-9-4Z"/><path d="M7 10v5c0 1 2 2 5 2s5-1 5-2v-5"/></svg></span>
+        <div><div class="fh">Education level</div><div class="fs">Who is the project for?</div></div>
+      </div>
+      <div class="field">
+        <span class="fic"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        <div><div class="fh">Placements</div><div class="fs">How many interns required?</div></div>
+      </div>
+      <div class="field">
+        <span class="fic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+        <div><div class="fh">Internship period</div><div class="fs">When can project be hosted?</div></div>
+      </div>
+    </div>
+    <p class="note r" style="--d:.5s">These three decide which programme intake a project can slot into.</p>
+  </section>
+
+  <!-- WHAT IT IS LOOKING FOR -->
+  <section class="slide">
+    <div class="num r">Matching</div>
+    <h2 class="r" style="--d:.1s">Then, what it's <span class="grad">looking for.</span></h2>
+    <div class="criteria">
+      <span class="crit r" style="--d:.28s"><span class="pdot"></span>Discipline of study</span>
+      <span class="crit r" style="--d:.36s"><span class="pdot"></span>Skills</span>
+      <span class="crit r" style="--d:.44s"><span class="pdot"></span>Tech domain</span>
+      <span class="crit r" style="--d:.52s"><span class="pdot"></span>Emerging areas</span>
+    </div>
+    <p class="note r" style="--d:.62s">These tags describe the work, and quietly power suitability scoring the moment applicants come in.</p>
+  </section>
+
+  <!-- ACT 2 DIVIDER -->
+  <section class="slide">
+    <div class="actlabel r" style="--d:.05s">Part Two</div>
+    <h2 class="r" style="--d:.14s">Programme <span class="grad">creation.</span></h2>
+    <p class="note r" style="--d:.4s">How approved projects are drawn from the pool into the right programme intake.</p>
+  </section>
+
+  <!-- FIVE LEVELS -->
+  <section class="slide">
+    <div class="num r">Five levels</div>
+    <h2 class="r" style="--d:.1s">Five programmes.<br>Five kinds of <span class="grad">students.</span></h2>
+    <div class="row">
+      <div class="glass level r" style="--d:.22s"><div class="lab">Junior College</div></div>
+      <div class="glass level r" style="--d:.3s"><div class="lab">Polytechnic</div></div>
+      <div class="glass level r" style="--d:.38s"><div class="lab">Post JC / Post Poly</div></div>
+      <div class="glass level r" style="--d:.46s"><div class="lab">University</div></div>
+      <div class="glass level r" style="--d:.54s"><div class="lab">Integrated Programme (IP)</div></div>
+    </div>
+  </section>
+
+  <!-- ELIGIBILITY -->
+  <section class="slide">
+    <div class="num r">Entry rules</div>
+    <h2 class="r" style="--d:.1s">Entry rules,<br><span class="grad">ready to go.</span></h2>
+    <div class="glass check r" style="--d:.28s">
+      <div class="t">Eligibility Criteria for University Students</div>
+      <div class="citem"><span class="tick"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span> Singapore Citizen</div>
+      <div class="citem"><span class="tick"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span> Currently in university</div>
+      <div class="citem"><span class="tick"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span> Meets the minimum grade</div>
+    </div>
+    <p class="note r" style="--d:.5s">Every programme comes set up with sensible entry rules. You can customise them anytime.</p>
+  </section>
+
+  <!-- INTAKES -->
+  <section class="slide">
+    <div class="num r">Intakes</div>
+    <h2 class="r" style="--d:.1s">One programme,<br>many <span class="grad">intakes.</span></h2>
+    <div class="glass gantt r" style="--d:.28s">
+      <div class="ghead">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M3 8l9-4 9 4-9 4-9-4Z"/><path d="M7 10v5c0 1 2 2 5 2s5-1 5-2v-5"/></svg></div>
+        <h3>University Internship Programme</h3>
+      </div>
+      <div class="plot">
+        <div class="bars">
+          <div class="gbar i1" style="left:0%;width:50%"><b>Intake 1</b><span>January to June</span></div>
+          <div class="gbar i2" style="left:33.33%;width:33.33%"><b>Intake 2</b><span>May to August</span></div>
+          <div class="gbar i3" style="left:41.66%;width:58.34%"><b>Intake 3</b><span>June to December</span></div>
+        </div>
+      </div>
+      <div class="axis">
+        <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+        <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AUTO-ALLOCATION -->
+  <section class="slide">
+    <div class="num r">Auto placed</div>
+    <h2 class="r" style="--d:.1s">Projects placed in the right intake,<br><span class="grad">automatically.</span></h2>
+    <div class="flow">
+      <div class="glass poolcard r" style="--d:.26s">
+        <div class="mini-h">Pool of approved projects</div>
+        <div class="pchip"><span class="pdot"></span>AI Threat Detection</div>
+        <div class="pchip"><span class="pdot"></span>Cyber Defence Tools</div>
+        <div class="pchip"><span class="pdot"></span>Autonomous Robotics</div>
+      </div>
+      <div class="flowarrow r" style="--d:.42s"><svg viewBox="0 0 64 34"><path d="M2 17h54"/><path d="m48 8 10 9-10 9"/></svg><div class="cap">Automatic</div></div>
+      <div class="glass intakecard r" style="--d:.5s"><div class="big">June Intake</div><div class="small">University Programme</div></div>
+    </div>
+    <div class="criteria">
+      <span class="crit r" style="--d:.62s"><span class="tick"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span>Same education level</span>
+      <span class="crit r" style="--d:.7s"><span class="tick"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span>Places still available</span>
+      <span class="crit r" style="--d:.78s"><span class="tick"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span>Project dates fit the intake period</span>
+    </div>
+  </section>
+
+  <!-- FLAGGED EXCEPTION -->
+  <section class="slide">
+    <div class="num r">Good to know</div>
+    <h2 class="r" style="--d:.1s">A project fits no intake?<br><span class="grad">It gets flagged.</span></h2>
+    <div class="glass cmp r" style="--d:.28s">
+      <div class="cmprow">
+        <div class="cmplab">Intake dates</div>
+        <div class="cmptrack"><div class="cb blue" style="left:0%;width:50%">Jan to Jun</div></div>
+      </div>
+      <div class="cmprow">
+        <div class="cmplab">Project dates</div>
+        <div class="cmptrack"><div class="cb amberbar" style="left:54%;width:34%">Aug to Oct</div></div>
+      </div>
+      <div class="flag">
+        <span class="warn"><svg viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg></span>
+        <span class="ftxt">The dates do not overlap, so the portal flags it for you</span>
+        <span class="act">You decide</span>
+      </div>
+    </div>
+    <p class="note r" style="--d:.5s">No project is quietly dropped. If it lines up with no intake, you are told, and you choose what to do.</p>
+  </section>
+
+  <!-- ONE PROJECT MANY INTAKES -->
+  <section class="slide">
+    <div class="num r">Also handled</div>
+    <h2 class="r" style="--d:.1s">One project,<br>many <span class="grad">intakes.</span></h2>
+    <div class="fanflow">
+      <div class="glass projcard r" style="--d:.28s"><div class="pt">Autonomous Robotics</div><div class="ps">3 places to fill</div></div>
+      <div class="branch r" style="--d:.44s">
+        <svg viewBox="0 0 104 88"><path d="M2 44 H48"/><path d="M48 44 C72 44 72 20 100 20"/><path d="M48 44 C72 44 72 68 100 68"/><path d="M91 13 100 20 91 27"/><path d="M91 61 100 68 91 75"/></svg>
+      </div>
+      <div class="fancol">
+        <div class="glass ichip r" style="--d:.54s"><div class="im">June Intake</div><div class="is">All 3 places filled here</div></div>
+        <div class="glass ichip muted r" style="--d:.62s"><div class="im">September Intake</div><div class="is">No places left, no longer offered</div></div>
+      </div>
+    </div>
+    <p class="note r" style="--d:.74s">A project can be offered in several intakes, but its places are shared. Once they are filled in June, it is no longer offered in September.</p>
+  </section>
+
+  <!-- ANY ORDER -->
+  <section class="slide">
+    <div class="num r">The big idea</div>
+    <h2 class="r" style="--d:.1s">Build them in <span class="grad">any order.</span></h2>
+    <div class="any">
+      <div class="glass pill r" style="--d:.25s"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h12"/></svg></div><h3>Programmes</h3></div>
+      <div class="swap r" style="--d:.4s"><svg viewBox="0 0 24 24"><path d="M7 4 3 8l4 4"/><path d="M3 8h13"/><path d="m17 20 4-4-4-4"/><path d="M21 16H8"/></svg></div>
+      <div class="glass pill r" style="--d:.55s"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 4h10l6 6v10H4z"/><path d="M14 4v6h6"/></svg></div><h3>Projects</h3></div>
+    </div>
+  </section>
+
+  <!-- ACT 3 DIVIDER -->
+  <section class="slide">
+    <div class="actlabel r" style="--d:.05s">Part Three</div>
+    <h2 class="r" style="--d:.14s">See it in <span class="grad">action.</span></h2>
+    <p class="note r" style="--d:.4s">A hands on run: stand up a JC programme, submit projects, and watch a mismatch get flagged.</p>
+  </section>
+
+  <!-- DEMO -->
+  <section class="slide">
+    <div class="num r">Demo</div>
+    <h2 class="r" style="--d:.1s">A Junior College <span class="grad">walkthrough.</span></h2>
+    <div class="glass fields r" style="--d:.26s;max-width:660px">
+      <div class="field">
+        <span class="fic"><svg viewBox="0 0 24 24"><path d="M3 8l9-4 9 4-9 4-9-4Z"/><path d="M7 10v5c0 1 2 2 5 2s5-1 5-2v-5"/></svg></span>
+        <div><div class="fh">A JC programme, two intakes</div><div class="fs">Whole of June, and whole of December.</div></div>
+      </div>
+      <div class="field">
+        <span class="fic"><svg viewBox="0 0 24 24"><path d="M4 4h10l6 6v10H4z"/><path d="M14 4v6h6"/></svg></span>
+        <div><div class="fh">Three projects, submitted and approved</div><div class="fs">Each hostable in one month only.</div></div>
+      </div>
+      <div class="field">
+        <span class="fic"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div><div class="fh">Two slot straight in</div><div class="fs">The June project joins June, the December project joins December.</div></div>
+      </div>
+      <div class="field warn">
+        <span class="fic"><svg viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg></span>
+        <div><div class="fh">One is flagged</div><div class="fs">A January project fits neither intake, so the portal surfaces it.</div></div>
+      </div>
+    </div>
+    <a class="cta r" href="/workshop-jc-programme.html" style="--d:.5s">Open the hands on workshop <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+  </section>
+
+  <!-- CLOSING -->
+  <section class="slide">
+    <div class="eyebrow r" style="--d:.05s">In a nutshell</div>
+    <h2 class="r" style="--d:.12s">That's the <span class="grad">whole idea.</span></h2>
+    <div class="takes">
+      <div class="glass take r" style="--d:.26s"><span class="tk"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span><p>Projects arrive three ways, are reviewed, then wait in one shared pool</p></div>
+      <div class="glass take r" style="--d:.36s"><span class="tk"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span><p>Programmes and projects can be built in any order</p></div>
+      <div class="glass take r" style="--d:.46s"><span class="tk"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span><p>A project joins an intake only when its period fits inside that window</p></div>
+      <div class="glass take r" style="--d:.56s"><span class="tk"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span><p>Anything that lines up with no intake is flagged for you to decide</p></div>
+    </div>
+  </section>
+
+</main>
+
+<button class="nav prev" id="prev" aria-label="Previous"><svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button>
+<button class="nav next" id="next" aria-label="Next"><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
+<div class="dots" id="dots"></div>
+
+<script>
+(function(){
+  const slides=[...document.querySelectorAll('.slide')];
+  const bar=document.getElementById('bar');
+  const dotsWrap=document.getElementById('dots');
+  const prev=document.getElementById('prev'), next=document.getElementById('next');
+  const mq=matchMedia('(max-width:640px)');
+  let i=0;
+  slides.forEach((_,n)=>{const b=document.createElement('button');b.setAttribute('aria-label','Slide '+(n+1));b.addEventListener('click',()=>{if(!mq.matches)go(n);});dotsWrap.appendChild(b);});
+  const dots=[...dotsWrap.children];
+  function go(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    dots.forEach((d,k)=>d.classList.toggle('on',k===i));
+    bar.style.width=((i)/(slides.length-1)*100)+'%';
+    prev.disabled=i===0; next.disabled=i===slides.length-1;
+  }
+  const nextFn=()=>go(i+1), prevFn=()=>go(i-1);
+  next.addEventListener('click',()=>{if(!mq.matches)nextFn();});
+  prev.addEventListener('click',()=>{if(!mq.matches)prevFn();});
+  window.addEventListener('keydown',e=>{
+    if(mq.matches)return;
+    if(['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)){e.preventDefault();nextFn();}
+    else if(['ArrowLeft','ArrowUp','PageUp','Backspace'].includes(e.key)){e.preventDefault();prevFn();}
+    else if(e.key==='Home')go(0); else if(e.key==='End')go(slides.length-1);
+  });
+  let x0=null;const deck=document.getElementById('deck');
+  deck.addEventListener('pointerdown',e=>{x0=e.clientX;});
+  deck.addEventListener('pointerup',e=>{if(mq.matches||x0===null)return;const dx=e.clientX-x0;x0=null;if(Math.abs(dx)>60){dx<0?nextFn():prevFn();}});
+  function onScroll(){
+    const max=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(max>0?Math.min(100,window.scrollY/max*100):0)+'%';
+    const vh=window.innerHeight;
+    slides.forEach(s=>{if(!s.classList.contains('inview')&&s.getBoundingClientRect().top<vh*0.9)s.classList.add('inview');});
+  }
+  function setMode(){
+    if(mq.matches){
+      go(0);
+      window.addEventListener('scroll',onScroll,{passive:true});
+      window.addEventListener('resize',onScroll,{passive:true});
+      onScroll();
+    }else{
+      slides.forEach(s=>s.classList.remove('inview'));
+      window.removeEventListener('scroll',onScroll);
+      window.removeEventListener('resize',onScroll);
+      go(i);
+    }
+  }
+  if(mq.addEventListener)mq.addEventListener('change',setMode); else if(mq.addListener)mq.addListener(setMode);
+  setMode();
+})();
+</script>
+</body>
+</html>

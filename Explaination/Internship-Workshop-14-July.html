@@ -1,0 +1,1429 @@
+<!doctype html>
+<html lang="en-SG">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <title>14th July Internship Workshop · TOA</title>
+  <style>
+    :root {
+      --amber: #ffc266; --amber-soft: #ffd591; --amber-deep: #f5a623;
+      --green: #5fd39a; --blue: #5e9eff;
+      --ink: #f5f5f7; --ink-soft: #aeaeb4; --ink-faint: #86868b;
+      --bg: #000; --card: rgba(255,255,255,.055); --line: rgba(255,255,255,.12);
+      --radius: 26px; --ease: cubic-bezier(.2,.8,.2,1);
+      --font: -apple-system, "SF Pro Display", "SF Pro Text", system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+    html, body { height: 100%; }
+    body { font-family: var(--font); color: var(--ink); background: var(--bg); color-scheme: dark; overflow: hidden; position: relative; }
+
+    .wash { position: fixed; inset: -25%; z-index: 0; filter: blur(80px); opacity: .85; pointer-events: none; }
+    .blob { position: absolute; border-radius: 50%; mix-blend-mode: screen; animation: drift 26s var(--ease) infinite alternate; }
+    .b1 { left: -6vw; top: -10vw; width: 48vw; height: 48vw; background: radial-gradient(circle at 30% 30%, rgba(46,86,196,.55), transparent 70%); }
+    .b2 { right: -10vw; top: 2vw; width: 44vw; height: 44vw; background: radial-gradient(circle at 60% 40%, rgba(245,166,35,.32), transparent 70%); animation-delay: -8s; }
+    .b3 { left: 16vw; bottom: -20vw; width: 54vw; height: 54vw; background: radial-gradient(circle at 50% 50%, rgba(60,110,230,.4), transparent 70%); animation-delay: -15s; }
+    @keyframes drift { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(4vw,3vh,0) scale(1.12); } }
+
+    .bar { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: linear-gradient(90deg, var(--amber), var(--amber-soft)); z-index: 8; transition: width .5s var(--ease); }
+    .deck { position: fixed; inset: 0; z-index: 1; }
+    .slide { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: clamp(24px,5.4vw,88px); opacity: 0; transform: translateY(30px) scale(.986); transition: opacity .6s var(--ease), transform .7s var(--ease); pointer-events: none; }
+    .slide.active { opacity: 1; transform: none; pointer-events: auto; }
+    body.detail-open .slide.active { opacity: .18; transform: scale(.975); filter: blur(6px); pointer-events: none; }
+    .r { opacity: 0; transform: translateY(24px); }
+    .slide.active .r { animation: rise .9s var(--ease) forwards; animation-delay: var(--d,0s); }
+    @keyframes rise { to { opacity: 1; transform: none; } }
+
+    .eyebrow { font-size: clamp(12px,1.4vw,16px); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--amber); margin-bottom: 22px; }
+    h1 { font-size: clamp(38px,6.6vw,96px); line-height: 1.02; font-weight: 700; letter-spacing: -.025em; }
+    h2 { font-size: clamp(28px,4.4vw,58px); line-height: 1.05; font-weight: 700; letter-spacing: -.022em; }
+    .grad { background: linear-gradient(110deg, var(--amber), var(--amber-soft)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .num { display: inline-block; border: 1px solid rgba(245,166,35,.3); background: rgba(245,166,35,.12); color: var(--amber); border-radius: 999px; padding: 7px 16px; font-size: 13px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; margin-bottom: 26px; }
+    .hint { position: absolute; bottom: 46px; left: 0; right: 0; font-size: 13px; color: var(--ink-faint); font-weight: 500; }
+    .hint kbd { font-family: var(--font); background: rgba(255,255,255,.08); border: 1px solid var(--line); border-radius: 7px; padding: 2px 8px; font-size: 12px; color: var(--ink-soft); }
+    .glass { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 24px 70px -34px rgba(0,0,0,.85); }
+
+    /* ── The internship board ────────────────────────────────────────── */
+    .flowcols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(14px,1.8vw,22px); margin-top: 40px; width: min(1080px, 94vw); text-align: left; }
+    .fcol { padding: 22px 20px; }
+    .fst { display: flex; align-items: baseline; gap: 10px; padding-bottom: 13px; border-bottom: 1px solid var(--line); font-size: clamp(15px,1.7vw,20px); font-weight: 700; letter-spacing: -.01em; }
+    .fst .fsl { font-size: 13px; font-weight: 800; letter-spacing: .12em; color: var(--amber); }
+    .fareas { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+    .farea { min-height: 54px; width: 100%; display: flex; align-items: center; gap: 12px; padding: 13px 15px; border: 1px solid rgba(255,194,102,.26); border-radius: 14px; background: linear-gradient(135deg, rgba(245,166,35,.12), rgba(245,166,35,.035)); color: var(--ink); font: inherit; cursor: pointer; text-align: left; transition: .3s var(--ease); }
+    .farea:hover, .farea:focus-visible { outline: none; border-color: rgba(255,194,102,.6); background: linear-gradient(135deg, rgba(245,166,35,.22), rgba(245,166,35,.07)); transform: translateY(-2px); box-shadow: 0 16px 34px -22px rgba(245,166,35,.7); }
+    .farea.dim { opacity: .45; cursor: default; border-color: var(--line); background: rgba(255,255,255,.03); }
+    .farea.dim:hover { transform: none; box-shadow: none; border-color: var(--line); background: rgba(255,255,255,.03); }
+    .fic { flex: none; display: grid; place-items: center; min-width: 36px; height: 36px; padding: 0 8px; border-radius: 12px; background: rgba(245,166,35,.16); color: var(--amber); font-weight: 800; font-size: 13px; letter-spacing: .5px; }
+    .farea.dim .fic { background: rgba(255,255,255,.06); color: var(--ink-faint); }
+    .fan { min-width: 0; flex: 1; color: var(--ink); font-size: clamp(13px,1.4vw,16px); font-weight: 650; letter-spacing: -.01em; }
+    .chev { flex: none; width: 7px; height: 7px; border-right: 2px solid var(--amber); border-top: 2px solid var(--amber); transform: rotate(45deg); opacity: .55; transition: .3s var(--ease); }
+    .farea:hover .chev { opacity: 1; transform: rotate(45deg) translate(2px,-2px); }
+    .farea.done { border-color: var(--line); background: rgba(255,255,255,.04); }
+    .farea.done:hover, .farea.done:focus-visible { border-color: rgba(255,255,255,.24); background: rgba(255,255,255,.065); box-shadow: none; }
+    .farea.done .fic { background: rgba(255,255,255,.07); color: var(--ink-soft); }
+    .fdone { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 999px; background: rgba(255,255,255,.08); color: var(--ink-soft); }
+    .fdone svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.4; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .ftag { flex: none; font-size: 11px; font-weight: 700; letter-spacing: .02em; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+    .ftag.today { color: var(--amber); background: rgba(245,166,35,.18); border: 1px solid rgba(245,166,35,.42); }
+
+    /* ── Drill-down: sub-steps ───────────────────────────────────────── */
+    .detail { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; padding: clamp(18px,4vw,56px); opacity: 0; pointer-events: none; transition: opacity .4s var(--ease); }
+    .detail.open { opacity: 1; pointer-events: auto; }
+    .detail-bd { position: absolute; inset: 0; background: rgba(0,0,0,.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+    .detail-card { position: relative; z-index: 1; width: min(1160px, 96vw); max-height: 88vh; overflow: auto; padding: clamp(24px,3vw,38px); transform: translateY(24px) scale(.98); transition: transform .45s var(--ease); }
+    .detail.open .detail-card { transform: none; }
+    .d-top { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .d-code { font-size: 13px; font-weight: 800; letter-spacing: .08em; padding: 7px 12px; border-radius: 10px; color: var(--amber); background: rgba(245,166,35,.14); border: 1px solid rgba(245,166,35,.3); }
+    .d-title { font-size: clamp(20px,2.6vw,30px); font-weight: 700; letter-spacing: -.02em; }
+    .d-body { display: grid; grid-template-columns: 1.05fr 1fr; gap: 26px; align-items: start; }
+    .d-body.solo { grid-template-columns: 1fr; }
+    .d-body.solo .d-backlog { display: none; }
+    .d-backlog { border-left: 1px solid var(--line); padding-left: 26px; max-height: 62vh; overflow: auto; }
+    .bl-head { font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--amber); margin-bottom: 16px; }
+    .bl-empty { color: var(--ink-faint); font-size: 14px; line-height: 1.5; }
+    .bl-tabs { display: flex; gap: 7px; margin-bottom: 18px; }
+    .bl-tab { font: inherit; font-size: 12px; font-weight: 700; letter-spacing: .03em; color: var(--ink-soft); background: rgba(255,255,255,.05); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; cursor: pointer; transition: .2s var(--ease); }
+    .bl-tab:hover { color: var(--ink); border-color: rgba(255,255,255,.24); }
+    .bl-tab.active { color: #04122e; background: var(--amber); border-color: var(--amber); }
+    .bl-count { display: inline-grid; place-items: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: rgba(0,0,0,.16); font-size: 10px; margin-left: 5px; }
+    .bl-tab.active .bl-count { background: rgba(0,0,0,.22); }
+    ul.fu-list { list-style: none; display: flex; flex-direction: column; gap: 15px; }
+    ul.fu-list li { position: relative; padding-left: 24px; font-size: clamp(13px,1.4vw,15px); line-height: 1.45; color: var(--ink); }
+    ul.fu-list li::before { content: "?"; position: absolute; left: 4px; top: -1px; font-weight: 800; color: var(--amber); }
+    .fu-sol { display: flex; gap: 10px; align-items: flex-start; margin-top: 9px; font-size: clamp(12px,1.3vw,14px); line-height: 1.42; color: var(--ink-soft); }
+    ul.bl-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    ul.bl-list li { display: flex; gap: 11px; align-items: flex-start; font-size: clamp(13px,1.35vw,15px); line-height: 1.42; color: var(--ink); }
+    ul.bl-list li::before { content: ""; flex: none; margin-top: 7px; width: 5px; height: 5px; border-radius: 50%; background: var(--amber); }
+    .bl-s { flex: none; margin-top: 1px; font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+    .bl-s.built { color: var(--green); background: rgba(95,211,154,.12); border: 1px solid rgba(95,211,154,.3); }
+    .bl-s.uat { color: var(--amber); background: rgba(245,166,35,.12); border: 1px solid rgba(245,166,35,.3); }
+    .substeps { display: flex; flex-direction: column; gap: 11px; }
+    .substep { display: flex; align-items: center; gap: 15px; padding: 15px 18px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.03); transition: .2s var(--ease); }
+    .substep.is-now { border-color: rgba(245,166,35,.55); box-shadow: 0 0 0 1px rgba(245,166,35,.3) inset; }
+    .substep.is-tbd { opacity: .55; }
+    .substep.has-bl { cursor: pointer; }
+    .substep.has-bl:hover, .substep.active { border-color: rgba(245,166,35,.5); background: rgba(245,166,35,.06); }
+    .ss-code { flex: none; font-size: 12.5px; font-weight: 800; letter-spacing: .04em; color: var(--amber); background: rgba(245,166,35,.14); border: 1px solid rgba(245,166,35,.3); border-radius: 9px; padding: 6px 10px; }
+    .ss-title { flex: 1; min-width: 0; font-size: clamp(14px,1.5vw,17px); font-weight: 600; letter-spacing: -.01em; text-align: left; }
+    .tag { flex: none; font-size: 11.5px; font-weight: 700; letter-spacing: .04em; border-radius: 999px; padding: 5px 12px; white-space: nowrap; }
+    .tag.date { color: var(--green); background: rgba(95,211,154,.12); border: 1px solid rgba(95,211,154,.28); }
+    .tag.now  { color: #04122e; background: var(--amber); border: 1px solid var(--amber); }
+    .tag.tbd  { color: var(--ink-faint); background: rgba(255,255,255,.05); border: 1px solid var(--line); }
+    .d-close { position: absolute; top: 16px; right: 16px; z-index: 2; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--ink); cursor: pointer; display: grid; place-items: center; transition: .25s var(--ease); }
+    .d-close:hover { background: rgba(255,255,255,.14); }
+    .d-close svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ── Agenda ──────────────────────────────────────────────────────── */
+    .agenda.four { grid-template-columns: repeat(4, minmax(0,1fr)); width: min(1220px, 96vw); }
+    .agenda.two { grid-template-columns: repeat(2, minmax(0,1fr)); width: min(860px, 94vw); }
+    .ag-recap { border-color: rgba(95,211,154,.35); }
+    .ag-recap .ag-code { color: var(--green); }
+    .ag-recap .ag-sc { color: var(--green); background: rgba(95,211,154,.12); border-color: rgba(95,211,154,.3); }
+    .agenda { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 18px; margin-top: 40px; width: min(1040px, 94vw); text-align: left; align-items: start; }
+    .ag { padding: 24px 22px; display: flex; flex-direction: column; gap: 11px; }
+    .ag-code { font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--amber); }
+    .ag-title { font-size: clamp(17px,1.9vw,22px); font-weight: 700; letter-spacing: -.015em; line-height: 1.15; }
+    .ag-steps { list-style: none; display: flex; flex-direction: column; gap: 9px; margin-top: 3px; padding-top: 13px; border-top: 1px solid var(--line); }
+    .ag-steps li { display: flex; align-items: baseline; gap: 9px; font-size: clamp(12.5px,1.35vw,14.5px); color: var(--ink-soft); line-height: 1.35; }
+    .ag-sc { flex: none; font-size: 10.5px; font-weight: 800; color: var(--amber); background: rgba(245,166,35,.12); border: 1px solid rgba(245,166,35,.3); border-radius: 7px; padding: 2px 7px; }
+
+    /* ── A2 · what goes into a programme ─────────────────────────────── */
+    .prog { width: min(900px, 94vw); margin-top: 34px; }
+    .prog-outer { padding: clamp(20px,2.4vw,30px); }
+    .prog-hd { display: flex; align-items: baseline; justify-content: center; gap: 12px; margin-bottom: 20px; }
+    .prog-hd .pt { font-size: clamp(19px,2.2vw,27px); font-weight: 700; letter-spacing: -.015em; }
+    .prog-hd .ps { font-size: clamp(12px,1.4vw,15px); color: var(--amber); font-weight: 600; }
+    .pic { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 13px; background: rgba(245,166,35,.14); color: var(--amber); flex: none; }
+    .pic svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .pic.sm { width: 40px; height: 40px; }
+    .pic.xs { width: 30px; height: 30px; border-radius: 9px; }
+    .pic.xs svg { width: 17px; height: 17px; }
+    .prog-level { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .prog-elig { display: flex; align-items: center; gap: 13px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 15px; background: rgba(255,255,255,.03); }
+    .pl { font-size: clamp(14px,1.6vw,17.5px); font-weight: 650; letter-spacing: -.01em; }
+    .pi-label { font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); margin: 0 2px 13px; }
+    .pi-label span { color: var(--amber); letter-spacing: 0; text-transform: none; font-weight: 700; }
+    .pi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; align-items: start; }
+    .intake { border: 1px solid rgba(245,166,35,.28); border-radius: 16px; background: linear-gradient(135deg, rgba(245,166,35,.09), rgba(245,166,35,.02)); padding: 16px; }
+    .in-hd { font-size: 12px; font-weight: 800; letter-spacing: .06em; color: var(--amber); margin-bottom: 10px; }
+    .in-item { display: flex; align-items: center; gap: 11px; padding: 10px 0; font-size: clamp(13px,1.4vw,15px); font-weight: 600; color: var(--ink); }
+    .in-item + .in-item { border-top: 1px solid var(--line); }
+    .in-item.def { align-items: flex-start; }
+    .in-item.def .pic { margin-top: 1px; }
+    .in-tx { display: flex; flex-direction: column; gap: 3px; }
+    .in-d { font-size: 11.5px; font-weight: 500; color: var(--ink-faint); line-height: 1.35; }
+    .in-sub { color: var(--ink-faint); font-weight: 500; font-size: .84em; }
+
+    /* ── A2 · programmes across the year (Gantt) ─────────────────────── */
+    .cal { display: grid; grid-template-columns: 300px 1fr; gap: 26px; width: min(1140px, 95vw); margin-top: 30px; text-align: left; align-items: start; }
+    .cal-list { display: flex; flex-direction: column; gap: 8px; }
+    .cal-cat { font: inherit; display: flex; align-items: center; gap: 10px; text-align: left; padding: 12px 15px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.03); color: var(--ink-soft); cursor: pointer; transition: .2s var(--ease); }
+    .cal-cat:hover { color: var(--ink); border-color: rgba(255,255,255,.24); }
+    .cal-cat.active { color: var(--ink); border-color: rgba(245,166,35,.6); background: linear-gradient(135deg, rgba(245,166,35,.16), rgba(245,166,35,.05)); box-shadow: 0 0 0 1px rgba(245,166,35,.3) inset; }
+    .cc-name { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; letter-spacing: -.01em; line-height: 1.25; }
+    .cc-count { flex: none; font-size: 11px; font-weight: 800; color: var(--ink-faint); background: rgba(255,255,255,.06); border-radius: 999px; padding: 2px 8px; }
+    .cal-cat.active .cc-count { color: var(--amber); background: rgba(245,166,35,.14); }
+    .cc-note { flex: none; font-size: 10px; font-weight: 700; color: var(--amber); background: rgba(245,166,35,.12); border: 1px solid rgba(245,166,35,.3); border-radius: 999px; padding: 3px 8px; }
+    .cal-view { min-width: 0; }
+    .cal-hd { display: flex; align-items: center; gap: 10px; font-size: clamp(15px,1.7vw,21px); font-weight: 700; letter-spacing: -.015em; margin-bottom: 18px; }
+    .cal-empty { color: var(--ink-faint); font-size: 14px; padding: 18px 0; }
+    ul.elig-list { list-style: none; display: flex; flex-direction: column; gap: 13px; }
+    ul.elig-list li { position: relative; padding-left: 30px; font-size: clamp(13px,1.45vw,16px); line-height: 1.45; color: var(--ink); }
+    ul.elig-list li::before { content: ""; position: absolute; left: 0; top: 1px; width: 19px; height: 19px; border-radius: 6px; background: rgba(95,211,154,.14); border: 1px solid rgba(95,211,154,.34); }
+    ul.elig-list li::after { content: ""; position: absolute; left: 6px; top: 5px; width: 5px; height: 9px; border: solid var(--green); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+    .elig-note { margin-top: 16px; font-size: 12.5px; color: var(--ink-faint); }
+    .routes { display: flex; flex-direction: column; gap: 9px; margin-top: 10px; }
+    .routes span { color: var(--ink-soft); }
+    .elig-msg { margin-top: 4px; font-size: clamp(13px,1.45vw,16px); color: var(--ink-soft); line-height: 1.55; max-width: 52ch; }
+    .elig-global { width: min(1140px, 95vw); margin-top: 22px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-soft); }
+    .eg-check { position: relative; flex: none; width: 18px; height: 18px; border-radius: 6px; background: rgba(95,211,154,.14); border: 1px solid rgba(95,211,154,.34); }
+    .eg-check::after { content: ""; position: absolute; left: 5px; top: 3px; width: 5px; height: 9px; border: solid var(--green); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+    .eq { width: min(1140px, 95vw); margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); text-align: left; }
+    .eq-h { font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--amber); margin-bottom: 14px; }
+    .eq-toggle { display: inline-flex; align-items: center; gap: 10px; background: none; border: none; padding: 0; cursor: pointer; font: inherit; color: inherit; }
+    .eq-toggle .eq-h { margin-bottom: 0; }
+    .eq-count { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: rgba(245,166,35,.14); border: 1px solid rgba(245,166,35,.3); font-size: 10px; margin-left: 4px; }
+    .eq-chev { width: 7px; height: 7px; border-right: 2px solid var(--amber); border-bottom: 2px solid var(--amber); transform: rotate(-45deg); transition: transform .25s var(--ease); margin-top: -2px; }
+    .eq-toggle[aria-expanded="true"] .eq-chev { transform: rotate(45deg); }
+    .eq-list { margin-top: 16px; }
+    .eq-list[hidden] { display: none; }
+    .g-head, .g-row { display: grid; grid-template-columns: 128px 1fr; align-items: center; }
+    .g-head { margin-bottom: 10px; }
+    .g-head .g-track { display: grid; grid-template-columns: repeat(12, 1fr); }
+    .g-head .g-track span { text-align: center; font-size: 11.5px; font-weight: 600; color: var(--ink-faint); }
+    .g-row { margin-bottom: 8px; }
+    .g-label { font-size: 13px; color: var(--ink-soft); padding-right: 12px; white-space: nowrap; }
+    .g-grid { display: grid; grid-template-columns: repeat(12, 1fr); height: 32px; border-radius: 9px; border: 1px solid var(--line); background: repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0, rgba(255,255,255,.035) calc(100%/12 - 1px), rgba(255,255,255,.10) calc(100%/12 - 1px), rgba(255,255,255,.10) calc(100%/12)); }
+    .g-bar { grid-row: 1; align-self: center; height: 25px; margin: 0 3px; border-radius: 7px; display: flex; align-items: center; padding: 0 10px; font-size: 11.5px; font-weight: 700; white-space: nowrap; overflow: hidden; }
+    .g-bar.c-amber { background: linear-gradient(135deg, var(--amber), var(--amber-deep)); color: #04122e; }
+    .g-bar.c-blue { background: linear-gradient(135deg, var(--blue), #3f7ce0); color: #04122e; }
+    .g-bar.flagged { box-shadow: 0 0 0 1.5px #ff6b6b; }
+    .g-warn { color: #7a1f1f; font-weight: 900; }
+    .g-flags { margin-top: 16px; display: flex; flex-direction: column; gap: 7px; }
+    .g-fl { display: flex; align-items: flex-start; gap: 9px; font-size: 12.5px; line-height: 1.4; color: var(--ink-soft); }
+    .g-fl .g-warn { color: #ff8a5c; }
+
+    /* ── A2 · automation logic ───────────────────────────────────────── */
+    .logic { width: min(820px, 94vw); margin-top: 30px; display: flex; flex-direction: column; text-align: left; }
+    .lcard { display: flex; align-items: center; gap: 16px; padding: 15px 20px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.03); }
+    .lnum { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: rgba(245,166,35,.14); color: var(--amber); font-weight: 800; font-size: 15px; }
+    .lbody { flex: 1; min-width: 0; }
+    .lt { font-size: clamp(15px,1.6vw,18px); font-weight: 650; letter-spacing: -.01em; }
+    .ls { font-size: clamp(12.5px,1.4vw,14.5px); color: var(--ink-soft); margin-top: 3px; line-height: 1.4; }
+    .ltag { flex: none; font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--amber); background: rgba(245,166,35,.12); border: 1px solid rgba(245,166,35,.3); border-radius: 999px; padding: 5px 12px; }
+    .lcon { width: 2px; height: 16px; margin-left: 37px; background: var(--line); }
+    .lcard.payoff { border-color: rgba(245,166,35,.6); background: linear-gradient(135deg, rgba(245,166,35,.16), rgba(245,166,35,.05)); box-shadow: 0 0 0 1px rgba(245,166,35,.3) inset; }
+    .lcard.payoff .lnum { background: var(--amber); color: #04122e; }
+
+    /* ── A2 · request period vs intake window ────────────────────────── */
+    .dualcode { display: inline-flex; align-items: center; margin-bottom: 20px; }
+    .dc-chip { font-size: 14px; font-weight: 800; letter-spacing: .06em; color: var(--amber); background: rgba(245,166,35,.14); border: 1px solid rgba(245,166,35,.3); border-radius: 10px; padding: 7px 14px; }
+    .dc-bar { width: 30px; height: 2px; background: rgba(245,166,35,.5); }
+    .dc-cap { margin-left: 13px; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+    .excat { margin-top: 22px; font-size: clamp(12.5px,1.4vw,15px); color: var(--ink-soft); }
+    .excat span { color: var(--amber); font-weight: 700; }
+    .wcompare { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; width: min(1000px, 94vw); margin-top: 32px; text-align: left; }
+    .excat + .wcompare { margin-top: 14px; }
+    .wcard { padding: 22px 22px; }
+    .wcard.cur { border-color: rgba(245,166,35,.55); box-shadow: 0 0 0 1px rgba(245,166,35,.3) inset, 0 20px 50px -30px rgba(245,166,35,.85); }
+    .wc-top { display: flex; align-items: center; gap: 10px; margin-bottom: 13px; }
+    .wc-code { font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--amber); background: rgba(245,166,35,.14); border: 1px solid rgba(245,166,35,.3); border-radius: 9px; padding: 5px 10px; }
+    .wc-tag { margin-left: auto; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 4px 11px; white-space: nowrap; }
+    .wc-tag.done { color: var(--green); background: rgba(95,211,154,.12); border: 1px solid rgba(95,211,154,.3); }
+    .wc-tag.now { color: #04122e; background: var(--amber); border: 1px solid var(--amber); }
+    .wc-title { font-size: clamp(16px,1.8vw,20px); font-weight: 700; letter-spacing: -.015em; margin-bottom: 15px; }
+    .wc-fields { display: flex; flex-direction: column; gap: 10px; }
+    .wf { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.03); }
+    .wf-l { font-size: 12.5px; color: var(--ink-soft); }
+    .wf-v { font-size: clamp(13px,1.4vw,15px); font-weight: 650; }
+    .wf-v.muted { color: var(--ink-faint); font-weight: 500; }
+    .wf.hi { border-color: rgba(245,166,35,.45); background: rgba(245,166,35,.08); }
+    .wf.hi .wf-v { color: var(--amber); }
+    .wf.off { opacity: .5; }
+    .wc-cap { margin-top: 13px; font-size: 11.5px; color: var(--ink-faint); line-height: 1.45; }
+    .wlink { position: relative; display: grid; place-items: center; padding: 0 6px; }
+    .wlink::before { content: ""; position: absolute; top: 50%; left: -14px; right: -14px; height: 1px; background: rgba(245,166,35,.35); }
+    .wlink-label { position: relative; font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--amber); background: rgba(245,166,35,.14); border: 1px solid rgba(245,166,35,.3); border-radius: 999px; padding: 4px 11px; white-space: nowrap; }
+    .wlink.arrow svg { position: relative; width: 38px; height: 38px; padding: 8px; border-radius: 50%; background: #12121a; border: 1px solid rgba(245,166,35,.35); stroke: var(--amber); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .wnote { width: min(1000px, 94vw); margin-top: 20px; display: flex; gap: 12px; align-items: flex-start; padding: 15px 18px; border: 1px solid rgba(245,166,35,.3); border-radius: 14px; background: rgba(245,166,35,.08); font-size: clamp(13px,1.4vw,15.5px); color: var(--ink); line-height: 1.45; text-align: left; }
+    .wn-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; background: var(--amber); color: #04122e; font-weight: 800; font-size: 13px; }
+    /* ── Collapsible question + scenario ────────────────────────────── */
+    .qbox { margin-top: 16px; width: min(780px, 94vw); text-align: left; border: 1px solid rgba(245,166,35,.3); border-radius: 12px; background: rgba(245,166,35,.06); overflow: hidden; }
+    .qbox summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 13px 16px; font-size: clamp(13px,1.4vw,15px); font-weight: 600; color: var(--ink); }
+    .qbox summary::-webkit-details-marker { display: none; }
+    .qbox summary::after { content: '+'; margin-left: auto; color: var(--ink-faint); font-size: 18px; line-height: 1; }
+    .qbox[open] summary::after { content: '\2212'; }
+    .q-ic { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; background: rgba(245,166,35,.18); color: var(--amber); font-weight: 800; font-size: 13px; flex: none; }
+    .q-body { padding: 0 16px 14px 48px; font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; }
+    .scen-lead { margin-top: 22px; width: min(840px, 94vw); font-size: clamp(14px,1.5vw,16px); color: var(--ink); line-height: 1.5; text-align: center; }
+    .scen-lead b { color: var(--amber); font-weight: 700; }
+    .scen-wins { margin-top: 18px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .sw { padding: 13px 20px; text-align: center; min-width: 138px; }
+    .sw-h { font-size: clamp(13px,1.4vw,15px); font-weight: 650; }
+    .sw-n { font-size: 12px; color: var(--amber); font-weight: 700; margin-top: 4px; }
+    .wf-caret { display: inline-block; width: 6px; height: 6px; margin-left: 7px; border-right: 2px solid var(--amber); border-bottom: 2px solid var(--amber); transform: translateY(-2px) rotate(45deg); }
+    .wfix { width: min(1000px, 94vw); margin-top: 20px; padding: 18px 20px; border: 1px solid rgba(245,166,35,.4); border-radius: 16px; background: linear-gradient(135deg, rgba(245,166,35,.14), rgba(245,166,35,.04)); text-align: left; }
+    .wfix-h { font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--amber); margin-bottom: 8px; }
+    .wfix-b { font-size: clamp(13.5px,1.45vw,16px); color: var(--ink); line-height: 1.5; }
+    .wfix-b b { color: var(--amber); font-weight: 700; }
+
+    /* ── A1.5 · DCE approval flow ─────────────────────────────────────── */
+    .dce { width: min(920px, 94vw); margin-top: 30px; display: flex; flex-direction: column; text-align: left; }
+    .dstep { display: flex; align-items: center; gap: 16px; padding: 15px 20px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.03); }
+    .dnum { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: rgba(245,166,35,.14); color: var(--amber); font-weight: 800; font-size: 15px; }
+    .dt { font-size: clamp(15px,1.6vw,18px); font-weight: 650; letter-spacing: -.01em; }
+    .dl { font-size: clamp(12.5px,1.4vw,14.5px); color: var(--ink-soft); margin-top: 3px; line-height: 1.4; }
+    .dcon { width: 2px; height: 16px; margin-left: 37px; background: var(--line); }
+    .dbranch { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+    .dout { display: flex; align-items: flex-start; gap: 13px; padding: 15px 18px; border-radius: 16px; border: 1px solid var(--line); }
+    .dout.ok { border-color: rgba(95,211,154,.4); background: rgba(95,211,154,.07); }
+    .dout.no { border-color: rgba(255,107,107,.35); background: rgba(255,107,107,.06); }
+    .dico { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; font-weight: 800; font-size: 14px; }
+    .dout.ok .dico { background: rgba(95,211,154,.16); color: var(--green); }
+    .dout.no .dico { background: rgba(255,107,107,.16); color: #ff8a8a; }
+    .dt2 { font-size: clamp(14px,1.5vw,16px); font-weight: 700; }
+    .dl2 { font-size: clamp(12px,1.35vw,14px); color: var(--ink-soft); margin-top: 2px; line-height: 1.4; }
+    .dstep.prev { opacity: .55; background: none; border-style: dashed; padding: 12px 20px; }
+    .dstep.prev .dt { font-size: clamp(14px,1.45vw,16px); font-weight: 600; }
+    .dcon.from-prev { background: repeating-linear-gradient(var(--line) 0 4px, transparent 4px 9px); }
+    .dbody { flex: 1; min-width: 0; }
+    .dcode { flex: none; display: grid; place-items: center; min-width: 34px; height: 34px; padding: 0 8px; font-size: 12.5px; font-weight: 800; letter-spacing: .04em; color: var(--amber); background: rgba(245,166,35,.14); border: 1px solid rgba(245,166,35,.3); border-radius: 10px; }
+    .dtag { margin-left: auto; flex: none; font-size: 11px; font-weight: 700; color: var(--green); background: rgba(95,211,154,.12); border: 1px solid rgba(95,211,154,.3); border-radius: 999px; padding: 4px 11px; white-space: nowrap; }
+    .dceflow { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; width: min(1000px,94vw); margin-top: 36px; }
+    .dnode { display: flex; flex-direction: column; align-items: center; gap: 9px; text-align: center; width: 190px; padding: 6px; }
+    .dn-ic { display: grid; place-items: center; width: 62px; height: 62px; border-radius: 18px; background: rgba(245,166,35,.14); color: var(--amber); }
+    .dn-ic svg { width: 30px; height: 30px; stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .dn-t { font-size: clamp(14px,1.5vw,16.5px); font-weight: 650; letter-spacing: -.01em; }
+    .dn-s { font-size: 12px; color: var(--ink-soft); line-height: 1.35; }
+    .dnode.dim { opacity: .5; }
+    .dnode.dim .dn-ic { background: rgba(255,255,255,.06); color: var(--ink-soft); }
+    .darrow { flex: none; color: var(--ink-faint); display: grid; place-items: center; }
+    .darrow svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .dfork { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: min(760px,94vw); margin-top: 26px; text-align: left; }
+    .dfout { display: flex; align-items: center; gap: 13px; padding: 15px 18px; border-radius: 16px; border: 1px solid var(--line); }
+    .dfout.ok { border-color: rgba(95,211,154,.4); background: rgba(95,211,154,.07); }
+    .dfout.no { border-color: rgba(255,107,107,.35); background: rgba(255,107,107,.06); }
+    .dfic { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; font-weight: 800; font-size: 15px; }
+    .dfout.ok .dfic { background: rgba(95,211,154,.16); color: var(--green); }
+    .dfout.no .dfic { background: rgba(255,107,107,.16); color: #ff8a8a; }
+    .df-t { font-size: clamp(14px,1.5vw,16px); font-weight: 700; }
+    .df-s { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+
+
+    /* ── The cast (who does what) ─────────────────────────────────────── */
+    .cast2 { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; width: min(1040px, 94vw); margin-top: 32px; text-align: left; align-items: start; }
+    .cast-label { font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--amber); }
+    .cast-label span { color: var(--ink-faint); font-weight: 600; letter-spacing: .02em; text-transform: none; }
+    .roles-v { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+    .hchip { display: flex; align-items: center; gap: 14px; padding: 13px 16px; }
+    .hchip .ic { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: rgba(245,166,35,.14); color: var(--amber); flex: none; }
+    .hchip .ic svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .hchip.support .ic { background: rgba(255,255,255,.06); color: var(--ink-soft); }
+    .htext { min-width: 0; }
+    .rn { font-size: clamp(15px,1.5vw,17px); font-weight: 650; letter-spacing: -.01em; }
+    .rr { font-size: 12px; color: var(--ink-soft); line-height: 1.35; margin-top: 2px; }
+    .castbtn { margin-top: 18px; display: inline-flex; align-items: center; gap: 9px; padding: 10px 18px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.05); color: var(--ink-soft); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: .25s var(--ease); }
+    .castbtn:hover, .castbtn:focus-visible { outline: none; border-color: rgba(255,255,255,.28); background: rgba(255,255,255,.09); color: var(--ink); transform: translateY(-1px); }
+    .castbtn svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ── Application form ideas ───────────────────────────────────────── */
+    .ideas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; width: min(1080px, 95vw); margin-top: 30px; text-align: left; }
+    .idea { padding: 22px 20px; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.03); }
+    .idea.ask { border-style: dashed; background: rgba(255,255,255,.015); }
+    .iic { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: rgba(245,166,35,.14); color: var(--amber); margin-bottom: 14px; }
+    .iic svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .idea.ask .iic { background: rgba(255,255,255,.06); color: var(--ink-soft); }
+    .it { font-size: clamp(15px,1.6vw,17px); font-weight: 650; letter-spacing: -.01em; }
+    .is { font-size: 12.5px; color: var(--ink-soft); margin-top: 5px; line-height: 1.4; }
+
+    /* application mockup */
+    .appdemo { display: grid; grid-template-columns: 322px 1fr; gap: 56px; align-items: center; width: min(940px, 94vw); margin: 26px auto 0; text-align: left; }
+    .phone { border: 1px solid rgba(255,255,255,.12); border-radius: 34px; background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.01)); padding: 10px; box-shadow: 0 30px 80px rgba(0,0,0,.55); }
+    .phone-scr { background: #0c0f15; border-radius: 26px; overflow: hidden; }
+    .phone-hd { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .phone-hd .ph-ic { width: 30px; height: 30px; border-radius: 9px; background: rgba(245,166,35,.16); display: grid; place-items: center; color: var(--amber); flex: none; }
+    .phone-hd .ph-ic svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .phone-hd .ph-t { font-size: 13px; font-weight: 700; line-height: 1.1; }
+    .phone-hd .ph-s { font-size: 11px; color: var(--green); font-weight: 600; }
+    .phone-hd .ph-s::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); margin-right: 5px; vertical-align: middle; }
+    .chat { padding: 14px; display: flex; flex-direction: column; gap: 9px; }
+    .bub { max-width: 84%; padding: 9px 12px; border-radius: 15px; font-size: 12.5px; line-height: 1.38; color: var(--ink); }
+    .bub.bot { align-self: flex-start; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.05); border-top-left-radius: 5px; }
+    .bub.me { align-self: flex-end; background: rgba(245,166,35,.16); border: 1px solid rgba(245,166,35,.3); border-top-right-radius: 5px; }
+    .bub .file { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+    .bub .file svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+    .bub.ai { border-color: rgba(95,211,154,.3); background: rgba(95,211,154,.1); }
+    .bub .aitag { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--green); margin-bottom: 5px; }
+    .fillcard { margin-top: 8px; background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.08); border-radius: 11px; padding: 8px 11px; display: grid; gap: 5px; }
+    .fillrow { display: flex; justify-content: space-between; gap: 12px; font-size: 11.5px; }
+    .fillrow .k { color: var(--ink-faint); }
+    .fillrow .v { font-weight: 600; }
+    .qchips { display: flex; gap: 7px; align-self: flex-start; flex-wrap: wrap; }
+    .qchip { font-size: 11.5px; padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(94,158,255,.32); background: rgba(94,158,255,.13); color: #cfe0ff; font-weight: 600; }
+    .qchip.sel { background: rgba(94,158,255,.28); color: #fff; }
+    .matchcard { align-self: stretch; background: linear-gradient(120deg, rgba(245,166,35,.16), rgba(245,166,35,.05)); border: 1px solid rgba(245,166,35,.32); border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .matchcard .mc-t { font-size: 12px; font-weight: 700; }
+    .matchcard .mc-s { font-size: 11px; color: var(--ink-faint); }
+    .matchcard .mc-score { font-size: 17px; font-weight: 800; color: var(--amber); line-height: 1; }
+    .matchcard .mc-score span { display: block; font-size: 9px; font-weight: 700; letter-spacing: .08em; color: var(--ink-faint); text-align: right; }
+    .applybtn { align-self: stretch; text-align: center; background: var(--amber); color: #1c1405; font-weight: 800; font-size: 13px; padding: 11px; border-radius: 12px; margin-top: 2px; }
+    .appsteps { display: flex; flex-direction: column; gap: 16px; }
+    .astep { display: flex; gap: 13px; align-items: flex-start; }
+    .astep .an { width: 36px; height: 36px; border-radius: 10px; background: rgba(245,166,35,.14); border: 1px solid rgba(245,166,35,.24); display: grid; place-items: center; color: var(--amber); flex: none; }
+    .astep .an svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .astep .at { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+    .astep .as { font-size: 12.5px; color: var(--ink-faint); margin-top: 2px; line-height: 1.4; }
+
+    /* ── B2.1 · project suitability scoring ──────────────────────────── */
+    .sui { display: flex; gap: 20px; align-items: stretch; width: min(1120px, 95vw); margin-top: 28px; text-align: left; }
+    .sui > .sui-col { flex: 1.4; }
+    .b21side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+    .sui-col { padding: 22px 22px; }
+    .sui-appl { display: flex; align-items: center; gap: 13px; padding-bottom: 15px; margin-bottom: 16px; border-bottom: 1px solid var(--line); }
+    .sui-av { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; background: rgba(94,158,255,.16); color: var(--blue); font-weight: 800; font-size: 15px; flex: none; }
+    .sui-an { font-size: clamp(15px,1.6vw,18px); font-weight: 650; letter-spacing: -.01em; }
+    .sui-as { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+    .sui-cap { font-size: 12px; color: var(--ink-soft); line-height: 1.4; margin: 0 0 11px; }
+    .sui-projhd { display: flex; justify-content: space-between; font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); padding: 0 4px 7px; }
+    .sui-projs { display: flex; flex-direction: column; gap: 8px; }
+    .sui-proj { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 13px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 13px; background: rgba(255,255,255,.03); }
+    .sui-proj.top { border-color: rgba(245,166,35,.4); background: rgba(245,166,35,.07); }
+    .sui-rank { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 8px; font-size: 12px; font-weight: 800; color: var(--ink-soft); background: rgba(255,255,255,.07); }
+    .sui-proj.top .sui-rank { color: #04122e; background: var(--amber); }
+    .sui-pt { font-size: clamp(13px,1.4vw,15px); font-weight: 600; letter-spacing: -.01em; }
+    .sui-psub { font-size: 11.5px; color: var(--ink-faint); margin-top: 2px; }
+    .sui-pbar { margin-top: 7px; height: 5px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }
+    .sui-pbar span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--amber), var(--amber-deep)); }
+    .sui-proj:not(.top) .sui-pbar span { background: linear-gradient(90deg, var(--amber), var(--amber-deep)); }
+    .sui-score { font-size: clamp(20px,2.2vw,26px); font-weight: 800; color: var(--amber); line-height: 1; text-align: right; }
+    .sui-proj:not(.top) .sui-score { color: var(--amber); }
+    .sui-score span { display: block; font-size: 9px; font-weight: 700; letter-spacing: .08em; color: var(--ink-faint); margin-top: 3px; }
+    .sui-h { font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--amber); margin-bottom: 18px; }
+    .sui-comp { margin-bottom: 15px; }
+    .sui-crow { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
+    .sui-cl { font-size: clamp(13px,1.4vw,15px); font-weight: 600; }
+    .sui-cw { font-size: 12px; font-weight: 800; color: var(--amber); }
+    .sui-cbar { height: 9px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; }
+    .sui-cbar span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--amber), var(--amber-deep)); }
+    .wtbar { display: flex; width: 100%; height: 74px; border-radius: 13px; overflow: hidden; border: 1px solid rgba(245,166,35,.35); }
+    .wtseg { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px; text-align: center; min-width: 0; }
+    .wtseg.a { background: rgba(245,166,35,.24); }
+    .wtseg.b { background: rgba(245,166,35,.09); border-left: 1px solid rgba(245,166,35,.35); }
+    .wtl { font-size: clamp(11px,1.2vw,13px); font-weight: 600; color: var(--ink); line-height: 1.2; }
+    .wtp { font-size: clamp(18px,2.1vw,25px); font-weight: 800; color: var(--amber); line-height: 1; }
+    .c360 { margin-top: 14px; font-size: 12.5px; color: var(--ink-faint); }
+    .c360 b { color: var(--amber); font-weight: 700; }
+    .wtwrap { width: min(600px, 92vw); margin-top: 22px; }
+    .beyond.b21 { width: auto; grid-template-columns: 1fr; align-items: start; flex: 1; }
+    .beyond.b21 .by-chips { justify-content: flex-start; margin-top: 12px; }
+    .disc { margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: min(960px, 94vw); text-align: left; }
+    .disc-item { display: flex; gap: 13px; align-items: flex-start; padding: 16px 18px; }
+    .disc-q { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: rgba(245,166,35,.16); color: var(--amber); font-weight: 800; font-size: 14px; }
+    .disc-t { font-size: clamp(14px,1.5vw,16px); font-weight: 650; letter-spacing: -.01em; }
+    .disc-d { font-size: 12.5px; color: var(--ink-soft); line-height: 1.4; margin-top: 3px; }
+    .sui-total { margin-top: 18px; padding: 15px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid rgba(245,166,35,.4); border-radius: 14px; background: rgba(245,166,35,.09); }
+    .sui-tl { font-size: clamp(13px,1.5vw,16px); font-weight: 650; letter-spacing: -.01em; }
+    .sui-tv { font-size: clamp(26px,3vw,34px); font-weight: 800; color: var(--amber); line-height: 1; }
+    .sui-tv span { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--ink-faint); margin-left: 3px; }
+    /* ── Score deep-dive (factors per category) ─────────────────────── */
+    .score-cats { margin-top: 26px; width: min(880px, 94vw); text-align: center; }
+    .sc-lead { display: block; font-size: 11.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 12px; }
+    .sc-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+    .stabs { width: min(900px, 94vw); margin-top: 22px; text-align: center; }
+    .stab-r { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+    .stab-btns { display: inline-flex; gap: 6px; padding: 5px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.03); }
+    .stab-btns label { cursor: pointer; padding: 8px 14px; border-radius: 8px; font-size: clamp(12px,1.3vw,14px); font-weight: 600; color: var(--ink-faint); transition: .2s var(--ease); white-space: nowrap; }
+    .stab-btns label:hover { color: var(--ink); }
+    #stab-disc:checked ~ .stab-btns label[for="stab-disc"],
+    #stab-nodisc:checked ~ .stab-btns label[for="stab-nodisc"],
+    #stab-combo:checked ~ .stab-btns label[for="stab-combo"] { background: var(--amber); color: #04122e; }
+    .stab-panel { display: none; flex-direction: column; align-items: center; margin-top: 22px; }
+    #stab-disc:checked ~ .p-disc,
+    #stab-nodisc:checked ~ .p-nodisc,
+    #stab-combo:checked ~ .p-combo { display: flex; }
+    .stab-note { width: min(720px, 92vw); margin-top: 18px; font-size: clamp(13px,1.4vw,15px); color: var(--ink-soft); line-height: 1.5; }
+    .score-factors { margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: min(880px, 94vw); text-align: left; }
+    .sf { padding: 20px 22px; }
+    .sf-h { display: flex; align-items: center; gap: 11px; font-size: clamp(16px,1.9vw,20px); font-weight: 700; letter-spacing: -.015em; margin-bottom: 10px; }
+    .sf-n { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: rgba(245,166,35,.16); color: var(--amber); font-size: 13px; font-weight: 800; flex: none; }
+    .sf-d { font-size: clamp(13px,1.4vw,15px); color: var(--ink-soft); line-height: 1.5; }
+    .ex { margin-top: 22px; width: min(900px, 94vw); padding: 0; overflow: hidden; text-align: left; }
+    .ex-proj { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding: 15px 20px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.02); }
+    .ex-plabel { font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+    .ex-pt { font-size: clamp(15px,1.7vw,19px); font-weight: 700; letter-spacing: -.015em; }
+    .ex-pd { font-size: 12.5px; color: var(--amber); font-weight: 600; margin-left: auto; }
+    .ex-formula { padding: 14px 20px; border-bottom: 1px solid var(--line); background: rgba(245,166,35,.13); text-align: center; }
+    .ex-flabel { display: block; font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--amber); margin-bottom: 6px; }
+    .ex-feq { font-size: clamp(13px,1.55vw,16px); color: var(--ink); font-weight: 600; line-height: 1.4; }
+    .ex-feq b { color: var(--amber); font-weight: 800; }
+    .ex-key { padding: 9px 20px; font-size: 11px; color: var(--ink-faint); border-bottom: 1px solid var(--line); line-height: 1.5; }
+    .ex-key b { color: var(--ink-soft); font-weight: 700; }
+    /* ── Shortlist by project / applicant ───────────────────────────── */
+    .pl-wrap { width: min(720px, 94vw); margin-top: 24px; text-align: left; }
+    .pl-proj { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; margin-bottom: 12px; }
+    .pl-pt { font-size: clamp(15px,1.7vw,19px); font-weight: 700; letter-spacing: -.015em; }
+    .pl-psub { font-size: 12px; color: var(--ink-faint); margin-top: 3px; }
+    .pl-place { text-align: right; flex: none; }
+    .pl-place-n { display: block; font-size: clamp(18px,2vw,24px); font-weight: 800; color: var(--amber); line-height: 1; }
+    .pl-place-l { font-size: 10px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .08em; }
+    .pl-list { display: flex; flex-direction: column; gap: 8px; }
+    .pl-row { position: relative; display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 13px; padding: 11px 15px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.03); cursor: default; transition: .2s var(--ease); }
+    .pl-row:hover { border-color: rgba(245,166,35,.45); background: rgba(245,166,35,.06); }
+    .pl-rank { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 8px; font-size: 12px; font-weight: 800; color: var(--ink-soft); background: rgba(255,255,255,.07); }
+    .pl-name { font-size: clamp(13px,1.4vw,15px); font-weight: 650; }
+    .pl-sub { font-size: 11.5px; color: var(--ink-faint); margin-top: 2px; }
+    .pl-score { font-size: clamp(17px,1.9vw,22px); font-weight: 800; color: var(--amber); }
+    .pl-mets { display: flex; gap: 22px; flex: none; }
+    .pl-right { display: flex; align-items: center; gap: 16px; }
+    .pl-mini { display: flex; flex-direction: column; gap: 2px; text-align: right; font-size: 10.5px; color: var(--ink-faint); line-height: 1.3; }
+    .pl-mini b { color: var(--ink-soft); font-weight: 700; }
+    /* ── Eligibility screening ──────────────────────────────────────── */
+    .scr-crit { width: min(920px, 94vw); margin-top: 22px; font-size: clamp(13px,1.4vw,15px); color: var(--ink-soft); text-align: center; }
+    .scr-crit b { color: var(--amber); font-weight: 700; }
+    .scr { width: min(920px, 94vw); margin-top: 16px; padding: 0; overflow: hidden; text-align: left; }
+    .scr-head, .scr-row { display: grid; grid-template-columns: 1fr 1.35fr 1.35fr 1.5fr; align-items: center; gap: 12px; padding: 12px 20px; }
+    .scr-head { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint); background: rgba(255,255,255,.02); border-bottom: 1px solid var(--line); }
+    .scr-row { border-bottom: 1px solid rgba(255,255,255,.05); }
+    .scr-row:last-child { border-bottom: none; }
+    .scr-name { font-size: clamp(13px,1.4vw,15px); font-weight: 650; }
+    .scr-c { font-size: 12.5px; color: var(--ink-soft); display: flex; align-items: center; gap: 7px; }
+    .scr-i { font-weight: 800; flex: none; }
+    .scr-i.ok { color: var(--green); }
+    .scr-i.warn { color: var(--amber); }
+    .scr-i.bad { color: #ff6b6b; }
+    .scr-out { justify-self: start; font-size: 11.5px; font-weight: 700; padding: 5px 11px; border-radius: 999px; white-space: nowrap; }
+    .scr-out.eligible { color: var(--green); background: rgba(95,211,154,.14); border: 1px solid rgba(95,211,154,.3); }
+    .scr-out.flagged { color: var(--amber); background: rgba(245,166,35,.14); border: 1px solid rgba(245,166,35,.3); }
+    .scr-out.rejected { color: #ff6b6b; background: rgba(255,107,107,.13); border: 1px solid rgba(255,107,107,.3); }
+    .ai-pop { display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 40; padding: 13px 16px; border-radius: 12px; border: 1px solid rgba(245,166,35,.4); background: #14141d; box-shadow: 0 22px 55px -18px rgba(0,0,0,.85); }
+    .pl-row:last-child .ai-pop { top: auto; bottom: calc(100% + 6px); }
+    .pl-row:hover { z-index: 40; }
+    .pl-row:hover .ai-pop { display: block; }
+    .ai-pop-h { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--amber); margin-bottom: 6px; }
+    .ai-pop-h svg { width: 13px; height: 13px; stroke: none; fill: var(--amber); }
+    .ai-pop p { font-size: 12px; color: var(--ink-soft); line-height: 1.5; }
+    .ai-pop p b { color: var(--ink); }
+    .ex-formula b { color: var(--amber); font-weight: 700; }
+    .ex-rows { padding: 4px 20px 14px; }
+    .ex-head, .ex-row { display: grid; grid-template-columns: 1.05fr 1.45fr .95fr .55fr; align-items: center; gap: 12px; }
+    .ex.g3 .ex-head, .ex.g3 .ex-row { grid-template-columns: 1fr 1.7fr .5fr; }
+    .ex-head { padding: 11px 0 9px; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint); border-bottom: 1px solid var(--line); }
+    .ex-row { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+    .ex-row:last-child { border-bottom: none; }
+    .ex-row.nomatch { opacity: .72; }
+    .ex-name { font-size: clamp(13px,1.4vw,15px); font-weight: 650; display: flex; flex-direction: column; }
+    .ex-inst { font-size: 10.5px; font-weight: 500; color: var(--ink-faint); margin-top: 2px; }
+    .ex-disc { font-size: 12.5px; color: var(--ink-soft); display: flex; align-items: center; gap: 7px; }
+    .ex-ok { color: var(--amber); font-weight: 800; }
+    .ex-mid { color: var(--amber-soft); font-weight: 800; }
+    .ex-no { color: var(--ink-faint); font-weight: 800; }
+    .ex-gpa { font-size: clamp(14px,1.5vw,16px); font-weight: 700; }
+    .ex-pts { font-size: 12px; font-weight: 800; color: var(--amber); margin-left: 6px; background: rgba(245,166,35,.14); border-radius: 5px; padding: 1px 6px; }
+    .ex-score { font-size: clamp(18px,2vw,24px); font-weight: 800; color: var(--amber); text-align: right; }
+    .ex-score.dim { font-size: clamp(12px,1.3vw,14px); font-weight: 700; color: var(--ink-faint); }
+    /* Beyond the score — AI summary + at-a-glance highlights */
+    .beyond { width: min(1040px, 94vw); margin-top: 16px; padding: 16px 20px; display: grid; grid-template-columns: 1.5fr 1fr; gap: 22px; align-items: center; text-align: left; }
+    .by-h { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--green); margin-bottom: 7px; }
+    .by-h svg { width: 14px; height: 14px; fill: var(--green); }
+    .by-txt { font-size: clamp(12.5px,1.35vw,14.5px); line-height: 1.5; color: var(--ink-soft); }
+    .by-txt b { color: var(--ink); font-weight: 700; }
+    .beyond.solo { grid-template-columns: 1fr; }
+    .by-list { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+    .by-list li { position: relative; padding-left: 20px; font-size: clamp(13px,1.4vw,15.5px); color: var(--ink); line-height: 1.4; }
+    .by-list li::before { content: ""; position: absolute; left: 3px; top: .5em; width: 7px; height: 7px; border-radius: 50%; background: var(--amber); }
+    /* ── New-workflow stepper + internship-window calendar ─────────── */
+    .wf-flow { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center; gap: 8px; margin-top: 30px; width: min(1080px, 94vw); }
+    .wf-step { flex: 1 1 0; min-width: 150px; max-width: 230px; display: flex; flex-direction: column; gap: 3px; padding: 15px 17px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.04); text-align: left; }
+    .wf-step.cur { border-color: rgba(245,166,35,.5); background: rgba(245,166,35,.08); }
+    .wf-n { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(245,166,35,.16); color: var(--amber); font-size: 11px; font-weight: 800; margin-bottom: 3px; }
+    .wf-step b { font-size: clamp(13px,1.5vw,15px); font-weight: 650; color: var(--ink); }
+    .wf-d { font-size: 11.5px; color: var(--ink-faint); line-height: 1.35; }
+    .wf-arrow { display: flex; align-items: center; color: var(--ink-faint); }
+    .wf-arrow svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .by-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+    .by-chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.04); font-size: 12px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+    .by-chip.eng { border-color: rgba(94,158,255,.4); background: rgba(94,158,255,.12); color: #cfe0ff; }
+
+    /* nav + dots */
+    .nav { position: fixed; top: 50%; transform: translateY(-50%); z-index: 7; width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line); background: rgba(255,255,255,.06); backdrop-filter: blur(10px); color: var(--ink); cursor: pointer; display: grid; place-items: center; transition: .25s var(--ease); }
+    .nav:hover { background: rgba(255,255,255,.13); }
+    .nav:disabled { opacity: .25; cursor: default; }
+    .nav svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .nav.prev { left: 26px; } .nav.next { right: 26px; }
+    .fsbtn { position: fixed; top: 22px; right: 24px; z-index: 7; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: rgba(255,255,255,.06); backdrop-filter: blur(10px); color: var(--ink-soft); cursor: pointer; display: grid; place-items: center; transition: .25s var(--ease); }
+    .fsbtn:hover { background: rgba(255,255,255,.13); color: var(--ink); }
+    .fsbtn svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    body.detail-open .nav { opacity: 0; pointer-events: none; }
+    .dots { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; gap: 9px; z-index: 6; }
+    .dots button { width: 9px; height: 9px; border-radius: 50%; border: none; background: rgba(255,255,255,.25); cursor: pointer; padding: 0; transition: .35s var(--ease); }
+    .dots button.on { background: var(--amber); width: 26px; border-radius: 6px; }
+
+    @media (max-width: 820px) {
+      .flowcols, .agenda, .agenda.four, .pi-row, .prog-level, .ideas, .appdemo, .beyond, .disc { grid-template-columns: 1fr; }
+      .sui { flex-direction: column; }
+      .cast2 { grid-template-columns: 1fr; }
+      .d-body { grid-template-columns: 1fr; }
+      .d-backlog { border-left: none; border-top: 1px solid var(--line); padding-left: 0; padding-top: 18px; max-height: none; }
+      .cal { grid-template-columns: 1fr; }
+      .g-head, .g-row { grid-template-columns: 96px 1fr; }
+      .g-label { font-size: 11px; padding-right: 8px; }
+      .wcompare { grid-template-columns: 1fr; }
+      .wlink::before { display: none; }
+      .dbranch, .dfork { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      body { overflow: auto; position: static; }
+      .deck { position: static; inset: auto; }
+      .slide { position: relative; inset: auto; min-height: 100svh; opacity: 1; transform: none; pointer-events: auto; }
+      .slide .r { opacity: 0; transform: translateY(20px); }
+      .slide.inview .r { animation: rise .8s var(--ease) forwards; }
+      .nav, .dots, .hint { display: none; }
+      .wash { filter: blur(46px); opacity: .6; } .blob { animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="wash"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<div class="bar" id="bar"></div>
+
+<main class="deck" id="deck">
+
+  <!-- 0 · TITLE -->
+  <section class="slide active">
+    <div class="eyebrow r" style="--d:.05s">DSTA · Talent Outreach &amp; Acquisition</div>
+    <h1 class="r" style="--d:.15s">14th July<br><span class="grad">Internship Workshop.</span></h1>
+    <div class="hint r" style="--d:.7s">Press <kbd>&rarr;</kbd> to begin</div>
+  </section>
+
+  <!-- AGENDA -->
+  <section class="slide">
+    <h2 class="r" style="--d:.12s"><span class="grad">Agenda.</span></h2>
+    <div class="agenda two r" style="--d:.24s">
+      <div class="glass ag ag-recap">
+        <span class="ag-code">Recap</span><span class="ag-title">Last session · 13 Jul</span>
+        <ul class="ag-steps">
+          <li><span class="ag-sc">B1.1</span>Application</li>
+        </ul>
+      </div>
+      <div class="glass ag">
+        <span class="ag-code">B2</span><span class="ag-title">Applicant shortlisting</span>
+        <ul class="ag-steps">
+          <li><span class="ag-sc">B2.1</span>Applicant screened against eligibility criteria and assigned project suitability score</li>
+          <li><span class="ag-sc">B2.2</span>IO shortlists applicant for interview</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- THE CAST (overlay — opened from the internship slide) -->
+  <div class="detail" id="cast" aria-hidden="true">
+    <div class="detail-bd" id="castBd"></div>
+    <div class="detail-card glass" role="dialog" aria-modal="true" aria-labelledby="castTitle">
+      <button class="d-close" id="castClose" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <div class="d-top">
+        <span class="d-code">Cast</span>
+        <span class="d-title" id="castTitle">Who does what</span>
+      </div>
+      <div class="cast2">
+        <div class="castcol">
+          <div class="cast-label">Main cast <span>· have an account</span></div>
+          <div class="roles-v">
+          <div class="glass hchip"><span class="ic"><svg viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"/></svg></span><div class="htext"><div class="rn">IO</div><div class="rr">Manages programmes and applications</div></div></div>
+          <div class="glass hchip"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg></span><div class="htext"><div class="rn">HQ</div><div class="rr">Requests and reviews project submissions</div></div></div>
+          <div class="glass hchip"><span class="ic"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg></span><div class="htext"><div class="rn">AD (P&amp;C) / DSO, CSIT HR</div><div class="rr">Consolidates and submits the project list</div></div></div>
+          <div class="glass hchip"><span class="ic"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/></svg></span><div class="htext"><div class="rn">Mentor</div><div class="rr">Interviews and evaluates applicants</div></div></div>
+          <div class="glass hchip"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M6 21v-1a6 6 0 0 1 12 0v1"/></svg></span><div class="htext"><div class="rn">Applicant</div><div class="rr">Applies for an internship and joins DSTA</div></div></div>
+        </div>
+      </div>
+      <div class="castcol">
+        <div class="cast-label">Supporting cast <span>· no account</span></div>
+        <div class="roles-v">
+          <div class="glass hchip support"><span class="ic"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><div class="htext"><div class="rn">PC Head</div><div class="rr">Kept in the loop on project requests; endorses mentor feedback</div></div></div>
+          <div class="glass hchip support"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6l7-3Z"/><path d="m9 12 2 2 4-4"/></svg></span><div class="htext"><div class="rn">DCE(S)</div><div class="rr">Final approval for projects</div></div></div>
+          <div class="glass hchip support"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span><div class="htext"><div class="rn">DSTA Security</div><div class="rr">Clears projects and applicants</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1 · THE INTERNSHIP -->
+  <section class="slide">
+    <h2 class="r" style="--d:.08s">The <span class="grad">internship.</span></h2>
+    <button class="castbtn r" id="castOpen" style="--d:.14s"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meet the cast</button>
+    <div class="flowcols r" style="--d:.2s">
+      <div class="glass fcol">
+        <div class="fst"><span class="fsl">A</span>Preparation</div>
+        <div class="fareas">
+          <button class="farea done" data-code="A1"><span class="fic">A1</span><span class="fan">Project creation</span><span class="fdone"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span></button>
+          <button class="farea done" data-code="A2"><span class="fic">A2</span><span class="fan">Programme creation</span><span class="fdone"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span></button>
+        </div>
+      </div>
+      <div class="glass fcol">
+        <div class="fst"><span class="fsl">B</span>Programme</div>
+        <div class="fareas">
+          <button class="farea done" data-code="B1"><span class="fic">B1</span><span class="fan">Application</span><span class="fdone"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span></button>
+          <button class="farea" data-code="B2"><span class="fic">B2</span><span class="fan">Applicant shortlisting</span><span class="ftag today">Today</span></button>
+          <button class="farea dim"><span class="fic">B3</span><span class="fan">Interview</span></button>
+          <button class="farea dim"><span class="fic">B4</span><span class="fan">Offer</span></button>
+          <button class="farea dim"><span class="fic">B5</span><span class="fan">Onboard</span></button>
+        </div>
+      </div>
+      <div class="glass fcol">
+        <div class="fst"><span class="fsl">C</span>Post-internship</div>
+        <div class="fareas">
+          <button class="farea dim"><span class="fic">C1</span><span class="fan">Offboard</span></button>
+        </div>
+      </div>
+    </div>
+    <div class="hint">Click a process area to open its steps</div>
+  </section>
+
+  <!-- B1.1 · TRANSITION (recap) -->
+  <section class="slide">
+    <div class="num r" style="--d:.05s">B1.1 · Recap</div>
+    <h2 class="r" style="--d:.14s">The <span class="grad">application.</span></h2>
+  </section>
+
+  <!-- B1.1 · APPLICATION OPENS UP -->
+  <section class="slide">
+    <div class="eyebrow r" style="--d:.05s">B1.1 · Application</div>
+    <h2 class="r" style="--d:.12s">Every internship window, <span class="grad">open.</span></h2>
+    <div class="excat r" style="--d:.18s"><span>Undergraduate Student</span></div>
+    <div class="wcompare r" style="--d:.24s">
+      <div class="glass wcard">
+        <div class="wc-top"><span class="wc-code">Before</span></div>
+        <div class="wc-title">One window open at a time</div>
+        <div class="wc-fields">
+          <div class="wf off"><span class="wf-l">Jan – Jun 2026</span><span class="wf-v muted">Closed</span></div>
+          <div class="wf hi"><span class="wf-l">May – Aug 2026</span><span class="wf-v">Apply now</span></div>
+          <div class="wf off"><span class="wf-l">Jul – Dec 2026</span><span class="wf-v muted">Not yet open</span></div>
+        </div>
+      </div>
+      <div class="wlink arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div class="glass wcard cur">
+        <div class="wc-top"><span class="wc-code">Now</span></div>
+        <div class="wc-title">Every window open, year-round</div>
+        <div class="wc-fields">
+          <div class="wf hi"><span class="wf-l">Jan – Jun 2026</span><span class="wf-v">Open</span></div>
+          <div class="wf hi"><span class="wf-l">May – Aug 2026</span><span class="wf-v">Open</span></div>
+          <div class="wf hi"><span class="wf-l">Jul – Dec 2026</span><span class="wf-v">Open</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="beyond glass solo r" style="--d:.42s">
+      <div>
+        <div class="by-h"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg> The intent</div>
+        <ul class="by-list">
+          <li>Less admin for officers, with one application window instead of one per internship window</li>
+          <li>More information and visibility of the internship windows for the public</li>
+        </ul>
+      </div>
+    </div>
+    <details class="qbox r" style="--d:.5s">
+      <summary><span class="q-ic">?</span>Follow up question</summary>
+      <div class="q-body">Is the application window the same across all 7 intern categories?</div>
+    </details>
+  </section>
+
+  <!-- B1.1 · SCENARIO -->
+  <section class="slide">
+    <div class="eyebrow r" style="--d:.05s">B1.1 · Application</div>
+    <h2 class="r" style="--d:.12s"><span class="grad">Scenario.</span></h2>
+    <div class="scen-lead r" style="--d:.2s">An <b>Undergraduate Student</b> applies and selects all 3 internship windows. Each window has its own set of projects.</div>
+    <div class="scen-wins r" style="--d:.28s">
+      <div class="glass sw"><div class="sw-h">Jan – Jun 2026</div><div class="sw-n">8 projects</div></div>
+      <div class="glass sw"><div class="sw-h">May – Aug 2026</div><div class="sw-n">6 projects</div></div>
+      <div class="glass sw"><div class="sw-h">Jul – Dec 2026</div><div class="sw-n">7 projects</div></div>
+    </div>
+    <div class="wcompare r" style="--d:.36s">
+      <div class="glass wcard">
+        <div class="wc-top"><span class="wc-code">Option A</span></div>
+        <div class="wc-title">5 projects per window</div>
+        <div class="wc-cap">A ranked set of up to 5 for each window, so up to 15 rankings in total.</div>
+      </div>
+      <div class="wlink"><span class="wlink-label">or</span></div>
+      <div class="glass wcard">
+        <div class="wc-top"><span class="wc-code">Option B</span></div>
+        <div class="wc-title">5 projects across all windows</div>
+        <div class="wc-cap">One combined ranking of up to 5, spanning the 3 windows.</div>
+      </div>
+    </div>
+    <div class="wnote r" style="--d:.46s"><span class="wn-mark">?</span><span>Each internship window has its own projects, so this choice shapes both the application and how shortlisting works. To decide.</span></div>
+  </section>
+
+  <!-- B2.1 · TRANSITION -->
+  <section class="slide">
+    <div class="num r" style="--d:.05s">B2.1</div>
+    <h2 class="r" style="--d:.14s">Screened and <span class="grad">scored.</span></h2>
+  </section>
+
+  <!-- B2.1 · ELIGIBILITY SCREENING -->
+  <section class="slide">
+    <div class="eyebrow r" style="--d:.05s">B2.1 · Screening</div>
+    <h2 class="r" style="--d:.12s">Checked against <span class="grad">eligibility.</span></h2>
+    <div class="scr-crit r" style="--d:.2s">Eligibility criteria for this programme: <b>Nationality</b> and <b>minimum education requirement</b></div>
+    <div class="glass scr r" style="--d:.3s">
+      <div class="scr-head"><span>Applicant</span><span>Nationality</span><span>Minimum education requirement</span><span>Status</span></div>
+      <div class="scr-row">
+        <span class="scr-name">Rachel Lim</span>
+        <span class="scr-c"><span class="scr-i ok">&#10003;</span>Singapore Citizen</span>
+        <span class="scr-c"><span class="scr-i ok">&#10003;</span>Meets requirement</span>
+        <span class="scr-out eligible">Eligible</span>
+      </div>
+      <div class="scr-row">
+        <span class="scr-name">David Ng</span>
+        <span class="scr-c"><span class="scr-i ok">&#10003;</span>Singapore Citizen</span>
+        <span class="scr-c"><span class="scr-i warn">&#10007;</span>Below requirement</span>
+        <span class="scr-out flagged">Flagged</span>
+      </div>
+      <div class="scr-row">
+        <span class="scr-name">Wei Chen</span>
+        <span class="scr-c"><span class="scr-i bad">&#10007;</span>Foreigner</span>
+        <span class="scr-c"><span class="scr-i ok">&#10003;</span>Meets requirement</span>
+        <span class="scr-out rejected">Not eligible</span>
+      </div>
+      <div class="scr-row">
+        <span class="scr-name">Sara Tan</span>
+        <span class="scr-c"><span class="scr-i ok">&#10003;</span>Singapore Citizen</span>
+        <span class="scr-c"><span class="scr-i ok">&#10003;</span>Meets requirement</span>
+        <span class="scr-out eligible">Eligible</span>
+      </div>
+    </div>
+    <div class="wnote r" style="--d:.44s"><span class="wn-mark">&#10003;</span><span>Fail nationality and the application is auto rejected after 3 days. Fail minimum education and it is only flagged, so the IO can still shortlist.</span></div>
+  </section>
+
+  <!-- B2.1 · SUITABILITY SCORING -->
+  <section class="slide">
+    <div class="eyebrow r" style="--d:.05s">B2.1 · Suitability scores</div>
+    <h2 class="r" style="--d:.12s">Preferences, <span class="grad">scored.</span></h2>
+    <div class="sui r" style="--d:.24s">
+      <div class="glass sui-col">
+        <div class="sui-appl">
+          <span class="sui-av">RL</span>
+          <div><div class="sui-an">Rachel Lim</div><div class="sui-as">Computer Science · NUS, Year 3</div></div>
+        </div>
+        <div class="sui-projhd"><span>Project preference</span><span>Suitability score</span></div>
+        <div class="sui-projs">
+          <div class="sui-proj top">
+            <span class="sui-rank">1</span>
+            <div><div class="sui-pt">Autonomous Swarm Coordination</div><div class="sui-pbar"><span style="width:93%"></span></div></div>
+            <div class="sui-score">93%</div>
+          </div>
+          <div class="sui-proj">
+            <span class="sui-rank">2</span>
+            <div><div class="sui-pt">Digital Twin · Fleet Maintenance</div><div class="sui-pbar"><span style="width:63%"></span></div></div>
+            <div class="sui-score">63%</div>
+          </div>
+          <div class="sui-proj">
+            <span class="sui-rank">3</span>
+            <div><div class="sui-pt">Cyber Threat Detection Pipeline</div><div class="sui-pbar"><span style="width:85%"></span></div></div>
+            <div class="sui-score">85%</div>
+          </div>
+          <div class="sui-proj">
+            <span class="sui-rank">4</span>
+            <div><div class="sui-pt">Radar Signal Classification (ML)</div><div class="sui-pbar"><span style="width:78%"></span></div></div>
+            <div class="sui-score">78%</div>
+          </div>
+          <div class="sui-proj">
+            <span class="sui-rank">5</span>
+            <div><div class="sui-pt">Secure Comms Protocol</div><div class="sui-pbar"><span style="width:71%"></span></div></div>
+            <div class="sui-score">71%</div>
+          </div>
+        </div>
+      </div>
+      <div class="b21side">
+        <div class="beyond glass b21 r" style="--d:.42s">
+      <div>
+        <div class="by-h"><svg viewBox="0 0 24 24"><path d="M12 2l2.2 5.8L20 10l-5.8 2.2L12 18l-2.2-5.8L4 10l5.8-2.2L12 2Z"/></svg> AI profile summary</div>
+        <p class="by-txt">Rachel is a Computer Science undergraduate at NUS, GPA 4.30. She has <b>prior DSTA experience</b> through YDSP 2024, led her CCA as <b>club president</b>, and was a <b>national hackathon finalist</b>.</p>
+      </div>
+      <div class="by-chips">
+        <span class="by-chip eng">Prior DSTA · YDSP 2024</span>
+        <span class="by-chip">CCA President</span>
+        <span class="by-chip">Hackathon finalist</span>
+        <span class="by-chip">Dean's List</span>
+      </div>
+    </div>
+        <div class="c360 r" style="--d:.5s"><span>Part of the applicant's <b>Candidate 360</b> profile &rarr;</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- B2.1 · SCORE DEEP DIVE -->
+  <section class="slide">
+    <div class="eyebrow r" style="--d:.05s">B2.1 · Suitability score</div>
+    <h2 class="r" style="--d:.12s">How the score is <span class="grad">built.</span></h2>
+    <div class="stabs r" style="--d:.2s">
+      <input type="radio" name="stab" id="stab-disc" class="stab-r" checked>
+      <input type="radio" name="stab" id="stab-nodisc" class="stab-r">
+      <input type="radio" name="stab" id="stab-combo" class="stab-r">
+      <div class="stab-btns">
+        <label for="stab-disc">With discipline</label>
+        <label for="stab-nodisc">No discipline</label>
+        <label for="stab-combo">Mixed</label>
+      </div>
+
+      <div class="stab-panel p-disc">
+        <div class="sc-chips">
+          <span class="by-chip">UG Scholar / Merit Scholar</span>
+          <span class="by-chip">UG Student</span>
+          <span class="by-chip">Tech UP</span>
+          <span class="by-chip">Polytechnic</span>
+        </div>
+        <div class="wtwrap">
+          <div class="wtbar">
+            <div class="wtseg a" style="width:50%"><span class="wtl">Discipline of study</span><span class="wtp">50%</span></div>
+            <div class="wtseg b" style="width:50%"><span class="wtl">Academic grades</span><span class="wtp">50%</span></div>
+          </div>
+        </div>
+        <div class="glass ex">
+          <div class="ex-proj">
+            <span class="ex-plabel">Project</span>
+            <span class="ex-pt">Autonomous Swarm Coordination</span>
+            <span class="ex-pd">Discipline of study · Computer Science</span>
+          </div>
+          <div class="ex-formula">
+            <span class="ex-flabel">How the score is calculated</span>
+            <span class="ex-feq">Score = <b>Discipline match (20 to 50)</b> + <b>GPA &divide; institution max &times; 50</b></span>
+          </div>
+          <div class="ex-key">Discipline: <b>exact 50 · related 35 · no match 20</b>. GPA is rebased to each institution's scale: <b>NUS / NTU / SUTD 5.00 · SMU / poly 4.00</b>.</div>
+          <div class="ex-rows">
+            <div class="ex-head"><span>Applicant</span><span>Discipline of study</span><span>GPA</span><span>Suitability score</span></div>
+            <div class="ex-row"><span class="ex-name">Rachel Lim<span class="ex-inst">NUS · 5.00 scale</span></span><span class="ex-disc"><span class="ex-ok">&#10003;</span>Computer Science, exact <b class="ex-pts">50</b></span><span class="ex-gpa">4.30 / 5.00 <b class="ex-pts">43</b></span><span class="ex-score">93%</span></div>
+            <div class="ex-row"><span class="ex-name">Wei En<span class="ex-inst">SMU · 4.00 scale</span></span><span class="ex-disc"><span class="ex-mid">&#8776;</span>Information Systems, related <b class="ex-pts">35</b></span><span class="ex-gpa">3.60 / 4.00 <b class="ex-pts">45</b></span><span class="ex-score">80%</span></div>
+            <div class="ex-row"><span class="ex-name">Sara Tan<span class="ex-inst">NUS · 5.00 scale</span></span><span class="ex-disc"><span class="ex-no">&#10007;</span>Mechanical Engineering, no match <b class="ex-pts">20</b></span><span class="ex-gpa">4.50 / 5.00 <b class="ex-pts">45</b></span><span class="ex-score">65%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stab-panel p-nodisc">
+        <div class="sc-chips">
+          <span class="by-chip">Junior College</span>
+          <span class="by-chip">YDSP</span>
+        </div>
+        <div class="wtwrap">
+          <div class="wtbar">
+            <div class="wtseg a" style="width:100%"><span class="wtl">Academic grades</span><span class="wtp">100%</span></div>
+          </div>
+        </div>
+        <div class="glass ex g3">
+          <div class="ex-proj">
+            <span class="ex-plabel">Project</span>
+            <span class="ex-pt">Autonomous Swarm Coordination</span>
+            <span class="ex-pd">Discipline of study · Computer Science</span>
+          </div>
+          <div class="ex-formula">
+            <span class="ex-flabel">How the score is calculated</span>
+            <span class="ex-feq">No discipline to match, so scored on <b>academic results, normalised to 0 to 100</b></span>
+          </div>
+          <div class="ex-key">A-Level per STEM subject <b>A 100 · B 85 · C 70</b>, weighted by level (H1 &times;1, H2 &times;2, H3 &times;3) &nbsp;·&nbsp; IB: <b>total &divide; 45</b> &nbsp;·&nbsp; NUS High: <b>CAP &divide; 5.00</b></div>
+          <div class="ex-rows">
+            <div class="ex-head"><span>Applicant</span><span>Result</span><span>Suitability score</span></div>
+            <div class="ex-row"><span class="ex-name">Ryan Goh<span class="ex-inst">A-Level</span></span><span class="ex-disc">H2 Math A · H2 Physics A · H3 Chemistry B</span><span class="ex-score">94%</span></div>
+            <div class="ex-row"><span class="ex-name">Chloe Tan<span class="ex-inst">IB</span></span><span class="ex-disc">41 / 45</span><span class="ex-score">91%</span></div>
+            <div class="ex-row"><span class="ex-name">Deepak Rajan<span class="ex-inst">NUS High</span></span><span class="ex-disc">CAP 4.40 / 5.00</span><span class="ex-score">88%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stab-panel p-combo">
+        <div class="sc-chips">
+          <span class="by-chip">Post JC / Post Poly</span>
+        </div>
+        <div class="glass ex g3">
+          <div class="ex-proj">
+            <span class="ex-plabel">Project</span>
+            <span class="ex-pt">Autonomous Swarm Coordination</span>
+            <span class="ex-pd">Discipline of study · Computer Science</span>
+          </div>
+          <div class="ex-formula">
+            <span class="ex-flabel">How the score is calculated</span>
+            <span class="ex-feq">Post Poly has a discipline, scored like <b>with discipline</b>. Post JC has none, scored like <b>no discipline</b>.</span>
+          </div>
+          <div class="ex-rows">
+            <div class="ex-head"><span>Applicant</span><span>Scored on</span><span>Suitability score</span></div>
+            <div class="ex-row"><span class="ex-name">Nadia Lim<span class="ex-inst">Post Poly</span></span><span class="ex-disc"><span class="ex-ok">&#10003;</span>Information Technology matches, plus GPA</span><span class="ex-score">95%</span></div>
+            <div class="ex-row"><span class="ex-name">Marcus Tan<span class="ex-inst">Post JC</span></span><span class="ex-disc">STEM grades, no discipline to match</span><span class="ex-score">90%</span></div>
+            <div class="ex-row"><span class="ex-name">Priya Rao<span class="ex-inst">Post Poly</span></span><span class="ex-disc"><span class="ex-no">&#10007;</span>Mechanical Engineering, no match, plus GPA</span><span class="ex-score">60%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- B2.1 · FOR DISCUSSION -->
+  <section class="slide">
+    <div class="eyebrow r" style="--d:.05s">B2.1 · For discussion</div>
+    <h2 class="r" style="--d:.12s">Open <span class="grad">questions.</span></h2>
+    <div class="disc r" style="--d:.24s">
+      <div class="glass disc-item"><span class="disc-q">?</span><div><div class="disc-t">Weightings</div><div class="disc-d">Is Discipline of study 50 / Academic grades 50 the right balance?</div></div></div>
+      <div class="glass disc-item"><span class="disc-q">?</span><div><div class="disc-t">Discipline match</div><div class="disc-d">Binary (match or not) or graded by how closely the discipline fits?</div></div></div>
+      <div class="glass disc-item"><span class="disc-q">?</span><div><div class="disc-t">Categories without a discipline</div><div class="disc-d">How are Junior College, Post JC / Post Poly and YDSP scored?</div></div></div>
+      <div class="glass disc-item"><span class="disc-q">?</span><div><div class="disc-t">AI summary signals</div><div class="disc-d">Should prior DSTA, CCA leadership and similar affect the score, or stay advisory?</div></div></div>
+      <div class="glass disc-item"><span class="disc-q">?</span><div><div class="disc-t">GPA scales</div><div class="disc-d">Beyond local 4.00 / 5.00, how are overseas grades and letter grades handled?</div></div></div>
+    </div>
+  </section>
+
+  <!-- B2.2 · TRANSITION -->
+  <section class="slide">
+    <div class="num r" style="--d:.05s">B2.2</div>
+    <h2 class="r" style="--d:.14s">Shortlist for <span class="grad">interview.</span></h2>
+  </section>
+
+  <!-- B2.2 · SHORTLIST BY PROJECT -->
+  <section class="slide">
+    <div class="eyebrow r" style="--d:.05s">B2.2 · Shortlist for interview</div>
+    <h2 class="r" style="--d:.12s">Shortlist by <span class="grad">project.</span></h2>
+    <div class="pl-wrap r" style="--d:.24s">
+      <div class="glass pl-proj">
+        <div>
+          <div class="pl-pt">Autonomous Swarm Coordination</div>
+          <div class="pl-psub">PC4 · Undergraduate</div>
+        </div>
+        <div class="pl-mets">
+          <div class="pl-place"><span class="pl-place-n">1 / 3</span><span class="pl-place-l">placements filled</span></div>
+          <div class="pl-place"><span class="pl-place-n">3</span><span class="pl-place-l">pending interview</span></div>
+        </div>
+      </div>
+      <div class="pl-list">
+        <div class="pl-row">
+          <span class="pl-rank">1</span>
+          <div><div class="pl-name">Rachel Lim</div><div class="pl-sub">Computer Science · NUS · ranked this project #1</div></div>
+          <span class="pl-score">88%</span>
+          <div class="ai-pop"><div class="ai-pop-h"><svg viewBox="0 0 24 24"><path d="M12 2l2.2 5.8L20 10l-5.8 2.2L12 18l-2.2-5.8L4 10l5.8-2.2L12 2Z"/></svg>AI profile summary</div><p>Computer Science at NUS, GPA 4.30. <b>Prior DSTA</b> through YDSP 2024, <b>CCA president</b>, national hackathon finalist.</p></div>
+        </div>
+        <div class="pl-row">
+          <span class="pl-rank">2</span>
+          <div><div class="pl-name">David Ng</div><div class="pl-sub">Electrical Engineering · NTU · ranked this project #2</div></div>
+          <span class="pl-score">81%</span>
+          <div class="ai-pop"><div class="ai-pop-h"><svg viewBox="0 0 24 24"><path d="M12 2l2.2 5.8L20 10l-5.8 2.2L12 18l-2.2-5.8L4 10l5.8-2.2L12 2Z"/></svg>AI profile summary</div><p>Electrical Engineering at NTU, GPA 3.90. <b>Robotics club lead</b>, two prior internships in embedded systems.</p></div>
+        </div>
+        <div class="pl-row">
+          <span class="pl-rank">3</span>
+          <div><div class="pl-name">Sara Tan</div><div class="pl-sub">Data Science · SMU · ranked this project #4</div></div>
+          <span class="pl-score">81%</span>
+          <div class="ai-pop"><div class="ai-pop-h"><svg viewBox="0 0 24 24"><path d="M12 2l2.2 5.8L20 10l-5.8 2.2L12 18l-2.2-5.8L4 10l5.8-2.2L12 2Z"/></svg>AI profile summary</div><p>Data Science at SMU, GPA 3.60 / 4.00. Kaggle competitor; led a national data visualisation project.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="wnote r" style="--d:.44s"><span class="wn-mark">&#10003;</span><span>Applicants are sorted by suitability score. When scores tie, whoever ranked this project higher is placed first (David at #2, above Sara at #4). Hover an applicant for an AI profile summary.</span></div>
+  </section>
+
+  <!-- B2.2 · SHORTLIST BY APPLICANT -->
+  <section class="slide">
+    <div class="eyebrow r" style="--d:.05s">B2.2 · Shortlist for interview</div>
+    <h2 class="r" style="--d:.12s">Shortlist by <span class="grad">applicant.</span></h2>
+    <div class="pl-wrap r" style="--d:.24s">
+      <div class="glass pl-proj">
+        <div>
+          <div class="pl-pt">Rachel Lim</div>
+          <div class="pl-psub">Computer Science · NUS · Applicants tab</div>
+        </div>
+        <div class="pl-place"><span class="pl-place-n">88%</span><span class="pl-place-l">top suitability score</span></div>
+      </div>
+      <div class="pl-list">
+        <div class="pl-row"><span class="pl-rank">1</span><div><div class="pl-name">Autonomous Swarm Coordination</div><div class="pl-sub">PC4 · her preference #1</div></div><div class="pl-right"><div class="pl-mini"><span><b>1 / 3</b> placements</span><span><b>3</b> pending interview</span></div><span class="pl-score">88%</span></div></div>
+        <div class="pl-row"><span class="pl-rank">2</span><div><div class="pl-name">Radar Signal Classification (ML)</div><div class="pl-sub">PC4 · her preference #3</div></div><div class="pl-right"><div class="pl-mini"><span><b>0 / 2</b> placements</span><span><b>2</b> pending interview</span></div><span class="pl-score">74%</span></div></div>
+        <div class="pl-row"><span class="pl-rank">3</span><div><div class="pl-name">Digital Twin · Fleet Maintenance</div><div class="pl-sub">PC8 · her preference #2</div></div><div class="pl-right"><div class="pl-mini"><span><b>2 / 2</b> placements</span><span><b>0</b> pending interview</span></div><span class="pl-score">61%</span></div></div>
+      </div>
+    </div>
+    <div class="wnote r" style="--d:.44s"><span class="wn-mark">&#10003;</span><span>Her projects ranked by fit, shortlist straight from here. Both views share the same scores and shortlist, so shortlisting sends the applicant to the mentor for interview whichever way you came in.</span></div>
+  </section>
+
+
+</main>
+
+<button class="nav prev" id="prev" aria-label="Previous"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+<button class="nav next" id="next" aria-label="Next"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button>
+<div class="dots" id="dots"></div>
+<button class="fsbtn" id="fsbtn" aria-label="Full screen"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+
+<!-- DRILL-DOWN -->
+<div class="detail" id="detail" aria-hidden="true">
+  <div class="detail-bd" id="detailBd"></div>
+  <div class="detail-card glass" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+    <button class="d-close" id="dClose" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    <div class="d-top">
+      <span class="d-code" id="dCode"></span>
+      <span class="d-title" id="dTitle"></span>
+    </div>
+    <div class="d-body" id="dBody">
+      <div class="substeps" id="dSteps"></div>
+      <aside class="d-backlog" id="dBacklog"></aside>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  /* ── Process areas → sub-steps ──────────────────────────────────── */
+  const AREA = {
+    A1: { title: "Project creation", steps: [
+      { code: "A1.1", title: "HQ creates a project request for AD (P&C)", tag: "3 July",          kind: "date" },
+      { code: "A1.2", title: "HQ tracks project request",                  tag: "3 July",          kind: "date" },
+      { code: "A1.3", title: "AD (P&C) responds and uploads projects as Excel", tag: "3 July",       kind: "date" },
+      { code: "A1.4", title: "HQ reviews project submission",              tag: "3 July",          kind: "date" },
+      { code: "A1.5", title: "HQ routes projects for DCE approval",        tag: "10 July", kind: "date" }
+    ]},
+    A2: { title: "Programme creation", steps: [
+      { code: "A2.1", title: "IO creates programme",                       tag: "10 July", kind: "date" }
+    ]},
+    B1: { title: "Application", steps: [
+      { code: "B1.1", title: "Applicant applies for internship", tag: "13 July", kind: "date" }
+    ]},
+    B2: { title: "Applicant shortlisting", steps: [
+      { code: "B2.1", title: "Applicant screened against eligibility criteria and assigned project suitability score", tag: "Discuss today", kind: "now" },
+      { code: "B2.2", title: "IO shortlists applicant for interview",            tag: "Discuss today", kind: "now" }
+    ]}
+  };
+
+  /* ── Backlog per sub-step (from the UX-feedback tracker) ─────────── */
+  /* s: "built" = incorporated into the prototype · "uat" = planned / pending */
+  const BACKLOG = {
+    "A1.1": [
+      { s:"built", t:"Request fields: Intern Category, Internship Window, Duration (1/2/3/6/12 mo), Placements" },
+      { s:"built", t:"Select Programme Centre → auto-fills PC Head + AD (P&C) from the mapping table" },
+      { s:"built", t:"DSO & CSIT selectable, with no PC Head, so the request goes straight to their HR (AD (P&C))" },
+      { s:"built", t:"Response deadline; save request as draft" },
+      { s:"built", t:"Email to AD (P&C), Cc PC Head + HQ; To, Cc and the message body are all editable in the preview" },
+      { s:"built", t:"Email carries portal link, instructions, Excel template, and clearance + PC Head approval note" },
+      { s:"built", t:"Automatic reminders 14 & 7 days before the deadline" },
+      { s:"uat",   t:"Send one request across many (20+) Programme Centres conveniently" },
+      { s:"uat",   t:"Sent from a configurable Internship HQ system address" }
+    ],
+    "A1.2": [
+      { s:"built", t:"Columns: Programme Centre, Intern Category, AD (P&C), Placements Requested, Request Date, Deadline, Status" },
+      { s:"built", t:"Status: Draft / Pending / Incomplete / Fulfilled / Withdrawn + over-target flag" },
+      { s:"built", t:"A sent request can't be edited. Add-ons go out as a new request; a cut-down withdraws the request first, then a new one is raised" },
+      { s:"built", t:"Withdrawing moves the request to Closed and emails the AD (P&C); the AD can still withdraw & resubmit while the window is open" },
+      { s:"built", t:"Row actions: Send reminder, Extend deadline, Withdraw (open) · Edit / Delete (drafts only) · View" },
+      { s:"uat",   t:"Filter the list by Year (request date); show all available fields" },
+      { s:"uat",   t:"Reminders only for unfulfilled lines; extend +7 days up to 3× with audit trail + auto email" }
+    ],
+    "A1.3": [
+      { s:"built", t:"AD (P&C) sees requests to respond to, with deadline and submission state" },
+      { s:"built", t:"AD (P&C) can only submit against a received request" },
+      { s:"built", t:"Excel template: PC (auto), Title, Scope, Tech Competency ×3, Discipline ×3, Primary + Secondary Mentor (name / appointment / email), Placements" },
+      { s:"built", t:"DSO / CSIT: Tech Competency is optional, as their project lists don't share the same competencies" },
+      { s:"built", t:"Tabs per Intern Category, segmented by Internship Window & Duration, with a live placement tally" },
+      { s:"built", t:"Upload the completed Excel; projects appear as editable cards" },
+      { s:"built", t:"Submit confirmation showing submitted vs requested (variance)" },
+      { s:"built", t:"Submission disclaimer / declaration" },
+      { s:"uat",   t:"Excel blocks adding rows, so AD can't exceed the requested project count, but may offer more placements" },
+      { s:"uat",   t:"Checkboxes to include / exclude uploaded projects before submitting (all ticked by default)" },
+      { s:"uat",   t:"AI tick/cross check of scope vs Intern Category + suggested edits" }
+    ],
+    "A1.4": [
+      { s:"built", t:"Submitted projects awaiting review live under Project Requests → Project Submissions (Pending / Approved / Rejected)" },
+      { s:"built", t:"HQ approves or rejects with remarks; grouped by Programme Centre" },
+      { s:"built", t:"Placements column (was Slots) shows submitted / requested (e.g. 3 / 5)" },
+      { s:"built", t:"Discipline of Study shown in place of Mentor in the list" },
+      { s:"built", t:"Project detail fields aligned to the Excel template; duplicate Intern Category removed" },
+      { s:"built", t:"IO can edit a submitted project's details before approving" },
+      { s:"uat",   t:"Rename Project Pool → Approved Projects" },
+      { s:"uat",   t:"Clearer AI-check labels (Approved by AI / More Suggestions by AI); enhanced uploaded-projects UI" },
+      { s:"uat",   t:"Audit trail for IO edits to published projects, without notifying submitters" }
+    ],
+    "A1.5": [
+      { s:"built", t:"IO reviews the submitted projects, then routes a batch to DCE for approval" },
+      { s:"built", t:"IO records the final approve / reject on the portal, with remarks for resubmission" },
+      { s:"uat",   t:"DCE approval handled offline by email; the system only captures the IO's final decision, not the DCE email trail" },
+      { s:"uat",   t:"Distinguish the approval status: Approved (by HQ) vs Approved on behalf of DCE" }
+    ],
+    "A2.1": [
+      { s:"built", t:"Programme groups one or more Intakes, each an Application Window + Internship Window (terms aligned 10 Jul)" },
+      { s:"built", t:"Internship Window presets per Intern Category (dropdown), plus a Customise option for a bespoke window" },
+      { s:"built", t:"Intake Year shifts the seasonal window presets to the chosen cycle" },
+      { s:"built", t:"Eligibility criteria configured per Intern Category on the programme" },
+      { s:"uat",   t:"Finalise the built-in intake periods per category (JC Jun/Dec · Poly Mar–Aug & Sep–Feb · UG Jan–Jun/May–Sep/Jul–Dec/Jan–Dec · YDSP Sep–Dec)" }
+    ],
+    "B1.1": [
+      { s:"built", t:"Applicant journey on the DSTA website skin, starting with Singpass authentication" },
+      { s:"built", t:"Conversational application, quiz assessment, CV upload, and transcript upload" },
+      { s:"uat",   t:"Application form templates as first-class, configurable objects (preview + edit) for the dev system" }
+    ]
+  };
+
+  /* ── Follow-up questions per sub-step (open points to resolve) ───── */
+  /* Each item: { q: question } · optional { sol: solution already shown in the prototype } */
+  const FOLLOWUP = {
+    // Follow-up questions cleared pending the detailed 10 Jul discussion with the team.
+  };
+
+  const detail = document.getElementById("detail");
+  const dCode = document.getElementById("dCode"), dTitle = document.getElementById("dTitle"),
+        dSteps = document.getElementById("dSteps"), dBody = document.getElementById("dBody"),
+        dBacklog = document.getElementById("dBacklog");
+  let open = false, curCode = null, curTab = "backlog";
+  const hasDetail = code => !!(BACKLOG[code] || FOLLOWUP[code]);
+  function renderPanel(){
+    if(!curCode){ dBacklog.innerHTML = '<div class="bl-empty">Click a step to see its backlog and follow-up questions.</div>'; return; }
+    const bl = BACKLOG[curCode] || [], fu = FOLLOWUP[curCode] || [];
+    if(!fu.length) curTab = 'backlog';
+    // Only show the tab bar when a step has follow-up questions; otherwise show the backlog on its own.
+    const tabs = fu.length
+      ? '<div class="bl-tabs">' +
+          '<button class="bl-tab ' + (curTab==='backlog'?'active':'') + '" data-tab="backlog">Backlog' + (bl.length?' <span class="bl-count">'+bl.length+'</span>':'') + '</button>' +
+          '<button class="bl-tab ' + (curTab==='followup'?'active':'') + '" data-tab="followup">Follow-up questions <span class="bl-count">'+fu.length+'</span></button>' +
+        '</div>'
+      : '';
+    let body;
+    if(curTab==='backlog'){
+      body = bl.length
+        ? '<ul class="bl-list">' + bl.map(it => '<li><span>'+it.t+'</span></li>').join('') + '</ul>'
+        : '<div class="bl-empty">No backlog captured.</div>';
+    } else {
+      body = fu.length
+        ? '<ul class="fu-list">' + fu.map(item => {
+            const q = typeof item === 'string' ? item : item.q;
+            const sol = (item && item.sol) ? '<div class="fu-sol"><span class="bl-s built">In prototype</span><span>'+item.sol+'</span></div>' : '';
+            return '<li>'+q+sol+'</li>';
+          }).join('') + '</ul>'
+        : '<div class="bl-empty">No follow-up questions.</div>';
+    }
+    dBacklog.innerHTML = tabs + body;
+    dBacklog.querySelectorAll('.bl-tab').forEach(t => t.addEventListener('click', () => { curTab = t.dataset.tab; renderPanel(); }));
+  }
+  function openDetail(code){
+    const a = AREA[code]; if(!a) return;
+    dCode.textContent = code;
+    dTitle.textContent = a.title;
+    dSteps.innerHTML = a.steps.map(s => {
+      return `<div class="substep ${s.kind==='now'?'is-now':s.kind==='tbd'?'is-tbd':''} ${hasDetail(s.code)?'has-bl':''}" data-code="${s.code}">
+        <span class="ss-code">${s.code}</span>
+        <span class="ss-title">${s.title}</span>
+        <span class="tag ${s.kind}">${s.tag}</span>
+      </div>`;
+    }).join("");
+    const anyDetail = a.steps.some(s => hasDetail(s.code));
+    dBody.classList.toggle('solo', !anyDetail);
+    curCode = null; curTab = "backlog";
+    if(anyDetail){
+      renderPanel();
+      dSteps.querySelectorAll('.substep.has-bl').forEach(row => {
+        const activate = () => { curCode = row.dataset.code; curTab = "backlog"; renderPanel(); dSteps.querySelectorAll('.substep').forEach(r => r.classList.toggle('active', r === row)); };
+        row.setAttribute('tabindex','0');
+        row.addEventListener('click', activate);
+        row.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); activate(); } });
+      });
+    }
+    detail.classList.add("open"); detail.setAttribute("aria-hidden","false");
+    document.body.classList.add("detail-open"); open = true;
+  }
+  function closeDetail(){ detail.classList.remove("open"); detail.setAttribute("aria-hidden","true"); document.body.classList.remove("detail-open"); open = false; }
+  document.querySelectorAll(".farea[data-code]").forEach(b => b.addEventListener("click", () => openDetail(b.dataset.code)));
+  document.getElementById("dClose").addEventListener("click", closeDetail);
+  document.getElementById("detailBd").addEventListener("click", closeDetail);
+
+  /* ── Cast overlay (opened from the internship slide) ────────────── */
+  const cast = document.getElementById("cast");
+  function openCast(){ cast.classList.add("open"); cast.setAttribute("aria-hidden","false"); document.body.classList.add("detail-open"); open = true; }
+  function closeCast(){ cast.classList.remove("open"); cast.setAttribute("aria-hidden","true"); if(!detail.classList.contains("open")) document.body.classList.remove("detail-open"); open = detail.classList.contains("open"); }
+  document.getElementById("castOpen").addEventListener("click", openCast);
+  document.getElementById("castClose").addEventListener("click", closeCast);
+  document.getElementById("castBd").addEventListener("click", closeCast);
+
+  /* ── Slide navigation ───────────────────────────────────────────── */
+  const slides = [...document.querySelectorAll('.slide')];
+  const bar = document.getElementById('bar');
+  const dotsWrap = document.getElementById('dots');
+  const prev = document.getElementById('prev'), next = document.getElementById('next');
+  const mq = matchMedia('(max-width:640px)');
+  let i = 0;
+  slides.forEach((_, n) => { const b = document.createElement('button'); b.setAttribute('aria-label','Slide '+(n+1)); b.addEventListener('click',()=>{ if(!mq.matches) go(n); }); dotsWrap.appendChild(b); });
+  const dots = [...dotsWrap.children];
+  function go(n){
+    if(open){ closeDetail(); closeCast(); }
+    i = Math.max(0, Math.min(slides.length-1, n));
+    slides.forEach((s,k)=>s.classList.toggle('active', k===i));
+    dots.forEach((d,k)=>d.classList.toggle('on', k===i));
+    bar.style.width = (i/(slides.length-1)*100) + '%';
+    prev.disabled = i===0; next.disabled = i===slides.length-1;
+  }
+  const nextFn = ()=>go(i+1), prevFn = ()=>go(i-1);
+  next.addEventListener('click',()=>{ if(!mq.matches) nextFn(); });
+  prev.addEventListener('click',()=>{ if(!mq.matches) prevFn(); });
+  window.addEventListener('keydown', e=>{
+    if(open){ if(e.key==='Escape'){ e.preventDefault(); closeDetail(); closeCast(); } else if(e.key.indexOf('Arrow')===0||e.key===' '){ e.preventDefault(); } return; }
+    if(mq.matches) return;
+    if(['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)){ e.preventDefault(); nextFn(); }
+    else if(['ArrowLeft','ArrowUp','PageUp','Backspace'].includes(e.key)){ e.preventDefault(); prevFn(); }
+    else if(e.key==='Home') go(0); else if(e.key==='End') go(slides.length-1);
+  });
+  let x0=null; const deck=document.getElementById('deck');
+  deck.addEventListener('pointerdown',e=>{ x0=e.clientX; });
+  deck.addEventListener('pointerup',e=>{ if(mq.matches||x0===null||open) return; const dx=e.clientX-x0; x0=null; if(Math.abs(dx)>60){ dx<0?nextFn():prevFn(); } });
+  function onScroll(){
+    const max=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(max>0?Math.min(100,window.scrollY/max*100):0)+'%';
+    const vh=window.innerHeight;
+    slides.forEach(s=>{ if(!s.classList.contains('inview') && s.getBoundingClientRect().top<vh*0.9) s.classList.add('inview'); });
+  }
+  function setMode(){
+    if(mq.matches){ window.addEventListener('scroll',onScroll,{passive:true}); window.addEventListener('resize',onScroll,{passive:true}); onScroll(); }
+    else { slides.forEach(s=>s.classList.remove('inview')); window.removeEventListener('scroll',onScroll); window.removeEventListener('resize',onScroll); go(i); }
+  }
+  if(mq.addEventListener) mq.addEventListener('change',setMode); else if(mq.addListener) mq.addListener(setMode);
+  setMode();
+
+  /* ── Board area → jump to its slide ─────────────────────────────── */
+  document.querySelectorAll('.farea[data-goto]').forEach(b => {
+    b.addEventListener('click', () => { if(!mq.matches) go(parseInt(b.dataset.goto, 10)); });
+  });
+
+  /* ── A2 · programmes across the year (Gantt) ────────────────────── */
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const GANTT = [
+    { cat: "Undergraduate Scholar / Merit Scholar", intakes: [
+      { label: "Jan – Jun", dur: "6 mths",    start: 1, end: 6 },
+      { label: "Jan – Dec", dur: "12 mths",   start: 1, end: 12 },
+      { label: "May – Aug", dur: "3 mths",    start: 5, end: 8 },
+      { label: "May – Sep", dur: "2, 3 mths", start: 5, end: 9 },
+      { label: "Jun – Sep", dur: "2, 3 mths", start: 6, end: 9 },
+      { label: "Jul – Dec", dur: "6 mths",    start: 7, end: 12 }
+    ]},
+    { cat: "Tech UP", note: "Intakes TBD", intakes: [] },
+    { cat: "Undergraduate Student", intakes: [
+      { label: "Jan – Jun", dur: "6 mths", start: 1, end: 6 },
+      { label: "May – Aug", dur: "3 mths", start: 5, end: 8 },
+      { label: "Jul – Dec", dur: "6 mths", start: 7, end: 12 }
+    ]},
+    { cat: "Junior College Scholar / Junior College Student", intakes: [
+      { label: "Jun", dur: "1 mth", start: 6, end: 6 },
+      { label: "Dec", dur: "1 mth", start: 12, end: 12 }
+    ]},
+    { cat: "Polytechnic Scholar / Polytechnic Student", intakes: [
+      { label: "Sep – Feb", dur: "3, 6 mths", start: 9, end: 2 },
+      { label: "Mar – Aug", dur: "3, 6 mths", start: 3, end: 8 },
+      { label: "Jan – Dec", dur: "12 mths",   start: 1, end: 12 }
+    ]},
+    { cat: "Post Junior College / Post Polytechnic Student", intakes: [
+      { label: "Jan – Jun", dur: "1, 2, 4 mths", start: 1, end: 6, flag: "Post JC / Post Poly has a 4-month project, outside the agreed 1 / 2 / 3 / 6 / 12-month durations." }
+    ]},
+    { cat: "Young Defence Scientist Programme", note: "Full-time vs part-time?", intakes: [
+      { label: "Jun – Sep", dur: "", start: 6, end: 9 },
+      { label: "Sep – Dec", dur: "", start: 9, end: 12 }
+    ]}
+  ];
+  function seg(start, end){ return start <= end ? [[start, end+1]] : [[start, 13], [1, end+1]]; }
+  const calList = document.getElementById('calList');
+  const calView = document.getElementById('calView');
+  function renderCal(i){
+    const g = GANTT[i];
+    const cls = 'c-amber';
+    let html = '<div class="cal-hd">' + g.cat + (g.note ? ' <span class="cc-note">'+g.note+'</span>' : '') + '</div>';
+    if(!g.intakes.length){ calView.innerHTML = html + '<div class="cal-empty">Intakes to be defined.</div>'; return; }
+    html += '<div class="g-head"><div class="g-label"></div><div class="g-track">' + MONTHS.map(m => '<span>'+m+'</span>').join('') + '</div></div>';
+    const flags = [];
+    g.intakes.forEach(it => {
+      if(it.flag) flags.push(it.flag);
+      const lbl = (it.dur || '') + (it.flag ? ' <span class="g-warn">&#9888;</span>' : '');
+      const bars = seg(it.start, it.end).map((s, k) => '<div class="g-bar ' + cls + (it.flag ? ' flagged' : '') + '" style="grid-column:' + s[0] + ' / ' + s[1] + '">' + (k === 0 ? lbl : '') + '</div>').join('');
+      html += '<div class="g-row"><div class="g-label">' + it.label + '</div><div class="g-grid">' + bars + '</div></div>';
+    });
+    if(flags.length) html += '<div class="g-flags">' + flags.map(f => '<div class="g-fl"><span class="g-warn">&#9888;</span>'+f+'</div>').join('') + '</div>';
+    calView.innerHTML = html;
+  }
+  function selectCat(i){
+    calList.querySelectorAll('.cal-cat').forEach((b, k) => b.classList.toggle('active', k === i));
+    renderCal(i);
+  }
+  if(calList && calView){
+    calList.innerHTML = GANTT.map((g, i) =>
+      '<button class="cal-cat' + (i === 0 ? ' active' : '') + '" data-i="' + i + '">' +
+        '<span class="cc-name">' + g.cat + '</span>' +
+        (g.intakes.length ? '<span class="cc-count">' + g.intakes.length + '</span>' : (g.note ? '<span class="cc-note">' + g.note + '</span>' : '')) +
+      '</button>').join('');
+    calList.querySelectorAll('.cal-cat').forEach(b => b.addEventListener('click', () => selectCat(parseInt(b.dataset.i, 10))));
+    renderCal(0);
+  }
+
+  /* ── A2 · eligibility criteria per intern category ──────────────── */
+  const ELIG_CATS = [
+    "Undergraduate Scholar / Merit Scholar",
+    "Tech UP",
+    "Undergraduate Student",
+    "Junior College Scholar / Junior College Student",
+    "Polytechnic Scholar / Polytechnic Student",
+    "Post Junior College / Post Polytechnic Student",
+    "Young Defence Scientist Programme"
+  ];
+  const ELIGIBILITY = {
+    "Undergraduate Scholar / Merit Scholar": [
+      "Currently at University",
+      "GPA ≥ 4.0 (NUS / NTU / SUTD), or ≥ 3.6 (SMU)"
+    ],
+    "Tech UP": { note: "No set eligibility criteria. Tech UP members have already been through a round of screening and interview." },
+    "Undergraduate Student": [
+      "Currently at University",
+      "GPA ≥ 4.0 (NUS / NTU / SUTD), or ≥ 3.6 (SMU)"
+    ],
+    "Junior College Scholar / Junior College Student": [
+      "Currently in Junior College",
+      "One of these qualifications:<div class='routes'><span>GCE A-Level: STEM ≥ B (Math, Physics, Chemistry, Biology, Computing)</span><span>IB: total ≥ 40</span><span>NUS High School Diploma: CAP ≥ 4.5</span></div>"
+    ],
+    "Polytechnic Scholar / Polytechnic Student": [
+      "Currently at Polytechnic",
+      "GPA ≥ 3.8"
+    ],
+    "Post Junior College / Post Polytechnic Student": [
+      "One of these routes:<div class='routes'><span>JC: A-Level STEM ≥ B</span><span>IB Diploma: total ≥ 40</span><span>NUS High School Diploma: CAP ≥ 4.5</span><span>Polytechnic: GPA ≥ 3.8</span></div>"
+    ],
+    "Young Defence Scientist Programme": [
+      "IP Year 4 Science student",
+      "Grade B and above in STEM subjects: Mathematics (≥ 2 Maths subjects), Biology / Chemistry / Physics (combination varies); English Language also assessed"
+    ]
+  };
+  const eligList = document.getElementById('eligList');
+  const eligView = document.getElementById('eligView');
+  function renderElig(i){
+    const cat = ELIG_CATS[i];
+    const data = ELIGIBILITY[cat];
+    let html = '<div class="cal-hd">' + cat + '</div>';
+    if(Array.isArray(data) && data.length){
+      html += '<ul class="elig-list">' + data.map(c => '<li>'+c+'</li>').join('') + '</ul>';
+    } else if(data && data.note){
+      html += '<div class="elig-msg">' + data.note + '</div>';
+    } else {
+      html += '<div class="cal-empty">Criteria to be defined.</div>';
+    }
+    eligView.innerHTML = html;
+  }
+  function selectElig(i){ eligList.querySelectorAll('.cal-cat').forEach((b,k) => b.classList.toggle('active', k===i)); renderElig(i); }
+  if(eligList && eligView){
+    eligList.innerHTML = ELIG_CATS.map((c,i) => '<button class="cal-cat'+(i===0?' active':'')+'" data-i="'+i+'"><span class="cc-name">'+c+'</span></button>').join('');
+    eligList.querySelectorAll('.cal-cat').forEach(b => b.addEventListener('click', () => selectElig(parseInt(b.dataset.i,10))));
+    renderElig(0);
+  }
+
+  /* ── Fullscreen toggle ──────────────────────────────────────────── */
+  const fsbtn = document.getElementById('fsbtn');
+  if(fsbtn){
+    const FS_EXPAND = '<svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+    const FS_COMPRESS = '<svg viewBox="0 0 24 24"><path d="M8 3v3a2 2 0 0 1-2 2H3M16 3v3a2 2 0 0 0 2 2h3M8 21v-3a2 2 0 0 0-2-2H3M16 21v-3a2 2 0 0 1 2-2h3"/></svg>';
+    const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+    fsbtn.addEventListener('click', () => {
+      if(fsEl()){ (document.exitFullscreen || document.webkitExitFullscreen || function(){}).call(document); }
+      else { const el = document.documentElement; (el.requestFullscreen || el.webkitRequestFullscreen || function(){}).call(el); }
+    });
+    const updateFs = () => { fsbtn.innerHTML = fsEl() ? FS_COMPRESS : FS_EXPAND; };
+    document.addEventListener('fullscreenchange', updateFs);
+    document.addEventListener('webkitfullscreenchange', updateFs);
+  }
+
+  /* ── Eligibility questions: collapsible ─────────────────────────── */
+  const eqToggle = document.getElementById('eqToggle');
+  const eqList = document.getElementById('eqList');
+  if(eqToggle && eqList){
+    eqToggle.addEventListener('click', () => {
+      const collapsed = eqList.hasAttribute('hidden');
+      if(collapsed){ eqList.removeAttribute('hidden'); eqToggle.setAttribute('aria-expanded','true'); }
+      else { eqList.setAttribute('hidden',''); eqToggle.setAttribute('aria-expanded','false'); }
+    });
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TOA — System Requirement Specification</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config = { darkMode: "class", theme: { extend: { fontFamily: { sans: ["Inter","ui-sans-serif","system-ui","-apple-system","Segoe UI","Roboto","Helvetica","Arial","sans-serif"] } } } };</script>
+<script>try { if (localStorage.getItem("toa-theme") === "dark") document.documentElement.classList.add("dark"); } catch (e) {}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --ring: 226 232 240; }
+  html { scroll-behavior: smooth; }
+  body { font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; overflow-x: clip; }
+  #sidebarAside { transition: none; }
+  body.anim-ready #sidebarAside { transition: margin-left .32s cubic-bezier(.4, 0, .2, 1); }
+  #sidebarAside.sb-hidden { margin-left: -311px; }
+  #showPanel { transition: opacity .2s ease, transform .2s ease; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; border: 2px solid transparent; background-clip: content-box; }
+  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; background-clip: content-box; }
+  .nav-step.active { background: #eef2ff; }
+  .nav-step.active .nav-code, .nav-step.active .nav-title { color: #4338ca; }
+  .dark .nav-step.active { background: rgba(99,102,241,.18); }
+  .dark .nav-step.active .nav-code, .dark .nav-step.active .nav-title { color: #c7d2fe; }
+  .ac-tab.active { color: #4f46e5; border-color: #4f46e5; }
+  .ac-tab.active .ac-tab-count { background: #e0e7ff; color: #4338ca; }
+  .dark .ac-tab.active { color: #a5b4fc; border-color: #818cf8; }
+  .dark .ac-tab.active .ac-tab-count { background: rgba(129,140,248,.22); color: #c7d2fe; }
+  .fade-in { animation: fade .28s ease both; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  mark { background: #fde68a; color: inherit; padding: 0 1px; border-radius: 2px; }
+  .dark mark { background: #a16207; color: #fff; }
+  .dark ::-webkit-scrollbar-thumb { background: #334155; background-clip: content-box; }
+  @media print { .no-print { display: none !important; } }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-300">
+
+<!-- ── Top bar ─────────────────────────────────────────────────────── -->
+<header class="no-print sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-800">
+  <div class="flex items-center gap-4 px-5 h-16">
+    <div class="flex items-center gap-3 shrink-0">
+      <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white grid place-items-center font-bold text-[13px] tracking-tight shadow-sm">TOA</div>
+      <div class="leading-tight">
+        <div class="font-semibold text-slate-900 dark:text-white text-[15px]">System Requirement Specification</div>
+        <div class="text-[12px] text-slate-500 dark:text-slate-400">Talent Outreach &amp; Acquisition</div>
+      </div>
+    </div>
+
+    <div class="flex-1 max-w-md ml-2">
+      <div class="relative">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="search" type="search" placeholder="Search steps, stories or criteria…" autocomplete="off"
+          class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-500/20 outline-none transition">
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 ml-auto shrink-0">
+      <button id="themeToggle" title="Toggle colour theme" class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition">
+        <span id="themeIcon" class="grid place-items-center h-4 w-4"></span>
+        <span id="themeLabel"></span>
+      </button>
+      <span class="h-6 w-px bg-slate-200 dark:bg-slate-700"></span>
+      <button id="exportWord" class="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition">
+        <svg class="h-4 w-4 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="m8 13 1.5 5 1.5-3 1.5 3 1.5-5"/></svg>
+        Word
+      </button>
+      <button id="exportExcel" class="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition">
+        <svg class="h-4 w-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="m9 13 6 5M15 13l-6 5"/></svg>
+        Excel
+      </button>
+    </div>
+  </div>
+</header>
+
+<button id="showPanel" title="Show contents  (⌘/Ctrl + B)" class="no-print hidden fixed left-3 top-20 z-20 grid place-items-center h-9 w-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 transition">
+  <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/></svg>
+</button>
+
+<div class="flex items-start">
+  <!-- ── Sidebar ───────────────────────────────────────────────────── -->
+  <aside id="sidebarAside" class="no-print sticky top-16 h-[calc(100vh-4rem)] w-[310px] shrink-0 overflow-y-auto bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
+    <nav id="sidebar" class="py-4 px-3"></nav>
+  </aside>
+
+  <!-- ── Detail ────────────────────────────────────────────────────── -->
+  <main class="flex-1 min-w-0">
+    <div id="detail" class="max-w-4xl mx-auto px-8 py-10"></div>
+    <div id="empty" class="hidden max-w-4xl mx-auto px-8 py-24 text-center text-slate-400">
+      <p class="text-lg font-medium text-slate-500">No steps match your search</p>
+      <p class="text-sm mt-1">Try a different term.</p>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ── Reference data (grounded in the TOA prototype + UX-feedback tracker) ── */
+  const SECTIONS = [
+    { key:"data",      label:"Data & display" },
+    { key:"rules",     label:"Rules & scenarios" },
+    { key:"decisions", label:"Decisions" }
+  ];
+  const IDP = { data:"D", rules:"R" };
+  function isScenario(x){ return x && typeof x === "object"; }
+  function ruleText(x){
+    if(!isScenario(x)) return x;
+    return (x.name ? x.name + " — " : "") + "Given " + x.given + "; When " + x.when + "; Then " + x.then;
+  }
+
+  const PHASES = ["Preparation", "Programme", "Post Internship"];
+  const PHASE_CODE = { "Preparation": "A", "Programme": "B", "Post Internship": "C" };
+
+  const DATA = [
+    {
+      code:"A1", title:"Project creation", phase:"Preparation",
+      steps:[
+        {
+          code:"A1.1", title:"HQ creates a project request for AD (P&amp;C)", actor:"Internship HQ",
+          story:{ as:"Internship HQ", want:"create and send a project request to AD (P&C) — specifying the intern category, calendar period, duration and placements", so:"programme centres can submit projects for the intake" },
+          data:[
+            "Request fields: Intern Category, Internship Window (formerly Calendar Period), Internship Duration (1 / 2 / 3 / 6 / 12 months) and number of Placements.",
+            "A response deadline for the request.",
+            "DSO and CSIT are selectable as Programme Centres."
+          ],
+          rules:[
+            "Selecting a Programme Centre auto-fills its PC Head and AD (P&C) from the mapping table.",
+            "For DSO & CSIT there is no PC Head to Cc — only the HR representative (the AD (P&C) equivalent) receives the request.",
+            "A request can be saved as a draft before it is sent.",
+            "On send, the AD (P&C) is emailed and the PC Head and HQ are Cc'd, with an editable message body; the email carries the portal link, instructions, the Excel template and the clearance + PC Head approval note.",
+            "The TO and CC recipients are configurable in the email preview before the request is sent.",
+            "Automatic reminders are sent 14 and 7 days before the deadline.",
+            "Send one request across many (20+) Programme Centres in a single action.",
+            "Requests are sent from a configurable Internship HQ system address."
+          ],
+          decisions:[]
+        },
+        {
+          code:"A1.2", title:"HQ tracks project request", actor:"Internship HQ",
+          story:{ as:"Internship HQ", want:"track project requests, and correct a request when the original was wrong", so:"programme centres always receive an accurate request" },
+          data:[
+            "Tracker columns: Programme Centre, Intern Category, AD (P&C), Placements, Request Date, Deadline and Status.",
+            "The Placements column shows submitted / requested (e.g. 3 / 5).",
+            "The list can be filtered by Year (from the Request Date); all request fields are available as columns.",
+            "Request status: Draft / Pending / Incomplete / Fulfilled, with an over-target flag.",
+            "Row actions: Send reminder, Extend deadline, Edit / Delete (drafts only), Withdraw and View."
+          ],
+          rules:[
+            "A submitted project request cannot be edited — corrections follow the two scenarios below.",
+            { name:"Correcting a request — adding placements or an intern category",
+              given:"a request has already been sent to a Programme Centre",
+              when:"HQ needs to add placements or another intern category",
+              then:"HQ creates a new, separate request (the original is untouched); a new row appears in the HQ tracker and the AD (P&C) receives a second request — both requests stand" },
+            { name:"Correcting a request — reducing placements",
+              given:"a request has already been sent to a Programme Centre",
+              when:"HQ needs to reduce the placements or scope",
+              then:"HQ withdraws the original request first, then sends a new one — the AD (P&C) no longer sees the original, only the replacement" },
+            "Recipients are notified by email whenever a submitted request is updated (e.g. withdrawn).",
+            "Once a request passes its deadline it moves to the Closed tab; extending the deadline reopens it to the Open tab.",
+            "Reminders target only unfulfilled lines; deadlines can be extended by +7 days up to 3 times, with an audit trail and automatic email."
+          ],
+          decisions:[
+            "Confirmed (10 Jul): submitted requests are not editable. Additions go out as a new, separate request; reductions require withdraw-then-resend, so a PC never collects against a stale, higher number."
+          ]
+        },
+        {
+          code:"A1.3", title:"AD (P&amp;C) responds — uploads projects as Excel", actor:"AD (P&C)",
+          story:{ as:"AD (P&C)", want:"complete and upload the projects for a request using the provided template", so:"Internship HQ receives structured project items for the intake" },
+          data:[
+            "Excel template fields: Programme Centre (auto), Title, Scope, Tech Competency ×3, Discipline ×3, Primary Mentor, Secondary Mentor Appointment and Placements.",
+            "A submission disclaimer / declaration is captured on submit."
+          ],
+          rules:[
+            "AD (P&C) sees the requests to respond to, each with its deadline and submission state.",
+            "AD (P&C) can only submit against a request they have received.",
+            "AD (P&C) cannot add more projects than requested — rows cannot be added to the Excel — but may offer more placements than requested.",
+            "Tech Competency is optional for DSO and CSIT, whose projects may not use the same competency list.",
+            "Uploaded projects appear as editable cards under tabs per Intern Category, with a live placement tally; a submit confirmation shows submitted vs requested (variance).",
+            "Each uploaded project has a checkbox to include or exclude it from the submission; all are checked by default.",
+            "While the response window is open, AD (P&C) can withdraw and resubmit — the latest submission stands.",
+            "AI tick / cross check of each scope against the Intern Category, with suggested edits."
+          ],
+          decisions:[]
+        },
+        {
+          code:"A1.4", title:"HQ reviews project submission", actor:"Internship HQ",
+          story:{ as:"Internship HQ", want:"review each submitted project and approve or reject it with remarks", so:"only suitable projects enter the approved pool" },
+          data:[
+            "Project detail fields aligned to the Excel template: Scope, Tech Competency, Discipline of Study and mentors.",
+            "Approval status: Approved (by HQ) or Approved on behalf of DCE.",
+            "Approved projects sit under the 'Approved Projects' tab (renamed from Project Pool)."
+          ],
+          rules:[
+            "Submitted projects are reviewed under tabs by Intern Category; those Pending Review appear in the Project Requests tab.",
+            "HQ reviews each submitted project and approves or rejects it with remarks.",
+            "IO can edit a submitted or published project (e.g. to fix grammar) without notifying the submitter; every edit is recorded in an audit trail.",
+            "AI check on each uploaded project, labelled 'Approved by AI' or 'More suggestions by AI'.",
+            { name:"Rejected-project follow-up (planned)",
+              given:"a project has been rejected by HQ or DCE",
+              when:"the Programme Centre follows up",
+              then:"they can modify the project, submit a new project, or increase placements on an existing approved project" }
+          ],
+          decisions:[
+            "Approval statuses distinguish 'Approved by HQ' from 'Approved on behalf of DCE'.",
+            "Pending-Review submitted projects live in the Project Requests tab — this settles where HQ reviews submissions."
+          ]
+        },
+        {
+          code:"A1.5", title:"HQ routes projects for DCE approval", actor:"Internship HQ",
+          story:{ as:"Internship HQ", want:"export the approved projects to email DCE for offline sign-off, then record the outcome in the portal", so:"projects are cleared before publishing" },
+          data:[
+            "The approved-project list can be exported for emailing to DCE."
+          ],
+          rules:[
+            { name:"DCE approval (handled offline)",
+              given:"a set of HQ-approved projects is ready for sign-off",
+              when:"the IO exports the list and emails it to DCE for approval",
+              then:"DCE approves or rejects offline with comments; the IO returns to the TOA portal to record approve / reject with comments (for resubmission)" },
+            "The IO only marks a project Approved in the portal after DCE has approved it offline.",
+            "The email approval itself is not stored in the system — only the IO's final decision is recorded."
+          ],
+          decisions:[
+            "Confirmed (10 Jul): DCE approval is handled offline by email, not in-system. The portal captures only the final decision. (Supersedes the earlier tokenised in-system approval link.)"
+          ]
+        }
+      ]
+    },
+    {
+      code:"A2", title:"Programme creation", phase:"Preparation",
+      steps:[
+        {
+          code:"A2.1", title:"IO creates programme", actor:"IO",
+          story:{ as:"an IO", want:"set up a programme with its eligibility criteria, intakes and application form, and attach approved projects", so:"candidates can apply to the right intake" },
+          data:[
+            "An intake = an Application Window (when applicants apply) + an Internship Window (when the internship runs; formerly Calendar Period).",
+            "Internship Duration (1 / 2 / 3 / 6 / 12 months) is the actual time the intern is on the project, captured on the applicant's side.",
+            "Eligibility criteria per intern category.",
+            "Application form fields for the programme (to be finalised)."
+          ],
+          rules:[
+            "Internship Window options follow the selected Intern Category's intake periods (on-cycle), shown as dropdown presets; a Customise option allows a bespoke window on top of the presets.",
+            "Eligibility — the applicant must be a Singapore citizen.",
+            "Eligibility — for JC, IB and YDSP the applicant must take STEM subjects (Mathematics, Further Mathematics, Physics, Chemistry, Biology, Computing; Computer Science for IB), across H1 / H2 / H3.",
+            "Minimum scores — JC: A-level STEM >= B · IB: total >= 40 / 45 with >= 6 (B) in STEM · NUS High: CAP >= 4.0 / 5 · Polytechnic: GPA >= 3.8 / 4 · University: NUS / NTU / SUTD >= 4.0, SMU >= 3.6, overseas >= Second Upper Honours · YDSP: IP Year 4 Science, STEM >= B.",
+            "Undergraduate Scholar / Merit Scholar and Tech UP have no score criteria (they are scouted).",
+            "Only the citizenship criterion auto-rejects (automatic email after 3 days); all other criteria are reviewed by the IO before a rejection email is sent.",
+            "Approved projects are attached to intakes.",
+            { name:"Project spanning intakes",
+              given:"a project's period or duration overlaps more than one intake",
+              when:"it is attached to the programme",
+              then:"it can be associated with each overlapping intake (handling to be confirmed)" },
+            "Projects are auto-tagged to intakes based on their period and duration."
+          ],
+          decisions:[
+            "Date terms aligned (10 Jul): Application Window (apply) · Internship Window (internship runs, was Calendar Period) · Intake = both windows · Internship Duration = actual time on the project.",
+            "The programme and its intakes are created first; projects are then tagged to the right intake by period and duration."
+          ]
+        }
+      ]
+    },
+    {
+      code:"B1", title:"Application", phase:"Programme",
+      steps:[
+        {
+          code:"B1.1", title:"Applicant applies for internship", actor:"Applicant",
+          story:{ as:"an Applicant", want:"apply by sharing my CV and details and ranking my preferred projects", so:"I'm matched to suitable projects I'm eligible for" },
+          data:[
+            "Capture CV, transcript and academic details (intended course of study, JC1 / JC2 indicator, and more).",
+            "Preferred Internship Duration (1 / 2 / 3 / 6 / 12 months), on the applicant's side."
+          ],
+          rules:[
+            "The application starts with Singpass authentication.",
+            "The journey is conversational and includes a quiz assessment, CV submission and transcript upload.",
+            "The applicant is auto-screened against the programme's eligibility criteria; only citizenship triggers automatic rejection (auto email after 3 days) — all other criteria are reviewed by the IO before a rejection email is sent.",
+            "Suitable projects are surfaced from the CV and responses, matched on discipline, interests and more; the applicant ranks up to five preferred projects."
+          ],
+          decisions:[
+            "Application forms and data fields to be finalised at the 13 July session, to standardise the format.",
+            "Keep the essential fields and trim the rest so the form stays short."
+          ]
+        }
+      ]
+    },
+    {
+      code:"B2", title:"Applicant shortlisting", phase:"Programme",
+      steps:[
+        {
+          code:"B2.1", title:"Shortlist applicants", actor:"IO",
+          story:{ as:"an IO", want:"applicants auto-screened and scored for suitability, with rich context at a glance", so:"I can shortlist the best candidates for interview" },
+          data:[
+            "Rich applicant context at a glance — prior DSTA touchpoints, achievements and leadership roles."
+          ],
+          rules:[
+            "Applicants are auto-screened against the programme's eligibility criteria and auto-scored for suitability against each project.",
+            "Suitability scoring normalises across qualifications (IB, IP, NUS High, Poly, University) and weighs discipline, grades and — for JC — STEM subjects; subjects are mapped across schools.",
+            "The IO shortlists an applicant for interview with a project mentor."
+          ],
+          decisions:[]
+        }
+      ]
+    },
+    {
+      code:"B3", title:"Interview", phase:"Programme",
+      steps:[
+        {
+          code:"B3.1", title:"Interview &amp; evaluate", actor:"Mentor",
+          story:{ as:"a Mentor", want:"the applicant's profile and a way to schedule and record the interview outcome", so:"I can evaluate and recommend a decision to the IO" },
+          data:[
+            "The mentor receives the applicant profile with a summary, similar to what the IO sees at shortlisting."
+          ],
+          rules:[
+            "The interview is scheduled.",
+            "The mentor evaluates the applicant and submits a decision to the IO."
+          ],
+          decisions:[]
+        }
+      ]
+    },
+    {
+      code:"B4", title:"Offer", phase:"Programme",
+      steps:[
+        {
+          code:"B4.1", title:"Extend offer", actor:"IO",
+          story:{ as:"an IO", want:"extend an offer and confirm the placement once accepted", so:"the intern is secured" },
+          data:[],
+          rules:[
+            "The IO extends an offer to the chosen applicant.",
+            "The applicant accepts and the placement is confirmed."
+          ],
+          decisions:[]
+        }
+      ]
+    },
+    {
+      code:"B5", title:"Onboard", phase:"Programme",
+      steps:[
+        {
+          code:"B5.1", title:"Onboard intern", actor:"IO",
+          story:{ as:"an IO", want:"send the welcome letter and begin the internship", so:"the intern is onboarded smoothly" },
+          data:[],
+          rules:[
+            "The welcome letter is sent.",
+            "The internship begins."
+          ],
+          decisions:[]
+        }
+      ]
+    },
+    {
+      code:"C1", title:"Offboard", phase:"Post Internship",
+      steps:[
+        {
+          code:"C1.1", title:"Offboard intern", actor:"IO &amp; Mentor",
+          story:{ as:"an IO", want:"run exit clearance, capture mentor evaluation and intern feedback, and issue a certificate", so:"the internship is closed out properly" },
+          data:[
+            "The mentor submits an evaluation; the intern provides feedback."
+          ],
+          rules:[
+            "Exit clearance is started.",
+            "Intern feedback generates sentiment analysis across calibration, mentorship and work environment.",
+            "On completion, a certificate of completion is sent."
+          ],
+          decisions:[]
+        }
+      ]
+    }
+  ];
+
+  /* ── Flatten + helpers ────────────────────────────────────────────── */
+  const STEPS = [];
+  DATA.forEach(area => area.steps.forEach(s => STEPS.push(Object.assign({ area }, s))));
+
+  function esc(s){ return String(s).replace(/&(?!amp;|lt;|gt;|#)/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function plain(s){ return String(s).replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">"); }
+  function allText(step){
+    return [].concat((step.data||[]), (step.rules||[]).map(ruleText), (step.decisions||[])).map(plain);
+  }
+  function storyLine(s){ return "As "+plain(s.as)+", I want to "+plain(s.want)+", so that "+plain(s.so)+"."; }
+
+  let current = STEPS[0].code;
+  let curSection = "data";
+  let query = "";
+  const collapsed = new Set(DATA.map(a => a.code));           // default: everything collapsed…
+  collapsed.delete(STEPS.find(s => s.code === current).area.code); // …except the active area
+  const collapsedPhases = new Set(PHASES);                   // default: all phases collapsed…
+  collapsedPhases.delete(STEPS.find(s => s.code === current).area.phase); // …except the active phase
+
+  /* ── Sidebar ──────────────────────────────────────────────────────── */
+  const sidebar = document.getElementById("sidebar");
+  function matches(step){
+    if(!query) return true;
+    const hay = [step.code, plain(step.title), step.actor, storyLine(step.story),
+      ...allText(step)].join(" ").toLowerCase();
+    return hay.includes(query);
+  }
+
+  function renderSidebar(){
+    const allCol = DATA.every(a => collapsed.has(a.code)) && PHASES.every(p => collapsedPhases.has(p));
+    let html = "";
+    html += '<div class="flex items-center justify-between gap-1 px-1 pt-1 pb-2">'
+      + '<span class="px-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Contents</span>'
+      + '<div class="flex items-center gap-0.5">'
+        + '<button id="toggleAll" title="'+(allCol?'Expand all sections':'Collapse all sections')+'" class="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-md px-1.5 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition">'
+          + '<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(allCol?'<path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/>':'<path d="m7 20 5-5 5 5"/><path d="m7 4 5 5 5-5"/>')+'</svg>'
+          + '<span>'+(allCol?'Expand':'Collapse')+'</span>'
+        + '</button>'
+        + '<button id="collapsePanel" title="Hide contents  (⌘/Ctrl + B)" class="grid place-items-center h-7 w-7 rounded-md text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">'
+          + '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg>'
+        + '</button>'
+      + '</div>'
+      + '</div>';
+    PHASES.forEach(phase => {
+      const areas = DATA.filter(a => a.phase === phase && a.steps.some(matches));
+      if(!areas.length) return;
+      const pcol = !query && collapsedPhases.has(phase);
+      html += '<button data-phase="'+phase+'" class="nav-phase w-full text-left flex items-center gap-2 rounded-lg px-2 py-2 mt-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">'
+        + '<svg class="h-3 w-3 shrink-0 transition-transform '+(pcol?'-rotate-90':'')+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>'
+        + '<span class="grid place-items-center h-4 w-4 rounded bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold shrink-0">'+PHASE_CODE[phase]+'</span>'
+        + '<span>'+esc(phase)+'</span>'
+        + '</button>';
+      if(pcol) return;
+      areas.forEach(area => {
+        const steps = area.steps.filter(matches);
+        const col = !query && collapsed.has(area.code);
+        const isActive = area.steps.some(s => s.code === current);
+        html += '<button data-area="'+area.code+'" class="nav-area w-full text-left flex items-center gap-1.5 rounded-lg pl-4 pr-2 py-1.5 mt-0.5 text-[12.5px] font-semibold '+(isActive?'text-indigo-700 dark:text-indigo-300':'text-slate-700 dark:text-slate-200')+' hover:bg-slate-50 dark:hover:bg-slate-800 transition">'
+          + '<svg class="h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform '+(col?'-rotate-90':'')+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>'
+          + '<span class="leading-snug">'+esc(area.code)+'. '+area.title+'</span>'
+          + '<span class="ml-auto shrink-0 text-[10px] font-semibold '+(isActive?'text-indigo-600 bg-indigo-50 dark:text-indigo-300 dark:bg-indigo-500/15':'text-slate-400 bg-slate-100 dark:bg-slate-800')+' rounded-full px-1.5 py-0.5 tabular-nums">'+area.steps.length+'</span>'
+          + '</button>';
+        if(col) return;
+        html += '<div class="ml-[26px] pl-3 mb-1 border-l border-slate-200 dark:border-slate-700 space-y-0.5">';
+        steps.forEach(step => {
+          html += '<button data-code="'+step.code+'" class="nav-step group w-full text-left flex items-start gap-2.5 rounded-md px-2 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition '+(step.code===current?'active':'')+'">'
+            + '<span class="nav-code text-[12px] font-semibold text-slate-500 dark:text-slate-400 tabular-nums shrink-0 pt-px">'+step.code+'</span>'
+            + '<span class="nav-title text-[13px] text-slate-700 dark:text-slate-300 leading-snug">'+step.title+'</span>'
+            + '</button>';
+        });
+        html += '</div>';
+      });
+    });
+    sidebar.innerHTML = html;
+    const ta = document.getElementById("toggleAll");
+    if(ta) ta.addEventListener("click", () => {
+      if(allCol){ collapsed.clear(); collapsedPhases.clear(); }
+      else { DATA.forEach(a => collapsed.add(a.code)); PHASES.forEach(p => collapsedPhases.add(p)); }
+      renderSidebar();
+    });
+    const cp = document.getElementById("collapsePanel");
+    if(cp) cp.addEventListener("click", () => setSidebar(true));
+    sidebar.querySelectorAll(".nav-phase").forEach(b => b.addEventListener("click", () => {
+      const p = b.dataset.phase;
+      collapsedPhases.has(p) ? collapsedPhases.delete(p) : collapsedPhases.add(p);
+      renderSidebar();
+    }));
+    sidebar.querySelectorAll(".nav-area").forEach(b => b.addEventListener("click", () => {
+      const code = b.dataset.area;
+      collapsed.has(code) ? collapsed.delete(code) : collapsed.add(code);
+      renderSidebar();
+    }));
+    sidebar.querySelectorAll(".nav-step").forEach(b => b.addEventListener("click", () => select(b.dataset.code)));
+  }
+
+  /* ── Detail ───────────────────────────────────────────────────────── */
+  const detailEl = document.getElementById("detail");
+  const emptyEl = document.getElementById("empty");
+
+  function hl(text){
+    const safe = esc(text);
+    if(!query) return safe;
+    try { return safe.replace(new RegExp("("+query.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","ig"), "<mark>$1</mark>"); }
+    catch(e){ return safe; }
+  }
+
+  function renderDetail(){
+    const step = STEPS.find(s => s.code === current);
+    if(!step){ detailEl.innerHTML = ""; return; }
+
+    const idChip = id => '<span class="shrink-0 font-mono text-[11px] font-semibold text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/10 rounded px-2 py-1 h-fit">'+id+'</span>';
+    const bullet = (id, text) => '<div class="flex gap-4 py-2">'+idChip(id)+'<span class="text-[14px] text-slate-700 dark:text-slate-300 leading-relaxed pt-0.5">'+text+'</span></div>';
+    const gwtRow = (label, text, color) => '<div class="flex gap-3 px-4 py-2.5">'
+      + '<span class="shrink-0 w-11 text-[11px] font-bold uppercase tracking-wide '+color+' pt-0.5">'+label+'</span>'
+      + '<span class="text-[14px] text-slate-700 dark:text-slate-300 leading-relaxed">'+text+'</span></div>';
+
+    function sectionBody(sec){
+      const list = step[sec.key] || [];
+      if(!list.length) return '<div class="py-10 text-center text-sm text-slate-500 dark:text-slate-400">Nothing captured in this section.</div>';
+      if(sec.key === "decisions"){
+        return '<div class="space-y-2">' + list.map(t =>
+          '<div class="flex gap-3 rounded-lg border border-indigo-200/70 dark:border-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-500/10 px-4 py-3">'
+          + '<svg class="h-4 w-4 shrink-0 mt-0.5 text-indigo-500 dark:text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>'
+          + '<span class="text-[14px] text-slate-700 dark:text-slate-200 leading-relaxed">'+hl(plain(t))+'</span></div>'
+        ).join("") + '</div>';
+      }
+      return '<div class="space-y-2.5">' + list.map((item,i) => {
+        const id = step.code+"-"+IDP[sec.key]+(i+1);
+        if(isScenario(item)){
+          return '<div class="rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">'
+            + '<div class="flex items-center gap-2.5 px-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800">'
+              + idChip(id)
+              + '<span class="text-[14px] font-semibold text-slate-800 dark:text-slate-100 leading-snug">'+hl(plain(item.name||"Scenario"))+'</span>'
+            + '</div>'
+            + '<div class="divide-y divide-slate-100 dark:divide-slate-800">'
+              + gwtRow("Given", hl(plain(item.given)), "text-slate-400 dark:text-slate-500")
+              + gwtRow("When", hl(plain(item.when)), "text-indigo-500 dark:text-indigo-400")
+              + gwtRow("Then", hl(plain(item.then)), "text-emerald-600 dark:text-emerald-400")
+            + '</div>'
+          + '</div>';
+        }
+        return bullet(id, hl(plain(item)));
+      }).join("") + '</div>';
+    }
+
+    const counts = {}; SECTIONS.forEach(s => counts[s.key] = (step[s.key]||[]).length);
+    if(!counts[curSection]){ const first = SECTIONS.find(s => counts[s.key]); curSection = first ? first.key : "data"; }
+    const visibleSecs = SECTIONS.filter(s => counts[s.key] > 0);
+    const tabs = visibleSecs.map(s =>
+      '<button data-sec="'+s.key+'" class="ac-tab flex items-center gap-2 px-1 pb-3 -mb-px border-b-2 border-transparent text-sm font-medium '+(s.key===curSection?'active':'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200')+'">'
+      + s.label
+      + '<span class="ac-tab-count text-[11px] font-semibold rounded-full px-1.5 py-0.5 '+(s.key===curSection?'':'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500')+'">'+counts[s.key]+'</span>'
+      + '</button>'
+    ).join("");
+    const sectionsHtml = '<div>'
+      + '<div class="flex gap-6 border-b border-slate-200 dark:border-slate-800 overflow-x-auto mb-6">'+tabs+'</div>'
+      + sectionBody(SECTIONS.find(s => s.key === curSection))
+      + '</div>';
+
+    detailEl.innerHTML =
+      '<div class="fade-in">'
+      + '<div class="flex items-center gap-2 text-[13px] text-slate-500 dark:text-slate-400 mb-3">'
+        + '<span class="font-semibold text-slate-700 dark:text-slate-200">'+esc(step.area.code)+'. '+step.area.title+'</span>'
+        + '<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>'
+        + '<span>'+PHASE_CODE[step.area.phase]+' · '+esc(step.area.phase)+'</span>'
+      + '</div>'
+
+      + '<div class="flex items-baseline gap-3 mb-5">'
+        + '<span class="font-mono text-lg font-bold text-indigo-600 dark:text-indigo-400">'+step.code+'</span>'
+        + '<h1 class="text-2xl font-bold tracking-tight leading-tight text-slate-900 dark:text-white">'+step.title+'</h1>'
+      + '</div>'
+
+      + '<div class="flex flex-wrap items-center gap-2 mb-7">'
+        + '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-[13px] font-medium text-slate-600 dark:text-slate-300">'
+          + '<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+          + esc(step.actor)+'</span>'
+      + '</div>'
+
+      + '<div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 mb-8 shadow-sm">'
+        + '<div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">User story</div>'
+        + '<div class="space-y-2 text-[15px] leading-relaxed text-slate-700 dark:text-slate-200">'
+          + '<p><span class="font-semibold text-indigo-500 dark:text-indigo-400">As</span> <span class="text-slate-900 dark:text-white font-semibold">'+hl(plain(step.story.as))+'</span>,</p>'
+          + '<p><span class="font-semibold text-indigo-500 dark:text-indigo-400">I want to</span> '+hl(plain(step.story.want))+',</p>'
+          + '<p><span class="font-semibold text-indigo-500 dark:text-indigo-400">so that</span> '+hl(plain(step.story.so))+'.</p>'
+        + '</div>'
+      + '</div>'
+
+      + sectionsHtml
+      + '</div>';
+
+    detailEl.querySelectorAll(".ac-tab").forEach(t => t.addEventListener("click", () => { curSection = t.dataset.sec; renderDetail(); }));
+  }
+
+  function select(code){
+    current = code; curSection = "data";
+    const s = STEPS.find(x => x.code === code);
+    if(s){ collapsed.delete(s.area.code); collapsedPhases.delete(s.area.phase); }   // keep the selected step's group open
+    renderSidebar(); renderDetail();
+    document.querySelector(".flex-1").scrollIntoView({ block:"start" });
+  }
+
+  /* ── Search ───────────────────────────────────────────────────────── */
+  document.getElementById("search").addEventListener("input", e => {
+    query = e.target.value.trim().toLowerCase();
+    const visible = STEPS.filter(matches);
+    renderSidebar();
+    if(!visible.length){ detailEl.classList.add("hidden"); emptyEl.classList.remove("hidden"); return; }
+    detailEl.classList.remove("hidden"); emptyEl.classList.add("hidden");
+    if(!visible.some(s => s.code === current)) current = visible[0].code;
+    renderDetail();
+  });
+
+  /* ── Downloads ────────────────────────────────────────────────────── */
+  function download(filename, content, mime){
+    const blob = new Blob(["﻿", content], { type: mime + ";charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  function today(){ const d = new Date(); return d.toLocaleDateString("en-GB", { day:"2-digit", month:"long", year:"numeric" }); }
+
+  /* Word (.doc) — formatted document for sign-off */
+  document.getElementById("exportWord").addEventListener("click", () => {
+    let b = "";
+    b += '<h1 style="font-size:24pt;color:#1e1b4b;margin:0;">TOA — Talent Outreach &amp; Acquisition</h1>';
+    b += '<p style="font-size:13pt;color:#4f46e5;margin:4px 0 0;font-weight:bold;">System Requirement Specification</p>';
+    b += '<p style="color:#666;margin:2px 0 18px;">Generated '+today()+'</p>';
+    b += '<hr>';
+    DATA.forEach(area => {
+      b += '<h2 style="font-size:16pt;color:#1e1b4b;border-bottom:2px solid #4f46e5;padding-bottom:4px;margin-top:26px;">'+esc(area.code)+'. '+area.title+' <span style="font-size:10pt;color:#888;font-weight:normal;">('+esc(area.phase)+')</span></h2>';
+      area.steps.forEach(step => {
+        b += '<h3 style="font-size:13pt;color:#111;margin-top:18px;">'+step.code+' &nbsp; '+step.title+'</h3>';
+        b += '<table style="border-collapse:collapse;font-size:10pt;margin:6px 0;"><tr>'
+          + '<td style="padding:2px 10px 2px 0;color:#666;">Actor</td><td style="padding:2px 0;font-weight:bold;">'+esc(step.actor)+'</td>'
+          + '</tr></table>';
+        b += '<p style="background:#f5f3ff;border-left:3px solid #7c3aed;padding:8px 12px;margin:8px 0;font-style:italic;color:#333;">'
+          + '<b>As</b> '+esc(plain(step.story.as))+', <b>I want to</b> '+esc(plain(step.story.want))+', <b>so that</b> '+esc(plain(step.story.so))+'.</p>';
+        SECTIONS.forEach(sec => {
+          const list = step[sec.key] || []; if(!list.length) return;
+          b += '<p style="font-weight:bold;color:#4f46e5;margin:12px 0 4px;">'+sec.label+'</p>';
+          if(sec.key === "decisions"){
+            b += '<ul style="margin:0 0 4px;">';
+            list.forEach(t => b += '<li style="color:#333;">'+esc(plain(t))+'</li>');
+            b += '</ul>';
+          } else {
+            b += '<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%;font-size:10pt;border-color:#ddd;">';
+            list.forEach((item,i) => {
+              b += '<tr><td style="width:64px;font-family:monospace;color:#4f46e5;font-weight:bold;background:#fafafa;vertical-align:top;">'+step.code+'-'+IDP[sec.key]+(i+1)+'</td>'
+                + '<td>'+esc(plain(ruleText(item)))+'</td></tr>';
+            });
+            b += '</table>';
+          }
+        });
+      });
+    });
+    const doc = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>TOA Requirements</title></head>'
+      + '<body style="font-family:Calibri,Arial,sans-serif;color:#222;">'+b+'</body></html>';
+    download("TOA-Requirements.doc", doc, "application/msword");
+  });
+
+  /* Excel (.xls) — flat traceability matrix */
+  document.getElementById("exportExcel").addEventListener("click", () => {
+    const cols = ["Process Area","Process Step","Actor","User Story","Section","ID","Requirement"];
+    let rows = "";
+    DATA.forEach(area => area.steps.forEach(step => {
+      const story = storyLine(step.story);
+      const base = [esc(area.code+". "+area.title), esc(step.code+" "+step.title), esc(step.actor), esc(story)];
+      let any = false;
+      SECTIONS.forEach(sec => (step[sec.key]||[]).forEach((item,i) => {
+        any = true;
+        const id = sec.key === "decisions" ? "" : step.code+"-"+IDP[sec.key]+(i+1);
+        rows += "<tr>" + base.map(v=>'<td>'+v+'</td>').join("")
+          + '<td>'+esc(sec.label)+'</td><td>'+id+'</td><td>'+esc(plain(ruleText(item)))+'</td></tr>';
+      }));
+      if(!any){
+        rows += "<tr>" + base.map(v=>'<td>'+v+'</td>').join("") + '<td></td><td></td><td></td></tr>';
+      }
+    }));
+    const head = "<tr>"+cols.map(c=>'<th style="background:#4f46e5;color:#fff;text-align:left;">'+c+'</th>').join("")+"</tr>";
+    const table = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8">'
+      + '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Traceability</x:Name>'
+      + '<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->'
+      + '</head><body><table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse;font-family:Calibri,Arial;font-size:10pt;vertical-align:top;">'
+      + head + rows + '</table></body></html>';
+    download("TOA-Requirements-Matrix.xls", table, "application/vnd.ms-excel");
+  });
+
+  /* ── Theme toggle ─────────────────────────────────────────────────── */
+  const root = document.documentElement;
+  const tIcon = document.getElementById("themeIcon");
+  const tLabel = document.getElementById("themeLabel");
+  const MOON = '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>';
+  const SUN = '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/></svg>';
+  function syncTheme(){
+    const dark = root.classList.contains("dark");
+    tIcon.innerHTML = dark ? SUN : MOON;
+    tLabel.textContent = dark ? "Light mode" : "Dark mode";
+  }
+  document.getElementById("themeToggle").addEventListener("click", () => {
+    root.classList.toggle("dark");
+    try { localStorage.setItem("toa-theme", root.classList.contains("dark") ? "dark" : "light"); } catch (e) {}
+    syncTheme();
+  });
+  syncTheme();
+
+  /* ── Sidebar show / hide ──────────────────────────────────────────── */
+  const aside = document.getElementById("sidebarAside");
+  const showPanel = document.getElementById("showPanel");
+  function setSidebar(hide){
+    aside.classList.toggle("sb-hidden", hide);
+    showPanel.classList.toggle("hidden", !hide);
+    try { localStorage.setItem("toa-sidebar", hide ? "hidden" : "shown"); } catch(e){}
+  }
+  let sbHidden = false;
+  try { sbHidden = localStorage.getItem("toa-sidebar") === "hidden"; } catch(e){}
+  if(sbHidden){ aside.classList.add("sb-hidden"); showPanel.classList.remove("hidden"); }
+  showPanel.addEventListener("click", () => setSidebar(false));
+  window.addEventListener("keydown", e => {
+    if((e.metaKey || e.ctrlKey) && (e.key === "b" || e.key === "B")){
+      e.preventDefault();
+      setSidebar(!aside.classList.contains("sb-hidden"));
+    }
+  });
+  requestAnimationFrame(() => document.body.classList.add("anim-ready"));  // enable slide only after first paint
+
+  /* ── Init ─────────────────────────────────────────────────────────── */
+  renderSidebar();
+  renderDetail();
+})();
+</script>
+</body>
+</html>

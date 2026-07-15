@@ -1,0 +1,118 @@
+# PRIZM 4.0
+
+> A DSTA design system. Serves command-and-control (C3) and enterprise products. Built on Base UI and Tailwind CSS. Distributed via copy-paste, engineered for both developers and AI assistants. Supports light/dark mode and air-gapped deployment.
+
+For full context, read [PRIZM.md](/PRIZM.md). For installation and theming, see the docs section.
+
+## Foundations – visual reference + design rationale
+
+- [Foundations overview](/docs/foundations): index of every foundation reference page.
+- [Design principles](/docs/principles): the human factors and HCI research behind PRIZM's patterns. Core + C3 + Enterprise principle sets. Templates and components anchor on these.
+- [Colours](/docs/colors): semantic tokens across all four theme variants, plus baseline scales.
+- [Typography](/docs/typography): font families, type scale, weights.
+- [Surface & motion](/docs/surface-and-motion): radii, shadows, and a note on motion (components use Tailwind's default duration / easing utilities; PRIZM doesn't define its own).
+- [Icons](/docs/icons): lucide-react at PRIZM's site-wide 1.5 stroke-width. Sizes, text-pairing, accessibility, catalogue of ~30 commonly-used icons.
+- [Liquid glass](/docs/liquid-glass): C3-only translucent surface treatment. Two tiers (chrome / panel). Available in both C3 light and C3 dark modes. Featured in PRIZM 4.0.
+
+## Overview – orientation and how-to
+
+- [Introduction](/docs/introduction): why PRIZM is named after a prism, what changed in 4.0 (Base UI foundation, Tailwind v4 tokens, AI-first documentation, custom Liquid Glass), and what's next.
+- [Getting started](/docs/getting-started)
+- [Using with AI](/docs/using-with-ai): how a team adopts PRIZM with AI in the loop – what PRIZM gives AI, how to wire up Claude Code / Cursor / chat-based LLMs / internal gateways / air-gapped models, a starter prompt, and where each role fits.
+- [Installation](/docs/installation)
+- [Theming](/docs/theming): architecture of the four-variant token system.
+- [Air-gap setup](/docs/air-gap)
+- [Changelog](/docs/changelog): dated timeline of new components, templates, foundations, design tweaks, and notable fixes. Curated, not auto-generated.
+
+## Components – Actions
+
+- [Button](/components/button): Trigger an action. Six variants, four sizes.
+
+## Components – Forms
+
+- [Input](/components/input): Single-line text input.
+- [Textarea](/components/textarea): Multi-line text input.
+- [Checkbox](/components/checkbox): Binary toggle. Built on Base UI Checkbox.
+- [Radio Group](/components/radio-group): Mutually exclusive options. Built on Base UI Radio.
+- [Switch](/components/switch): Toggle on/off. Built on Base UI Switch.
+- [Select](/components/select): Choose one option. Built on Base UI Select.
+- [Combobox](/components/combobox): Searchable select with typeahead. Built on Base UI Combobox.
+- [Slider](/components/slider): Numeric range. Built on Base UI Slider.
+- [Label](/components/label): Accessible label for form controls.
+- [Field](/components/field): Form field wrapper with label, hint, and error. Built on Base UI Field.
+
+## Components – Data display
+
+- [Badge](/components/badge): Status indicator or label. Seven variants.
+- [Avatar](/components/avatar): User image with fallback. Built on Base UI Avatar.
+- [Table](/components/table): Structured tabular data.
+- [Calendar](/components/calendar): Date picker grid.
+- [Kbd](/components/kbd): Keyboard shortcut display.
+- [Code](/components/code): Inline and block code.
+
+## Components – Layout
+
+- [Card](/components/card): Container with surface, border, and structured slots.
+- [Separator](/components/separator): Visual divider. Built on Base UI Separator.
+- [Frame](/components/frame): Constrained content frame with padding variants.
+- [Group](/components/group): Horizontal control grouping.
+- [Stack](/components/stack): Vertical spacing primitive.
+
+## Components – Feedback
+
+- [Alert](/components/alert): Inline message block.
+- [Toast](/components/toast): Transient notification. Built on Base UI Toast.
+- [Progress](/components/progress): Determinate loading. Built on Base UI Progress.
+- [Spinner](/components/spinner): Indeterminate loading indicator.
+- [Skeleton](/components/skeleton): Loading placeholder.
+- [Empty State](/components/empty-state): Placeholder for empty content regions.
+
+## Components – Navigation
+
+- [Tabs](/components/tabs): Switch between views. Built on Base UI Tabs.
+- [Breadcrumb](/components/breadcrumb): Hierarchical navigation trail.
+- [Pagination](/components/pagination): Page navigation for long lists.
+- [Navigation Menu](/components/navigation-menu): Multi-level navigation bar. Built on Base UI Navigation Menu.
+- [Command](/components/command): Command palette with fuzzy search and keyboard navigation.
+- [Link](/components/link): Inline hyperlink with PRIZM styling.
+
+## Components – Overlay
+
+- [Dialog](/components/dialog): Modal dialog for focused tasks. Built on Base UI Dialog.
+- [Sheet](/components/sheet): Edge-anchored sliding panel. Opens from any side. Built on Base UI Dialog.
+- [Popover](/components/popover): Floating contextual panel. Built on Base UI Popover.
+- [Tooltip](/components/tooltip): Hover label for compact UI elements. Built on Base UI Tooltip.
+- [Menu](/components/menu): Action menu with keyboard support. Built on Base UI Menu.
+- [Context Menu](/components/context-menu): Right-click action menu. Built on Base UI Context Menu.
+- [Hover Card](/components/hover-card): Rich preview on hover. Built on Base UI Preview Card.
+
+## Components – Typography
+
+- [Heading](/components/heading): Display and section headings with size variants.
+- [Text](/components/text): Body text primitive with size, variant, and weight props.
+- [Prose](/components/prose): Long-form content block with styled headings, lists, code, and tables.
+
+## Components – Planned
+
+Reserved slugs with no source file yet. Surface them as roadmap; never copy or fabricate.
+
+- [Toggle Group](/components/toggle-group): Group of toggle buttons for view switching or multi-select. Will be built on Base UI Toggle Group.
+- [Number Input](/components/number-input): Numeric input with increment / decrement controls. Will be built on Base UI Number Field.
+- [Date Picker](/components/date-picker): Date or date-range picker. Composes Calendar with input + popover.
+- [Tree](/components/tree): Hierarchical data view with expand / collapse.
+- [Accordion](/components/accordion): Vertically stacked, collapsible content sections. Will be built on Base UI Accordion.
+- [Scroll Area](/components/scroll-area): Custom-styled scrollable region. Will be built on Base UI Scroll Area.
+
+## Product zones
+
+- [C3 overview](/c3/overview): When to use C3 and its design principles.
+- [Enterprise overview](/enterprise/overview): When to use Enterprise and its design principles.
+
+## Templates
+
+- [C3 templates](/c3/templates): index of available C3 layout scaffolds.
+  - [C3 App Shell](/c3/templates/app-shell): foundational chrome – top bar, status ticker, icon rail, main canvas slot, expandable side panel. Other C3 templates compose this. [Full-bleed preview](/c3/templates/app-shell/preview).
+
+## Optional
+
+- [Per-component LLM context files](/llms/) – deeper detail on each component for LLMs.

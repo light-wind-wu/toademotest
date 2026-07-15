@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Intake & Project Allocation · Strict Lo-fi v7</title>
+  <style>
+    :root{
+      --bg:#f6f8fb;
+      --panel:#fff;
+      --line:#dfe6ef;
+      --line2:#edf1f6;
+      --text:#172033;
+      --muted:#607089;
+      --blue:#2166e8;
+      --blue-weak:#edf4ff;
+      --yellow:#fff7e3;
+      --yellow-line:#f2d28b;
+      --red:#d92d20;
+      --green:#18864b;
+      --chip:#eef2f7;
+      --shadow:0 6px 24px rgba(18,33,61,.08);
+      --radius:14px;
+      --radius-sm:10px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);font-size:14px;}
+    button,input,select{font:inherit}
+    .page{max-width:1500px;margin:0 auto;padding:18px 28px 88px;}
+    .breadcrumb{display:flex;gap:8px;align-items:center;color:var(--muted);font-weight:700;margin-bottom:12px}.breadcrumb strong{color:var(--text)}
+    .stepper{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;align-items:center;margin:4px 0 18px;}
+    .step{display:flex;align-items:center;gap:10px;min-width:0;color:#5d6b81;font-weight:800}.step .circle{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:#e6edf5;color:#6a7890;font-weight:900}.step.done .circle,.step.active .circle{background:var(--blue);color:#fff}.step.active .circle{outline:4px solid #cfe0ff}.step .bar{height:2px;background:#dbe3ee;flex:1}.step.done .bar{background:#82a9ff}.step:last-child .bar{display:none}.step.done,.step.active{color:var(--blue)}
+    .shell{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 1px 0 rgba(18,33,61,.03);overflow:hidden}.shell-head{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.shell-title{margin:0;font-size:25px;line-height:1.2}.shell-sub{color:var(--muted);margin-top:6px}.option-tabs{display:flex;gap:8px;flex-wrap:wrap}.option-tab{border:1px solid var(--line);background:#fff;color:#31405a;border-radius:999px;padding:8px 12px;font-weight:800;cursor:pointer}.option-tab.active{background:var(--blue);border-color:var(--blue);color:#fff}.option-wrap{display:none}.option-wrap.active{display:block}.option-note{margin:16px 24px 0;border:1px solid #b9d1ff;background:#f3f7ff;border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;color:#203657}.option-note strong{color:#0f4fb8}.content{padding:20px 24px 28px}.split{display:grid;grid-template-columns:420px minmax(0,1fr);gap:20px}.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden}.card-head{padding:14px 16px;border-bottom:1px solid var(--line2);display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fbfcfe}.card-title{font-weight:900;font-size:15px}.card-sub{color:var(--muted);font-size:12px;margin-top:2px}.section-label{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#506075;font-weight:900;margin:16px 0 8px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field label{display:block;font-weight:850;margin-bottom:6px}.req{color:#d92d20}.fake-input{height:42px;border:1px solid var(--line);border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 12px;color:#162033;box-shadow:0 2px 5px rgba(18,33,61,.04)}.fake-input.placeholder{color:#708096}.fake-input select,.fake-input input{border:0;outline:0;width:100%;background:transparent;color:#162033}.mini-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.mini-tab{border:1px solid var(--line);border-radius:999px;background:#fff;padding:7px 10px;font-weight:800;color:#41506a;cursor:pointer}.mini-tab.active{background:#eef4ff;border-color:#9fc0ff;color:#175bd3}.ghost-btn,.primary-btn,.soft-btn,.danger-btn{border-radius:10px;padding:9px 12px;font-weight:850;cursor:pointer;display:inline-flex;align-items:center;gap:8px}.primary-btn{background:var(--blue);border:1px solid var(--blue);color:#fff}.ghost-btn{background:#fff;border:1px solid var(--line);color:#1f2b40}.soft-btn{background:#edf2f8;border:1px solid #d8e1ed;color:#56657a}.danger-btn{background:#fff;border:1px solid #ffd4d0;color:#b42318}.text-btn{border:0;background:transparent;color:var(--blue);font-weight:900;padding:0;cursor:pointer}.muted{color:var(--muted)}.small{font-size:12px}.count-pill{display:inline-flex;min-width:24px;height:24px;border-radius:999px;align-items:center;justify-content:center;background:#edf2f8;color:#4c5b72;font-weight:900;font-size:12px}.intake-list{display:grid;gap:10px;margin-top:14px}.intake-row{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff;cursor:pointer}.intake-row.active{border-color:#8bb4ff;background:#f4f8ff}.intake-row-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.intake-title{font-weight:900}.intake-meta{color:#53637a;font-size:12px;margin-top:5px;line-height:1.45}.intake-projects{margin-top:8px;color:#2d3b52;font-size:12px;line-height:1.6}.x{color:#9aa8ba;margin-left:4px}.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}.stats{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.stat{border:1px solid var(--line);background:#fff;border-radius:12px;padding:8px 10px;min-width:112px}.stat b{font-size:16px}.stat span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}.project-list{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}.list-head{display:grid;grid-template-columns:36px minmax(250px,1fr) 180px 180px 120px;gap:0;align-items:center;padding:12px 14px;background:#eef2f7;border-bottom:1px solid var(--line);font-weight:900}.project-row{display:grid;grid-template-columns:36px minmax(250px,1fr) 180px 180px 120px;gap:0;align-items:center;padding:13px 14px;border-bottom:1px solid var(--line2);min-height:74px}.project-row:last-child{border-bottom:0}.project-row.need{background:#fff9e8}.check{width:18px;height:18px;border:2px solid #cfdae8;border-radius:4px;background:#fff}.project-name{font-weight:900}.project-meta{color:#53637a;margin-top:4px;font-size:12px}.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;background:var(--chip);border:1px solid #dce4ef;color:#45566f;padding:4px 8px;font-size:12px;font-weight:800}.chip.yellow{background:#fff1cc;border-color:#f1d388;color:#9a5b00}.chip.green{background:#eaf8f0;border-color:#b7e4c9;color:#176b3a}.chip.blue{background:#eaf2ff;border-color:#bcd5ff;color:#175bd3}.chip.red{background:#fff0ee;border-color:#ffc7c0;color:#b42318}.mono{font-variant-numeric:tabular-nums}.tabs-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.subtab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 12px;font-weight:900;color:#43536b}.subtab.active{background:#172033;color:#fff;border-color:#172033}.accordion{display:grid;gap:14px}.acc-item{border:1px solid var(--line);border-radius:13px;overflow:hidden;background:#fff}.acc-head{padding:14px 16px;background:#fbfcfe;border-bottom:1px solid var(--line2);display:flex;align-items:center;justify-content:space-between;gap:14px}.acc-title{font-weight:950;font-size:16px}.acc-body{padding:16px}.intake-form-compact{border:1px dashed #ccd7e6;border-radius:12px;padding:14px;margin-bottom:14px;background:#fbfdff}.suggest-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.suggest-box{border:1px solid var(--line);border-radius:12px;overflow:hidden}.suggest-box h4{margin:0;padding:12px 14px;background:#f7f9fc;border-bottom:1px solid var(--line2);font-size:14px}.suggest-card{padding:12px 14px;border-bottom:1px solid var(--line2);display:flex;justify-content:space-between;gap:12px}.suggest-card:last-child{border-bottom:0}.matrix-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff}.matrix{border-collapse:collapse;width:100%;min-width:980px}.matrix th,.matrix td{border-bottom:1px solid var(--line2);border-right:1px solid var(--line2);padding:12px;text-align:left;vertical-align:middle}.matrix th{background:#f4f7fb;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#516176}.matrix td:first-child,.matrix th:first-child{position:sticky;left:0;background:#fff;z-index:1;width:270px}.matrix th:first-child{background:#f4f7fb;z-index:2}.cell-btn{width:100%;border:1px dashed #cbd6e5;border-radius:10px;background:#fff;padding:8px;min-height:52px;text-align:left;cursor:pointer}.cell-btn.assigned{border-style:solid;border-color:#a7d9bc;background:#effaf4}.cell-btn.auto{border-style:solid;border-color:#f0d28a;background:#fff8e8}.cell-btn.empty{color:#8895a6}.stack{display:grid;gap:18px}.intake-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.footer-bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(18,33,61,.05);padding:14px 28px;z-index:30}.footer-inner{max-width:1500px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}.right-actions{display:flex;gap:10px}.drawer-mask{position:fixed;inset:0;background:rgba(14,24,40,.35);z-index:60;display:none}.drawer{position:fixed;right:0;top:0;height:100vh;width:480px;max-width:96vw;background:#fff;z-index:70;box-shadow:-8px 0 32px rgba(18,33,61,.18);transform:translateX(100%);transition:.18s ease;display:flex;flex-direction:column}.drawer.open{transform:translateX(0)}.drawer-mask.open{display:block}.drawer-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px}.drawer-title{font-size:20px;font-weight:950}.drawer-body{padding:18px 20px;overflow:auto;flex:1}.drawer-footer{border-top:1px solid var(--line);padding:14px 20px;display:flex;justify-content:flex-end;gap:10px}.allocation-row{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}.allocation-row-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.assign-controls{display:grid;grid-template-columns:90px 1fr;gap:10px;margin-top:10px;align-items:center}.num{height:38px;border:1px solid var(--line);border-radius:9px;padding:0 10px;width:100%}.alert{border:1px solid #ffd4d0;background:#fff4f2;color:#9f1f17;border-radius:12px;padding:10px 12px;margin-top:12px;display:none}.alert.show{display:block}.new-intake-panel{border:1px solid #b9d1ff;background:#f8fbff;border-radius:12px;padding:14px;margin:14px 0;display:none}.new-intake-panel.show{display:block}.empty-state{border:1px dashed #cad5e5;border-radius:12px;background:#fbfdff;padding:18px;text-align:center;color:#607089}.kbd{font-size:11px;border:1px solid var(--line);background:#fff;border-radius:5px;padding:1px 5px;color:#66758b}.hidden{display:none !important}
+    @media(max-width:1100px){.split{grid-template-columns:1fr}.list-head,.project-row{grid-template-columns:28px minmax(220px,1fr) 130px 120px 100px}.intake-card-grid{grid-template-columns:1fr}.suggest-grid{grid-template-columns:1fr}.stepper{grid-template-columns:1fr}.step .bar{display:none}}
+  
+    .workspace{display:grid;grid-template-columns:360px minmax(0,1fr);border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden;min-height:620px}.workspace-side{border-right:1px solid var(--line);background:#fbfcfe;display:flex;flex-direction:column}.workspace-side-head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}.workspace-intake-list{padding:12px;display:grid;gap:10px}.workspace-intake-card{border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px;cursor:pointer;transition:.12s ease}.workspace-intake-card:hover{border-color:#9fc0ff;background:#f7faff}.workspace-intake-card.active{border-color:var(--blue);background:#eef5ff;box-shadow:0 0 0 3px rgba(33,102,232,.08)}.workspace-intake-card.all{border-style:dashed}.workspace-card-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.workspace-form{border-top:1px solid var(--line);padding:14px 16px;background:#fff;margin-top:auto}.workspace-main{display:flex;flex-direction:column;min-width:0}.workspace-toolbar{padding:14px 16px;border-bottom:1px solid var(--line);background:#f7f9fc;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}.workspace-hint{padding:10px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap}.workspace-project-list{overflow:auto}.workspace-project-row{display:grid;grid-template-columns:36px minmax(260px,1fr) 170px 150px 120px;align-items:center;gap:0;padding:13px 14px;border-bottom:1px solid var(--line2);min-height:78px}.workspace-project-row:last-child{border-bottom:0}.workspace-project-row.need{background:#fff9e8}.workspace-project-row:hover{background:#f9fbff}.workspace-project-row.need:hover{background:#fff6d8}.workspace-empty{margin:16px;border:1px dashed #cad5e5;border-radius:12px;background:#fbfdff;padding:32px;text-align:center;color:var(--muted)}@media(max-width:980px){.workspace{grid-template-columns:1fr}.workspace-side{border-right:0;border-bottom:1px solid var(--line)}.workspace-project-row{grid-template-columns:32px 1fr;gap:8px}.workspace-project-row>div:nth-child(n+3){grid-column:2}.split{grid-template-columns:1fr}.intake-card-grid{grid-template-columns:1fr}}
+
+
+    /* v7 refinements */
+    .acc-head{cursor:pointer}.acc-head:hover{background:#f5f8fc}.acc-head-actions{display:flex;align-items:center;gap:8px}.acc-chevron{display:inline-flex;width:18px;color:#506075}.acc-body.collapsed{display:none}.workspace-intake-card.expanded{padding-bottom:0}.workspace-inline-form{margin:12px -12px 0;padding:14px 12px 12px;border-top:1px solid #d8e4f2;background:#fff;border-radius:0 0 12px 12px;cursor:default}.workspace-inline-form .section-label{margin-top:0}.workspace-status-text{font-size:12px;color:#53637a;margin-top:6px;line-height:1.5}.workspace-status-text strong{color:#172033}.workspace-simple-note{font-size:12px;color:#607089}.workspace-hint .chip{font-size:12px}.workspace-project-row .chips{display:none}.workspace-project-row{grid-template-columns:36px minmax(260px,1fr) 150px 145px 110px}.workspace-side{overflow:auto}.workspace-intake-list{overflow:visible}.workspace-main{min-height:620px}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="breadcrumb">Programmes <span>›</span> <strong>Create Programme</strong></div>
+    <div class="stepper" aria-label="Create programme steps">
+      <div class="step done"><span class="circle">✓</span><span>Programme Details</span><span class="bar"></span></div>
+      <div class="step active"><span class="circle">2</span><span>Intake & Project Allocation</span><span class="bar"></span></div>
+      <div class="step"><span class="circle">3</span><span>Review and Confirm</span></div>
+    </div>
+
+    <main class="shell">
+      <div class="shell-head">
+        <div>
+          <h1 class="shell-title">Intake & Project Allocation</h1>
+          <div class="shell-sub">Create intake windows, then review project matches. Projects can be auto-assigned by project start time or manually assigned. Placements are configured after a project is assigned to an intake.</div>
+        </div>
+        <div class="option-tabs" role="tablist">
+          <button class="option-tab active" data-option="option1">Option 1 · Split View</button>
+          <button class="option-tab" data-option="option2">Option 2 · Intake-first Accordion</button>
+          <button class="option-tab" data-option="option3">Option 3 · Interactive Workspace</button>
+        </div>
+      </div>
+
+      <div class="option-note">
+        <span class="chip blue">Auto-match rule</span>
+        <div><strong>System suggestion:</strong> when a project start month falls inside an intake internship period, the project is marked as a suggested match. IO can accept the suggestion or manually assign another intake in the placement drawer.</div>
+      </div>
+
+      <section id="option1" class="option-wrap active">
+        <div class="content split">
+          <aside>
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <div class="card-title">Intake setup</div>
+                  <div class="card-sub">Strict fields only</div>
+                </div>
+                <button class="ghost-btn" onclick="showNewIntakePanel('o1')">+ Add intake</button>
+              </div>
+              <div style="padding:16px">
+                <div id="o1MiniTabs" class="mini-tabs"></div>
+                <div id="o1NewIntake" class="new-intake-panel"></div>
+                <div id="o1SelectedForm"></div>
+                <div class="empty-state" style="margin-top:14px;padding:12px;text-align:left">
+                  Select or add an intake here. The project pool on the right updates based on this intake’s internship period.
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <section>
+            <div class="toolbar">
+              <div>
+                <div class="section-label" style="margin:0 0 4px">POOL · UNIVERSITY</div>
+                <strong id="o1Summary">0 of 0 projects allocated · 0 intake assignments</strong>
+              </div>
+              <div class="stats">
+                <div class="stat"><b id="o1Need">0</b><span>Need assignment</span></div>
+                <div class="stat"><b id="o1Allocated">0</b><span>Allocated</span></div>
+                <button class="soft-btn">Assign selected</button>
+                <button class="ghost-btn">Clear selection</button>
+              </div>
+            </div>
+            <div class="tabs-row hidden" aria-hidden="true">
+              <button class="subtab active">Project Pool</button>
+              <button class="subtab">Allocated</button>
+              <button class="subtab">Need Attention</button>
+            </div>
+            <div id="o1ProjectList" class="project-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="option2" class="option-wrap">
+        <div class="content">
+          <div class="toolbar">
+            <div>
+              <div class="card-title">Intake-first Accordion</div>
+              <div class="card-sub">Each intake expands into its own setup fields, assigned projects and system suggestions.</div>
+            </div>
+            <button class="ghost-btn" onclick="showNewIntakePanel('o2')">+ Add intake</button>
+          </div>
+          <div id="o2NewIntake" class="new-intake-panel"></div>
+          <div id="o2Accordion" class="accordion"></div>
+        </div>
+      </section>
+
+      <section id="option3" class="option-wrap">
+        <div class="content">
+          <div class="toolbar">
+            <div>
+              <div class="card-title">Interactive Workspace</div>
+              <div class="card-sub">Added from the uploaded interaction direction: select an intake on the left, review the matching project pool on the right, then configure placements in the drawer.</div>
+            </div>
+            <button class="ghost-btn" onclick="showNewIntakePanel('o3')">+ Add intake</button>
+          </div>
+          <div id="o3NewIntake" class="new-intake-panel"></div>
+
+          <div class="workspace">
+            <aside class="workspace-side">
+              <div class="workspace-side-head">
+                <div>
+                  <div class="card-title">Intake windows</div>
+                  <div id="o3SideSub" class="card-sub">2 intakes · University pool</div>
+                </div>
+              </div>
+              <div id="o3IntakeList" class="workspace-intake-list"></div>
+            </aside>
+
+            <section class="workspace-main">
+              <div class="workspace-toolbar">
+                <div>
+                  <div id="o3PoolTitle" class="card-title">Project pool</div>
+                  <div id="o3PoolSub" class="card-sub">Auto-match by project start time</div>
+                </div>
+                <div class="small muted">Select an intake to expand its setup fields.</div>
+              </div>
+              <div class="workspace-hint">
+                <span class="chip yellow" id="o3NeedChip">0 need assignment</span>
+                <span class="muted small">Project placements are only configured after a project is assigned to one or more intakes.</span>
+              </div>
+              <div id="o3ProjectList" class="workspace-project-list"></div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="footer-bar">
+    <div class="footer-inner">
+      <button class="ghost-btn">← Back</button>
+      <div class="right-actions">
+        <button class="ghost-btn">▣ Save as Draft</button>
+        <button class="primary-btn">Next: Review and Confirm →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="drawerMask" class="drawer-mask" onclick="closeDrawer()"></div>
+  <aside id="drawer" class="drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div>
+        <div class="drawer-title">Manage Project Allocation</div>
+        <div id="drawerSub" class="card-sub"></div>
+      </div>
+      <button class="ghost-btn" onclick="closeDrawer()">Close</button>
+    </div>
+    <div id="drawerBody" class="drawer-body"></div>
+    <div class="drawer-footer">
+      <button class="ghost-btn" onclick="closeDrawer()">Cancel</button>
+      <button id="saveAllocationBtn" class="primary-btn" onclick="saveDrawer()">Save allocation</button>
+    </div>
+  </aside>
+
+<script>
+  const monthOrder = {
+    Jan:1, Feb:2, Mar:3, Apr:4, May:5, Jun:6,
+    Jul:7, Aug:8, Sep:9, Oct:10, Nov:11, Dec:12
+  };
+  let state = {
+    selectedIntakeId:'i1',
+    o2OpenIntakeId:'i1',
+    o3Filter:'all',
+    editingProjectId:null,
+    draftAllocations:{},
+    intakes:[
+      {id:'i1', label:'Intake 1', appOpen:'29 Jun 2026', appClose:'30 Jun 2026', start:'Jul 2026', end:'Dec 2026'},
+      {id:'i2', label:'Intake 2', appOpen:'01 Sep 2026', appClose:'30 Nov 2026', start:'Jan 2027', end:'Jul 2027'}
+    ],
+    projects:[
+      {id:'p1', name:'AI/ML in Defence Logistics', owner:'Hui Shan Tan · EDS', start:'Jan 2027', end:'Apr 2027', total:3, allocations:{i2:1}},
+      {id:'p2', name:'Signal Processing R&D', owner:'Kah Leong Ng · SECC', start:'Aug 2027', end:'Nov 2027', total:3, allocations:{}},
+      {id:'p3', name:'Autonomous Systems Prototyping', owner:'Rachel Bong · AS', start:'Sep 2027', end:'Dec 2027', total:3, allocations:{}},
+      {id:'p4', name:'Sensor Fusion for ISR Systems', owner:'Priya Subramaniam · SECC', start:'Jun 2027', end:'Sep 2027', total:2, allocations:{}},
+      {id:'p5', name:'Drone Payload Optimisation', owner:'Faizal Hassan · AS', start:'Jul 2027', end:'Oct 2027', total:1, allocations:{}},
+      {id:'p6', name:'Drone Payload Optimisation', owner:'Hui Shan Tan · SECC', start:'Jan 2027', end:'Apr 2027', total:2, allocations:{i2:1}}
+    ]
+  };
+
+  function monthValue(label){
+    const parts = label.split(' ');
+    return Number(parts[1]) * 12 + monthOrder[parts[0]];
+  }
+  function shortRange(intake){return `${intake.start.replace(' 20','')} – ${intake.end.replace(' 20','')}`;}
+  function projectRange(project){return `${project.start.replace(' 20','')} – ${project.end.replace(' 20','')}`;}
+  function getSuggestedIntakes(project){
+    const start = monthValue(project.start);
+    return state.intakes.filter(i => start >= monthValue(i.start) && start <= monthValue(i.end));
+  }
+  function allocatedSeats(project){return Object.values(project.allocations).reduce((a,b)=>a+Number(b||0),0);}
+  function assignedIntakes(project){return Object.keys(project.allocations).filter(id => Number(project.allocations[id])>0).map(id => state.intakes.find(i=>i.id===id)).filter(Boolean);}
+  function hasAssignment(project){return allocatedSeats(project)>0;}
+  function isNeedAssignment(project){return !hasAssignment(project);}
+  function assignmentCount(){return state.projects.reduce((acc,p)=>acc+Object.keys(p.allocations).filter(id=>Number(p.allocations[id])>0).length,0);}
+  function assignedProjectCount(){return state.projects.filter(hasAssignment).length;}
+  function fullyAllocatedCount(){return state.projects.filter(p=>allocatedSeats(p)>=p.total).length;}
+  function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));}
+
+  document.querySelectorAll('.option-tab').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.option-tab').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.option-wrap').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.option).classList.add('active');
+      renderAll();
+    });
+  });
+
+  function inputField(label, value, type, onChange){
+    const isReq = label.includes('Application');
+    const options = ['Jul 2026','Aug 2026','Sep 2026','Oct 2026','Nov 2026','Dec 2026','Jan 2027','Feb 2027','Mar 2027','Apr 2027','May 2027','Jun 2027','Jul 2027','Aug 2027','Sep 2027','Oct 2027','Nov 2027','Dec 2027'];
+    if(type==='select'){
+      return `<div class="field"><label>${label}</label><div class="fake-input"><select onchange="${onChange}(this.value)">${options.map(o=>`<option ${o===value?'selected':''}>${o}</option>`).join('')}</select><span>⌄</span></div></div>`;
+    }
+    return `<div class="field"><label>${label}${isReq?' <span class="req">*</span>':''}</label><div class="fake-input"><input value="${esc(value)}" onchange="${onChange}(this.value)"/><span>▦</span></div></div>`;
+  }
+
+  function intakeStrictForm(intake, namespace=''){
+    const id = intake.id;
+    return `
+      <div>
+        <h3 style="margin:0 0 14px">${esc(intake.label)}</h3>
+        <div class="section-label">Application Window</div>
+        <div class="form-grid">
+          ${inputField('Application Open Date', intake.appOpen, 'text', `updateIntakeField.bind(null,'${id}','appOpen')`)}
+          ${inputField('Application Close Date', intake.appClose, 'text', `updateIntakeField.bind(null,'${id}','appClose')`)}
+        </div>
+        <div class="section-label">Internship Period</div>
+        <div class="form-grid">
+          ${inputField('Internship Start Month', intake.start, 'select', `updateIntakeField.bind(null,'${id}','start')`)}
+          ${inputField('Internship End Month', intake.end, 'select', `updateIntakeField.bind(null,'${id}','end')`)}
+        </div>
+      </div>`;
+  }
+
+  window.updateIntakeField = function(id, field, value){
+    const intake = state.intakes.find(i=>i.id===id);
+    if(intake){intake[field]=value; renderAll();}
+  }
+
+  function renderNewIntakePanel(hostId){
+    return `
+      <div class="section-label" style="margin-top:0">New intake</div>
+      <div class="form-grid">
+        <div class="field"><label>Application Open Date <span class="req">*</span></label><div class="fake-input"><input id="${hostId}NewOpen" placeholder="Pick a date"/><span>▦</span></div></div>
+        <div class="field"><label>Application Close Date <span class="req">*</span></label><div class="fake-input"><input id="${hostId}NewClose" placeholder="Pick a date"/><span>▦</span></div></div>
+        <div class="field"><label>Internship Start Month</label><div class="fake-input"><select id="${hostId}NewStart"><option>Jul 2026</option><option>Jan 2027</option><option>Aug 2027</option><option>Sep 2027</option></select><span>⌄</span></div></div>
+        <div class="field"><label>Internship End Month</label><div class="fake-input"><select id="${hostId}NewEnd"><option>Dec 2026</option><option>Jul 2027</option><option>Nov 2027</option><option>Dec 2027</option></select><span>⌄</span></div></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+        <button class="ghost-btn" onclick="hideNewIntakePanel('${hostId}')">Cancel</button>
+        <button class="primary-btn" onclick="addIntakeFromPanel('${hostId}')">Add intake</button>
+      </div>`;
+  }
+
+  window.showNewIntakePanel = function(hostId){
+    const el = document.getElementById(`${hostId}NewIntake`);
+    if(el){el.innerHTML = renderNewIntakePanel(hostId); el.classList.add('show');}
+  }
+  window.hideNewIntakePanel = function(hostId){
+    const el = document.getElementById(`${hostId}NewIntake`);
+    if(el){el.classList.remove('show'); el.innerHTML='';}
+  }
+  window.addIntakeFromPanel = function(hostId){
+    const next = state.intakes.length + 1;
+    const appOpen = document.getElementById(`${hostId}NewOpen`)?.value || 'Pick a date';
+    const appClose = document.getElementById(`${hostId}NewClose`)?.value || 'Pick a date';
+    const start = document.getElementById(`${hostId}NewStart`)?.value || 'Sep 2027';
+    const end = document.getElementById(`${hostId}NewEnd`)?.value || 'Dec 2027';
+    const newIntake = {id:`i${Date.now()}`, label:`Intake ${next}`, appOpen, appClose, start, end};
+    state.intakes.push(newIntake);
+    state.selectedIntakeId = newIntake.id;
+    state.o2OpenIntakeId = newIntake.id;
+    hideNewIntakePanel(hostId);
+    renderAll();
+  }
+
+  function projectRow(p){
+    const suggested = getSuggestedIntakes(p);
+    const assigned = assignedIntakes(p);
+    const allocated = allocatedSeats(p);
+    const free = Math.max(0,p.total-allocated);
+    const need = isNeedAssignment(p);
+    const suggestLabel = suggested.length ? suggested.map(shortRange).join(', ') : 'No auto match';
+    return `<div class="project-row ${need?'need':''}">
+      <div><div class="check"></div></div>
+      <div>
+        <div class="project-name">${esc(p.name)} ${need?'<span class="chip yellow">Needs assignment</span>':''}</div>
+        <div class="project-meta">${esc(p.owner)} · ${free} of ${p.total} placements free · ${projectRange(p)}</div>
+        <div class="chips">
+          ${assigned.length ? assigned.map(i=>`<span class="chip blue">${shortRange(i)} · ${p.allocations[i.id]} seat${p.allocations[i.id]>1?'s':''}</span>`).join('') : '<span class="small muted">Assigned intakes: None</span>'}
+        </div>
+      </div>
+      <div><span class="chip ${suggested.length?'green':'yellow'}">${esc(suggestLabel)}</span></div>
+      <div class="mono"><strong>${allocated}/${p.total}</strong> placements</div>
+      <div><button class="ghost-btn" onclick="openDrawer('${p.id}')">Manage</button></div>
+    </div>`;
+  }
+
+  function renderProjectList(targetId){
+    const el = document.getElementById(targetId);
+    if(!el) return;
+    el.innerHTML = `<div class="list-head"><div></div><div>Project</div><div>Suggested intake</div><div>Placement split</div><div>Action</div></div>` + state.projects.map(projectRow).join('');
+  }
+
+  function renderSelectedIntakeProjectList(targetId, selected){
+    const el = document.getElementById(targetId);
+    if(!el) return;
+    let base = state.projects.filter(p=>getSuggestedIntakes(p).some(i=>i.id===selected.id) || Number(p.allocations[selected.id]||0)>0);
+    base.sort((a,b)=>{
+      const an = (!Number(a.allocations[selected.id]||0) && getSuggestedIntakes(a).some(i=>i.id===selected.id)) ? 0 : 1;
+      const bn = (!Number(b.allocations[selected.id]||0) && getSuggestedIntakes(b).some(i=>i.id===selected.id)) ? 0 : 1;
+      return an-bn;
+    });
+    if(!base.length){
+      el.innerHTML = `<div class="empty-state" style="margin:16px">No project suggestions for ${esc(selected.label)} yet. Adjust the internship period or assign projects manually from another option.</div>`;
+      return;
+    }
+    el.innerHTML = `<div class="list-head"><div></div><div>Project</div><div>Status for this intake</div><div>Placement split</div><div>Action</div></div>` + base.map(p=>selectedIntakeProjectRow(p, selected)).join('');
+  }
+
+  function selectedIntakeProjectRow(p, selected){
+    const allocated = allocatedSeats(p);
+    const free = Math.max(0,p.total-allocated);
+    const seats = Number(p.allocations[selected.id]||0);
+    const suggested = getSuggestedIntakes(p).some(i=>i.id===selected.id);
+    const need = suggested && !seats;
+    const statusChip = seats ? `<span class="chip blue">Assigned · ${seats} seat${seats>1?'s':''}</span>` : (suggested ? `<span class="chip yellow">Suggested match</span>` : `<span class="chip">Manual option</span>`);
+    return `<div class="project-row ${need?'need':''}">
+      <div><div class="check"></div></div>
+      <div>
+        <div class="project-name">${esc(p.name)} ${need?'<span class="chip yellow">Needs assignment</span>':''}</div>
+        <div class="project-meta">${esc(p.owner)} · ${free} of ${p.total} placements free · ${projectRange(p)}</div>
+        <div class="chips">${seats ? `<span class="chip blue">${shortRange(selected)} · ${seats} seat${seats>1?'s':''}</span>` : '<span class="small muted">Assigned intakes: None for this intake</span>'}</div>
+      </div>
+      <div>${statusChip}</div>
+      <div class="mono"><strong>${allocated}/${p.total}</strong> placements</div>
+      <div><button class="ghost-btn" onclick="openDrawer('${p.id}','${selected.id}')">Manage</button></div>
+    </div>`;
+  }
+
+  function renderOption1(){
+    const tabs = document.getElementById('o1MiniTabs');
+    const form = document.getElementById('o1SelectedForm');
+    if(!tabs || !form) return;
+    const selected = state.intakes.find(i=>i.id===state.selectedIntakeId) || state.intakes[0];
+    state.selectedIntakeId = selected.id;
+    tabs.innerHTML = state.intakes.map(i=>`<button class="mini-tab ${i.id===selected.id?'active':''}" onclick="selectIntake('${i.id}')">${esc(i.label)}</button>`).join('');
+    form.innerHTML = intakeStrictForm(selected);
+
+    const assigned = state.projects.filter(p=>Number(p.allocations[selected.id]||0)>0);
+    const suggested = state.projects.filter(p=>getSuggestedIntakes(p).some(si=>si.id===selected.id));
+    const need = suggested.filter(p=>!Number(p.allocations[selected.id]||0));
+    document.getElementById('o1Summary').textContent = `${selected.label} · ${assigned.length} assigned · ${suggested.length} system suggestions`;
+    document.getElementById('o1Need').textContent = need.length;
+    document.getElementById('o1Allocated').textContent = assigned.length;
+    renderSelectedIntakeProjectList('o1ProjectList', selected);
+  }
+  window.selectIntake = function(id){state.selectedIntakeId=id; renderAll();}
+
+  function renderOption2(){
+    const el = document.getElementById('o2Accordion');
+    if(!el) return;
+    if(!state.o2OpenIntakeId && state.intakes.length) state.o2OpenIntakeId = state.intakes[0].id;
+    el.innerHTML = state.intakes.map((i,idx)=>{
+      const isOpen = state.o2OpenIntakeId === i.id;
+      const assigned = state.projects.filter(p=>Number(p.allocations[i.id]||0)>0);
+      const suggested = state.projects.filter(p=>getSuggestedIntakes(p).some(si=>si.id===i.id) && !Number(p.allocations[i.id]||0));
+      return `<div class="acc-item">
+        <div class="acc-head" onclick="toggleAccordionIntake('${i.id}')">
+          <div>
+            <div class="acc-title"><span class="acc-chevron">${isOpen?'▾':'▸'}</span>${esc(i.label)} · ${shortRange(i)}</div>
+            <div class="card-sub">${assigned.length} assigned · ${suggested.length} suggested by project start time</div>
+          </div>
+          <div class="acc-head-actions">
+            ${isOpen?`<button class="soft-btn" onclick="event.stopPropagation();acceptAllForIntake('${i.id}')">Accept all recommended</button>`:''}
+          </div>
+        </div>
+        <div class="acc-body ${isOpen?'':'collapsed'}">
+          <div class="intake-form-compact">${intakeStrictForm(i)}</div>
+          <div class="suggest-grid">
+            <div class="suggest-box"><h4>Assigned projects</h4>${assigned.length?assigned.map(p=>`<div class="suggest-card"><div><strong>${esc(p.name)}</strong><div class="small muted">${projectRange(p)} · ${p.allocations[i.id]} seat${p.allocations[i.id]>1?'s':''}</div></div><button class="ghost-btn" onclick="openDrawer('${p.id}','${i.id}')">Manage</button></div>`).join(''):'<div class="empty-state">No projects assigned.</div>'}</div>
+            <div class="suggest-box"><h4>System suggested projects</h4>${suggested.length?suggested.map(p=>`<div class="suggest-card"><div><strong>${esc(p.name)}</strong><div class="small muted">Project starts ${p.start} · ${p.total-allocatedSeats(p)} placements free</div></div><button class="ghost-btn" onclick="openDrawer('${p.id}','${i.id}')">Assign</button></div>`).join(''):'<div class="empty-state">No unassigned suggestions for this intake.</div>'}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  window.toggleAccordionIntake = function(intakeId){
+    state.o2OpenIntakeId = state.o2OpenIntakeId === intakeId ? null : intakeId;
+    renderOption2();
+  }
+  window.acceptAllForIntake = function(intakeId){
+    state.projects.forEach(p=>{
+      const isSuggested = getSuggestedIntakes(p).some(i=>i.id===intakeId);
+      if(isSuggested && !Number(p.allocations[intakeId]||0) && allocatedSeats(p)<p.total){p.allocations[intakeId]=1;}
+    });
+    renderAll();
+  }
+
+  function renderOption3(){
+    const list = document.getElementById('o3IntakeList');
+    const sideSub = document.getElementById('o3SideSub');
+    const poolTitle = document.getElementById('o3PoolTitle');
+    const poolSub = document.getElementById('o3PoolSub');
+    const projectList = document.getElementById('o3ProjectList');
+    if(!list || !projectList) return;
+
+    let selected = state.intakes.find(i=>i.id===state.selectedIntakeId) || state.intakes[0] || null;
+    if(selected) state.selectedIntakeId = selected.id;
+    if(sideSub) sideSub.textContent = `${state.intakes.length} intake${state.intakes.length>1?'s':''} · select one to expand`;
+
+    list.innerHTML = state.intakes.map(i=>{
+      const isActive = selected && selected.id===i.id;
+      const assigned = state.projects.filter(p=>Number(p.allocations[i.id]||0)>0);
+      const suggested = state.projects.filter(p=>getSuggestedIntakes(p).some(si=>si.id===i.id));
+      const unassignedSuggested = suggested.filter(p=>!Number(p.allocations[i.id]||0));
+      return `<div class="workspace-intake-card ${isActive?'active expanded':''}" onclick="selectWorkspaceIntake('${i.id}')">
+        <div class="workspace-card-top">
+          <div>
+            <div class="intake-title">${esc(i.label)} · ${shortRange(i)}</div>
+            <div class="intake-meta">Application: ${esc(i.appOpen)} – ${esc(i.appClose)}<br/>${assigned.length} assigned · ${unassignedSuggested.length} suggested</div>
+          </div>
+          <span class="count-pill">${assigned.length}</span>
+        </div>
+        <div class="intake-projects">${assigned.length?assigned.slice(0,2).map(p=>esc(p.name)).join('<br/>'):'No projects assigned yet.'}${assigned.length>2?'<br/>+ more':''}</div>
+        ${isActive?`<div class="workspace-inline-form" onclick="event.stopPropagation()">
+          <div class="section-label">Selected intake fields</div>
+          ${intakeStrictForm(i)}
+        </div>`:''}
+      </div>`;
+    }).join('');
+
+    let base = selected ? state.projects.filter(p=>getSuggestedIntakes(p).some(si=>si.id===selected.id) || Number(p.allocations[selected.id]||0)>0) : [...state.projects];
+    const needCount = selected ? base.filter(p=>!Number(p.allocations[selected.id]||0) && getSuggestedIntakes(p).some(si=>si.id===selected.id)).length : base.filter(isNeedAssignment).length;
+    const assignedCount = selected ? base.filter(p=>Number(p.allocations[selected.id]||0)>0).length : base.filter(hasAssignment).length;
+    if(poolTitle) poolTitle.textContent = selected ? `${selected.label} · Project pool` : 'Project pool';
+    if(poolSub) poolSub.textContent = selected ? `${assignedCount} assigned · ${needCount} need action · refreshed after save` : `${assignedCount} allocated · ${needCount} need assignment`;
+    const chip = document.getElementById('o3NeedChip');
+    if(chip) chip.textContent = `${needCount} need assignment`;
+
+    base.sort((a,b)=>{
+      const an = selected && (!Number(a.allocations[selected.id]||0) && getSuggestedIntakes(a).some(si=>si.id===selected.id)) ? 0 : 1;
+      const bn = selected && (!Number(b.allocations[selected.id]||0) && getSuggestedIntakes(b).some(si=>si.id===selected.id)) ? 0 : 1;
+      return an-bn;
+    });
+
+    if(!base.length){
+      projectList.innerHTML = `<div class="workspace-empty">No projects match this intake. Update the internship period or manually assign a project in the drawer.</div>`;
+      return;
+    }
+    projectList.innerHTML = `<div class="list-head"><div></div><div>Project</div><div>Status</div><div>Placements</div><div>Action</div></div>` + base.map(p=>workspaceProjectRow(p, selected)).join('');
+  }
+
+  function workspaceProjectRow(p, selected){
+    const suggested = getSuggestedIntakes(p);
+    const allocated = allocatedSeats(p);
+    const free = Math.max(0,p.total-allocated);
+    const selectedSeats = selected ? Number(p.allocations[selected.id]||0) : 0;
+    const suggestedForSelected = selected ? suggested.some(i=>i.id===selected.id) : suggested.length>0;
+    const need = selected ? (!selectedSeats && suggestedForSelected) : isNeedAssignment(p);
+    const statusLabel = selectedSeats ? `Assigned · ${selectedSeats} seat${selectedSeats>1?'s':''}` : (suggestedForSelected ? 'Auto suggested' : 'Manual option');
+    const rowNote = selectedSeats
+      ? `<div class="workspace-status-text"><strong>Assigned to:</strong> ${shortRange(selected)} · ${selectedSeats} seat${selectedSeats>1?'s':''}</div>`
+      : (suggestedForSelected ? `<div class="workspace-status-text"><strong>Suggestion:</strong> project start time fits ${shortRange(selected)}</div>` : `<div class="workspace-status-text">No automatic match for this intake.</div>`);
+    return `<div class="workspace-project-row ${need?'need':''}">
+      <div><div class="check"></div></div>
+      <div>
+        <div class="project-name">${esc(p.name)} ${need?'<span class="chip yellow">Needs assignment</span>':''}</div>
+        <div class="project-meta">${esc(p.owner)} · ${free} of ${p.total} placements free · ${projectRange(p)}</div>
+        ${rowNote}
+      </div>
+      <div><span class="chip ${selectedSeats?'blue':suggestedForSelected?'green':'yellow'}">${esc(statusLabel)}</span></div>
+      <div class="mono"><strong>${allocated}/${p.total}</strong> placements</div>
+      <div><button class="ghost-btn" onclick="openDrawer('${p.id}','${selected?selected.id:''}')">${allocated?'Manage':'Assign'}</button></div>
+    </div>`;
+  }
+
+  window.selectWorkspaceIntake = function(id){state.selectedIntakeId=id; renderAll();}
+  window.setWorkspaceFilter = function(filter){state.o3Filter=filter; renderOption3();}
+
+  function renderAll(){renderOption1(); renderOption2(); renderOption3();}
+
+  window.openDrawer = function(projectId, preferredIntakeId=''){
+    const p = state.projects.find(x=>x.id===projectId); if(!p) return;
+    state.editingProjectId = projectId;
+    state.draftAllocations = {...p.allocations};
+    if(preferredIntakeId && !Number(state.draftAllocations[preferredIntakeId]||0) && allocatedSeats(p) < p.total){
+      state.draftAllocations[preferredIntakeId] = 1;
+    }
+    document.getElementById('drawerSub').textContent = `${p.name} · ${projectRange(p)} · ${p.total} total placements`;
+    renderDrawer();
+    document.getElementById('drawerMask').classList.add('open');
+    document.getElementById('drawer').classList.add('open');
+    document.getElementById('drawer').setAttribute('aria-hidden','false');
+  }
+  function renderDrawer(){
+    const p = state.projects.find(x=>x.id===state.editingProjectId); if(!p) return;
+    const suggestedIds = getSuggestedIntakes(p).map(i=>i.id);
+    const totalDraft = Object.values(state.draftAllocations).reduce((a,b)=>a+Number(b||0),0);
+    const over = totalDraft > p.total;
+    const body = document.getElementById('drawerBody');
+    body.innerHTML = `
+      <div class="card" style="margin-bottom:14px"><div style="padding:14px">
+        <div class="section-label" style="margin-top:0">Project placement capacity</div>
+        <div class="form-grid">
+          <div class="stat"><b>${p.total}</b><span>Total placements</span></div>
+          <div class="stat"><b>${Math.max(0,p.total-totalDraft)}</b><span>Remaining placements</span></div>
+        </div>
+        <div class="small muted" style="margin-top:10px">Placements are configured per intake only after the project is assigned to that intake.</div>
+      </div></div>
+      ${state.intakes.map(i=>{
+        const seats = Number(state.draftAllocations[i.id]||0);
+        const isSuggested = suggestedIds.includes(i.id);
+        return `<div class="allocation-row">
+          <div class="allocation-row-top">
+            <div><strong>${esc(i.label)} · ${shortRange(i)}</strong><div class="small muted">Internship period: ${esc(i.start)} – ${esc(i.end)}</div></div>
+            ${isSuggested?'<span class="chip green">Auto suggested</span>':'<span class="chip">Manual option</span>'}
+          </div>
+          <div class="assign-controls">
+            <label><input type="checkbox" ${seats>0?'checked':''} onchange="toggleDraftAllocation('${i.id}', this.checked)"> Assign</label>
+            <input class="num" type="number" min="0" max="${p.total}" value="${seats}" ${seats>0?'':'disabled'} onchange="setDraftAllocation('${i.id}', this.value)">
+          </div>
+        </div>`;
+      }).join('')}
+      <button class="soft-btn" onclick="acceptRecommendedInDrawer()">Accept auto suggestions</button>
+      <div id="drawerAlert" class="alert ${over?'show':''}">Over allocation: assigned placements (${totalDraft}) cannot exceed total placements (${p.total}).</div>
+    `;
+    document.getElementById('saveAllocationBtn').disabled = over;
+    document.getElementById('saveAllocationBtn').style.opacity = over ? .45 : 1;
+  }
+  window.toggleDraftAllocation = function(intakeId, checked){
+    if(checked){ if(!Number(state.draftAllocations[intakeId]||0)) state.draftAllocations[intakeId]=1; }
+    else{ delete state.draftAllocations[intakeId]; }
+    renderDrawer();
+  }
+  window.setDraftAllocation = function(intakeId, value){
+    const n = Math.max(0, Number(value||0));
+    if(n===0) delete state.draftAllocations[intakeId]; else state.draftAllocations[intakeId]=n;
+    renderDrawer();
+  }
+  window.acceptRecommendedInDrawer = function(){
+    const p = state.projects.find(x=>x.id===state.editingProjectId); if(!p) return;
+    getSuggestedIntakes(p).forEach(i=>{ if(!state.draftAllocations[i.id]) state.draftAllocations[i.id]=1; });
+    renderDrawer();
+  }
+  window.saveDrawer = function(){
+    const p = state.projects.find(x=>x.id===state.editingProjectId); if(!p) return;
+    const totalDraft = Object.values(state.draftAllocations).reduce((a,b)=>a+Number(b||0),0);
+    if(totalDraft > p.total) return;
+    p.allocations = Object.fromEntries(Object.entries(state.draftAllocations).filter(([_,v])=>Number(v)>0));
+    closeDrawer(); renderAll();
+  }
+  window.closeDrawer = function(){
+    document.getElementById('drawerMask').classList.remove('open');
+    document.getElementById('drawer').classList.remove('open');
+    document.getElementById('drawer').setAttribute('aria-hidden','true');
+  }
+
+  renderAll();
+</script>
+</body>
+</html>

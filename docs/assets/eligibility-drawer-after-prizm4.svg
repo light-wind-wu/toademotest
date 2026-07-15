@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="900" viewBox="0 0 1280 900" role="img" aria-labelledby="title desc">
+  <title id="title">Eligibility Criteria drawer after PRIZM 4 alignment</title>
+  <desc id="desc">A source-aligned after-state mock for the Eligibility Criteria drawer using PRIZM 4 semantic tokens, rounded-lg surfaces, and typography tokens.</desc>
+  <defs>
+    <style>
+      .page { fill: #f8fafc; }
+      .surface { fill: #ffffff; }
+      .muted { fill: #f1f5f9; }
+      .border { stroke: #e2e8f0; }
+      .fg { fill: #0f172a; }
+      .fg-muted { fill: #475569; }
+      .fg-subtle { fill: #64748b; }
+      .accent { fill: #2563eb; }
+      .accent-stroke { stroke: #2563eb; }
+      .text { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .headline { font-size: 24px; font-weight: 600; }
+      .body { font-size: 14px; font-weight: 400; }
+      .label { font-size: 14px; font-weight: 600; }
+      .caption { font-size: 12px; font-weight: 400; }
+      .label-sm { font-size: 12px; font-weight: 700; letter-spacing: .04em; }
+    </style>
+  </defs>
+
+  <rect class="page" width="1280" height="900"/>
+  <rect x="0" y="0" width="632" height="900" fill="#e5e7eb" opacity=".72"/>
+  <rect x="0.5" y="0.5" width="112" height="899" class="surface border"/>
+  <rect x="112.5" y="0.5" width="1167" height="64" class="surface border"/>
+  <text x="136" y="39" class="text headline" fill="#2563eb">Talent Outreach &amp; Acquisition</text>
+  <text x="18" y="86" class="text label-sm fg-subtle">WORKSTREAM</text>
+  <text x="18" y="107" class="text label fg">Internship</text>
+  <text x="46" y="176" class="text caption fg-muted" text-anchor="middle">Dashboard</text>
+  <text x="46" y="240" class="text caption" fill="#2563eb" text-anchor="middle">Programmes</text>
+  <text x="46" y="304" class="text caption fg-muted" text-anchor="middle">Projects</text>
+
+  <g transform="translate(146 84)">
+    <text class="text caption fg-muted" x="0" y="10">Programmes</text>
+    <text class="text caption fg-muted" x="88" y="10">›</text>
+    <text class="text label fg" x="112" y="10">Create Programme</text>
+    <rect x="0.5" y="68.5" width="486" height="694" rx="8" class="surface border"/>
+    <text x="24" y="108" class="text headline fg">Programme Details</text>
+    <line x1="0" y1="132" x2="486" y2="132" stroke="#e2e8f0"/>
+    <text x="24" y="166" class="text label fg">Programme Title *</text>
+    <rect x="24.5" y="178.5" width="430" height="44" rx="8" class="surface border"/>
+    <text x="40" y="206" class="text body fg-subtle">e.g. UG Intern 2027</text>
+    <text x="24" y="258" class="text label fg">Education Level *</text>
+    <circle cx="34" cy="282" r="8" fill="none" stroke="#94a3b8"/>
+    <text x="52" y="287" class="text body fg">Junior College</text>
+    <circle cx="34" cy="310" r="8" fill="none" stroke="#2563eb" stroke-width="2"/>
+    <circle cx="34" cy="310" r="4" fill="#2563eb"/>
+    <text x="52" y="315" class="text body fg">University</text>
+    <text x="122" y="315" class="text caption" fill="#2563eb">Preview</text>
+    <text x="24" y="354" class="text label fg">Eligibility Criteria</text>
+    <rect x="24.5" y="364.5" width="430" height="58" rx="8" class="surface border"/>
+    <text x="70" y="389" class="text label fg">4 criteria configured</text>
+    <text x="70" y="407" class="text caption fg-muted">View or edit eligibility criteria</text>
+    <text x="436" y="400" class="text body fg-subtle">›</text>
+    <text x="24" y="464" class="text label fg">Programme Description</text>
+    <rect x="24.5" y="478.5" width="430" height="112" rx="8" class="surface border"/>
+    <text x="40" y="506" class="text body fg-subtle">Briefly describe the programme...</text>
+  </g>
+
+  <rect x="632" y="0" width="648" height="900" class="surface"/>
+  <line x1="632.5" y1="0" x2="632.5" y2="900" stroke="#e2e8f0"/>
+  <g transform="translate(656 24)">
+    <text class="text headline fg" x="0" y="0">Eligibility criteria</text>
+    <text class="text body fg-muted" x="0" y="26">University</text>
+    <text class="text body fg-muted" x="574" y="6">×</text>
+  </g>
+  <line x1="632" y1="82" x2="1280" y2="82" stroke="#e2e8f0"/>
+
+  <g transform="translate(656 104)">
+    <rect x="0.5" y="0.5" width="588" height="118" rx="8" class="surface border"/>
+    <text class="text body fg" x="16" y="28">Applicants must be a Singapore Citizen and be studying at University level,</text>
+    <text class="text body fg" x="16" y="50">and also have a minimum GPA of 4.0 (NUS / NTU / SUTD applicants) or</text>
+    <text class="text body fg" x="16" y="72">have a minimum GPA of 3.6 (SMU applicants).</text>
+    <text class="text caption fg-subtle" x="16" y="100">Generated from configured criteria</text>
+
+    <text class="text label-sm fg-subtle" x="0" y="154">DETAILED BREAKDOWN</text>
+    <rect x="0.5" y="172.5" width="588" height="94" rx="8" class="surface border"/>
+    <text class="text label-sm" fill="#2563eb" x="14" y="196">ALL OF THESE CONDITIONS:</text>
+    <text class="text body fg" x="34" y="226">Nationality is any of Singapore Citizen</text>
+    <text class="text body fg" x="34" y="250">Education Level is University</text>
+
+    <line x1="0" y1="288" x2="270" y2="288" stroke="#e2e8f0"/>
+    <rect x="280" y="276" width="40" height="24" rx="6" fill="#2563eb"/>
+    <text x="300" y="292" text-anchor="middle" class="text label-sm" fill="#ffffff">AND</text>
+    <line x1="330" y1="288" x2="588" y2="288" stroke="#e2e8f0"/>
+
+    <rect x="0.5" y="316.5" width="588" height="198" rx="8" class="surface border"/>
+    <text class="text label-sm" fill="#2563eb" x="14" y="340">ANY OF THESE OPTIONS:</text>
+    <rect x="14.5" y="360.5" width="560" height="58" rx="6" class="muted border"/>
+    <text class="text label fg-muted" x="26" y="384">Option 1</text>
+    <text class="text body fg" x="42" y="406">Minimum GPA at least 4.0</text>
+    <text class="text label-sm fg-muted" x="14" y="448">OR</text>
+    <rect x="14.5" y="466.5" width="560" height="38" rx="6" class="muted border"/>
+    <text class="text body fg" x="42" y="491">Minimum GPA at least 3.6</text>
+  </g>
+
+  <line x1="632" y1="820" x2="1280" y2="820" stroke="#e2e8f0"/>
+  <text x="676" y="864" class="text label fg-muted">Close</text>
+  <rect x="1110" y="844" width="136" height="40" rx="8" fill="#2563eb"/>
+  <text x="1178" y="869" text-anchor="middle" class="text label" fill="#ffffff">Edit criteria</text>
+</svg>

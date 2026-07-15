@@ -1,0 +1,102 @@
+[
+  {
+    "email": "limjunhao@u.nus.edu",
+    "engagements": [
+      {
+        "year": 2018,
+        "title": "YDSP Science & Technology Camp",
+        "details": "Attended the 4-day residential S&T Camp at DSTA HQ. Hands-on workshops covering robotics, cybersecurity, and defence systems design.",
+        "kind": "techup-event"
+      },
+      {
+        "year": 2019,
+        "title": "Research@YDSP",
+        "details": "8-week research attachment at DSTA's Programmes directorate. Developed an obstacle-avoidance algorithm for small UAVs using computer vision, mentored by Dr. Ho Wei Lin (Principal Engineer).",
+        "kind": "programme"
+      },
+      {
+        "year": 2019,
+        "title": "YDSP Congress",
+        "details": "Presented findings at YDSP Congress 2019. Awarded Best Research Presentation (Engineering category).",
+        "kind": "programme"
+      },
+      {
+        "year": 2021,
+        "title": "Junior College 2021 Internship",
+        "details": "6-week internship at DSTA's Command, Control & Communications (C3) Systems department. Contributed to RF frequency planning tool development.",
+        "kind": "internship"
+      },
+      {
+        "year": 2022,
+        "title": "Singapore Airshow 2022",
+        "details": "Attended as a DSTA guest delegate. Participated in DSTA-organised panel on autonomous systems and engaged with defence industry partners.",
+        "kind": "techup-event"
+      },
+      {
+        "year": 2025,
+        "title": "Tech UP",
+        "details": "Completed DSTA's Tech UP programme \u2014 10-week structured upskilling track covering applied AI, cloud systems, and secure software development.",
+        "kind": "techup-event"
+      },
+      {
+        "year": 2025,
+        "title": "Brainhack 2025",
+        "details": "Competed in Brainhack 2025 (AI/ML track) organised by DSTA and CSIT. Team placed top 8 of 120 university teams.",
+        "kind": "competition"
+      },
+      {
+        "year": 2025,
+        "title": "DSTA Undergraduate Scholarship",
+        "details": "Awarded the DSTA Undergraduate Scholarship following outstanding performance in Tech UP and Brainhack 2025.",
+        "kind": "scholarship"
+      }
+    ]
+  },
+  {
+    "email": "marcus.tan@u.nus.edu",
+    "engagements": [
+      {
+        "year": 2021,
+        "title": "YDSP Science & Technology Camp",
+        "details": "4-day residential camp at DSTA HQ \u2014 robotics, cyber, systems design.",
+        "kind": "techup-event"
+      },
+      {
+        "year": 2022,
+        "title": "Junior College Internship",
+        "details": "6-week internship with the Sensors directorate; built a small radar data visualiser.",
+        "kind": "internship"
+      },
+      {
+        "year": 2023,
+        "title": "TechUp: Python for Engineers",
+        "details": "Completed the 8-module TechUp course with distinction.",
+        "kind": "techup-course"
+      },
+      {
+        "year": 2023,
+        "title": "TechUp: Introduction to Machine Learning",
+        "details": "Completed; capstone on image classification.",
+        "kind": "techup-course"
+      },
+      {
+        "year": 2024,
+        "title": "BrainHack 2024",
+        "details": "Top-10 finalist, Today-I-Learned AI challenge.",
+        "kind": "competition"
+      },
+      {
+        "year": 2024,
+        "title": "DSTA Engineering Open House",
+        "details": "Attended talks on autonomous systems and EW.",
+        "kind": "techup-event"
+      },
+      {
+        "year": 2025,
+        "title": "University Summer Internship",
+        "details": "12-week internship \u2014 UAV flight-controller tuning.",
+        "kind": "internship"
+      }
+    ]
+  }
+]

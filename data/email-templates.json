@@ -1,0 +1,56 @@
+[
+  {
+    "id": "ET-001",
+    "name": "Project Request 2026",
+    "trigger": "Manual",
+    "subject": "[DSTA] Project Request \u2014 Internship 2026",
+    "body": "Dear {{pc_head_name}},\n\nI am writing on behalf of DSTA's Talent Outreach & Acquisition team to request project submissions for our upcoming internship programme(s).\n\n{{placements_detail}}\n\nTo submit your project proposals, please use the dedicated upload link below:\n{{upload_link}}\n\nPlease submit your proposals by {{deadline}}.\n\nThank you for your continued support.\n\nWarm regards,\nDavina Lim\nInternship Officer, DSTA",
+    "updatedAt": "2026-05-24",
+    "category": "project-request"
+  },
+  {
+    "id": "ET-002",
+    "name": "Ineligibility Notification",
+    "trigger": "Auto-rejected",
+    "subject": "[DSTA] Update on Your Internship Application \u2014 {{programme_name}}",
+    "body": "Dear {{first_name}},\n\nThank you for applying to the DSTA {{programme_name}} internship programme.\n\nAfter careful review, we regret to inform you that your application does not meet the eligibility requirements for this programme. As a result, we are unable to proceed with your application at this time.\n\nWe appreciate the time and effort you put into your application and encourage you to look out for future internship opportunities with DSTA.\n\nShould you have any queries, please do not hesitate to contact us at internship@dsta.gov.sg.\n\nWe wish you all the best in your academic journey.\n\nWarm regards,\nInternship Office\nDefence Science and Technology Agency (DSTA)\ninternship@dsta.gov.sg",
+    "updatedAt": "2026-05-31",
+    "category": "application"
+  },
+  {
+    "id": "ET-003",
+    "name": "Pre-Interview Rejection",
+    "trigger": "Rejected (before interview)",
+    "subject": "[DSTA] Update on Your Internship Application \u2014 {{programme_name}}",
+    "body": "Dear {{first_name}},\n\nThank you for your interest in the DSTA {{programme_name}} internship programme and for taking the time to submit your application.\n\nAfter careful consideration, we regret to inform you that we are unable to offer you a placement for this intake. The selection process was highly competitive and we received a large number of strong applications.\n\nWe appreciate your interest in DSTA and encourage you to apply again in future cycles. Please continue to look out for internship opportunities on our website.\n\nThank you once again for your application, and we wish you every success in your future endeavours.\n\nWarm regards,\nInternship Office\nDefence Science and Technology Agency (DSTA)\ninternship@dsta.gov.sg",
+    "updatedAt": "2026-05-31",
+    "category": "application"
+  },
+  {
+    "id": "ET-004",
+    "name": "Post-Interview Rejection",
+    "trigger": "Rejected (after interview)",
+    "subject": "[DSTA] Update on Your Internship Application \u2014 {{programme_name}}",
+    "body": "Dear {{first_name}},\n\nThank you for attending the interview for the DSTA {{programme_name}} internship programme. We appreciate the time and effort you invested in the process.\n\nAfter careful deliberation, we regret to inform you that we are unable to offer you a placement for this intake. This was a difficult decision given the high calibre of candidates we interviewed.\n\nWe encourage you to continue developing your skills and to apply again in future internship cycles. Please look out for upcoming opportunities on our website.\n\nWe wish you every success in your studies and future career.\n\nWarm regards,\nInternship Office\nDefence Science and Technology Agency (DSTA)\ninternship@dsta.gov.sg",
+    "updatedAt": "2026-05-31",
+    "category": "application"
+  },
+  {
+    "id": "ET-005",
+    "name": "Project Request 2025",
+    "trigger": "Manual",
+    "subject": "[DSTA] Project Request \u2014 Internship 2025",
+    "body": "Dear {{pc_head_name}},\n\nI am writing on behalf of DSTA's Talent Outreach & Acquisition team to request project submissions for our upcoming internship programme(s).\n\n{{placements_detail}}\n\nTo submit your project proposals, please use the dedicated upload link below:\n{{upload_link}}\n\nPlease submit your proposals by {{deadline}}.\n\nThank you for your continued support.\n\nWarm regards,\nDavina Lim\nInternship Officer, DSTA",
+    "updatedAt": "2025-05-20",
+    "category": "project-request"
+  },
+  {
+    "id": "ET-006",
+    "name": "Project Request 2024",
+    "trigger": "Manual",
+    "subject": "[DSTA] Project Request \u2014 Internship 2024",
+    "body": "Dear {{pc_head_name}},\n\nI am writing on behalf of DSTA's Talent Outreach & Acquisition team to request project submissions for our upcoming internship programme(s).\n\n{{placements_detail}}\n\nTo submit your project proposals, please use the dedicated upload link below:\n{{upload_link}}\n\nPlease submit your proposals by {{deadline}}.\n\nThank you for your continued support.\n\nWarm regards,\nDavina Lim\nInternship Officer, DSTA",
+    "updatedAt": "2024-05-18",
+    "category": "project-request"
+  }
+]

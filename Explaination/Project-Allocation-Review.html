@@ -1,0 +1,3076 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>IO-approved Project Allocation Review</title>
+<style>
+:root {
+  --bg: #f6f8fc;
+  --panel: #ffffff;
+  --soft: #f8fafc;
+  --soft-blue: #eff6ff;
+  --soft-purple: #f5f3ff;
+  --soft-green: #ecfdf5;
+  --soft-amber: #fffbeb;
+  --soft-red: #fef2f2;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --subtle: #94a3b8;
+  --line: #dbe3ef;
+  --blue: #2563eb;
+  --blue-strong: #1d4ed8;
+  --purple: #7c3aed;
+  --green: #059669;
+  --amber: #d97706;
+  --red: #dc2626;
+  --shadow: 0 24px 60px rgba(15, 23, 42, .10);
+  --shadow-soft: 0 12px 28px rgba(15, 23, 42, .06);
+  --radius-xl: 28px;
+  --radius-lg: 22px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at 6% -4%, rgba(37, 99, 235, .16), transparent 28%),
+    radial-gradient(circle at 90% 0%, rgba(124, 58, 237, .12), transparent 26%),
+    linear-gradient(180deg, #f8fbff 0%, var(--bg) 52%, #f8fafc 100%);
+}
+.page {
+  width: min(1480px, calc(100vw - 48px));
+  margin: 0 auto;
+  padding: 28px 0 54px;
+}
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.header-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  margin-bottom: 14px;
+  padding: 7px 12px;
+  border: 1px solid rgba(37, 99, 235, .18);
+  border-radius: 999px;
+  background: rgba(255,255,255,.78);
+  color: var(--blue-strong);
+  font-size: 13px;
+  font-weight: 850;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .05);
+  transition: .18s ease;
+}
+.back-button:hover { transform: translateY(-1px); background: #fff; }
+.back-button svg { width: 15px; height: 15px; }
+.version-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  margin-bottom: 14px;
+  padding: 4px;
+  border: 1px solid rgba(37, 99, 235, .18);
+  border-radius: 999px;
+  background: rgba(255,255,255,.78);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .05);
+  vertical-align: top;
+}
+.version-switch a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  min-height: 26px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+}
+.version-switch a.active {
+  background: var(--blue-strong);
+  color: #fff;
+  box-shadow: 0 5px 14px rgba(37, 99, 235, .22);
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, .10);
+  color: var(--blue-strong);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .02em;
+  margin-bottom: 10px;
+}
+h1 {
+  margin: 0;
+  max-width: 980px;
+  font-size: clamp(30px, 3.2vw, 54px);
+  line-height: 1.03;
+  letter-spacing: -.055em;
+}
+.subtitle {
+  margin: 14px 0 0;
+  max-width: 1040px;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.72;
+}
+.lang-switch {
+  flex: 0 0 auto;
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
+  position: sticky;
+  top: 18px;
+  z-index: 30;
+}
+.lang-switch button {
+  border: 0;
+  background: transparent;
+  color: #475569;
+  font-weight: 900;
+  font-size: 12px;
+  border-radius: 999px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: .18s ease;
+}
+.lang-switch button.active { background: #fff; color: var(--ink); box-shadow: 0 4px 14px rgba(15, 23, 42, .12); }
+.icon-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  border: 1px solid rgba(37, 99, 235, .20);
+  background: rgba(255,255,255,.84);
+  color: var(--blue-strong);
+  display: inline-grid;
+  place-items: center;
+  font-weight: 950;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(15,23,42,.08);
+  transition: .18s ease;
+}
+.icon-button:hover { transform: translateY(-1px); background: #fff; border-color: rgba(37,99,235,.38); }
+.lifecycle-popover {
+  position: absolute;
+  right: 24px;
+  top: 86px;
+  width: min(520px, calc(100vw - 48px));
+  z-index: 60;
+  border: 1px solid #dbe3ef;
+  border-radius: 24px;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 32px 80px rgba(15,23,42,.18);
+  backdrop-filter: blur(16px);
+  padding: 16px;
+  display: none;
+}
+.lifecycle-popover.open { display: block; animation: fadeUp .18s ease both; }
+.lifecycle-popover h3 { margin: 0 0 6px; font-size: 16px; letter-spacing: -.02em; }
+.lifecycle-popover p { margin: 0; color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+.lifecycle-steps { margin-top: 12px; display: grid; gap: 8px; }
+.life-step {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+.life-step b { font-size: 12px; display: block; }
+.life-step span:not(.role) { color: var(--muted); font-size: 11.5px; display: block; margin-top: 3px; line-height: 1.35; }
+
+.lifecycle-steps.simple .life-step { grid-template-columns: 36px 1fr; }
+.lifecycle-steps.simple .role {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  align-items: center;
+}
+.lifecycle-steps.simple .life-step b { font-size: 13px; }
+.lifecycle-legend {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 18px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+}
+.lifecycle-legend b { font-size: 12px; }
+.lifecycle-legend .chip-row { margin-top: 8px; }
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.45fr .9fr;
+  gap: 16px;
+  margin: 20px 0 18px;
+}
+.hero-card, .decision-card, .panel, .mini-card, .placeholder, .table-card, .model-card, .workbench-card {
+  border: 1px solid rgba(219, 227, 239, .95);
+  background: rgba(255,255,255,.86);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(12px);
+}
+.hero-card {
+  border-radius: var(--radius-xl);
+  padding: 18px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.signal {
+  border-radius: 18px;
+  padding: 14px 14px 13px;
+  background: linear-gradient(180deg, #fff, #f8fafc);
+  border: 1px solid #e2e8f0;
+  min-height: 112px;
+}
+.signal b { display: block; font-size: 13px; line-height: 1.32; margin-bottom: 7px; }
+.signal span { display: block; color: var(--muted); font-size: 12px; line-height: 1.48; }
+.signal.blue { background: linear-gradient(180deg, #eff6ff, #fff); border-color: #bfdbfe; }
+.signal.green { background: linear-gradient(180deg, #ecfdf5, #fff); border-color: #bbf7d0; }
+.signal.amber { background: linear-gradient(180deg, #fffbeb, #fff); border-color: #fde68a; }
+.signal.purple { background: linear-gradient(180deg, #f5f3ff, #fff); border-color: #ddd6fe; }
+.decision-card {
+  border-radius: var(--radius-xl);
+  padding: 18px;
+  background: linear-gradient(135deg, #0f172a, #1e293b 60%, #1d4ed8);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.decision-card:before {
+  content: "";
+  position: absolute;
+  width: 240px; height: 240px;
+  right: -90px; top: -120px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.12);
+}
+.decision-card h2 { margin: 0 0 8px; font-size: 17px; letter-spacing: -.02em; position: relative; }
+.decision-card p { margin: 0; color: rgba(255,255,255,.78); font-size: 13px; line-height: 1.6; position: relative; }
+.decision-list { display: grid; gap: 8px; margin-top: 14px; position: relative; }
+.decision-row { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; color: rgba(255,255,255,.86); line-height: 1.45; }
+.tick { width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,.16); display: grid; place-items: center; flex: 0 0 auto; color: #bfdbfe; font-weight: 950; }
+.tabs-shell {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  padding: 10px 0 12px;
+  margin-bottom: 4px;
+  background: linear-gradient(180deg, rgba(246,248,252,.96), rgba(246,248,252,.82));
+  backdrop-filter: blur(10px);
+}
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 7px;
+  border-radius: 22px;
+  border: 1px solid #dbe3ef;
+  background: rgba(255,255,255,.82);
+  box-shadow: 0 10px 24px rgba(15,23,42,.06);
+}
+.tab-btn {
+  border: 0;
+  border-radius: 16px;
+  padding: 12px 12px;
+  background: transparent;
+  color: #475569;
+  font-weight: 900;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: .2s ease;
+  text-align: left;
+}
+.tab-btn small { display: block; color: #94a3b8; font-size: 10px; font-weight: 850; margin-bottom: 3px; letter-spacing: .03em; }
+.tab-btn.active {
+  background: var(--ink);
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, .16);
+}
+.tab-btn.active small { color: #bfdbfe; }
+.tab-panel { display: none; animation: fadeUp .24s ease both; }
+.tab-panel.active { display: block; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.panel {
+  border-radius: var(--radius-xl);
+  padding: 22px;
+  margin-top: 14px;
+  overflow: hidden;
+}
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+.panel-title { display: flex; gap: 12px; align-items: flex-start; }
+.panel-icon {
+  width: 42px; height: 42px; border-radius: 15px;
+  display: grid; place-items: center;
+  background: var(--soft-blue); color: var(--blue);
+  font-weight: 950;
+  flex: 0 0 auto;
+}
+.panel h2 { margin: 0; font-size: 22px; letter-spacing: -.03em; }
+.panel .lead { margin: 5px 0 0; color: var(--muted); font-size: 14px; line-height: 1.62; max-width: 900px; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.chip.blue { background: #dbeafe; color: #1d4ed8; }
+.chip.green { background: #d1fae5; color: #047857; }
+.chip.purple { background: #ede9fe; color: #6d28d9; }
+.chip.amber { background: #fef3c7; color: #b45309; }
+.chip.red { background: #fee2e2; color: #b91c1c; }
+.chip.gray { background: #f1f5f9; color: #475569; }
+.chip.dark { background: #0f172a; color: #fff; }
+.chip.business { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+.chip.allowed { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.chip.capacity { background: #eef2ff; color: #3730a3; border: 1px solid #c7d2fe; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.three-col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.four-col { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.mini-card {
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  background: #fff;
+}
+.mini-card h3 { margin: 0 0 9px; font-size: 15px; letter-spacing: -.02em; }
+.mini-card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.62; }
+.mini-card ul { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.mini-card li { display: flex; gap: 8px; color: #475569; font-size: 12.5px; line-height: 1.45; }
+.mini-card li:before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--blue); margin-top: 6px; flex: 0 0 auto; }
+.mini-card.warning li:before { background: var(--amber); }
+.mini-card.confirm li:before { background: var(--purple); }
+.mini-card.success li:before { background: var(--green); }
+.mini-card.danger li:before { background: var(--red); }
+.before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.compare-card {
+  border-radius: 24px;
+  padding: 18px;
+  border: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #fff, #f8fafc);
+  min-height: 330px;
+  position: relative;
+  overflow: hidden;
+}
+.compare-card.old { border-color: #cbd5e1; }
+.compare-card.new { border-color: rgba(37,99,235,.34); background: linear-gradient(180deg, #eff6ff, #fff 44%); }
+.compare-card h3 { margin: 0 0 10px; font-size: 18px; letter-spacing: -.03em; }
+.compare-card .diagram-line { margin-top: 14px; display: grid; gap: 10px; }
+.node {
+  border-radius: 16px;
+  border: 1px solid #dbe3ef;
+  background: #fff;
+  padding: 12px;
+  box-shadow: 0 8px 18px rgba(15,23,42,.035);
+}
+.node b { display: block; font-size: 13px; }
+.node span { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; line-height: 1.4; }
+.connector { text-align: center; color: #94a3b8; font-weight: 950; font-size: 18px; line-height: 1; }
+.flow-layout { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(360px, .92fr); gap: 18px; align-items: start; }
+.flow-card {
+  border: 1px solid #dbe3ef;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  padding: 16px;
+  box-shadow: var(--shadow-soft);
+}
+.flow-card h3 { margin: 0 0 12px; font-size: 16px; letter-spacing: -.02em; }
+.parallel-stage { display: grid; gap: 12px; }
+.parallel-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #eff6ff, #fff);
+  border: 1px solid rgba(37,99,235,.22);
+  color: #1e3a8a;
+  font-size: 12px;
+  font-weight: 950;
+}
+.parallel-label span:last-child { color: #64748b; font-weight: 800; }
+.parallel-lanes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+.parallel-lanes.three { grid-template-columns: .95fr .9fr 1.15fr; }
+.lane-card {
+  border: 1px solid #dbe3ef;
+  border-radius: 20px;
+  background: #fff;
+  padding: 12px;
+  position: relative;
+  box-shadow: 0 8px 18px rgba(15,23,42,.035);
+}
+.lane-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  border-radius: 20px 20px 0 0;
+  background: #dbeafe;
+}
+.lane-card.supply::before { background: #ede9fe; }
+.lane-card.project::before { background: #d1fae5; }
+.lane-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 4px 0 10px;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: -.01em;
+}
+.lane-title small { color: var(--muted); font-size: 10px; font-weight: 850; }
+.lane-steps { display: grid; gap: 8px; }
+.lane-step {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 10px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+.lane-step b { display: block; font-size: 12px; letter-spacing: -.01em; }
+.lane-step span:not(.role):not(.chip) { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.4; }
+.merge-arrow { display: grid; place-items: center; color: #94a3b8; font-size: 18px; font-weight: 950; margin: -2px 0; }
+.flow-steps { display: grid; gap: 10px; }
+.step {
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: #fff;
+  position: relative;
+}
+.step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  width: 2px;
+  height: 10px;
+  background: #cbd5e1;
+  left: 34px;
+  bottom: -11px;
+}
+.role {
+  display: inline-flex;
+  justify-content: center;
+  padding: 7px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 950;
+  white-space: nowrap;
+}
+.role.hr { background: #dbeafe; color: #1d4ed8; }
+.role.ad { background: #ede9fe; color: #6d28d9; }
+.role.sys { background: #d1fae5; color: #047857; }
+.role.mentor { background: #dcfce7; color: #166534; }
+.role.project { background: #f1f5f9; color: #334155; }
+.role.report { background: #fef3c7; color: #b45309; }
+.step b { display: block; font-size: 13px; letter-spacing: -.01em; }
+.step span.desc, .step span:not(.role):not(.chip):not(.num) { display: block; color: var(--muted); font-size: 12px; line-height: 1.42; margin-top: 4px; }
+.step .num { width: 28px; height: 28px; border-radius: 10px; display: grid; place-items: center; background: #f1f5f9; color: #475569; font-size: 12px; font-weight: 950; }
+.placeholder {
+  border-radius: 24px;
+  min-height: 470px;
+  background:
+    linear-gradient(135deg, rgba(37,99,235,.08), transparent 28%),
+    linear-gradient(180deg, #fff, #f8fafc);
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.placeholder .window {
+  border: 1px solid #dbe3ef;
+  border-radius: 18px;
+  background: #fff;
+  min-height: 338px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.5), 0 14px 26px rgba(15,23,42,.055);
+  overflow: hidden;
+}
+.placeholder .window-top {
+  height: 42px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 14px;
+  background: #f8fafc;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; }
+.placeholder .screen { padding: 16px; display: grid; gap: 12px; }
+.screen-title { width: 56%; height: 18px; border-radius: 999px; background: #cbd5e1; }
+.screen-subtitle { width: 78%; height: 10px; border-radius: 999px; background: #e2e8f0; }
+.screen-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.skeleton-card { min-height: 80px; border-radius: 14px; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 12px; }
+.skeleton-line { height: 9px; border-radius: 999px; background: #cbd5e1; margin-bottom: 8px; }
+.skeleton-line.short { width: 58%; }
+.skeleton-table { border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; }
+.skeleton-tr { display: grid; grid-template-columns: 1.1fr .8fr .7fr .7fr; gap: 8px; padding: 12px; border-bottom: 1px solid #e2e8f0; }
+.skeleton-tr:last-child { border-bottom: 0; }
+.placeholder-label {
+  margin-top: 12px;
+  border-radius: 18px;
+  background: #f8fafc;
+  border: 1px dashed #94a3b8;
+  padding: 12px;
+  color: #475569;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.placeholder-label b { display: block; color: var(--ink); margin-bottom: 4px; }
+.placeholder .compact-skeleton {
+  min-height: 190px;
+  margin-bottom: 12px;
+}
+.compact-skeleton .window-top { height: 30px; }
+.compact-skeleton .screen {
+  padding: 12px;
+  gap: 8px;
+}
+.compact-skeleton .screen-title {
+  width: 54%;
+  height: 12px;
+}
+.compact-skeleton .screen-subtitle {
+  width: 74%;
+  height: 7px;
+}
+.compact-skeleton .screen-row {
+  gap: 8px;
+}
+.compact-skeleton .skeleton-card {
+  min-height: 52px;
+  border-radius: 12px;
+  padding: 9px;
+}
+.compact-skeleton .skeleton-line {
+  height: 7px;
+  margin-bottom: 6px;
+}
+.compact-skeleton .skeleton-tr {
+  padding: 8px 10px;
+  gap: 8px;
+}
+.compact-skeleton .skeleton-table {
+  border-radius: 12px;
+}
+.pending-page-list {
+  border: 1px solid #dbe3ef;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.5), 0 14px 26px rgba(15,23,42,.055);
+  overflow: hidden;
+}
+.pending-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #fff, #f8fafc);
+}
+.pending-page-head h3 {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: -.02em;
+}
+.pending-page-head p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.pending-page-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.pending-page-table th,
+.pending-page-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: top;
+}
+.pending-page-table td:first-child,
+.pending-page-table th:first-child {
+  width: 92px;
+}
+.pending-page-table a {
+  color: var(--blue-strong);
+  font-weight: 800;
+  text-decoration: none;
+}
+.pending-page-table a:hover { text-decoration: underline; }
+.pending-page-table tr.example-row-active td {
+  background: #eff6ff;
+  box-shadow: inset 0 1px 0 #bfdbfe, inset 0 -1px 0 #bfdbfe;
+}
+.pending-page-table tr.example-row-active td:first-child {
+  box-shadow: inset 4px 0 0 #2563eb, inset 0 1px 0 #bfdbfe, inset 0 -1px 0 #bfdbfe;
+}
+.row-expand-trigger {
+  width: 26px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+  margin-left: 8px;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 950;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform .18s ease, background .18s ease, border-color .18s ease;
+}
+.row-expand-trigger:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+.row-expand-trigger[aria-expanded="true"] {
+  transform: rotate(90deg);
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+.row-title-with-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pending-note {
+  color: #475569;
+  line-height: 1.42;
+}
+.pending-note.is-question { color: #b45309; font-weight: 800; }
+.pending-example {
+  margin: 12px 14px 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  background: #fff;
+  overflow: hidden;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+  scroll-margin-top: 116px;
+}
+.pending-example[data-example-id] {
+  display: none;
+}
+.pending-example.example-active {
+  display: block;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,.14), 0 18px 42px rgba(37,99,235,.12);
+  transform: translateY(-1px);
+}
+.pending-example-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #f8fbff, #fff);
+}
+.pending-example.example-active .pending-example-title {
+  background: linear-gradient(180deg, #eff6ff, #fff);
+}
+.pending-example-title b {
+  font-size: 12px;
+  letter-spacing: -.01em;
+}
+.pending-example table {
+  font-size: 11.5px;
+}
+.pending-example th,
+.pending-example td {
+  padding: 9px 10px;
+}
+.pending-example td {
+  color: #1f2937;
+  line-height: 1.42;
+}
+.info-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
+.status-board { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.status-card {
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  min-height: 86px;
+}
+.status-card b { font-size: 12px; display: block; }
+.status-card span:not(.chip) { color: var(--muted); font-size: 11.5px; line-height: 1.4; display: block; margin-top: 5px; }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+th, td { text-align: left; padding: 13px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+th { color: #475569; background: #f8fafc; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+td { color: #334155; }
+tr:last-child td { border-bottom: 0; }
+.table-card { border-radius: 24px; overflow: hidden; background: #fff; }
+.recommendation-band { margin-top: 16px; display: grid; grid-template-columns: .8fr 1.2fr; gap: 14px; align-items: stretch; }
+.recommendation {
+  border-radius: 24px;
+  padding: 18px;
+  color: #fff;
+  background: linear-gradient(135deg, #1d4ed8, #0f172a);
+  box-shadow: var(--shadow-soft);
+}
+.recommendation h3 { margin: 0 0 8px; font-size: 18px; letter-spacing: -.03em; }
+.recommendation p { margin: 0; color: rgba(255,255,255,.78); font-size: 13px; line-height: 1.6; }
+.report-mock { display: grid; grid-template-columns: 300px 1fr; gap: 14px; margin-top: 12px; }
+.filter-card {
+  border-radius: 22px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  padding: 16px;
+  box-shadow: var(--shadow-soft);
+}
+.filter-card h3 { margin: 0 0 12px; font-size: 15px; }
+.filter-field { border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 14px; padding: 11px 12px; margin-top: 9px; }
+.filter-field span { display: block; color: var(--muted); font-size: 11px; margin-bottom: 4px; }
+.filter-field b { font-size: 13px; }
+.data-model { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; align-items: stretch; margin-top: 16px; }
+.model-node {
+  border: 1px solid #dbe3ef;
+  border-radius: 18px;
+  background: #fff;
+  padding: 14px;
+  text-align: center;
+  position: relative;
+}
+.model-node:not(:last-child)::after {
+  content: "→";
+  position: absolute;
+  right: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--blue);
+  font-weight: 950;
+  z-index: 2;
+}
+.model-node b { display: block; font-size: 13px; }
+.model-node span { display: block; color: var(--muted); font-size: 11px; margin-top: 5px; line-height: 1.35; }
+.tomi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
+.model-card { border-radius: 24px; padding: 18px; background: #fff; position: relative; overflow: hidden; }
+.model-card h3 { margin: 0 0 8px; font-size: 16px; letter-spacing: -.02em; }
+.model-card p { margin: 0; color: var(--muted); font-size: 12.5px; line-height: 1.55; }
+.model-num { width: 30px; height: 30px; border-radius: 11px; display: grid; place-items: center; background: #eff6ff; color: var(--blue); font-weight: 950; margin-bottom: 12px; }
+.workbench-grid { display: grid; grid-template-columns: .9fr 1.1fr .9fr; gap: 14px; margin-top: 16px; }
+.workbench-card { border-radius: 24px; padding: 16px; background: #fff; }
+.workbench-card h3 { margin: 0 0 10px; font-size: 15px; letter-spacing: -.02em; }
+.workbench-card .list { display: grid; gap: 8px; }
+.workbench-item { border-radius: 14px; border: 1px solid #e2e8f0; background: #f8fafc; padding: 10px; font-size: 12px; color: #334155; }
+.workbench-item b { display: block; margin-bottom: 4px; font-size: 12px; color: var(--ink); }
+
+
+/* Simplified flow experience */
+.simple-flow {
+  display: grid;
+  gap: 12px;
+}
+.simple-stage {
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: #fff;
+  padding: 14px;
+  box-shadow: 0 8px 18px rgba(15,23,42,.035);
+}
+.simple-stage.highlight {
+  background: linear-gradient(135deg, #eff6ff, #fff);
+  border-color: rgba(37,99,235,.26);
+}
+.simple-stage.business-stage {
+  background: linear-gradient(135deg, #fff7ed, #fff);
+  border-color: #fed7aa;
+}
+.simple-stage.done-stage {
+  background: linear-gradient(135deg, #ecfdf5, #fff);
+  border-color: #bbf7d0;
+}
+.stage-top {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 11px;
+  align-items: flex-start;
+}
+.stage-num {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: #0f172a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 950;
+}
+.stage-body h4 {
+  margin: 1px 0 4px;
+  font-size: 14px;
+  letter-spacing: -.015em;
+}
+.stage-body p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.stage-roles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.stage-role-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 15px;
+  background: #f8fafc;
+  padding: 10px;
+}
+.stage-role-card b {
+  display: block;
+  margin-top: 7px;
+  font-size: 12px;
+  line-height: 1.32;
+}
+.stage-role-card span.desc {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11.2px;
+  line-height: 1.35;
+}
+.simple-arrow {
+  display: grid;
+  place-items: center;
+  height: 20px;
+  color: #94a3b8;
+  font-weight: 950;
+  font-size: 18px;
+  line-height: 1;
+}
+.compact-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+.compact-note {
+  margin-top: 10px;
+  border-radius: 15px;
+  border: 1px dashed #cbd5e1;
+  background: #f8fafc;
+  padding: 10px;
+  color: #475569;
+  font-size: 11.7px;
+  line-height: 1.42;
+}
+.tag-example {
+  margin-top: 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #f8fbff, #eef6ff);
+  padding: 12px;
+}
+.tag-example-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.tag-example-head b {
+  font-size: 12px;
+  letter-spacing: -.01em;
+}
+.tag-example-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.tag-example-item {
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  background: rgba(255,255,255,.78);
+  padding: 9px;
+  color: #1e3a5f;
+  font-size: 11.2px;
+  line-height: 1.35;
+  font-weight: 800;
+}
+.tag-example-item span {
+  display: block;
+  margin-top: 3px;
+  color: #2563eb;
+  font-size: 10.8px;
+}
+.stage-mini-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+  margin-top: 11px;
+}
+.stage-mini-flow .mini-arrow {
+  color: #94a3b8;
+  font-weight: 950;
+}
+.stage-mini-flow .mini-token {
+  padding: 7px 9px;
+  border-radius: 999px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.allocation-bridge {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid #bfdbfe;
+  background: linear-gradient(135deg, #eff6ff, #fff);
+}
+.allocation-bridge b {
+  display: block;
+  font-size: 12.5px;
+  letter-spacing: -.01em;
+}
+.allocation-bridge span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.42;
+}
+.offer-note {
+  margin-top: 12px;
+  border-radius: 16px;
+  border: 1px solid #bbf7d0;
+  background: linear-gradient(135deg, #ecfdf5, #fff);
+  padding: 12px;
+}
+.offer-note b { display:block; font-size:12.5px; }
+.offer-note span { display:block; margin-top:4px; color:var(--muted); font-size:11.5px; line-height:1.42; }
+
+
+/* Multi Programme / Intake allocation example */
+.multi-allocation-example {
+  margin-top: 16px;
+  border: 1px solid rgba(37,99,235,.22);
+  border-radius: 24px;
+  background: linear-gradient(135deg, #f8fbff, #ffffff 46%, #f8fafc);
+  padding: 16px;
+  box-shadow: var(--shadow-soft);
+}
+.multi-allocation-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.multi-allocation-head h3 {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: -.02em;
+}
+.multi-allocation-head p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.55;
+  max-width: 780px;
+}
+.project-allocation-card {
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  gap: 12px;
+  align-items: stretch;
+}
+.project-summary-card,
+.allocation-record-panel {
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: #fff;
+  padding: 13px;
+}
+.project-summary-card b {
+  display: block;
+  font-size: 14px;
+  letter-spacing: -.02em;
+}
+.project-summary-card p {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.capacity-strip {
+  margin-top: 12px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  height: 9px;
+  overflow: hidden;
+}
+.capacity-strip i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
+}
+.allocation-record-panel h4 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: -.01em;
+}
+.allocation-record-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.allocation-record {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #f8fafc;
+  padding: 11px;
+}
+.allocation-record b {
+  display: block;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.allocation-record span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+.allocation-record .record-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 9px;
+}
+@media (max-width: 1180px) {
+  .project-allocation-card { grid-template-columns: 1fr; }
+  .allocation-record-grid { grid-template-columns: 1fr; }
+  .tag-example-grid { grid-template-columns: 1fr; }
+}
+
+
+/* Parallel lane refinement for Solution 1 */
+.parallel-two-lanes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+.parallel-branch {
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: rgba(255,255,255,.84);
+  padding: 12px;
+  min-height: 178px;
+}
+.parallel-branch.demand {
+  background: linear-gradient(180deg, #eff6ff, #fff);
+  border-color: rgba(37,99,235,.22);
+}
+.parallel-branch.request {
+  background: linear-gradient(180deg, #f5f3ff, #fff);
+  border-color: rgba(124,58,237,.22);
+}
+.branch-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.branch-label b {
+  font-size: 12.5px;
+  letter-spacing: -.01em;
+}
+.branch-steps {
+  display: grid;
+  gap: 8px;
+}
+.branch-step {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 8px;
+  align-items: start;
+  border: 1px solid #e2e8f0;
+  border-radius: 15px;
+  background: #fff;
+  padding: 10px;
+}
+.branch-step b {
+  display: block;
+  font-size: 12px;
+  line-height: 1.32;
+}
+.branch-step span.desc {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+  margin-top: 4px;
+}
+.merge-card {
+  margin-top: 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #eff6ff, #fff);
+  padding: 13px;
+}
+.merge-card .merge-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.merge-card .merge-title b {
+  font-size: 13px;
+  letter-spacing: -.01em;
+}
+.merge-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.allocation-path {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+.allocation-path .mini-arrow {
+  color: #94a3b8;
+  font-weight: 950;
+}
+@media (max-width: 1180px) {
+  .parallel-two-lanes { grid-template-columns: 1fr; }
+}
+@media (max-width: 780px) {
+  .branch-step { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 1180px) {
+  .stage-roles { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 1180px) {
+  .hero-grid, .flow-layout, .recommendation-band, .report-mock, .workbench-grid { grid-template-columns: 1fr; }
+  .hero-card { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .three-col, .info-grid, .parallel-lanes.three { grid-template-columns: 1fr; }
+  .four-col, .status-board, .tomi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .data-model { grid-template-columns: 1fr; }
+  .model-node:not(:last-child)::after { content: "↓"; right: auto; top: auto; left: 50%; bottom: -18px; transform: translateX(-50%); }
+}
+@media (max-width: 780px) {
+  .page { width: min(100vw - 24px, 1480px); padding-top: 18px; }
+  .topbar { flex-direction: column; }
+  .tabs { grid-template-columns: 1fr; }
+  .tabs-shell { position: relative; top: auto; }
+  .hero-card, .before-after, .two-col, .four-col, .status-board, .tomi-grid { grid-template-columns: 1fr; }
+  .panel, .hero-card, .decision-card { border-radius: 22px; padding: 16px; }
+  .panel-head { flex-direction: column; }
+  .step, .lane-step, .life-step { grid-template-columns: 1fr; }
+  .parallel-lanes { grid-template-columns: 1fr; }
+  .placeholder { min-height: auto; }
+  .lifecycle-popover { right: 12px; top: 100px; }
+}
+
+
+/* Page-level review drawer */
+.page-impact-panel {
+  min-height: 470px;
+  background: linear-gradient(135deg, rgba(37,99,235,.08), transparent 28%), linear-gradient(180deg, #fff, #f8fafc);
+}
+.drawer-enabled .pending-page-table td {
+  vertical-align: middle;
+}
+.compact-page-table th:nth-child(3),
+.compact-page-table td:nth-child(3),
+.compact-page-table th:nth-child(5),
+.compact-page-table td:nth-child(5) {
+  width: 96px;
+}
+.page-review-row {
+  cursor: pointer;
+  transition: background .18s ease, box-shadow .18s ease;
+}
+.page-review-row:hover td {
+  background: #f8fbff;
+}
+.page-review-row.drawer-row-active td {
+  background: #eff6ff;
+  box-shadow: inset 0 1px 0 #bfdbfe, inset 0 -1px 0 #bfdbfe;
+}
+.page-review-row.drawer-row-active td:first-child {
+  box-shadow: inset 4px 0 0 #2563eb, inset 0 1px 0 #bfdbfe, inset 0 -1px 0 #bfdbfe;
+}
+.view-detail-btn {
+  min-height: 30px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 950;
+  cursor: pointer;
+  transition: .18s ease;
+}
+.view-detail-btn:hover { background: #dbeafe; transform: translateY(-1px); }
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: none;
+  background: rgba(15,23,42,.24);
+  backdrop-filter: blur(3px);
+}
+.drawer-overlay.open { display: block; animation: drawerFade .18s ease both; }
+.page-detail-drawer {
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 90;
+  width: min(1360px, calc(100vw - 36px));
+  height: calc(100vh - 32px);
+  top: 16px;
+  right: 16px;
+  background: rgba(255,255,255,.98);
+  border: 1px solid #dbe3ef;
+  border-radius: 26px;
+  box-shadow: -24px 0 80px rgba(15,23,42,.18);
+  transform: translateX(calc(100% + 28px));
+  transition: transform .24s ease;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+}
+.page-detail-drawer.open { transform: translateX(0); }
+.page-detail-drawer.expanded {
+  width: calc(100vw - 24px);
+  height: calc(100vh - 24px);
+  top: 12px;
+  right: 12px;
+}
+.drawer-head {
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #fff, #f8fafc);
+}
+.drawer-head-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.drawer-head h3 {
+  margin: 8px 0 6px;
+  font-size: 22px;
+  letter-spacing: -.035em;
+}
+.drawer-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.drawer-close {
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #334155;
+  font-size: 20px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.drawer-body {
+  padding: 18px 22px 26px;
+  overflow: auto;
+  display: grid;
+  gap: 14px;
+}
+.drawer-section {
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: #fff;
+  padding: 14px;
+}
+.drawer-section h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  letter-spacing: -.015em;
+}
+.drawer-section p,
+.drawer-section li,
+.drawer-section td {
+  color: #475569;
+  font-size: 12.5px;
+  line-height: 1.52;
+}
+.drawer-section p { margin: 0; }
+.drawer-section ul { margin: 0; padding-left: 18px; display: grid; gap: 7px; }
+.drawer-section table { font-size: 12px; }
+.drawer-section th { font-size: 10px; }
+
+.drawer-before-after-placeholder {
+  border: 1px solid #dbeafe;
+  border-radius: 24px;
+  background: linear-gradient(135deg,#ffffff,#f8fbff 58%,#eef6ff);
+  padding: 16px;
+  box-shadow: 0 14px 34px rgba(37,99,235,.08);
+}
+.drawer-ba-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.drawer-ba-head h4 {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: -.02em;
+}
+.drawer-ba-head p {
+  margin: 5px 0 0;
+  max-width: 720px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.drawer-ba-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.drawer-before-after-placeholder.is-step4 .drawer-ba-grid {
+  grid-template-columns: minmax(320px, .46fr) minmax(720px, 1fr);
+}
+.drawer-before-after-placeholder.is-step4 .ba-placeholder-card.after {
+  min-height: 620px;
+}
+.ba-placeholder-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: #fff;
+  overflow: hidden;
+  min-height: 430px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+.ba-placeholder-card.after {
+  border-color: #bfdbfe;
+  background: linear-gradient(180deg,#ffffff,#f8fbff);
+}
+.ba-placeholder-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+.ba-placeholder-head b {
+  font-size: 12px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.ba-screen {
+  margin: 16px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 18px;
+  background: linear-gradient(180deg,#f8fafc,#ffffff);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  min-height: 310px;
+}
+.ba-screen-inner {
+  width: min(360px, 100%);
+  display: grid;
+  gap: 12px;
+}
+.ba-browser-bar {
+  height: 34px;
+  border-radius: 12px;
+  background: #e2e8f0;
+  position: relative;
+}
+.ba-browser-bar::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #94a3b8;
+  box-shadow: 16px 0 0 #cbd5e1, 32px 0 0 #cbd5e1;
+}
+.ba-skeleton-title,
+.ba-skeleton-line,
+.ba-skeleton-card {
+  border-radius: 999px;
+  background: #cbd5e1;
+}
+.ba-skeleton-title { height: 18px; width: 72%; }
+.ba-skeleton-line { height: 10px; width: 100%; opacity: .8; }
+.ba-skeleton-line.short { width: 58%; }
+.ba-skeleton-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+.ba-skeleton-card { min-height: 78px; border-radius: 16px; background: #eef2ff; border: 1px solid #dbeafe; }
+.ba-screen.toa-capture {
+  display: block;
+  padding: 0;
+  place-items: initial;
+  overflow: hidden;
+  background: #f8fafc;
+}
+.ba-screen.image-capture {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: auto;
+  padding: 10px;
+  background: #f8fafc;
+  border-style: solid;
+}
+.ba-screen.image-capture img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(15,23,42,.10);
+}
+.toa-mini-app {
+  min-height: 330px;
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 8.5px;
+}
+.toa-mini-sidebar {
+  background: #fff;
+  border-right: 1px solid #e2e8f0;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 10px 6px;
+}
+.toa-mini-logo {
+  height: 20px;
+  border-radius: 8px;
+  background: linear-gradient(135deg,#2563eb,#16a34a);
+  opacity: .85;
+}
+.toa-mini-nav {
+  height: 22px;
+  border-radius: 8px;
+  background: #f1f5f9;
+}
+.toa-mini-nav.active { background: #dbeafe; box-shadow: inset 3px 0 0 #2563eb; }
+.toa-mini-main {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+.toa-mini-top {
+  height: 34px;
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 12px;
+}
+.toa-mini-brand {
+  color: #2563eb;
+  font-weight: 950;
+  font-size: 12px;
+}
+.toa-mini-search {
+  width: 128px;
+  height: 18px;
+  border-radius: 7px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+.toa-mini-content {
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+.toa-mini-crumb {
+  color: #64748b;
+  font-weight: 850;
+}
+.toa-mini-steps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0,1fr));
+  gap: 7px;
+  align-items: center;
+}
+.toa-mini-step {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #64748b;
+  font-weight: 950;
+  white-space: nowrap;
+}
+.toa-mini-step i {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  background: #e2e8f0;
+  color: #64748b;
+  font-style: normal;
+  font-size: 7px;
+}
+.toa-mini-step.done i,
+.toa-mini-step.active i {
+  background: #2563eb;
+  color: #fff;
+}
+.toa-mini-step.active {
+  color: #2563eb;
+}
+.toa-mini-panel {
+  background: #fff;
+  border: 1px solid #dbe3ef;
+  border-radius: 11px;
+  overflow: hidden;
+  min-height: 210px;
+}
+.toa-mini-panel-head {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.toa-mini-panel-head h5 {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: -.02em;
+}
+.toa-mini-panel-head p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 8px;
+  line-height: 1.35;
+}
+.toa-mini-alert {
+  margin: 10px 12px;
+  border: 1px solid #bae6fd;
+  background: #e0f2fe;
+  color: #334155;
+  border-radius: 9px;
+  padding: 8px;
+  line-height: 1.35;
+  font-weight: 750;
+}
+.toa-mini-list-title {
+  padding: 6px 12px;
+  color: #64748b;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-weight: 950;
+}
+.toa-mini-project-row {
+  margin: 0 12px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: start;
+  background: #fff;
+}
+.toa-mini-checkbox {
+  width: 9px;
+  height: 9px;
+  border: 1px solid #94a3b8;
+  border-radius: 2px;
+  margin-top: 2px;
+}
+.toa-mini-project-row b { display: block; font-size: 8.8px; }
+.toa-mini-project-row span { display: block; margin-top: 3px; color: #64748b; line-height: 1.3; }
+.toa-mini-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #fff;
+  border-top: 1px solid #e2e8f0;
+}
+.toa-mini-button {
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-weight: 950;
+  background: #2563eb;
+  color: #fff;
+}
+.toa-mini-button.secondary {
+  background: #fff;
+  color: #0f172a;
+  border: 1px solid #dbe3ef;
+}
+.toa-mini-allocation {
+  display: grid;
+  grid-template-columns: 156px 1fr;
+  gap: 10px;
+  padding: 10px 12px;
+}
+.toa-mini-intakes {
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  overflow: hidden;
+}
+.toa-mini-intakes h6,
+.toa-mini-queue h6 {
+  margin: 0;
+  padding: 8px;
+  font-size: 8.6px;
+  background: #f1f5f9;
+}
+.toa-mini-intake {
+  padding: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+.toa-mini-intake b { display: flex; justify-content: space-between; gap: 8px; }
+.toa-mini-intake span { display: block; margin-top: 4px; color: #64748b; }
+.toa-mini-project-row.attention {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+.toa-mini-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.toa-mini-tag {
+  border: 1px solid #fed7aa;
+  color: #c2410c;
+  background: #fffbeb;
+  border-radius: 999px;
+  padding: 4px 7px;
+  font-weight: 900;
+}
+.ba-placeholder-note {
+  padding: 0 16px 16px;
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.ba-placeholder-note b { display: block; color: var(--ink); margin-bottom: 4px; }
+.drawer-ba-footer {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 10px;
+}
+.drawer-ba-footer .blueprint-summary-card { background: #fff; }
+@media (max-width: 980px) {
+  .drawer-ba-grid,
+  .drawer-before-after-placeholder.is-step4 .drawer-ba-grid,
+  .drawer-ba-footer { grid-template-columns: 1fr; }
+  .ba-placeholder-card { min-height: 360px; }
+}
+
+@keyframes drawerFade { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 780px) {
+  .compact-page-table th:nth-child(3), .compact-page-table td:nth-child(3) { display: none; }
+  .page-detail-drawer,
+  .page-detail-drawer.expanded { width: 96vw; right: 2vw; top: 2vh; height: 96vh; }
+}
+
+
+/* Preparing Blueprint before / after review */
+.blueprint-board {
+  display: grid;
+  gap: 18px;
+}
+.blueprint-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.blueprint-kpi {
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  background: linear-gradient(180deg,#fff,#f8fbff);
+  padding: 13px;
+  min-height: 96px;
+}
+.blueprint-kpi b {
+  display: block;
+  color: var(--ink);
+  font-size: 13px;
+  letter-spacing: -.01em;
+}
+.blueprint-kpi span {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+.blueprint-before-after {
+  border: 1px solid rgba(37,99,235,.20);
+  border-radius: 28px;
+  background: linear-gradient(135deg,#ffffff,#f8fbff 58%,#eef6ff);
+  box-shadow: var(--shadow-soft);
+  padding: 18px;
+}
+.blueprint-session-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #dbe3ef;
+}
+.blueprint-session-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.blueprint-session-num {
+  width: 44px;
+  height: 44px;
+  border-radius: 15px;
+  display: grid;
+  place-items: center;
+  background: #0f172a;
+  color: #fff;
+  font-weight: 950;
+  flex: 0 0 auto;
+}
+.blueprint-session-title h3 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -.025em;
+}
+.blueprint-session-title p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.52;
+}
+.blueprint-compare-grid {
+  display: grid;
+  grid-template-columns: .96fr 1.14fr;
+  gap: 16px;
+  padding-top: 16px;
+}
+.blueprint-panel {
+  border: 1px solid #dbe3ef;
+  border-radius: 22px;
+  background: #fff;
+  padding: 15px;
+  min-width: 0;
+  overflow: hidden;
+}
+.blueprint-panel.before {
+  border-left: 5px solid #94a3b8;
+}
+.blueprint-panel.after {
+  border-left: 5px solid #2563eb;
+  background: linear-gradient(180deg,#ffffff,#f8fbff);
+}
+.blueprint-panel-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.blueprint-panel-title b {
+  font-size: 15px;
+  color: var(--ink);
+}
+.blueprint-panel-title small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+.role-flow {
+  position: relative;
+  display: grid;
+  gap: 10px;
+}
+.role-flow-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 10px;
+  align-items: stretch;
+}
+.role-flow-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 54px;
+  top: calc(100% - 2px);
+  width: 2px;
+  height: 14px;
+  background: linear-gradient(180deg,#cbd5e1,#93c5fd);
+  z-index: 1;
+}
+.role-flow-role {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 950;
+  text-align: center;
+  line-height: 1.15;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
+}
+.role-flow-role.io { background:#dbeafe; color:#1d4ed8; border-color:#bfdbfe; }
+.role-flow-role.ad { background:#ede9fe; color:#6d28d9; border-color:#ddd6fe; }
+.role-flow-role.mentor { background:#dcfce7; color:#166534; border-color:#bbf7d0; }
+.role-flow-role.sys { background:#d1fae5; color:#047857; border-color:#a7f3d0; }
+.role-flow-role.project { background:#f1f5f9; color:#334155; border-color:#cbd5e1; }
+.role-flow-node {
+  min-height: 56px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #f8fafc;
+  padding: 11px 12px;
+  position: relative;
+}
+.role-flow-node::before {
+  content: "";
+  position: absolute;
+  left: -18px;
+  top: 50%;
+  width: 16px;
+  height: 2px;
+  background: #cbd5e1;
+}
+.role-flow-node b {
+  display: block;
+  font-size: 12.5px;
+  letter-spacing: -.01em;
+}
+.role-flow-node span {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 11.4px;
+  line-height: 1.42;
+}
+.role-flow-note {
+  margin-top: 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 16px;
+  background: #f8fafc;
+  padding: 11px 12px;
+  color: #475569;
+  font-size: 11.7px;
+  line-height: 1.45;
+}
+.blueprint-after-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.blueprint-summary-card {
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  background: rgba(255,255,255,.82);
+  padding: 11px;
+}
+.blueprint-summary-card b {
+  display: block;
+  color: #1e3a8a;
+  font-size: 12px;
+}
+.blueprint-summary-card span {
+  display: block;
+  margin-top: 5px;
+  color: #475569;
+  font-size: 11px;
+  line-height: 1.38;
+}
+@media (max-width: 1180px) {
+  .blueprint-compare-grid { grid-template-columns: 1fr; }
+  .blueprint-kpi-row, .blueprint-after-summary { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 780px) {
+  .blueprint-session-head { flex-direction: column; }
+  .blueprint-kpi-row, .blueprint-after-summary { grid-template-columns: 1fr; }
+  .role-flow-step { grid-template-columns: 1fr; }
+  .role-flow-step:not(:last-child)::after { left: 50%; transform: translateX(-50%); }
+  .role-flow-node::before { display: none; }
+}
+
+
+/* Blueprint parallel after + prototype compare */
+.blueprint-after-parallel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.parallel-mini {
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  background: rgba(255,255,255,.88);
+  padding: 12px;
+  min-height: 156px;
+  position: relative;
+}
+.parallel-mini::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  border-radius: 18px 18px 0 0;
+  background: linear-gradient(90deg,#93c5fd,#2563eb);
+}
+.parallel-mini.io::before { background: linear-gradient(90deg,#bfdbfe,#2563eb); }
+.parallel-mini.request::before { background: linear-gradient(90deg,#ddd6fe,#7c3aed); }
+.parallel-mini.upload::before { background: linear-gradient(90deg,#c7f9cc,#059669); }
+.parallel-mini .mini-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.parallel-mini .mini-top b {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.parallel-mini p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11.4px;
+  line-height: 1.45;
+}
+.parallel-mini .mini-foot {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.parallel-merge {
+  margin: 6px 0 12px;
+  display: grid;
+  gap: 10px;
+}
+.parallel-merge .merge-arrow-line {
+  height: 22px;
+  display: grid;
+  place-items: center;
+  color: #94a3b8;
+  font-weight: 950;
+  font-size: 18px;
+}
+.data-flow-board {
+  margin-top: 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  background: linear-gradient(135deg,#eff6ff,#ffffff);
+  padding: 13px;
+}
+.data-flow-board h4 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: -.01em;
+}
+.data-flow-path {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.data-token {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 8px 11px;
+  border-radius: 999px;
+  border: 1px solid #bfdbfe;
+  background: rgba(255,255,255,.94);
+  color: #1e3a8a;
+  font-size: 11px;
+  font-weight: 850;
+  text-align: center;
+}
+.data-arrow {
+  color: #94a3b8;
+  font-size: 16px;
+  font-weight: 950;
+}
+.proto-links {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.proto-link {
+  display: block;
+  text-decoration: none;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  background: #fff;
+  padding: 10px;
+  color: var(--ink);
+  transition: .18s ease;
+}
+.proto-link:hover { transform: translateY(-1px); border-color: #93c5fd; box-shadow: 0 10px 26px rgba(37,99,235,.10); }
+.proto-link b { display:block; font-size: 11.5px; }
+.proto-link span { display:block; margin-top: 4px; color: var(--muted); font-size: 10.5px; line-height: 1.35; }
+.prototype-compare {
+  margin-top: 18px;
+  border: 1px solid #dbe3ef;
+  border-radius: 24px;
+  background: linear-gradient(180deg,#fff,#f8fbff);
+  overflow: hidden;
+  box-shadow: var(--shadow-soft);
+}
+.prototype-compare-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.prototype-compare-head h3 { margin: 0; font-size: 17px; letter-spacing: -.02em; }
+.prototype-compare-head p { margin: 6px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; max-width: 760px; }
+.compare-instruction-lite {
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding: 12px 18px 0; color:#475569; font-size:12px; font-weight:700;
+}
+.compare-instruction-lite .hint { color:#1d4ed8; font-weight:850; }
+.proto-compare-frame {
+  position: relative;
+  height: 720px;
+  margin: 10px 16px 16px;
+  border: 1px solid #dbe3ef;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #eef2ff;
+}
+.proto-before-layer,
+.proto-after-layer {
+  position: absolute;
+  inset: 0;
+}
+.proto-before-layer iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+.proto-after-layer {
+  width: 50%;
+  overflow: hidden;
+  border-right: 2px solid rgba(255,255,255,.92);
+  box-shadow: 12px 0 28px rgba(15,23,42,.12);
+}
+.proto-after-inner {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg,#f9fbff,#eef4ff);
+  padding: 24px;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+.update-reference-shell {
+  border: 1px solid #dbe3ef;
+  border-radius: 18px;
+  background: #fff;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(37,99,235,.08);
+}
+.update-shell-head {
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(180deg,#ffffff,#f8fbff);
+}
+.update-shell-head b { display:block; font-size: 12px; }
+.update-shell-head span { display:block; margin-top: 4px; color: var(--muted); font-size: 10.8px; line-height: 1.35; }
+.update-shell-body { padding: 14px; display:grid; gap:10px; }
+.update-line { height: 10px; border-radius: 999px; background:#c7d2fe; }
+.update-line.short { width: 56%; }
+.update-card-grid { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+.update-mini-card {
+  min-height: 82px;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  background: #f8fbff;
+  padding: 10px;
+}
+.update-mini-card b { display:block; font-size:11.5px; color:#1e3a8a; }
+.update-mini-card span { display:block; margin-top:4px; color:#64748b; font-size:10.4px; line-height:1.35; }
+.update-flow-strip { display:flex; flex-wrap:wrap; gap:7px; align-items:center; }
+.update-flow-strip .mini-arrow { color:#94a3b8; font-weight:950; }
+.compare-label-lite {
+  position: absolute;
+  top: 14px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  z-index: 4;
+}
+.compare-label-lite.before { right: 16px; background: rgba(15,23,42,.76); color:#fff; }
+.compare-label-lite.after { left: 16px; background: rgba(37,99,235,.90); color:#fff; }
+.proto-compare-line {
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 50%;
+  width: 2px;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 0 0 1px rgba(37,99,235,.18);
+  transform: translateX(-50%);
+  z-index: 5;
+}
+.proto-compare-handle {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 84px; height: 84px;
+  transform: translate(-50%,-50%);
+  border-radius: 50%;
+  border: 1px solid #cbd5e1;
+  background: rgba(255,255,255,.96);
+  display: grid; place-items: center;
+  color: #1f2f79;
+  font-size: 36px;
+  font-weight: 900;
+  z-index: 6;
+  box-shadow: 0 16px 40px rgba(15,23,42,.14);
+  pointer-events: none;
+}
+.proto-compare-range {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: ew-resize;
+  z-index: 7;
+}
+.prototype-caption-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:12px; padding: 0 16px 16px;
+}
+.prototype-caption-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  padding: 12px;
+}
+.prototype-caption-card b { display:block; font-size:12px; }
+.prototype-caption-card p { margin:6px 0 0; color:var(--muted); font-size:11.5px; line-height:1.45; }
+@media (max-width: 1180px) {
+  .blueprint-after-parallel, .proto-links, .prototype-caption-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 780px) {
+  .blueprint-after-parallel, .proto-links, .prototype-caption-grid, .update-card-grid { grid-template-columns: 1fr; }
+  .proto-compare-frame { height: 620px; }
+  .prototype-compare-head { flex-direction: column; }
+}
+
+</style>
+</head>
+<body>
+<main class="page">
+<div class="topbar">
+<div>
+<button class="back-button" id="backButton" type="button">
+<svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="m15 18-6-6 6-6"></path><path d="M21 12H9"></path></svg>
+<span data-cn="返回上一步" data-en="Back">Back</span>
+</button>
+<nav aria-label="Version switch" class="version-switch">
+<a class="active" href="Education Level Slot Pool.html" aria-current="page">V1</a>
+<a href="Education Level Slot Pool-v2.html">V2</a>
+</nav>
+<div class="eyebrow" data-cn="TOA Internship · 需求变更评审" data-en="TOA Internship · Change Review">TOA Internship · Change Review</div>
+<div class="header-title-row">
+<h1 data-cn="Programme / Intake / Approved Project Allocation 变更方案" data-en="Programme / Intake / Approved Project Allocation Change">Programme / Intake / Approved Project Allocation Change</h1>
+<button aria-label="Common Project Request Lifecycle" class="icon-button" id="infoButton" type="button">i</button>
+</div>
+<p class="subtitle" data-cn="本页说明系统从 Internship Category 驱动改为 Education Level 驱动后的 Programme / Intake / Project allocation 逻辑。Solution 1 更新为“AD 提交 Project → IO 先 approve Project → System 推荐 Programme + Intake → IO 最终确认 Allocation”：系统不会在 AD submission 后直接进入 Programme 推荐，必须先经过 IO project approval。" data-en="This page explains the proposed change from Internship Category-based setup to Education Level-based Programme setup. Solution 1 is updated to an approved-project allocation model: AD submits the Project, IO approves the submitted Project first, the system then recommends Programme + Intake allocation records, and IO finally confirms or amends the allocation. The system should not recommend Programme allocation before IO project approval.">This page explains the proposed change from Internship Category-based setup to Education Level-based Programme setup. Solution 1 is updated to an approved-project allocation model: AD submits the Project, IO approves the submitted Project first, the system then recommends Programme + Intake allocation records, and IO finally confirms or amends the allocation. The system should not recommend Programme allocation before IO project approval.</p>
+</div>
+<div aria-label="Language switch" class="lang-switch">
+<button data-lang="zh-CN">中文</button>
+<button class="active" data-lang="en">EN</button>
+</div>
+</div>
+<div class="lifecycle-popover" id="lifecyclePopover">
+<h3 data-cn="Approved Project · IO-confirmed Allocation Lifecycle" data-en="Approved Project · IO-confirmed Allocation Lifecycle">Approved Project · IO-confirmed Allocation Lifecycle</h3>
+<p data-cn="Solution 1 的关键变化：IO 先 approve AD 提交的 Project，系统才推荐 Programme + Intake allocation，最后仍由 IO 确认。" data-en="Key change in Solution 1: IO approves the AD-submitted Project first; only then does the system recommend Programme + Intake allocation, with IO still owning final confirmation.">Key change in Solution 1: IO approves the AD-submitted Project first; only then does the system recommend Programme + Intake allocation, with IO still owning final confirmation.</p>
+<div class="lifecycle-steps simple">
+<div class="life-step"><span class="role hr">1</span><div><b data-cn="IO initiates request to AD P&amp;C" data-en="IO initiates request to AD P&amp;C">IO initiates request to AD P&amp;C</b></div></div>
+<div class="life-step"><span class="role mentor">2</span><div><b data-cn="AD P&amp;C discusses with Mentor" data-en="AD P&amp;C discusses with Mentor">AD P&amp;C discusses with Mentor</b></div></div>
+<div class="life-step"><span class="role ad">3</span><div><b data-cn="AD P&amp;C submits Project for IO approval" data-en="AD P&amp;C submits Project for IO approval">AD P&amp;C submits Project for IO approval</b></div></div>
+<div class="life-step"><span class="role hr">4</span><div><b data-cn="IO approves the submitted Project" data-en="IO approves the submitted Project">IO approves the submitted Project</b></div></div>
+<div class="life-step"><span class="role sys">5</span><div><b data-cn="System recommends Programme + Intake allocation records" data-en="System recommends Programme + Intake allocation records">System recommends Programme + Intake allocation records</b></div></div>
+<div class="life-step"><span class="role hr">6</span><div><b data-cn="IO final-confirms Programme / Intake / slots" data-en="IO final-confirms Programme / Intake / slots">IO final-confirms Programme / Intake / slots</b></div></div>
+</div>
+</div>
+<section aria-label="Key messages" class="hero-grid">
+<div class="hero-card">
+<div class="signal blue"><b data-cn="One Programme / Level / Year" data-en="One Programme / Level / Year">One Programme / Level / Year</b><span data-cn="每年每个 Education Level 建立一个 Programme，作为年度主容器。" data-en="Create one Programme per Education Level per year as the annual container.">Create one Programme per Education Level per year as the annual container.</span></div>
+<div class="signal purple"><b data-cn="Intake = 时间窗口" data-en="Intake = Time Window">Intake = Time Window</b><span data-cn="Programme 下可以有多个 Intake，例如 May–Aug、Sep–Dec。" data-en="Each Programme can contain multiple Intakes, such as May–Aug and Sep–Dec.">Each Programme can contain multiple Intakes, such as May–Aug and Sep–Dec.</span></div>
+<div class="signal amber"><b data-cn="IO Approves Submitted Project" data-en="IO Approves Submitted Project">IO Approves Submitted Project</b><span data-cn="AD P&amp;C 提交 Project 后，必须先由 IO approve，之后才进入系统推荐 Programme / Intake 的阶段。" data-en="After AD P&amp;C submits the Project, IO must approve it before the system can recommend Programme / Intake allocation.">After AD P&amp;C submits the Project, IO must approve it before the system can recommend Programme / Intake allocation.</span></div>
+<div class="signal green"><b data-cn="System Recommends, IO Confirms" data-en="System Recommends, IO Confirms">System Recommends, IO Confirms</b><span data-cn="Project 被 IO approve 后，系统推荐 Programme + Intake records；IO 再最终确认、修改或拒绝。" data-en="After IO approval, the system recommends Programme + Intake records; IO then final-confirms, amends or rejects them.">After IO approval, the system recommends Programme + Intake records; IO then final-confirms, amends or rejects them.</span></div>
+</div>
+<aside class="decision-card">
+<h2 data-cn="Solution 1：IO approve Project 后，再推荐 Programme" data-en="Solution 1: IO-approved Project + Recommended Allocation">Solution 1: IO-approved Project + Recommended Allocation</h2>
+<p data-cn="核心是把 IO 决策拆成两步：第一步 approve AD 提交的 Project；第二步在系统推荐 Programme + Intake 后，IO 再 final confirm allocation。" data-en="The core logic splits IO decision-making into two steps: first approve the AD-submitted Project; then, after the system recommends Programme + Intake, IO final-confirms the allocation.">The core logic splits IO decision-making into two steps: first approve the AD-submitted Project; then, after the system recommends Programme + Intake, IO final-confirms the allocation.</p>
+<div class="decision-list">
+<div class="decision-row"><span class="tick">✓</span><span data-cn="AD 提交 Project 后，状态先进入 Pending IO Project Approval。" data-en="After AD submits the Project, the status moves to Pending IO Project Approval.">After AD submits the Project, the status moves to Pending IO Project Approval.</span></div>
+<div class="decision-row"><span class="tick">✓</span><span data-cn="IO approve Project 后，系统才推荐 Programme + Intake + slots。" data-en="Only after IO approves the Project does the system recommend Programme + Intake + slots.">Only after IO approves the Project does the system recommend Programme + Intake + slots.</span></div>
+<div class="decision-row"><span class="tick">✓</span><span data-cn="IO 可以更换 Programme、Intake 或调整 allocation slots。" data-en="IO can change the Programme, Intake or allocation slots.">IO can change the Programme, Intake or allocation slots.</span></div>
+</div>
+</aside>
+</section>
+<div class="tabs-shell">
+<nav aria-label="Review tabs" class="tabs">
+<button class="tab-btn active" data-tab="background"><small>01</small><span data-cn="背景 / 为什么改" data-en="Background / Why Change">Background / Why Change</span></button>
+<button class="tab-btn" data-tab="blueprint"><small>02</small><span data-cn="Blueprint · Preparing" data-en="Blueprint · Preparing">Blueprint · Preparing</span></button>
+<button class="tab-btn" data-tab="solution1"><small>03</small><span data-cn="方案 1 · IO 确认 Allocation" data-en="Solution 1 · IO-confirmed Allocation">Solution 1 · IO-confirmed</span></button>
+<button class="tab-btn" data-tab="report"><small>04</small><span data-cn="年度报表" data-en="Annual Report">Annual Report</span></button>
+</nav>
+</div>
+<section class="tab-panel active" id="background">
+<div class="panel">
+<div class="panel-head">
+<div class="panel-title">
+<div class="panel-icon">↔</div>
+<div>
+<h2 data-cn="背景：从 Internship Category 改为 Education Level" data-en="Background: From Internship Category to Education Level">Background: From Internship Category to Education Level</h2>
+<p class="lead" data-cn="这次变更不是单纯字段改名，而是 Programme 创建依据、Intake 层级、Project Request 分配关系和年度报表口径的变化。" data-en="This change is not only a field rename. It changes how Programmes are created, how Intakes are structured, how Project Requests are allocated, and how annual reporting is produced.">This change is not only a field rename. It changes how Programmes are created, how Intakes are structured, how Project Requests are allocated, and how annual reporting is produced.</p>
+</div>
+</div>
+<div class="chip-row"><span class="chip blue">Education Level</span><span class="chip purple">Intake</span><span class="chip amber">Project Request</span><span class="chip green">Allocation</span></div>
+</div>
+<div class="before-after">
+<div class="compare-card old">
+<span class="chip gray" data-cn="Old Logic" data-en="Old Logic">Old Logic</span>
+<h3 data-cn="Programme 主要跟 Internship Category 走" data-en="Programme mainly follows Internship Category">Programme mainly follows Internship Category</h3>
+<p class="subtitle" data-cn="Education Level 更像字段或筛选条件。Project timeline 可能被 Programme timeline 覆盖，后续做跨 Programme / Intake allocation report 时关系不够稳定。" data-en="Education Level behaves more like a field or filter. Project timeline may be overwritten by Programme timeline, and cross-Programme / Intake reporting is less stable." style="margin-top:0">Education Level behaves more like a field or filter. Project timeline may be overwritten by Programme timeline, and cross-Programme / Intake reporting is less stable.</p>
+<div class="diagram-line">
+<div class="node"><b>Programme</b><span data-cn="基于 Internship Category 创建" data-en="Created based on Internship Category">Created based on Internship Category</span></div>
+<div class="connector">↓</div>
+<div class="node"><b>Project</b><span data-cn="跟随 Programme timeline，可能被覆盖" data-en="Follows Programme timeline and may be overwritten">Follows Programme timeline and may be overwritten</span></div>
+<div class="connector">↓</div>
+<div class="node"><b>Report</b><span data-cn="Allocation 关系需要后续整理" data-en="Allocation relationship needs cleanup later">Allocation relationship needs cleanup later</span></div>
+</div>
+</div>
+<div class="compare-card new">
+<span class="chip blue" data-cn="New Logic" data-en="New Logic">New Logic</span>
+<h3 data-cn="Programme 改为按 Education Level 建立" data-en="Programme is created by Education Level">Programme is created by Education Level</h3>
+<p class="subtitle" data-cn="每年每个 Education Level 一个 Programme。Intake 是 Programme 下的时间批次。AD 提交 Project 后先由 IO approve；通过 approval 后，系统再推荐 Programme / Intake allocation records，IO 最终确认或修改。" data-en="One Programme per Education Level per year. Intake is the time window under Programme. After AD submits the Project, IO approves it first; once approved, the system recommends Programme / Intake allocation records for IO final confirmation or amendment." style="margin-top:0">One Programme per Education Level per year. Intake is the time window under Programme. After AD submits the Project, IO approves it first; once approved, the system recommends Programme / Intake allocation records for IO final confirmation or amendment.</p>
+<div class="diagram-line">
+<div class="node"><b>Year + Education Level</b><span>University Internship 2026</span></div>
+<div class="connector">↓</div>
+<div class="node"><b>Intakes</b><span>May–Aug / Sep–Dec</span></div>
+<div class="connector">↓</div>
+<div class="node"><b>Approved Project Allocation</b><span data-cn="Project 先由 IO approve；系统推荐后 IO 最终确认 Programme / Intake allocation" data-en="Project is approved by IO first; after system recommendation, IO owns the final Programme / Intake allocation decision">Project is approved by IO first; after system recommendation, IO owns the final Programme / Intake allocation decision</span></div>
+</div>
+</div>
+</div>
+<div class="data-model">
+<div class="model-node"><b>Year</b><span>2026</span></div>
+<div class="model-node"><b>Education Level Programme</b><span>University Internship 2026</span></div>
+<div class="model-node"><b>Intake</b><span>May–Aug Intake</span></div>
+<div class="model-node"><b>Approved Project</b><span data-cn="IO approve AD 提交的 Project 后进入推荐" data-en="Enters recommendation only after IO approves the AD submission">Enters recommendation only after IO approves the AD submission</span></div>
+<div class="model-node"><b>Allocation Records</b><span data-cn="系统推荐，IO 最终确认或修改" data-en="System recommended; IO final-confirms or amends">System recommended; IO final-confirms or amends</span></div>
+</div>
+</div>
+</section>
+
+<section class="tab-panel" id="blueprint">
+<div class="panel">
+<div class="panel-head">
+<div class="panel-title">
+<div class="panel-icon">BP</div>
+<div>
+<h2 data-cn="Blueprint：Preparing 阶段 Before / After" data-en="Blueprint: Preparing Stage Before / After">Blueprint: Preparing Stage Before / After</h2>
+<p class="lead" data-cn="这里只展示 Preparing 阶段，保留按 Role 的连线关系，用于说明 Solution 1 从“AD submission 后直接推荐”调整为“IO 先 approve Project，再由系统推荐 Programme / Intake，最后 IO final confirm allocation”。" data-en="This tab only shows the Preparing stage and keeps the role-based connection lines. It explains how Solution 1 changes from direct recommendation after AD submission to IO project approval first, then system Programme / Intake recommendation, then IO final allocation confirmation.">This tab only shows the Preparing stage and keeps the role-based connection lines. It explains how Solution 1 changes from direct recommendation after AD submission to IO project approval first, then system Programme / Intake recommendation, then IO final allocation confirmation.</p>
+</div>
+</div>
+<div class="chip-row"><span class="chip blue">Preparing only</span><span class="chip green">Role connection</span><span class="chip amber">Before / After</span></div>
+</div>
+<div class="blueprint-board">
+<div class="blueprint-kpi-row">
+<div class="blueprint-kpi"><b data-cn="Stage" data-en="Stage">Stage</b><span data-cn="Preparing，不展开 Applying / Matching / Offer 等后续阶段。" data-en="Preparing only; later stages such as Applying, Matching and Offer are not expanded here.">Preparing only; later stages such as Applying, Matching and Offer are not expanded here.</span></div>
+<div class="blueprint-kpi"><b data-cn="Role lanes" data-en="Role lanes">Role lanes</b><span data-cn="IO / IO Admin、AD(P&amp;C)、Mentor、System、Programme / Project。" data-en="IO / IO Admin, AD(P&amp;C), Mentor, System, Programme / Project.">IO / IO Admin, AD(P&amp;C), Mentor, System, Programme / Project.</span></div>
+<div class="blueprint-kpi"><b data-cn="Before" data-en="Before">Before</b><span data-cn="AD submission / project approval 与 Programme allocation 容易混在一起，推荐触发点不清晰。" data-en="AD submission / project approval and Programme allocation can be mixed together, making the recommendation trigger unclear.">AD submission / project approval and Programme allocation can be mixed together, making the recommendation trigger unclear.</span></div>
+<div class="blueprint-kpi"><b data-cn="After" data-en="After">After</b><span data-cn="IO approve Project 后，System 才建议 allocation；IO 再 final confirm 或修改。" data-en="Only after IO approves the Project does the system suggest allocation; IO then final-confirms or amends it.">Only after IO approves the Project does the system suggest allocation; IO then final-confirms or amends it.</span></div>
+</div>
+
+<article class="blueprint-before-after">
+<div class="blueprint-session-head">
+<div class="blueprint-session-title">
+<span class="blueprint-session-num">01</span>
+<div>
+<h3 data-cn="Preparing stage role flow" data-en="Preparing stage role flow">Preparing stage role flow</h3>
+<p data-cn="参考现有 Blueprint 的 Preparing 行，但只保留和 Programme / Intake / IO-approved Project allocation 相关的角色连线。" data-en="Based on the current Blueprint Preparing row, but only keeps the role connections related to Programme / Intake / IO-approved Project allocation.">Based on the current Blueprint Preparing row, but only keeps the role connections related to Programme / Intake / IO-approved Project allocation.</p>
+</div>
+</div>
+<span class="chip dark" data-cn="Blueprint extract" data-en="Blueprint extract">Blueprint extract</span>
+</div>
+
+<div class="blueprint-compare-grid">
+<section class="blueprint-panel before">
+<div class="blueprint-panel-title"><b data-cn="BEFORE · Approval and allocation mixed" data-en="BEFORE · Approval and allocation mixed">BEFORE · Approval and allocation mixed</b><small data-cn="旧理解" data-en="Old understanding">Old understanding</small></div>
+<div class="role-flow" aria-label="Before preparing role flow">
+<div class="role-flow-step"><div class="role-flow-role io">IO / IO Admin</div><div class="role-flow-node"><b data-cn="Create Programme / send Project Request" data-en="Create Programme / send Project Request">Create Programme / send Project Request</b><span data-cn="Programme 和 request 并行出现，但 Project Request 是主审批对象。" data-en="Programme and request can appear in parallel, but Project Request is the main approval object.">Programme and request can appear in parallel, but Project Request is the main approval object.</span></div></div>
+<div class="role-flow-step"><div class="role-flow-role ad">AD(P&amp;C)</div><div class="role-flow-node"><b data-cn="Upload Project Request" data-en="Upload Project Request">Upload Project Request</b><span data-cn="AD 上传 scope、mentor、slots，等待 IO review。" data-en="AD uploads scope, mentor and slots, then waits for IO review.">AD uploads scope, mentor and slots, then waits for IO review.</span></div></div>
+<div class="role-flow-step"><div class="role-flow-role mentor">Mentor</div><div class="role-flow-node"><b data-cn="Discuss / validate project content" data-en="Discuss / validate project content">Discuss / validate project content</b><span data-cn="Mentor 与 AD 对齐项目内容，但不直接产生 allocation。" data-en="Mentor aligns content with AD, but this does not directly create allocation.">Mentor aligns content with AD, but this does not directly create allocation.</span></div></div>
+<div class="role-flow-step"><div class="role-flow-role io">IO / IO Admin</div><div class="role-flow-node"><b data-cn="Approve Project Request" data-en="Approve Project Request">Approve Project Request</b><span data-cn="旧逻辑容易把 project approval 与 allocation confirmation 混在一起。" data-en="The old logic can mix project approval with allocation confirmation.">The old logic can mix project approval with allocation confirmation.</span></div></div>
+<div class="role-flow-step"><div class="role-flow-role project">Programme / Project</div><div class="role-flow-node"><b data-cn="Project enters Projects" data-en="Project enters Projects">Project enters Projects</b><span data-cn="Programme / Intake 关系后续整理，allocation 状态不够显性。" data-en="Programme / Intake relationship is cleaned up later, and allocation status is less visible.">Programme / Intake relationship is cleaned up later, and allocation status is less visible.</span></div></div>
+</div>
+<div class="role-flow-note" data-cn="问题：如果 approval 和 allocation 放在同一层，用户会不清楚 IO 是先 approve Project，还是直接确认 Programme / Intake allocation。" data-en="Issue: if approval and allocation sit at the same level, users may not know whether IO is approving the Project first or directly confirming Programme / Intake allocation.">Issue: if approval and allocation sit at the same level, users may not know whether IO is approving the Project first or directly confirming Programme / Intake allocation.</div>
+</section>
+
+<section class="blueprint-panel after">
+<div class="blueprint-panel-title"><b data-cn="AFTER · IO-approved Project + recommended allocation" data-en="AFTER · IO-approved Project + recommended allocation">AFTER · IO-approved Project + recommended allocation</b><small data-cn="Solution 1 新逻辑" data-en="New Solution 1 logic">New Solution 1 logic</small></div>
+<div class="blueprint-after-parallel" aria-label="After parallel preparing setup">
+  <div class="parallel-mini io">
+    <div class="mini-top"><b data-cn="Parallel A · Programme + Intake setup" data-en="Parallel A · Programme + Intake setup">Parallel A · Programme + Intake setup</b><span class="chip blue">IO / IO Admin</span></div>
+    <p data-cn="Programme 按 Education Level + Year 建立；Intake 定义 time window、capacity 和 allocation 条件。" data-en="Programme is created by Education Level + Year; Intake defines time window, capacity and allocation conditions.">Programme is created by Education Level + Year; Intake defines time window, capacity and allocation conditions.</p>
+    <div class="mini-foot"><span class="chip gray">University 2026</span><span class="chip gray">May–Aug</span><span class="chip gray">Sep–Dec</span></div>
+  </div>
+  <div class="parallel-mini request">
+    <div class="mini-top"><b data-cn="Parallel B · Initiate request" data-en="Parallel B · Initiate request">Parallel B · Initiate request</b><span class="chip purple">IO</span></div>
+    <p data-cn="IO 发起 request 给 AD(P&amp;C)。这一步只建立需求，不直接创建 Project。" data-en="IO initiates the request to AD(P&amp;C). This step creates the demand only and does not create the Project directly.">IO initiates the request to AD(P&amp;C). This step creates the demand only and does not create the Project directly.</p>
+    <div class="mini-foot"><span class="chip gray">Request brief</span><span class="chip gray">Slots needed</span></div>
+  </div>
+  <div class="parallel-mini upload">
+    <div class="mini-top"><b data-cn="Parallel C · AD submission + mentor alignment" data-en="Parallel C · AD submission + mentor alignment">Parallel C · AD submission + mentor alignment</b><span class="chip green">AD(P&amp;C)</span></div>
+    <p data-cn="AD(P&amp;C) 与 Mentor 对齐 scope 后提交 Project，等待 IO project approval。未 approve 前不触发 Programme 推荐。" data-en="AD(P&amp;C) aligns scope with Mentor, then submits the Project for IO approval. Programme recommendation is not triggered before approval.">AD(P&amp;C) aligns scope with Mentor, then submits the Project for IO approval. Programme recommendation is not triggered before approval.</p>
+    <div class="mini-foot"><span class="chip gray">Mentor confirmed</span><span class="chip amber">Pending IO approval</span></div>
+  </div>
+</div>
+<div class="parallel-merge">
+  <div class="merge-arrow-line">↓</div>
+  <div class="role-flow" aria-label="After preparing role flow follow-up">
+    <div class="role-flow-step"><div class="role-flow-role io">IO</div><div class="role-flow-node"><b data-cn="Approve submitted Project" data-en="Approve submitted Project">Approve submitted Project</b><span data-cn="IO 先确认 AD 提交的 Project 内容、slots、mentor 与基础字段是否可进入推荐。" data-en="IO first validates whether the AD-submitted Project content, slots, mentor and base fields are ready for recommendation.">IO first validates whether the AD-submitted Project content, slots, mentor and base fields are ready for recommendation.</span></div></div>
+    <div class="role-flow-step"><div class="role-flow-role sys">System</div><div class="role-flow-node"><b data-cn="Recommend Programme + Intake allocation records" data-en="Recommend Programme + Intake allocation records">Recommend Programme + Intake allocation records</b><span data-cn="系统只对 IO approved Project 生成建议，并根据 Education Level、Intake timing、capacity、skills 等字段匹配 Programme / Intake。" data-en="The system only generates recommendations for IO-approved Projects, matching Programme / Intake based on Education Level, Intake timing, capacity, skills and related fields.">The system only generates recommendations for IO-approved Projects, matching Programme / Intake based on Education Level, Intake timing, capacity, skills and related fields.</span></div></div>
+    <div class="role-flow-step"><div class="role-flow-role io">IO</div><div class="role-flow-node"><b data-cn="Final-confirm or change Programme / Intake / slots" data-en="Final-confirm or change Programme / Intake / slots">Final-confirm or change Programme / Intake / slots</b><span data-cn="IO 最终确认，也可以更换 Programme、Intake 或调整 allocated slots。" data-en="IO final-confirms, or changes Programme, Intake and allocated slots.">IO final-confirms, or changes Programme, Intake and allocated slots.</span></div></div>
+    <div class="role-flow-step"><div class="role-flow-role project">Programme / Project</div><div class="role-flow-node"><b data-cn="Allocation confirmed + data flows to downstream pages" data-en="Allocation confirmed + data flows to downstream pages">Allocation confirmed + data flows to downstream pages</b><span data-cn="确认后的 allocation records 会同步进入 Programme detail、Project detail、Project Allocation Review 和 Annual Report。" data-en="Confirmed allocation records flow into Programme detail, Project detail, Project Allocation Review and the Annual Report.">Confirmed allocation records flow into Programme detail, Project detail, Project Allocation Review and the Annual Report.</span></div></div>
+  </div>
+</div>
+
+<div class="blueprint-after-summary">
+<div class="blueprint-summary-card"><b data-cn="Project status" data-en="Project status">Project status</b><span data-cn="Submitted / IO Approved / Allocation Pending" data-en="Submitted / IO Approved / Allocation Pending">Submitted / IO Approved / Allocation Pending</span></div>
+<div class="blueprint-summary-card"><b data-cn="IO control" data-en="IO control">IO control</b><span data-cn="可接受、修改或拒绝系统建议。" data-en="Can accept, modify or reject system suggestions.">Can accept, modify or reject system suggestions.</span></div>
+<div class="blueprint-summary-card"><b data-cn="Final output" data-en="Final output">Final output</b><span data-cn="Programme + Intake allocation records confirmed by IO。" data-en="Programme + Intake allocation records confirmed by IO.">Programme + Intake allocation records confirmed by IO.</span></div>
+</div>
+</section>
+</div>
+</article>
+</div>
+</div>
+</section>
+
+<section class="tab-panel" id="solution1">
+<div class="panel">
+<div class="panel-head">
+<div class="panel-title">
+<div class="panel-icon">①</div>
+<div>
+<h2 data-cn="Solution 1：IO-approved Project + IO-confirmed Allocation" data-en="Solution 1: IO-approved Project + IO-confirmed Allocation">Solution 1: IO-approved Project + IO-confirmed Allocation</h2>
+<p class="lead" data-cn="AD P&amp;C 提交 Project 后，IO 先 approve Project 本身；只有 Project approval 通过后，系统才推荐 Programme + Intake allocation records。最终 allocation 仍由 IO 确认，IO 可以修改 Programme、Intake 或 allocated slots。" data-en="After AD P&amp;C submits the Project, IO first approves the Project itself. Only after Project approval does the system recommend Programme + Intake allocation records. Final allocation remains IO-owned, and IO can change Programme, Intake or allocated slots.">After AD P&amp;C submits the Project, IO first approves the Project itself. Only after Project approval does the system recommend Programme + Intake allocation records. Final allocation remains IO-owned, and IO can change Programme, Intake or allocated slots.</p>
+</div>
+</div>
+<div class="chip-row"><span class="chip amber" data-cn="Pending IO project approval" data-en="Pending IO project approval">Pending IO project approval</span><span class="chip blue" data-cn="System recommendation after approval" data-en="System recommendation after approval">System recommendation after approval</span><span class="chip green" data-cn="IO final allocation confirmation" data-en="IO final allocation confirmation">IO final allocation confirmation</span></div>
+</div>
+<div class="flow-layout">
+<div class="flow-card">
+<h3 data-cn="Flow · Simplified View" data-en="Flow · Simplified View">Flow · Simplified View</h3>
+<div class="simple-flow">
+<article class="simple-stage highlight">
+<div class="stage-top">
+<div class="stage-num">1</div>
+<div class="stage-body">
+<h4 data-cn="Parallel preparation" data-en="Parallel preparation">Parallel preparation</h4>
+<p data-cn="左侧是 HR / IO 创建 Programme 和 Intake；右侧是 AD Project submission lifecycle。两条线可以并行推进，但系统推荐必须等待 IO approve AD 提交的 Project。" data-en="The left lane is HR / IO creating Programme and Intakes; the right lane is the AD Project submission lifecycle. Both can progress in parallel, but system recommendation must wait until IO approves the AD-submitted Project.">The left lane is HR / IO creating Programme and Intakes; the right lane is the AD Project submission lifecycle. Both can progress in parallel, but system recommendation must wait until IO approves the AD-submitted Project.</p>
+</div>
+</div>
+<div class="parallel-two-lanes">
+<div class="parallel-branch demand">
+<div class="branch-label"><b data-cn="Lane A · Programme / Intake setup" data-en="Lane A · Programme / Intake setup">Lane A · Programme / Intake setup</b><span class="chip blue">Demand</span></div>
+<div class="branch-steps">
+<div class="branch-step"><span class="role hr">HR / IO</span><div><b data-cn="Create Education Level Programme" data-en="Create Education Level Programme">Create Education Level Programme</b><span class="desc" data-cn="Example: University Internship 2026." data-en="Example: University Internship 2026.">Example: University Internship 2026.</span></div></div>
+<div class="branch-step"><span class="role hr">HR / IO</span><div><b data-cn="Create Intake windows" data-en="Create Intake windows">Create Intake windows</b><span class="desc" data-cn="Example: May–Aug Intake, Sep–Dec Intake." data-en="Example: May–Aug Intake, Sep–Dec Intake.">Example: May–Aug Intake, Sep–Dec Intake.</span></div></div>
+</div>
+</div>
+<div class="parallel-branch request">
+<div class="branch-label"><b data-cn="Lane B · AD Project submission lifecycle" data-en="Lane B · AD Project submission lifecycle">Lane B · AD Project submission lifecycle</b><span class="chip purple">Submission</span></div>
+<div class="branch-steps">
+<div class="branch-step"><span class="role hr">IO</span><div><b data-cn="Initiate request to AD P&amp;C" data-en="Initiate request to AD P&amp;C">Initiate request to AD P&amp;C</b><span class="desc" data-cn="IO 发起需求给 AD P&amp;C。" data-en="IO initiates the request to AD P&amp;C.">IO initiates the request to AD P&amp;C.</span></div></div>
+<div class="branch-step"><span class="role mentor">AD + Mentor</span><div><b data-cn="Discuss scope / slots" data-en="Discuss scope / slots">Discuss scope / slots</b><span class="desc" data-cn="AD P&amp;C 与 Mentor 对齐项目内容。" data-en="AD P&amp;C aligns project details with Mentor.">AD P&amp;C aligns project details with Mentor.</span></div></div>
+<div class="branch-step"><span class="role ad">AD P&amp;C</span><div><b data-cn="Submit Project for IO approval" data-en="Submit Project for IO approval">Submit Project for IO approval</b><span class="desc" data-cn="提交后状态为 Pending IO Project Approval；暂不进入 Programme 推荐。" data-en="After submission, the status is Pending IO Project Approval; Programme recommendation has not started yet.">After submission, the status is Pending IO Project Approval; Programme recommendation has not started yet.</span></div></div>
+</div>
+</div>
+</div>
+</article>
+<div class="simple-arrow">↓</div>
+<article class="simple-stage">
+<div class="stage-top">
+<div class="stage-num">2</div>
+<div class="stage-body">
+<h4 data-cn="IO approves submitted Project, then system recommends allocation records" data-en="IO approves submitted Project, then system recommends allocation records">IO approves submitted Project, then system recommends allocation records</h4>
+<p data-cn="IO 先 approve AD 提交的 Project。通过 approval 后，系统根据 Education Level、intake timing、slots、skills、duration 等字段，为 approved Project 计算一个或多个 Programme / Intake 匹配项。One Project can be attached to multiple Programme / Intake allocation records；这里仍是 suggestion，不是 final allocation。" data-en="IO first approves the AD-submitted Project. After approval, the system calculates one or more Programme / Intake matches for the approved Project based on Education Level, intake timing, slots, skills, duration and other fields. One Project can be attached to multiple Programme / Intake allocation records; this remains a suggestion, not final allocation.">IO first approves the AD-submitted Project. After approval, the system calculates one or more Programme / Intake matches for the approved Project based on Education Level, intake timing, slots, skills, duration and other fields. One Project can be attached to multiple Programme / Intake allocation records; this remains a suggestion, not final allocation.</p>
+</div>
+</div>
+<div class="allocation-path">
+<span class="chip purple" data-cn="AD Submission" data-en="AD Submission">AD Submission</span><span class="mini-arrow">→</span>
+<span class="chip blue" data-cn="IO Project Approval" data-en="IO Project Approval">IO Project Approval</span><span class="mini-arrow">→</span>
+<span class="chip green" data-cn="System Recommendation" data-en="System Recommendation">System Recommendation</span><span class="mini-arrow">→</span>
+<span class="chip amber" data-cn="Allocation Pending" data-en="Allocation Pending">Allocation Pending</span>
+</div>
+</article>
+<div class="simple-arrow">↓</div>
+<article class="simple-stage done-stage">
+<div class="stage-top">
+<div class="stage-num">3</div>
+<div class="stage-body">
+<h4 data-cn="IO confirms or changes allocation records" data-en="IO confirms or changes allocation records">IO confirms or changes allocation records</h4>
+<p data-cn="Project 已被 IO approve。IO 的第二个决策动作是确认、修改或拒绝系统建议的 allocation records。IO 可以更换 Programme、Intake，也可以调整 allocated slots。" data-en="The Project has already been approved by IO. IO's second decision is to confirm, modify or reject the suggested allocation records. IO can change Programme, Intake and allocated slots.">The Project has already been approved by IO. IO's second decision is to confirm, modify or reject the suggested allocation records. IO can change Programme, Intake and allocated slots.</p>
+</div>
+</div>
+<div class="stage-mini-flow">
+<span class="mini-token" data-cn="Review suggestion" data-en="Review suggestion">Review suggestion</span><span class="mini-arrow">→</span>
+<span class="mini-token" data-cn="Change Programme / Intake" data-en="Change Programme / Intake">Change Programme / Intake</span><span class="mini-arrow">→</span>
+<span class="mini-token" data-cn="Adjust slots" data-en="Adjust slots">Adjust slots</span><span class="mini-arrow">→</span>
+<span class="mini-token" data-cn="Confirm allocation" data-en="Confirm allocation">Confirm allocation</span>
+</div>
+</article>
+</div>
+</div>
+<div class="placeholder page-impact-panel">
+<div class="pending-page-list drawer-enabled">
+<div class="pending-page-head">
+<div>
+<h3 data-cn="待修改页面：Solution 1" data-en="Pages to update: Solution 1">Pages to update: Solution 1</h3>
+<p data-cn="主页面只保留页面清单。点击 View 打开放大的右侧侧边栏，用 Before / After placeholder 对比当前页面和更新参考。" data-en="Keep the main page compact. Click View to open the enlarged side drawer with Before / After placeholders for the current screen and update reference.">Keep the main page compact. Click View to open the enlarged side drawer with Before / After placeholders for the current screen and update reference.</p>
+</div>
+<span class="chip amber" data-cn="Click row to view" data-en="Click row to view">Click row to view</span>
+</div>
+<table class="pending-page-table compact-page-table">
+<thead><tr><th data-cn="角色" data-en="Role">Role</th><th data-cn="页面" data-en="Page">Page</th><th data-cn="影响" data-en="Impact">Impact</th><th data-cn="Demo URL" data-en="Demo URL">Demo URL</th><th data-cn="动作" data-en="Action">Action</th></tr></thead>
+<tbody>
+<tr class="page-review-row" data-page-detail="programmes-list"><td><span class="role hr">IO</span></td><td data-cn="programmes list" data-en="programmes list">programmes list</td><td><span class="chip blue" data-cn="Medium" data-en="Medium">Medium</span></td><td><a href="https://toaproject.vercel.app/programmes" target="_blank" rel="noopener">/programmes</a></td><td><button class="view-detail-btn" type="button" data-page-detail="programmes-list" data-cn="View" data-en="View">View</button></td></tr>
+<tr class="page-review-row" data-page-detail="programmes-new-step1"><td><span class="role hr">IO</span></td><td data-cn="programmes creation - Step 1" data-en="programmes creation - Step 1">programmes creation - Step 1</td><td><span class="chip blue" data-cn="Medium" data-en="Medium">Medium</span></td><td><a href="https://toaproject.vercel.app/programmes/new" target="_blank" rel="noopener">/programmes/new</a></td><td><button class="view-detail-btn" type="button" data-page-detail="programmes-new-step1" data-cn="View" data-en="View">View</button></td></tr>
+<tr class="page-review-row" data-page-detail="intake-setup"><td><span class="role hr">IO</span></td><td data-cn="programmes creation - Intake setup" data-en="programmes creation - Intake setup">programmes creation - Intake setup</td><td><span class="chip amber" data-cn="High" data-en="High">High</span></td><td><a href="https://toaproject.vercel.app/programmes/new" target="_blank" rel="noopener">/programmes/new</a></td><td><button class="view-detail-btn" type="button" data-page-detail="intake-setup" data-cn="View" data-en="View">View</button></td></tr>
+<tr class="page-review-row" data-page-detail="programme-detail"><td><span class="role hr">IO</span></td><td data-cn="programmes detail" data-en="programmes detail">programmes detail</td><td><span class="chip red" data-cn="Critical" data-en="Critical">Critical</span></td><td><a href="https://toaproject.vercel.app/programmes/PROG-0007" target="_blank" rel="noopener">/programmes/PROG-0007</a></td><td><button class="view-detail-btn" type="button" data-page-detail="programme-detail" data-cn="View" data-en="View">View</button></td></tr>
+<tr class="page-review-row" data-page-detail="request-list"><td><span class="role hr">IO</span></td><td data-cn="Project request list" data-en="Project request list">Project request list</td><td><span class="chip red" data-cn="Critical" data-en="Critical">Critical</span></td><td><a href="https://toaproject.vercel.app/requests" target="_blank" rel="noopener">/requests</a></td><td><button class="view-detail-btn" type="button" data-page-detail="request-list" data-cn="View" data-en="View">View</button></td></tr>
+<tr class="page-review-row" data-page-detail="request-creation"><td><span class="role hr">IO</span></td><td data-cn="Project request creation" data-en="Project request creation">Project request creation</td><td><span class="chip blue" data-cn="Medium" data-en="Medium">Medium</span></td><td><a href="https://toaproject.vercel.app/requests/new" target="_blank" rel="noopener">/requests/new</a></td><td><button class="view-detail-btn" type="button" data-page-detail="request-creation" data-cn="View" data-en="View">View</button></td></tr>
+<tr class="page-review-row" data-page-detail="request-review"><td><span class="role hr">IO</span></td><td data-cn="Project request review" data-en="Project request review">Project request review</td><td><span class="chip red" data-cn="Critical" data-en="Critical">Critical</span></td><td><a href="https://toaproject.vercel.app/requests/project/batch-001/SUB-0003" target="_blank" rel="noopener">/requests/project/batch-001/SUB-0003</a></td><td><button class="view-detail-btn" type="button" data-page-detail="request-review" data-cn="View" data-en="View">View</button></td></tr>
+<tr class="page-review-row" data-page-detail="project-detail"><td><span class="role hr">IO</span></td><td data-cn="Project detail" data-en="Project detail">Project detail</td><td><span class="chip red" data-cn="Critical" data-en="Critical">Critical</span></td><td><a href="https://toaproject.vercel.app/projects/PROJ-0008" target="_blank" rel="noopener">/projects/PROJ-0008</a></td><td><button class="view-detail-btn" type="button" data-page-detail="project-detail" data-cn="View" data-en="View">View</button></td></tr>
+<tr class="page-review-row" data-page-detail="upload-projects"><td><span class="role ad">AD(P&amp;C)</span></td><td data-cn="Upload Projects" data-en="Upload Projects">Upload Projects</td><td><span class="chip red" data-cn="Critical" data-en="Critical">Critical</span></td><td><a href="https://toaproject.vercel.app/submissions/upload" target="_blank" rel="noopener">/submissions/upload</a></td><td><button class="view-detail-btn" type="button" data-page-detail="upload-projects" data-cn="View" data-en="View">View</button></td></tr>
+</tbody>
+</table>
+</div>
+<div class="placeholder-label"><b data-cn="UX update" data-en="UX update">UX update</b><span data-cn="页面级方案改成 drawer review，避免在 Solution 1 主页面展开过多内容。当前行会高亮，详情在右侧滑出。" data-en="The page-level update plan now uses a drawer review pattern to avoid expanding too much content inside the Solution 1 page. The selected row is highlighted and details slide out from the right.">The page-level update plan now uses a drawer review pattern to avoid expanding too much content inside the Solution 1 page. The selected row is highlighted and details slide out from the right.</span></div>
+</div>
+</div>
+<div class="info-grid">
+<div class="mini-card success"><h3 data-cn="优点" data-en="Advantages">Advantages</h3><ul><li data-cn="Programme / Intake 与 AD Project submission lifecycle 可以并行推进。" data-en="Programme / Intake and AD Project submission lifecycle can progress in parallel.">Programme / Intake and AD Project submission lifecycle can progress in parallel.</li><li data-cn="系统只对 approved Project 给出 Programme / Intake 建议，降低无效推荐。" data-en="The system only provides Programme / Intake recommendations for approved Projects, reducing invalid recommendations.">The system only provides Programme / Intake recommendations for approved Projects, reducing invalid recommendations.</li><li data-cn="IO 的职责被拆清楚：先 approve Project，再 final confirm allocation。" data-en="IO responsibility is clearer: approve the Project first, then final-confirm allocation.">IO responsibility is clearer: approve the Project first, then final-confirm allocation.</li></ul></div>
+<div class="mini-card warning"><h3 data-cn="风险" data-en="Risks">Risks</h3><ul><li data-cn="系统推荐依赖字段完整度和数据质量。" data-en="System recommendation depends on field completeness and data quality.">System recommendation depends on field completeness and data quality.</li><li data-cn="如果 Programme / Intake 尚未完整，系统建议可能不准确。" data-en="If Programme / Intake setup is incomplete, the system suggestion may be inaccurate.">If Programme / Intake setup is incomplete, the system suggestion may be inaccurate.</li><li data-cn="需要在 UI 中清楚区分 Submitted、Pending IO Approval、Approved、Recommendation Generated、Allocation Confirmed。" data-en="The UI must clearly separate Submitted, Pending IO Approval, Approved, Recommendation Generated and Allocation Confirmed.">The UI must clearly separate Submitted, Pending IO Approval, Approved, Recommendation Generated and Allocation Confirmed.</li></ul></div>
+<div class="mini-card confirm"><h3 data-cn="待业务确认" data-en="Business Input Needed">Business Input Needed</h3><ul><li data-cn="系统推荐使用哪些字段和权重？" data-en="Which fields and weights should drive the system recommendation?">Which fields and weights should drive the system recommendation?</li><li data-cn="IO 是否可以直接修改系统建议的 Programme / Intake？" data-en="Can IO directly change the suggested Programme / Intake?">Can IO directly change the suggested Programme / Intake?</li><li data-cn="Project ID 应该在 AD submit 时生成，还是在 IO approve 后生成？" data-en="Should the Project ID be generated at AD submission or only after IO approval?">Should the Project ID be generated at AD submission or only after IO approval?</li></ul></div>
+</div>
+
+<div class="multi-allocation-example">
+  <div class="multi-allocation-head">
+    <div>
+      <h3 data-cn="Multi-Intake Allocation Example" data-en="Multi-Intake Allocation Example">Multi-Intake Allocation Example</h3>
+      <p data-cn="IO approve AD 提交的 Project 后，系统可推荐多条 Programme / Intake allocation records。每条 allocation 都需要 IO review、amend 或 final confirm；Project approval 与 allocation confirmation 是两个不同状态。" data-en="After IO approves the AD-submitted Project, the system may recommend multiple Programme / Intake allocation records. Each allocation record still requires IO review, amendment or final confirmation; Project approval and allocation confirmation are two separate statuses.">After IO approves the AD-submitted Project, the system may recommend multiple Programme / Intake allocation records. Each allocation record still requires IO review, amendment or final confirmation; Project approval and allocation confirmation are two separate statuses.</p>
+    </div>
+    <div class="chip-row"><span class="chip allowed" data-cn="Multiple Intakes allowed" data-en="Multiple Intakes allowed">Multiple Intakes allowed</span><span class="chip capacity" data-cn="Capacity Check Required" data-en="Capacity Check Required">Capacity Check Required</span></div>
+  </div>
+  <div class="project-allocation-card">
+    <div class="project-summary-card">
+      <b data-cn="Project Alpha · PRJ-0261" data-en="Project Alpha · PRJ-0261">Project Alpha · PRJ-0261</b>
+      <p data-cn="AD P&amp;C 提交后由 IO approve，approved capacity 为 35 slots，可拆分到多个 Programme / Intake allocation records。" data-en="Submitted by AD P&amp;C and approved by IO. Approved capacity is 35 slots and can be split across multiple Programme / Intake allocation records.">Submitted by AD P&amp;C and approved by IO. Approved capacity is 35 slots and can be split across multiple Programme / Intake allocation records.</p>
+      <div class="capacity-strip"><i></i></div>
+      <div class="chip-row" style="margin-top:10px"><span class="chip blue">35 slots</span><span class="chip green" data-cn="Used 35 / 35" data-en="Used 35 / 35">Used 35 / 35</span></div>
+    </div>
+    <div class="allocation-record-panel">
+      <h4 data-cn="Allocation Records" data-en="Allocation Records">Allocation Records</h4>
+      <div class="allocation-record-grid">
+        <div class="allocation-record"><b>University Internship 2026</b><span>May–Aug Intake</span><div class="record-meta"><span class="chip blue">10 slots</span><span class="chip green">Confirmed</span></div></div>
+        <div class="allocation-record"><b>JC / A-Level Internship 2026</b><span>May–Aug Intake</span><div class="record-meta"><span class="chip blue">20 slots</span><span class="chip green">Confirmed</span></div></div>
+        <div class="allocation-record"><b>Polytechnic Internship 2026</b><span>Sep–Dec Intake</span><div class="record-meta"><span class="chip blue">5 slots</span><span class="chip amber">Pending Review</span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</section>
+
+
+<section class="tab-panel" id="report">
+<div class="panel">
+<div class="panel-head">
+<div class="panel-title">
+<div class="panel-icon">▦</div>
+<div>
+<h2 data-cn="Annual Project Allocation &amp; Offer Report" data-en="Annual Project Allocation &amp; Offer Report">Annual Project Allocation &amp; Offer Report</h2>
+<p class="lead" data-cn="由于不同 HR / IO 可能管理不同 Programme，系统需要一个随时可查看的年度报表。报表需要从 Project submission 状态一路追踪到 IO project approval、system recommendation、Programme / Intake allocation、allocated slots，以及最终 Offer 发放结果。" data-en="Because different HR / IO users may manage different Programmes, the system needs an annual report that can be called out anytime. The report should track each item from Project submission status to IO project approval, system recommendation, Programme / Intake allocation, allocated slots and final offer outcomes.">Because different HR / IO users may manage different Programmes, the system needs an annual report that can be called out anytime. The report should track each item from Project submission status to IO project approval, system recommendation, Programme / Intake allocation, allocated slots and final offer outcomes.</p>
+</div>
+</div>
+<div class="chip-row"><span class="chip blue">Project Submission</span><span class="chip purple">IO Project Approval</span><span class="chip amber">System Recommendation</span><span class="chip green">Offer Outcome</span></div>
+</div>
+<div class="report-mock">
+<aside class="filter-card"><h3 data-cn="Report Filters" data-en="Report Filters">Report Filters</h3><div class="filter-field"><span>Year</span><b>2026</b></div><div class="filter-field"><span>Education Level</span><b>All Levels</b></div><div class="filter-field"><span>Programme Owner</span><b>All HR / IO Owners</b></div><div class="filter-field"><span>Project Status</span><b>Submitted + IO Approved + Allocation Pending + Confirmed</b></div><div class="filter-field"><span>Offer Status</span><b>Issued + Accepted + Remaining</b></div><div class="placeholder-label" style="margin-top:14px"><b data-cn="Prototype Screenshot Placeholder" data-en="Prototype Screenshot Placeholder">Prototype Screenshot Placeholder</b><span data-cn="这里可替换为现有 demo 的 Annual Project Allocation Report 截图。需要体现 Project Submission → IO Project Approval → System Recommendation → Allocation Records → Programme / Intake → Slots → Offers 的链路，并支持同一个 approved Project 出现多条 allocation records。" data-en="Replace this with the existing demo screenshot of the Annual Project Allocation Report. It should show the chain from Project Submission → IO Project Approval → System Recommendation → Allocation Records → Programme / Intake → Slots → Offers, and support one approved Project appearing across multiple allocation records.">Replace this with the existing demo screenshot of the Annual Project Allocation Report. It should show the chain from Project Submission → IO Project Approval → System Recommendation → Allocation Records → Programme / Intake → Slots → Offers, and support one approved Project appearing across multiple allocation records.</span></div></aside>
+<div class="table-card">
+<table>
+<thead><tr><th>Year</th><th>Project Submission / Approved Project</th><th>Approval / Recommendation</th><th>Allocation Record</th><th>Programme / Intake</th><th>IO Allocation Decision</th><th>Allocated Slots</th><th>Offers Issued</th><th>Accepted</th><th>Remaining</th></tr></thead>
+<tbody>
+<tr><td>2026</td><td>Project Alpha Submission<br/><span class="chip purple">PRJ-0261</span></td><td><span class="chip green">IO Approved</span><br/><span class="chip blue">Recommendation Generated</span></td><td>ALLOC-001</td><td>University Internship 2026<br/>May–Aug</td><td><span class="chip green">Confirmed</span></td><td>10</td><td>8</td><td>6</td><td>4</td></tr>
+<tr><td>2026</td><td>Project Alpha Submission<br/><span class="chip purple">PRJ-0261</span></td><td><span class="chip green">IO Approved</span><br/><span class="chip blue">Recommendation Generated</span></td><td>ALLOC-002</td><td>JC / A-Level Internship 2026<br/>May–Aug</td><td><span class="chip green">Confirmed</span></td><td>20</td><td>15</td><td>12</td><td>8</td></tr>
+<tr><td>2026</td><td>Project Alpha Submission<br/><span class="chip purple">PRJ-0261</span></td><td><span class="chip green">IO Approved</span><br/><span class="chip blue">Recommendation Generated</span></td><td>ALLOC-003</td><td>Polytechnic Internship 2026<br/>Sep–Dec</td><td><span class="chip amber">Pending Final Confirmation</span></td><td>5</td><td>0</td><td>0</td><td>5</td></tr>
+<tr><td>2026</td><td>Cybersecurity Intern<br/><span class="chip purple">PRJ-0264</span></td><td><span class="chip green">IO Approved</span><br/><span class="chip blue">Recommendation Generated</span></td><td>ALLOC-004</td><td>University Internship 2026<br/>Sep–Dec</td><td><span class="chip blue">Ready for offer</span></td><td>1</td><td>0</td><td>0</td><td>1</td></tr>
+<tr><td>2026</td><td>Data Ops Intern<br/><span class="chip gray">Pending IO Approval</span></td><td><span class="chip amber">Not Recommended Yet</span></td><td>—</td><td>Polytechnic Internship 2026<br/>Jun–Aug</td><td><span class="chip purple">Approval Required</span></td><td>—</td><td>0</td><td>0</td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="info-grid">
+<div class="mini-card success"><h3 data-cn="Report 目的" data-en="Report Purpose">Report Purpose</h3><ul><li data-cn="跨 Programme / Intake 查看 Project allocation records。" data-en="View Project allocation records across Programmes and Intakes.">View Project allocation records across Programmes and Intakes.</li><li data-cn="确认哪些 AD submission 已被 IO approve、哪些已生成系统推荐、哪些 allocation records 仍待 IO final confirmation。" data-en="Confirm which AD submissions have been approved by IO, which have system recommendations generated, and which allocation records still await IO final confirmation.">Confirm which AD submissions have been approved by IO, which have system recommendations generated, and which allocation records still await IO final confirmation.</li><li data-cn="把 allocated slots 连接到 Offer 发放结果。" data-en="Connect allocated slots to offer issuance outcomes.">Connect allocated slots to offer issuance outcomes.</li></ul><div class="offer-note"><b data-cn="Slot → Offer linkage" data-en="Slot → Offer linkage">Slot → Offer linkage</b><span data-cn="只有进入 Programme / Intake allocation 的 Project 才形成可发 offer 的 slots；offers issued / accepted / remaining 用来判断 intake 是否已填满或仍有容量。" data-en="Only Projects that enter Programme / Intake allocation create offerable slots; offers issued / accepted / remaining show whether the intake is filled or still has capacity.">Only Projects that enter Programme / Intake allocation create offerable slots; offers issued / accepted / remaining show whether the intake is filled or still has capacity.</span></div></div>
+<div class="mini-card warning"><h3 data-cn="需要暴露的异常" data-en="Exceptions to Surface">Exceptions to Surface</h3><ul><li data-cn="AD 已提交 Project，但 IO 尚未 approve，所以系统不应生成 Programme / Intake recommendation。" data-en="AD has submitted the Project, but IO has not approved it yet, so the system should not generate Programme / Intake recommendations.">AD has submitted the Project, but IO has not approved it yet, so the system should not generate Programme / Intake recommendations.</li><li data-cn="Project 已 approve，系统已推荐 Programme / Intake，但 allocation 尚未 final confirm。" data-en="Project has been approved and the system has recommended Programme / Intake, but allocation is not final-confirmed yet.">Project has been approved and the system has recommended Programme / Intake, but allocation is not final-confirmed yet.</li><li data-cn="Project 已 allocated slots，但 offer 尚未发放。" data-en="Project has allocated slots but offers have not been issued.">Project has allocated slots but offers have not been issued.</li></ul></div>
+<div class="mini-card confirm"><h3 data-cn="允许的规则" data-en="Allowed Rule">Allowed Rule</h3><p data-cn="一个 Project Request / Project 允许服务多个 Intake / Education Level，但必须做 capacity 与 timeline validation。" data-en="One Project Request / Project can support multiple Intakes / Education Levels, but capacity and timeline validation is required.">One Project Request / Project can support multiple Intakes / Education Levels, but capacity and timeline validation is required.</p><div class="chip-row" style="margin-top:12px"><span class="chip allowed">Allowed</span><span class="chip capacity">Capacity Check Required</span></div></div>
+</div>
+</div>
+</section>
+</main>
+<div aria-hidden="true" class="drawer-overlay" id="pageDrawerOverlay"></div>
+<aside aria-modal="true" class="page-detail-drawer" id="pageDetailDrawer" role="dialog" aria-labelledby="drawerTitle">
+  <div class="drawer-head">
+    <div class="drawer-head-top">
+      <div>
+        <div class="chip-row" id="drawerChips"></div>
+        <h3 id="drawerTitle">Page detail</h3>
+        <p id="drawerUrl"></p>
+      </div>
+      <button class="drawer-close" id="drawerClose" type="button" aria-label="Close drawer">×</button>
+    </div>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+
+<script>
+const langButtons = document.querySelectorAll('.lang-switch button');
+const translatable = () => document.querySelectorAll('[data-cn][data-en]');
+const backButton = document.getElementById('backButton');
+const infoButton = document.getElementById('infoButton');
+const infoPopover = document.getElementById('lifecyclePopover');
+const drawerOverlay = document.getElementById('pageDrawerOverlay');
+const pageDrawer = document.getElementById('pageDetailDrawer');
+const drawerClose = document.getElementById('drawerClose');
+const drawerTitle = document.getElementById('drawerTitle');
+const drawerUrl = document.getElementById('drawerUrl');
+const drawerChips = document.getElementById('drawerChips');
+
+const protoRange = document.getElementById('protoRange');
+const protoAfterLayer = document.getElementById('protoAfterLayer');
+const protoCompareLine = document.getElementById('protoCompareLine');
+const protoCompareHandle = document.getElementById('protoCompareHandle');
+const protoRangeLabel = document.getElementById('protoRangeLabel');
+function updatePrototypeCompare(value) {
+  if (!protoAfterLayer || !protoCompareLine || !protoCompareHandle) return;
+  const safeValue = Math.max(0, Math.min(100, Number(value) || 50));
+  protoAfterLayer.style.width = safeValue + '%';
+  protoCompareLine.style.left = safeValue + '%';
+  protoCompareHandle.style.left = safeValue + '%';
+  if (protoRangeLabel) protoRangeLabel.textContent = safeValue + '% After';
+}
+if (protoRange) {
+  updatePrototypeCompare(protoRange.value);
+  protoRange.addEventListener('input', (e) => updatePrototypeCompare(e.target.value));
+}
+
+const drawerBody = document.getElementById('drawerBody');
+let currentLang = 'en';
+let activeDrawerKey = null;
+
+const pageDetailContent = {
+  'programmes-list': {
+    title: { en: 'programmes list', cn: 'programmes list' },
+    url: '/programmes',
+    impact: 'Medium',
+    role: 'IO',
+    current: {
+      en: 'Shows Programme records mainly as a list. The page does not yet surface IO-approved Project recommendations at Programme / Intake level.',
+      cn: '当前主要是 Programme 列表，还没有在 Programme / Intake 层级暴露 IO-approved Project recommendations。'
+    },
+    next: {
+      en: 'Add allocation summary indicators so IO can see confirmed slots, pending IO-approved recommendations and capacity risk by Programme / Intake.',
+      cn: '新增 allocation summary，让 IO 在 Programme / Intake 层级看到 confirmed slots、pending IO-approved recommendations 和 capacity risk。'
+    },
+    changes: {
+      en: ['Add Year and Education Level grouping.', 'Add Confirmed Slots and Pending Approved Recommendations columns.', 'Show capacity risk: Available / Over / Unassigned.', 'Row click opens Programme detail allocation context.'],
+      cn: ['新增 Year 和 Education Level 分组。', '新增 Confirmed Slots 和 Pending Approved Recommendations 列。', '显示 capacity risk：Available / Over / Unassigned。', '点击行进入 Programme detail allocation context。']
+    },
+    fields: [['Programme', 'University Internship 2026'], ['Pending Approved Recommendations', '3 records'], ['Confirmed Slots', '30 / 45'], ['Capacity Risk', 'Available']]
+  },
+  'programmes-new-step1': {
+    title: { en: 'programmes creation - Step 1', cn: 'programmes creation - Step 1' },
+    url: '/programmes/new',
+    impact: 'Medium',
+    role: 'IO',
+    current: {
+      en: 'Programme creation needs to be aligned with the Education Level + Year model.',
+      cn: 'Programme creation 需要和 Education Level + Year 的模型对齐。'
+    },
+    next: {
+      en: 'Keep Programme setup as Education Level + Year. Add matching rule inputs for later system recommendation.',
+      cn: 'Programme setup 保持 Education Level + Year，同时补充后续系统推荐需要的 matching rule inputs。'
+    },
+    changes: {
+      en: ['Use Education Level as Programme driver.', 'Auto-generate Programme Name from Education Level + Year.', 'Add recommendation eligibility / matching rule section.', 'Do not select Projects here.'],
+      cn: ['以 Education Level 作为 Programme driver。', '根据 Education Level + Year 自动生成 Programme Name。', '新增 recommendation eligibility / matching rule 区域。', '这里不选择 Project。']
+    },
+    fields: [['Programme Year', '2026'], ['Education Level', 'University'], ['Programme Name', 'University Internship 2026'], ['Allocation Rule', 'Open for system suggestions']]
+  },
+  'intake-setup': {
+    title: { en: 'Step 4 - Attach Projects', cn: 'Step 4 - Attach Projects' },
+    url: '/programmes/new',
+    impact: 'High',
+    role: 'IO',
+    current: {
+      en: 'Before: Step 4 only attaches approved projects to the Education Level programme, without assigning them into specific intake windows.',
+      cn: 'Before：Step 4 只把 approved projects attach 到 Education Level programme，尚未分配到具体 intake windows。'
+    },
+    next: {
+      en: 'After: Step 4 becomes an intake assignment workbench. IO can see intake windows, project attention state, and manage assignment into one or more intakes.',
+      cn: 'After：Step 4 变成 intake assignment workbench。IO 可以看到 intake windows、project attention 状态，并管理项目分配到一个或多个 intake。'
+    },
+    changes: {
+      en: ['Rename drawer context to Step 4 - Attach Projects.', 'Before state shows simple approved project attachment.', 'After state shows intake overview and assignment queue.', 'Highlight projects that need intake assignment.'],
+      cn: ['drawer context 改名为 Step 4 - Attach Projects。', 'Before 状态展示简单 approved project attachment。', 'After 状态展示 intake overview 与 assignment queue。', '高亮需要 intake assignment 的项目。']
+    },
+    fields: [['Education Level Pool', 'Junior College'], ['Approved Project', 'Intro to Cyber Defence Lab'], ['Before Assignment', '0 selected'], ['After State', 'Needs assignment / Manage']]
+  },
+  'programme-detail': {
+    title: { en: 'programmes detail', cn: 'programmes detail' },
+    url: '/programmes/PROG-0007',
+    impact: 'Critical',
+    role: 'IO',
+    current: {
+      en: 'Programme detail mainly shows Programme context. It does not fully operate as an Intake-level allocation workbench.',
+      cn: '当前 Programme detail 主要展示 Programme context，还不是完整的 Intake-level allocation workbench。'
+    },
+    next: {
+      en: 'Turn Programme detail into an Intake allocation workbench showing IO-approved Project recommendations and confirmed allocation records.',
+      cn: '将 Programme detail 改成 Intake allocation workbench，展示 IO-approved Project recommendations 和 confirmed allocation records。'
+    },
+    changes: {
+      en: ['Add Intake cards with capacity usage.', 'Show pending recommendations only for IO-approved Projects.', 'Show confirmed Project allocations.', 'Add capacity warning when recommended slots exceed capacity.'],
+      cn: ['新增 Intake cards 展示 capacity usage。', '只展示 IO-approved Projects 的 pending recommendations。', '展示 confirmed Project allocations。', '当 recommended slots 超过 capacity 时显示 warning。']
+    },
+    fields: [['Approved Project', 'PROJ-0008 · AI Research Intern'], ['Intake', 'May–Aug'], ['Recommended Slots', '10'], ['Status', 'Pending Final Allocation Confirmation']]
+  },
+  'request-list': {
+    title: { en: 'Project request list', cn: 'Project request list' },
+    url: '/requests',
+    impact: 'Critical',
+    role: 'IO',
+    current: {
+      en: 'The list is request-centric and does not separate AD submission, IO project approval, system recommendation and final allocation confirmation.',
+      cn: '当前列表偏 request-centric，没有区分 AD submission、IO project approval、system recommendation 和 final allocation confirmation。'
+    },
+    next: {
+      en: 'Show Project Approval Status and Recommendation Status. The key status path becomes Submitted → Pending IO Project Approval → Approved → Recommendation Generated → Allocation Pending / Confirmed.',
+      cn: '显示 Project Approval Status 和 Recommendation Status。核心状态链路变为 Submitted → Pending IO Project Approval → Approved → Recommendation Generated → Allocation Pending / Confirmed。'
+    },
+    changes: {
+      en: ['Add Project Approval Status column.', 'Add Recommendation Status column.', 'Only show Review Allocation after IO approval and system recommendation.', 'Primary action before approval is Review / Approve Project.'],
+      cn: ['新增 Project Approval Status 列。', '新增 Recommendation Status 列。', '只有 IO approve 且 system recommendation 后才显示 Review Allocation。', 'approval 前主操作是 Review / Approve Project。']
+    },
+    fields: [['Submission ID', 'SUB-0003'], ['Project Approval Status', 'Pending IO Approval / Approved'], ['Recommendation Status', 'Not Recommended / Generated'], ['Allocation Status', 'Pending Final Confirmation']]
+  },
+  'request-creation': {
+    title: { en: 'Project request creation', cn: 'Project request creation' },
+    url: '/requests/new',
+    impact: 'Medium',
+    role: 'IO',
+    current: {
+      en: 'IO initiates a request, but the page needs clearer separation from Project creation.',
+      cn: 'IO 发起 request，但页面需要和 Project creation 明确区分。'
+    },
+    next: {
+      en: 'Keep this page as IO request initiation only. It does not approve the Project and does not trigger Programme recommendation.',
+      cn: '这个页面保持为 IO request initiation。它不 approve Project，也不触发 Programme recommendation。'
+    },
+    changes: {
+      en: ['CTA should be Send request to AD P&C.', 'Add target Education Level and expected intake window.', 'Add expected slots and notes to AD / Mentor.', 'Avoid wording such as Create Project.'],
+      cn: ['CTA 改为 Send request to AD P&C。', '新增 target Education Level 和 expected intake window。', '新增 expected slots 和 notes to AD / Mentor。', '避免使用 Create Project 文案。']
+    },
+    fields: [['Request Title', 'AI Research Internship Request'], ['Target Education Level', 'University / JC'], ['Expected Intake Window', 'May–Aug'], ['AD P&C Owner', 'Ng Shu Qi']]
+  },
+  'request-review': {
+    title: { en: 'Project approval → Recommended Allocation Review', cn: 'Project approval → Recommended Allocation Review' },
+    url: '/requests/project/batch-001/SUB-0003',
+    impact: 'Critical',
+    role: 'IO',
+    current: {
+      en: 'Current logic needs to distinguish two IO actions: approving the AD-submitted Project, then final-confirming the Programme / Intake allocation after system recommendation.',
+      cn: '当前逻辑需要区分 IO 的两个动作：先 approve AD 提交的 Project，再在系统推荐后 final-confirm Programme / Intake allocation。'
+    },
+    next: {
+      en: 'New logic: IO first approves the submitted Project. After approval, the system generates recommended Programme + Intake allocation records for IO final confirmation or amendment.',
+      cn: '新逻辑：IO 先 approve submitted Project。approval 后，系统生成 Programme + Intake allocation records 建议，再由 IO final confirm 或修改。'
+    },
+    changes: {
+      en: ['Split the page into Project Approval and Recommended Allocation sections.', 'Before approval, primary action is Approve Project / Request Amendment.', 'After approval, show System Recommended Allocation Records table.', 'Allocation actions: Confirm / Change Programme / Change Intake / Adjust slots / Reject.', 'Make clear that recommendation is triggered only after Project approval.'],
+      cn: ['页面拆成 Project Approval 和 Recommended Allocation 两段。', 'approval 前主操作是 Approve Project / Request Amendment。', 'approval 后显示 System Recommended Allocation Records table。', 'Allocation 操作包括 Confirm / Change Programme / Change Intake / Adjust slots / Reject。', '明确 recommendation 只在 Project approval 后触发。']
+    },
+    fields: [['Project Approval', 'Pending / Approved'], ['Recommended Programme', 'University Internship 2026'], ['Recommended Intake', 'May–Aug'], ['IO Allocation Action', 'Confirm / Amend / Reject']]
+  },
+  'project-detail': {
+    title: { en: 'Project detail', cn: 'Project detail' },
+    url: '/projects/PROJ-0008',
+    impact: 'Critical',
+    role: 'IO',
+    current: {
+      en: 'Project detail may be treated as final allocation, but project approval and allocation confirmation are separate statuses.',
+      cn: '当前 Project detail 容易被理解成最终 allocation，但 project approval 和 allocation confirmation 是两个不同状态。'
+    },
+    next: {
+      en: 'Show Project approval status first, then recommendation status, then allocation status. Allocation remains pending until IO final-confirms or modifies Programme + Intake records.',
+      cn: '先展示 Project approval status，再展示 recommendation status，最后展示 allocation status。Allocation 仍 pending，直到 IO final-confirm 或修改 Programme + Intake records。'
+    },
+    changes: {
+      en: ['Add Project Approval Status: Submitted / Pending IO Approval / Approved / Amendment Required.', 'Show Recommendation Status: Not Recommended / Generated.', 'Show suggested and confirmed allocation records.', 'Allow IO to edit Programme, Intake and slots before final allocation confirmation.'],
+      cn: ['新增 Project Approval Status：Submitted / Pending IO Approval / Approved / Amendment Required。', '展示 Recommendation Status：Not Recommended / Generated。', '展示 suggested 和 confirmed allocation records。', 'IO 在 final allocation confirmation 前可以编辑 Programme、Intake 和 slots。']
+    },
+    fields: [['Project ID', 'PROJ-0008'], ['Project Approval Status', 'Approved'], ['Recommendation Status', 'Generated'], ['Allocation Status', 'Suggested / IO Modified / Confirmed']]
+  },
+  'upload-projects': {
+    title: { en: 'AD(P&C) Submit Project', cn: 'AD(P&C) Submit Project' },
+    url: '/submissions/upload',
+    impact: 'Critical',
+    role: 'AD(P&C)',
+    current: {
+      en: 'Upload may be understood as immediately creating a Project and recommendation. It should instead be treated as AD Project submission awaiting IO approval.',
+      cn: '当前 Upload 容易被理解成直接创建 Project 并生成 recommendation。这里应改成 AD Project submission，等待 IO approval。'
+    },
+    next: {
+      en: 'In Solution 1, AD submits the Project for IO approval. AD does not manually select Programme + Intake, and the system does not generate recommendations until IO approves the submitted Project.',
+      cn: '在 Solution 1 中，AD 提交 Project 给 IO approval。AD 不手动选择 Programme + Intake；系统也不在 IO approve 前生成 recommendation。'
+    },
+    changes: {
+      en: ['Show success result: Project Submitted.', 'Show submission ID / provisional Project ID if available.', 'Show status: Pending IO Project Approval.', 'Do not add manual Programme + Intake selection here for Solution 1.', 'Next step: IO approves Project, then system generates recommendations.'],
+      cn: ['成功结果显示 Project Submitted。', '显示 submission ID / provisional Project ID（如有）。', '显示状态：Pending IO Project Approval。', 'Solution 1 不在这里增加手动 Programme + Intake 选择。', '下一步是 IO approve Project 后，系统生成 recommendations。']
+    },
+    fields: [['Upload Result', 'Project Submitted'], ['Submission ID', 'SUB-0003'], ['Approval Status', 'Pending IO Project Approval'], ['Next Step', 'IO approve Project → System recommendation']]
+  }
+};
+
+function setLang(lang) {
+  currentLang = lang;
+  document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN';
+  langButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.lang === lang));
+  translatable().forEach(el => {
+    const value = lang === 'en' ? el.dataset.en : el.dataset.cn;
+    if (value && value.includes('<')) el.innerHTML = value;
+    else el.textContent = value || '';
+  });
+  if (activeDrawerKey) renderDrawer(activeDrawerKey);
+}
+
+function escapeText(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+function renderDrawer(key) {
+  const detail = pageDetailContent[key];
+  if (!detail) return;
+  const lang = currentLang === 'en' ? 'en' : 'cn';
+  drawerTitle.textContent = detail.title[lang];
+  drawerUrl.textContent = detail.url;
+  drawerChips.innerHTML = `<span class="chip dark">${escapeText(detail.role)}</span><span class="chip ${detail.impact === 'Critical' ? 'red' : detail.impact === 'High' ? 'amber' : 'blue'}">${escapeText(detail.impact)}</span><span class="chip green">Solution 1</span>`;
+  if (key === 'intake-setup') {
+    renderIntakeSetupDrawer(detail, lang);
+    return;
+  }
+  const beforeTitle = lang === 'en' ? 'Before placeholder' : 'Before 占位';
+  const afterTitle = lang === 'en' ? 'After placeholder' : 'After 占位';
+  const beforeDesc = lang === 'en'
+    ? 'Place the current TOA screen capture here. This side represents the existing page before the IO-approved allocation update.'
+    : '这里放当前 TOA 页面截图。左侧表示 IO-approved allocation 更新前的现有页面。';
+  const afterDesc = lang === 'en'
+    ? 'Place the updated reference here. This side should show Pending IO Project Approval, Approved Project, System Recommendation, and IO-confirmed Programme / Intake / slots.'
+    : '这里放更新后的参考图。右侧需要体现 Pending IO Project Approval、Approved Project、System Recommendation，以及 IO 确认 Programme / Intake / slots。';
+  const footer1 = lang === 'en' ? 'Current screen' : '当前页面';
+  const footer2 = lang === 'en' ? 'Update reference' : '更新参考';
+  const footer3 = lang === 'en' ? 'Review focus' : '评审重点';
+  drawerBody.innerHTML = `
+    <section class="drawer-before-after-placeholder">
+      <div class="drawer-ba-head">
+        <div>
+          <h4>${lang === 'en' ? 'Before / After screen placeholder' : 'Before / After 页面占位'}</h4>
+          <p>${lang === 'en' ? 'Use this enlarged drawer area to compare the existing page with the Solution 1 update reference.' : '使用放大的侧边栏区域，对比现有页面与 Solution 1 更新参考。'}</p>
+        </div>
+        <span class="chip amber">Placeholder</span>
+      </div>
+      <div class="drawer-ba-grid">
+        <article class="ba-placeholder-card before">
+          <div class="ba-placeholder-head"><b>${beforeTitle}</b><span class="chip gray">${escapeText(detail.url)}</span></div>
+          <div class="ba-screen" aria-label="Before placeholder">
+            <div class="ba-screen-inner">
+              <div class="ba-browser-bar"></div>
+              <div class="ba-skeleton-title"></div>
+              <div class="ba-skeleton-line"></div>
+              <div class="ba-skeleton-line short"></div>
+              <div class="ba-skeleton-grid"><div class="ba-skeleton-card"></div><div class="ba-skeleton-card"></div></div>
+            </div>
+          </div>
+          <div class="ba-placeholder-note"><b>${footer1}</b>${beforeDesc}</div>
+        </article>
+        <article class="ba-placeholder-card after">
+          <div class="ba-placeholder-head"><b>${afterTitle}</b><span class="chip blue">IO-confirmed Allocation</span></div>
+          <div class="ba-screen" aria-label="After placeholder">
+            <div class="ba-screen-inner">
+              <div class="ba-browser-bar"></div>
+              <div class="ba-skeleton-title"></div>
+              <div class="ba-skeleton-line"></div>
+              <div class="ba-skeleton-line short"></div>
+              <div class="ba-skeleton-grid"><div class="ba-skeleton-card"></div><div class="ba-skeleton-card"></div></div>
+            </div>
+          </div>
+          <div class="ba-placeholder-note"><b>${footer2}</b>${afterDesc}</div>
+        </article>
+      </div>
+      <div class="drawer-ba-footer">
+        <div class="blueprint-summary-card"><b>${footer1}</b><span>${escapeText(detail.title[lang])}</span></div>
+        <div class="blueprint-summary-card"><b>${footer2}</b><span>AD Submission → IO Project Approval → System Recommendation → IO Final Confirmation</span></div>
+        <div class="blueprint-summary-card"><b>${footer3}</b><span>${lang === 'en' ? 'Project approval and allocation confirmation should be shown as two separate IO decisions.' : 'Project approval 与 allocation confirmation 需要展示为两个独立的 IO 决策。'}</span></div>
+      </div>
+    </section>
+  `;
+}
+
+function renderIntakeSetupDrawer(detail, lang) {
+  const beforeDesc = lang === 'en'
+    ? 'Current screen: approved projects can be attached to the Education Level programme, but the UI does not yet show intake-window assignment.'
+    : '当前页面：approved projects 可以 attach 到 Education Level programme，但还没有展示 intake-window assignment。';
+  const afterDesc = lang === 'en'
+    ? 'Update reference: Step 4 shows intake windows, assigned counts, projects needing attention, and a Manage action for intake assignment.'
+    : '更新参考：Step 4 展示 intake windows、assigned counts、need attention 项目，以及用于 intake assignment 的 Manage 操作。';
+  drawerBody.innerHTML = `
+    <section class="drawer-before-after-placeholder is-step4">
+      <div class="drawer-ba-head">
+        <div>
+          <h4>${lang === 'en' ? 'Step 4 - Attach Projects' : 'Step 4 - Attach Projects'}</h4>
+          <p>${lang === 'en' ? 'Compare the current attach-only screen with the proposed intake-assignment version.' : '对比当前 attach-only 页面与新的 intake-assignment 版本。'}</p>
+        </div>
+        <span class="chip amber">Before / After</span>
+      </div>
+      <div class="drawer-ba-grid">
+        <article class="ba-placeholder-card before">
+          <div class="ba-placeholder-head"><b>${lang === 'en' ? 'Before' : 'Before'}</b><span class="chip gray">/programmes/new</span></div>
+          <div class="ba-screen toa-capture" aria-label="Before Step 4 Attach Projects screen">
+            <div class="toa-mini-app">
+              <aside class="toa-mini-sidebar"><div class="toa-mini-logo"></div><div class="toa-mini-nav"></div><div class="toa-mini-nav active"></div><div class="toa-mini-nav"></div><div class="toa-mini-nav"></div></aside>
+              <main class="toa-mini-main">
+                <div class="toa-mini-top"><b class="toa-mini-brand">Talent Outreach & Acquisition</b><div class="toa-mini-search"></div></div>
+                <div class="toa-mini-content">
+                  <div class="toa-mini-crumb">Programmes › Create Programme</div>
+                  <div class="toa-mini-steps">
+                    <div class="toa-mini-step done"><i>✓</i>Programme Details</div>
+                    <div class="toa-mini-step done"><i>✓</i>Window & Capacity</div>
+                    <div class="toa-mini-step done"><i>✓</i>Eligibility Criteria</div>
+                    <div class="toa-mini-step active"><i>4</i>Attach Projects</div>
+                    <div class="toa-mini-step"><i>5</i>Review</div>
+                  </div>
+                  <section class="toa-mini-panel">
+                    <div class="toa-mini-panel-head"><h5>Attach Projects</h5><p>Attach approved projects of this Education Level. You can also attach projects later from the programme page.</p></div>
+                    <div class="toa-mini-alert">Attach approved projects of Education Level <b>Junior College</b> to this programme. Attaching is optional.</div>
+                    <div class="toa-mini-list-title">Approved Projects · Junior College · 0 selected</div>
+                    <div class="toa-mini-project-row"><div class="toa-mini-checkbox"></div><div><b>Intro to Cyber Defence Lab</b><span>Marcus Tan · Cyber · 2 slots · Cybersecurity</span></div></div>
+                  </section>
+                  <div class="toa-mini-bottom"><span>‹ Back</span><span><b class="toa-mini-button secondary">Save as Draft</b> <b class="toa-mini-button">Skip →</b></span></div>
+                </div>
+              </main>
+            </div>
+          </div>
+          <div class="ba-placeholder-note"><b>${lang === 'en' ? 'Current screen' : '当前页面'}</b>${beforeDesc}</div>
+        </article>
+        <article class="ba-placeholder-card after">
+          <div class="ba-placeholder-head"><b>${lang === 'en' ? 'After' : 'After'}</b><span class="chip blue">Intake Assignment</span></div>
+          <div class="ba-screen image-capture" aria-label="After Step 4 Attach Projects screen">
+            <img src="assets/step-4-attach-projects-after.png" alt="After update reference for Step 4 Attach Projects showing intake overview and project assignment workbench" />
+          </div>
+          <div class="ba-placeholder-note"><b>${lang === 'en' ? 'Update reference' : '更新参考'}</b>${afterDesc}</div>
+        </article>
+      </div>
+      <div class="drawer-ba-footer">
+        <div class="blueprint-summary-card"><b>${lang === 'en' ? 'Current screen' : '当前页面'}</b><span>Attach approved projects to the Education Level programme.</span></div>
+        <div class="blueprint-summary-card"><b>${lang === 'en' ? 'Update reference' : '更新参考'}</b><span>Attach Projects becomes an intake-assignment workbench.</span></div>
+        <div class="blueprint-summary-card"><b>${lang === 'en' ? 'Review focus' : '评审重点'}</b><span>${lang === 'en' ? 'Step 4 should separate project attachment from intake assignment and show attention states.' : 'Step 4 需要区分 project attachment 与 intake assignment，并显示 attention state。'}</span></div>
+      </div>
+    </section>
+  `;
+}
+
+function openDrawer(key) {
+  if (!pageDetailContent[key]) return;
+  activeDrawerKey = key;
+  renderDrawer(key);
+  drawerOverlay?.classList.add('open');
+  pageDrawer?.classList.add('open');
+  pageDrawer?.classList.toggle('expanded', key === 'intake-setup');
+  pageDrawer?.removeAttribute('aria-hidden');
+  document.body.style.overflow = 'hidden';
+  document.querySelectorAll('.page-review-row').forEach(row => row.classList.toggle('drawer-row-active', row.dataset.pageDetail === key));
+}
+
+function closeDrawer() {
+  drawerOverlay?.classList.remove('open');
+  pageDrawer?.classList.remove('open');
+  pageDrawer?.classList.remove('expanded');
+  pageDrawer?.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+  activeDrawerKey = null;
+  document.querySelectorAll('.page-review-row').forEach(row => row.classList.remove('drawer-row-active'));
+}
+
+langButtons.forEach(btn => btn.addEventListener('click', () => setLang(btn.dataset.lang)));
+backButton?.addEventListener('click', () => {
+  if (window.history.length > 1) window.history.back();
+});
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.toggle('active', panel.id === target));
+  });
+});
+
+document.querySelectorAll('.view-detail-btn').forEach(button => {
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    openDrawer(button.dataset.pageDetail);
+  });
+});
+
+document.querySelectorAll('.page-review-row').forEach(row => {
+  row.addEventListener('click', event => {
+    if (event.target.closest('a')) return;
+    openDrawer(row.dataset.pageDetail);
+  });
+});
+
+drawerClose?.addEventListener('click', closeDrawer);
+drawerOverlay?.addEventListener('click', closeDrawer);
+
+infoButton?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  infoPopover?.classList.toggle('open');
+});
+document.addEventListener('click', (e) => {
+  if (!infoPopover || !infoButton) return;
+  if (!infoPopover.contains(e.target) && !infoButton.contains(e.target)) infoPopover.classList.remove('open');
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    infoPopover?.classList.remove('open');
+    closeDrawer();
+  }
+});
+setLang('en');
+</script>
+</body>
+</html>

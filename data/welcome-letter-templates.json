@@ -1,0 +1,16 @@
+[
+  {
+    "id": "WL-001",
+    "name": "Standard Welcome Letter",
+    "trigger": "Offer Accepted",
+    "body": "Dear {{first_name}},\n\nWelcome to DSTA! We are delighted to have you join us as an intern and look forward to a rewarding experience together.\n\nYour internship is scheduled to commence on {{start_date}} and conclude on {{end_date}}. Please report to DSTA Main Building (71 Science Park Drive, Singapore 118253) at 8:30 AM on your first day. You will be greeted by your assigned coordinator at the main reception.\n\nYour Project\n\n  Programme   :  {{programme_name}}\n  Project     :  {{project_title}}\n  Supervisor  :  {{supervisor_name}}\n\nPlease bring along the following on your first day:\n\n  • Original NRIC / Passport for verification\n  • Student pass (if applicable)\n  • Your most recent academic transcript or letter of enrolment\n\nYour supervisor and team are excited to work with you. Should you have any questions before your start date, please do not hesitate to reach out to us at internship@dsta.gov.sg.\n\nWe look forward to welcoming you on board!\n\nWarm regards,\nInternship Office\nDefence Science and Technology Agency (DSTA)\n71 Science Park Drive, Singapore 118253\ninternship@dsta.gov.sg",
+    "updatedAt": "2026-05-31"
+  },
+  {
+    "id": "WL-002",
+    "name": "Credit-Bearing Welcome Letter",
+    "trigger": "Offer Accepted",
+    "body": "Dear {{first_name}},\n\nWelcome to DSTA! We are pleased to confirm your internship commencement and look forward to a rewarding and enriching experience together.\n\nYour internship is scheduled to commence on {{start_date}} and conclude on {{end_date}}. Please report to DSTA Main Building (71 Science Park Drive, Singapore 118253) at 8:30 AM on your first day.\n\nYour Project\n\n  Programme   :  {{programme_name}}\n  Project     :  {{project_title}}\n  Supervisor  :  {{supervisor_name}}\n\nAs this is a credit-bearing internship, please note the following:\n\n  • You are responsible for fulfilling all academic requirements stipulated by {{school}} for the award of credit.\n  • Please ensure your school's Industrial Attachment (IA) approval documentation is submitted to your programme coordinator prior to commencement.\n  • Any academic reports, timesheets, or assessments required by {{school}} remain your responsibility to complete and submit on time.\n\nPlease bring along the following on your first day:\n\n  • Original NRIC / Passport for verification\n  • Student pass (if applicable)\n  • Letter of authorisation / IA approval from {{school}}\n  • Your most recent academic transcript or letter of enrolment\n\nShould you have any questions before your start date, please do not hesitate to reach out to us at internship@dsta.gov.sg.\n\nWe look forward to welcoming you on board!\n\nWarm regards,\nInternship Office\nDefence Science and Technology Agency (DSTA)\n71 Science Park Drive, Singapore 118253\ninternship@dsta.gov.sg",
+    "updatedAt": "2026-05-31"
+  }
+]

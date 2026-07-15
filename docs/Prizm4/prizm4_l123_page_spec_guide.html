@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en" data-zone="enterprise" data-mode="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PRIZM 4 · TOA Page-level L1/L2/L3 Guide</title>
+  <style>
+    :root {
+      --bg:#f7f8fb; --surface:#ffffff; --surface-elevated:#ffffff; --border:#d9dee8;
+      --fg:#111827; --muted:#667085; --subtle:#8a94a6; --accent:#1d4ed8;
+      --success:#16803c; --success-bg:#e8f7ee; --warning:#b76b00; --warning-bg:#fff4da;
+      --danger:#c62828; --danger-bg:#ffebee; --info:#0369a1; --info-bg:#e8f4ff;
+      --radius:14px; --shadow:0 16px 40px rgba(16,24,40,.08);
+      --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);line-height:1.55;font-size:14px}
+    a{color:inherit}
+    .shell{min-height:100vh;display:grid;grid-template-columns:292px minmax(0,1fr)}
+    aside{position:sticky;top:0;height:100vh;border-right:1px solid var(--border);background:rgba(255,255,255,.82);backdrop-filter:blur(10px);padding:22px;overflow:auto}
+    main{padding:36px 48px 80px;max-width:1260px}
+    .brand{font-size:12px;font-weight:750;letter-spacing:.08em;color:var(--accent);text-transform:uppercase}
+    .title{font-size:24px;line-height:1.18;margin:8px 0 10px;font-weight:760;letter-spacing:-.03em}
+    .subtitle{color:var(--muted);font-size:13px;margin-bottom:20px}
+    .toggle{display:flex;gap:6px;background:#eef2f7;border:1px solid var(--border);border-radius:999px;padding:4px;margin:18px 0}
+    .toggle button{border:0;background:transparent;border-radius:999px;padding:7px 12px;color:var(--muted);font-weight:650;cursor:pointer}
+    .toggle button.active{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(16,24,40,.08)}
+    nav a{display:block;text-decoration:none;color:var(--muted);padding:9px 10px;border-radius:9px;font-size:13px}
+    nav a:hover{background:#eef2f7;color:var(--fg)}
+    .nav-group{margin:14px 0 6px;padding:0 10px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--subtle)}
+    .nav-child{padding-left:22px}
+    .hero{background:linear-gradient(135deg,#fff 0%,#f5f9ff 100%);border:1px solid var(--border);border-radius:22px;padding:28px;box-shadow:var(--shadow);margin-bottom:22px}
+    .hero h1{font-size:32px;line-height:1.15;margin:8px 0 10px;letter-spacing:-.04em}
+    .hero p{color:var(--muted);max-width:86ch}
+    .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+    .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:5px 10px;font-size:12px;color:var(--muted)}
+    .pill.ok{background:var(--success-bg);border-color:#bfe8cc;color:var(--success)}
+    .pill.bad{background:var(--danger-bg);border-color:#ffc9c9;color:var(--danger)}
+    .pill.warn{background:var(--warning-bg);border-color:#ffd98c;color:var(--warning)}
+    .pill.info{background:var(--info-bg);border-color:#bfdbfe;color:var(--info)}
+    section{margin:24px 0}
+    .section-title{display:flex;align-items:center;gap:10px;font-size:20px;margin:0 0 12px;letter-spacing:-.02em}
+    .section-subtitle{margin:-4px 0 14px;color:var(--muted);max-width:92ch}
+    .icon{min-width:26px;height:26px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;padding:0 7px;font-size:12px}
+    .icon.info{background:var(--info-bg);color:var(--info)}
+    .icon.bad{background:var(--danger-bg);color:var(--danger)}
+    .icon.warn{background:var(--warning-bg);color:var(--warning)}
+    .icon.ok{background:var(--success-bg);color:var(--success)}
+    .grid{display:grid;gap:14px}
+    .grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:0 8px 24px rgba(16,24,40,.04)}
+    .card h3{font-size:15px;margin:0 0 8px}
+    .card p{margin:0;color:var(--muted)}
+    table{width:100%;border-collapse:separate;border-spacing:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:0 8px 24px rgba(16,24,40,.04)}
+    th,td{padding:12px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--border)}
+    th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:#f2f5f9}
+    tr:last-child td{border-bottom:0}
+    td:first-child{font-weight:650}
+    code{font-family:var(--mono);font-size:12px;background:#f3f5f8;border:1px solid #e0e5ee;border-radius:6px;padding:1px 5px}
+    .status{font-weight:750}
+    .status.bad{color:var(--danger)}
+    .status.warn{color:var(--warning)}
+    .status.ok{color:var(--success)}
+    .status.info{color:var(--info)}
+    .callout{border:1px solid #bfdbfe;background:#eff6ff;border-radius:var(--radius);padding:16px;color:#1e3a8a}
+    .callout strong{color:#1e40af}
+    .list{margin:0;padding-left:18px;color:var(--muted)}
+    .list li{margin:7px 0}
+    .codeblock{white-space:pre-wrap;background:#111827;color:#e5e7eb;border-radius:14px;padding:16px;overflow:auto;font-family:var(--mono);font-size:12px;line-height:1.6}
+    .footer{margin-top:42px;padding-top:18px;border-top:1px solid var(--border);color:var(--subtle);font-size:12px}
+    .diagram{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px}
+    .level-card{position:relative;padding:18px;border-radius:16px;border:1px solid var(--border);background:var(--surface)}
+    .level-card:after{content:"";position:absolute;right:-14px;top:50%;width:14px;height:1px;background:var(--border)}
+    .level-card:last-child:after{display:none}
+    .level-kicker{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:750}
+    .level-card h3{font-size:18px;margin:6px 0 8px}
+    [data-lang-panel="zh"]{display:none}
+    body.zh [data-lang-panel="en"]{display:none}
+    body.zh [data-lang-panel="zh"]{display:block}
+    body.zh [data-i18n="en"]{display:none}
+    body:not(.zh) [data-i18n="zh"]{display:none}
+    @media(max-width:960px){
+      .shell{display:block}
+      aside{position:relative;height:auto}
+      .grid.cols-3,.grid.cols-2,.diagram{grid-template-columns:1fr}
+      .level-card:after{display:none}
+      main{padding:24px 18px 60px}
+      .hero h1{font-size:26px}
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="brand">PRIZM 4 · TOA Rules</div>
+    <div class="title" data-i18n="en">Page-level L1/L2/L3 Guide</div>
+    <div class="title" data-i18n="zh">页面级 L1/L2/L3 指南</div>
+    <p class="subtitle" data-i18n="en">Default English view. L1/L2/L3 means page hierarchy: Dashboard, List Page, and Task Pages.</p>
+    <p class="subtitle" data-i18n="zh">默认英文显示。L1/L2/L3 表示页面层级：Dashboard、List Page、Task Pages。</p>
+    <div class="toggle">
+      <button id="enBtn" class="active">English</button>
+      <button id="zhBtn">中文</button>
+    </div>
+    <nav data-i18n="en">
+      <a href="#verdict-en">Overview</a>
+      <a href="#levels-en">Page Level Map</a>
+      <div class="nav-group">L1 · Foundation</div>
+      <a class="nav-child" href="#card-en">Card Primitive</a>
+      <div class="nav-group">L2 · Page Patterns</div>
+      <a class="nav-child" href="#l2-en">List Page Framework</a>
+      <a class="nav-child" href="#detail-typography-en">Detail Typography</a>
+      <div class="nav-group">L3 · Page Decisions</div>
+      <a class="nav-child" href="#new-page-en">Programme Create Scan</a>
+      <a class="nav-child" href="#programme-detail-en">Programme Detail</a>
+      <div class="nav-group">Governance</div>
+      <a class="nav-child" href="#unpublished-en">Unpublished Components</a>
+      <a class="nav-child" href="#md-en">MD Snippets</a>
+      <a class="nav-child" href="#checklist-en">Implementation Checklist</a>
+    </nav>
+    <nav data-i18n="zh">
+      <a href="#verdict-zh">总览</a>
+      <a href="#levels-zh">页面层级地图</a>
+      <div class="nav-group">L1 · 基础规则</div>
+      <a class="nav-child" href="#card-zh">Card Primitive</a>
+      <div class="nav-group">L2 · 页面模式</div>
+      <a class="nav-child" href="#l2-zh">List Page 框架</a>
+      <a class="nav-child" href="#detail-typography-zh">详情页字体层级</a>
+      <div class="nav-group">L3 · 页面决策</div>
+      <a class="nav-child" href="#new-page-zh">Programme 创建扫描</a>
+      <a class="nav-child" href="#programme-detail-zh">Programme Detail</a>
+      <div class="nav-group">治理规则</div>
+      <a class="nav-child" href="#unpublished-zh">未发布组件</a>
+      <a class="nav-child" href="#md-zh">MD 片段</a>
+      <a class="nav-child" href="#checklist-zh">实施检查清单</a>
+    </nav>
+  </aside>
+
+  <main data-lang-panel="en">
+    <div class="hero" id="verdict-en">
+      <span class="pill ok">Updated · English default</span>
+      <h1>PRIZM 4 · TOA Page-level Rules</h1>
+      <p><strong>Updated interpretation:</strong> L1/L2/L3 are not compliance layers. They are TOA page levels. L1 is Dashboard, L2 is List Page, and L3 is Create / Modify / Review / Detail. Official PRIZM requirements remain global constraints across all three levels.</p>
+      <div class="meta">
+        <span class="pill info">L1 = Dashboard</span>
+        <span class="pill info">L2 = List Page</span>
+        <span class="pill info">L3 = Create / Modify / Review / Detail</span>
+        <span class="pill warn">/programmes/new belongs to L3, with L2 handoff rules</span>
+      </div>
+    </div>
+
+    <section id="levels-en">
+      <h2 class="section-title"><span class="icon ok">M</span> Page Level Map</h2>
+      <p class="section-subtitle">Global PRIZM rules such as stable components, semantic tokens, no raw colours, no Enterprise glass, and air-gap discipline apply across every level. The L1/L2/L3 names below describe page types and workflow depth.</p>
+      <div class="diagram">
+        <div class="level-card">
+          <div class="level-kicker">L1</div>
+          <h3>Dashboard</h3>
+          <p>Landing and overview surfaces. Prioritise summary metrics, action alerts, workstream context, and navigation into L2 lists.</p>
+        </div>
+        <div class="level-card">
+          <div class="level-kicker">L2</div>
+          <h3>List Page</h3>
+          <p>Operational list surfaces such as Programmes, Projects, Requests, and Applications. Includes toolbar, filters, table/card list, pagination, and entry points into L3 tasks.</p>
+        </div>
+        <div class="level-card">
+          <div class="level-kicker">L3</div>
+          <h3>Create / Modify / Review / Detail</h3>
+          <p>Task-focused pages and existing-object details. Includes multi-step creation, edit flows, review/confirm screens, detail pages, and related-record panels.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="card-en">
+      <h2 class="section-title"><span class="icon ok">L1.1</span> L1 · Card Primitive</h2>
+      <p class="section-subtitle">PRIZM Card is a stable primitive. Use <code>components/ui/card.tsx</code> for primary detail-page and dashboard surfaces before introducing page-local <code>div.card</code> structures.</p>
+      <table>
+        <thead><tr><th>Card part</th><th>PRIZM baseline</th><th>TOA rule</th></tr></thead>
+        <tbody>
+          <tr><td>Root</td><td><code>rounded-lg border border-border bg-surface text-fg shadow-sm</code></td><td>Use for detail sections and compact dashboard metric surfaces.</td></tr>
+          <tr><td>Header</td><td>Title + description region with <code>p-6</code> and compact vertical gap.</td><td>Do not make ordinary row labels look like section headings.</td></tr>
+          <tr><td>Title</td><td><code>text-lg font-semibold leading-none</code></td><td>Use card title scale only for real card titles.</td></tr>
+          <tr><td>Description / body copy</td><td><code>text-sm text-fg-muted</code></td><td>Helper copy and explanatory text should stay body/caption scale.</td></tr>
+          <tr><td>Content</td><td><code>p-6 pt-0</code></td><td>Use dividers/subsection headings for internal grouping instead of nesting cards.</td></tr>
+          <tr><td>Footer</td><td>Action row with <code>p-6 pt-0</code>.</td><td>Footer actions still use PRIZM Button variants.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="margin-top:14px"><strong>TOA constraint:</strong> Card is a grouping surface, not a typography escape hatch. Text inside cards must still follow the relevant list/detail typography table. Avoid <code>rounded-xl</code> unless a specific existing PRIZM pattern requires it.</div>
+    </section>
+
+    <section id="l2-en">
+      <h2 class="section-title"><span class="icon info">L2.1</span> L2 · List Page Framework</h2>
+      <p class="section-subtitle">This is the framework that should be used for Programmes, Projects, Requests, and Applications list pages. It also defines how a list page hands the user into L3 pages such as <code>/programmes/new</code>.</p>
+      <table>
+        <thead><tr><th>L2 region</th><th>Expected pattern</th><th>PRIZM / TOA rule</th></tr></thead>
+        <tbody>
+          <tr><td>Page header</td><td>Title, short context copy, primary action such as Create Programme.</td><td>Use PRIZM Button for actions. The L2 header itself is a TOA page pattern.</td></tr>
+          <tr><td>Toolbar</td><td>Keyword search, column visibility, and any approved global filters.</td><td>Search uses PRIZM Input. Columns panel uses Checkbox / Popover or TOA wrapper based on stable primitives.</td></tr>
+          <tr><td>Status tabs</td><td>All / Active / Draft / Completed or page-specific tabs.</td><td>Use PRIZM Tabs. Counts should stay subtle and must not look like status badges.</td></tr>
+          <tr><td>Table/list card</td><td>One primary list surface with header, body rows, hover, selected, expanded rows where needed.</td><td>Use PRIZM Table primitives. <code>SortTh</code> is a TOA wrapper, not an official PRIZM primitive.</td></tr>
+          <tr><td>Programme Status</td><td>Client-reviewed low-emphasis dot + ordinary text.</td><td>Keep dot + text in L2 Programmes list. Do not use raw hex in page code. Dot colours must come from TOA semantic token / utility classes.</td></tr>
+          <tr><td>Pagination/footer</td><td>Visible range copy and pagination controls when paginated.</td><td>Use PRIZM Pagination. If not paginated, show count copy only.</td></tr>
+          <tr><td>Empty state</td><td>True empty and filtered-zero states are different.</td><td>Use PRIZM Empty State pattern. Add CTA only for true empty data, not filtered-zero results.</td></tr>
+          <tr><td>L2 → L3 handoff</td><td>Create / edit / detail actions route from the list into task pages.</td><td>The Create Programme CTA on Programmes list opens L3 <code>/programmes/new</code>. Keep the L2 list state predictable when returning.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="detail-typography-en">
+      <h2 class="section-title"><span class="icon info">L2.2</span> L2 · Detail Typography</h2>
+      <p class="section-subtitle">Operational detail pages should use a clear hierarchy: breadcrumb → H1 object name + primary status → actions → summary dashboard when useful → metadata summary → task sections.</p>
+      <table>
+        <thead><tr><th>Element</th><th>Approved scale</th><th>Rule</th></tr></thead>
+        <tbody>
+          <tr><td>Page title</td><td><code>text-headline-lg text-fg</code></td><td>Use once for the object name.</td></tr>
+          <tr><td>Header status</td><td><code>StatusBadge</code> / <code>Badge</code></td><td>Use only for real object lifecycle status.</td></tr>
+          <tr><td>Dashboard metric value</td><td><code>text-headline-md text-fg</code> or approved metric token</td><td>Keep compact; do not exceed the page's approved metric/headline scale.</td></tr>
+          <tr><td>Dashboard metric label</td><td><code>text-caption text-fg-muted</code></td><td>Labels stay secondary and scan-friendly.</td></tr>
+          <tr><td>Card title</td><td><code>text-headline-md</code> for major cards, <code>text-body-sm font-medium</code> for compact subsections</td><td>Do not use heading scale for ordinary row labels.</td></tr>
+          <tr><td>Metadata label</td><td><code>text-caption text-fg-muted</code></td><td>Labels should not compete with values.</td></tr>
+          <tr><td>Metadata value</td><td><code>text-body-sm font-medium text-fg</code></td><td>Use for key-value facts and compact summaries.</td></tr>
+          <tr><td>Long generated prose</td><td><code>text-body-sm leading-relaxed</code> with <code>max-w-[70ch-80ch]</code></td><td>Keep WCAG AA readability; avoid oversized prose in dense detail pages.</td></tr>
+          <tr><td>Detail table header</td><td>PRIZM <code>TableHead</code> default or <code>text-table-header</code></td><td>Use table header scale for sortable/detail tables.</td></tr>
+          <tr><td>Detail table body</td><td>PRIZM <code>TableCell</code> default <code>text-sm</code></td><td>Do not enlarge ordinary table cells to heading scale.</td></tr>
+          <tr><td>Table-cell badge</td><td><code>Badge</code> with <code>text-caption font-normal</code> or equivalent</td><td>Badge text should not appear heavier than row content unless status requires emphasis.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="margin-top:14px"><strong>Accessibility:</strong> Completed or locked pages should not use page-wide opacity. Use explicit disabled/read-only states and preserve WCAG AA contrast.</div>
+    </section>
+
+    <section id="new-page-en">
+      <h2 class="section-title"><span class="icon warn">L3.1</span> L3 · Programme Create Scan</h2>
+      <div class="callout"><strong>Scope correction:</strong> the current Details step no longer contains Internship Category. It should not be listed as an issue for this page. The current page shows AppShell, breadcrumb, stepper, Details form card, Education Level options, Eligibility Criteria summary row, Programme Description, and sticky footer actions.</div>
+      <table style="margin-top:14px">
+        <thead><tr><th>Area on page</th><th>Current component / pattern</th><th>PRIZM decision</th><th>Update to guide</th></tr></thead>
+        <tbody>
+          <tr><td>App shell</td><td>Top bar, sidebar, workstream switch, global search, profile.</td><td><span class="status warn">TOA pattern</span></td><td>Not an official PRIZM Enterprise template. Compose stable primitives such as Navigation Menu, Input, Button, Avatar, Menu, Separator.</td></tr>
+          <tr><td>Breadcrumb</td><td>Programmes › Create Programme.</td><td><span class="status ok">PRIZM stable primitive</span></td><td>Use PRIZM Breadcrumb.</td></tr>
+          <tr><td>3-step progress</td><td>Details → Intakes → Review.</td><td><span class="status warn">TOA Stepper wrapper</span></td><td>PRIZM has no official Stepper/Wizard primitive. Add to unpublished / not-official component area.</td></tr>
+          <tr><td>Details card</td><td>White form card with section heading and divider.</td><td><span class="status ok">PRIZM Card or TOA page card</span></td><td>Use semantic surface, border, radius, and restrained shadow.</td></tr>
+          <tr><td>Programme Title</td><td>Text input with label and helper copy.</td><td><span class="status ok">PRIZM Field + Label + Input</span></td><td>Keep accessible label and accent focus ring.</td></tr>
+          <tr><td>Education Level</td><td>Bordered radio-card options.</td><td><span class="status info">PRIZM Radio Group semantics + TOA option-card visual</span></td><td>If single-select, use Radio Group. If multi-select, use Checkbox group. The card visual is TOA wrapper.</td></tr>
+          <tr><td>Eligibility Criteria</td><td>Disabled “Not configured” summary row with icon and chevron.</td><td><span class="status warn">TOA CriteriaSummaryRow</span></td><td>Not a PRIZM primitive. Do not show a clickable chevron if disabled.</td></tr>
+          <tr><td>Programme Description</td><td>Textarea.</td><td><span class="status ok">PRIZM Field + Label + Textarea</span></td><td>Use body-scale helper text and semantic focus state.</td></tr>
+          <tr><td>Sticky footer</td><td>Cancel, Save as Draft, Next: Intakes.</td><td><span class="status warn">TOA StickyActionFooter + PRIZM Buttons</span></td><td>Footer layout is TOA. Buttons must use PRIZM Button variants.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="programme-detail-en">
+      <h2 class="section-title"><span class="icon info">L3.2</span> L3 · Programme Detail</h2>
+      <p class="section-subtitle">Programme detail is a Level 3 operational detail page for an existing programme. It should follow the create-programme Step 2 / Step 3 information model after the programme exists.</p>
+      <table>
+        <thead><tr><th>Required IA</th><th>Expected content</th><th>Rule</th></tr></thead>
+        <tbody>
+          <tr><td>Header</td><td>Programme name, primary lifecycle status, and actions.</td><td>Status is real data. Do not duplicate status in multiple sections.</td></tr>
+          <tr><td>Summary dashboard</td><td>Intakes, assigned projects, shared projects, placements.</td><td>Use compact PRIZM Card surfaces; metric labels stay caption-scale.</td></tr>
+          <tr><td>Programme Details</td><td>Stable metadata such as education level and application form.</td><td>Use label/value typography, not oversized prose.</td></tr>
+          <tr><td>Eligibility Requirements</td><td>Generated criteria summary and criteria detail action.</td><td>Long prose uses <code>text-body-sm leading-relaxed</code> and WCAG AA contrast.</td></tr>
+          <tr><td>Intake Windows</td><td>Application period, internship period, and assigned project relationship.</td><td>Projects belong to intakes. Show assigned projects inside the selected/expanded intake window.</td></tr>
+          <tr><td>Assigned Projects</td><td>Projects scoped to selected intake, with scope marker when shared.</td><td>Use label <code>Assigned Projects</code>, not <code>Confirmed Projects</code>. Do not repeat the intake period beside the section title.</td></tr>
+          <tr><td>Programme Timeline</td><td>Timeline view when present or in scope.</td><td>Use after description/project relationship content, with table/timeline typography.</td></tr>
+          <tr><td>Application Form preview</td><td>Read-only modal preview.</td><td>Use the same modal preview pattern as programme creation/editing, not a separate interactive submission drawer.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="margin-top:14px"><strong>Data relationship:</strong> Use <code>ProjectAttachment</code> as the source of truth for project-to-intake assignment when available. Legacy <code>project.programme/intakeId</code> may be fallback only.</div>
+    </section>
+
+    <section id="unpublished-en">
+      <h2 class="section-title"><span class="icon bad">G1</span> Governance · Unpublished Components</h2>
+      <p class="section-subtitle">This section now explicitly marks patterns seen or related to <code>/programmes/new</code>. Some are true PRIZM planned components; others are TOA patterns that must not be documented as official PRIZM primitives.</p>
+      <table>
+        <thead><tr><th>Component / pattern</th><th>Status in guide</th><th>Where it appears / may appear</th><th>Rule</th></tr></thead>
+        <tbody>
+          <tr><td>Date Picker</td><td><span class="status bad">PRIZM planned / unpublished</span></td><td>Not visible on current Details step; likely relevant in Intakes step if date fields are used.</td><td>Do not require <code>components/ui/date-picker.tsx</code> as official PRIZM. Use TOA temporary date-field wrapper until stable.</td></tr>
+          <tr><td>Stepper / Wizard</td><td><span class="status warn">Not official PRIZM primitive</span></td><td><code>/programmes/new</code> 3-step progress.</td><td>Define as <code>TOA Stepper</code>. Use accessible step labels, current state, completed state, and semantic tokens.</td></tr>
+          <tr><td>Toggle Group</td><td><span class="status bad">PRIZM planned / unpublished</span></td><td>Not present now. Previously relevant only if chip-style category selection returns.</td><td>Do not use fabricated PRIZM Toggle Group. Use Radio Group or Checkbox semantics under a TOA option-card visual.</td></tr>
+          <tr><td>Accordion</td><td><span class="status bad">PRIZM planned / unpublished</span></td><td>Review and detail sections may use collapsible disclosure.</td><td>Use accessible disclosure sections. Do not create official <code>accordion.tsx</code> until PRIZM ships it.</td></tr>
+          <tr><td>TOA AppShell</td><td><span class="status warn">TOA product pattern</span></td><td>All TOA pages including <code>/programmes/new</code>.</td><td>Not an official Enterprise template. Compose stable primitives and document as TOA pattern.</td></tr>
+          <tr><td>CriteriaSummaryRow</td><td><span class="status warn">TOA wrapper</span></td><td>Eligibility Criteria disabled row.</td><td>Compose Button/Card/Text/Icon. Disabled state must not behave like an active link.</td></tr>
+          <tr><td>StickyActionFooter</td><td><span class="status warn">TOA layout pattern</span></td><td>Create / Modify pages.</td><td>Footer is TOA. Buttons inside it must be PRIZM Buttons.</td></tr>
+          <tr><td>Portal Tour</td><td><span class="status warn">TOA onboarding pattern</span></td><td>Not visible in the current screenshot; keep as global note only.</td><td>If used, build surfaces from PRIZM Popover, Dialog, Sheet, or Tooltip. Do not document it as a PRIZM Tour component.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="md-en">
+      <h2 class="section-title"><span class="icon info">G2</span> Governance · MD Snippets</h2>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>L2 List Page handoff to L3</h3>
+          <div class="codeblock">- L2 list pages are operational entry points. Primary actions such as `Create Programme` may route into L3 task pages.
+- When an L2 page opens an L3 create / modify / review / detail page, keep the L2 list state predictable when the user returns.
+- The Create Programme route `/programmes/new` is an L3 task page entered from the L2 Programmes list.</div>
+        </div>
+        <div class="card">
+          <h3>Stepper / Wizard rule</h3>
+          <div class="codeblock">- Create / Modify pages may use a TOA Stepper wrapper for multi-step workflows. It is not an official PRIZM component.
+- Do not create or document `components/ui/stepper.tsx` as a PRIZM primitive unless it is confirmed stable in the PRIZM registry.
+- The wrapper must use semantic tokens, accessible step labels, visible current-step state, and keyboard-safe navigation.</div>
+        </div>
+        <div class="card">
+          <h3>Education Level option cards</h3>
+          <div class="codeblock">- Education Level selection should use PRIZM Radio Group when only one education level can be selected.
+- If multiple education levels are allowed, use PRIZM Checkbox group instead.
+- The bordered card visual is a TOA option-card wrapper and must preserve radio/checkbox semantics, keyboard access, and visible focus states.</div>
+        </div>
+        <div class="card">
+          <h3>Eligibility Criteria summary row</h3>
+          <div class="codeblock">- Eligibility Criteria summary row is a TOA CriteriaSummaryRow pattern, not a PRIZM primitive.
+- It should compose stable primitives such as Card, Button, Text, and Icon.
+- Do not show a clickable chevron or link affordance when the row is disabled or not configured.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="checklist-en">
+      <h2 class="section-title"><span class="icon ok">G3</span> Governance · Implementation Checklist</h2>
+      <ul class="list">
+        <li>For L2 Programmes list, keep the client-reviewed Programme Status dot + ordinary text pattern. Do not switch it to Badge unless the client pattern changes.</li>
+        <li>For <code>/programmes/new</code>, remove old references to Internship Category from the audit because it is no longer present.</li>
+        <li>For L3 detail pages, use PRIZM Card root for primary sections and follow the operational detail typography table.</li>
+        <li>For Programme detail, keep one primary status, place Assigned Projects under the selected intake, and avoid duplicate date ranges in section headings.</li>
+        <li>Mark Stepper/Wizard, AppShell, CriteriaSummaryRow, StickyActionFooter, and Portal Tour as TOA wrappers / patterns.</li>
+        <li>Mark Date Picker, Toggle Group, and Accordion as PRIZM planned / unpublished until stable.</li>
+        <li>Search for raw colours, especially status dot hex values. Hex may only live in a central TOA token / utility layer, not page TSX.</li>
+        <li>Search for Enterprise-forbidden glass usage: <code>surface-glass</code> and <code>variant="glass"</code>.</li>
+      </ul>
+    </section>
+    <div class="footer">Generated for TOA PRIZM 4 compliance review · Updated from L1/L2/L3 MD spec · 2026-07-01</div>
+  </main>
+
+  <main data-lang-panel="zh">
+    <div class="hero" id="verdict-zh">
+      <span class="pill ok">已更新 · 默认英文</span>
+      <h1>PRIZM 4 · TOA 页面级规范</h1>
+      <p><strong>更新后的理解：</strong>L1/L2/L3 不是合规层级，而是 TOA 的页面层级。L1 是 Dashboard，L2 是 List Page，L3 是 Create / Modify / Review / Detail。PRIZM 官方约束作为全局规则，适用于全部页面层级。</p>
+      <div class="meta">
+        <span class="pill info">L1 = Dashboard</span>
+        <span class="pill info">L2 = List Page</span>
+        <span class="pill info">L3 = Create / Modify / Review / Detail</span>
+        <span class="pill warn">/programmes/new 属于 L3，但需要写清 L2 handoff</span>
+      </div>
+    </div>
+
+    <section id="levels-zh">
+      <h2 class="section-title"><span class="icon ok">M</span> 页面层级地图</h2>
+      <p class="section-subtitle">Stable components、semantic tokens、禁止 raw colour、Enterprise 禁用 glass、air-gap discipline 等 PRIZM 官方规则适用于所有层级。下面的 L1/L2/L3 是页面类型和任务深度。</p>
+      <div class="diagram">
+        <div class="level-card">
+          <div class="level-kicker">L1</div>
+          <h3>Dashboard</h3>
+          <p>入口和概览页面。重点是 summary metrics、action alerts、workstream context，以及进入 L2 列表页的导航。</p>
+        </div>
+        <div class="level-card">
+          <div class="level-kicker">L2</div>
+          <h3>List Page</h3>
+          <p>Programmes、Projects、Requests、Applications 这类运营列表页。包含 toolbar、filters、table/list、pagination，以及进入 L3 task pages 的入口。</p>
+        </div>
+        <div class="level-card">
+          <div class="level-kicker">L3</div>
+          <h3>Create / Modify / Review / Detail</h3>
+          <p>任务型页面和对象详情页。包含创建、编辑、review/confirm、detail，以及 related-record panels。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="card-zh">
+      <h2 class="section-title"><span class="icon ok">L1.1</span> L1 · Card Primitive</h2>
+      <p class="section-subtitle">PRIZM Card 是 stable primitive。详情页主卡片和 dashboard summary surfaces 应优先使用 <code>components/ui/card.tsx</code>，不要先写页面局部的 <code>div.card</code>。</p>
+      <table>
+        <thead><tr><th>Card 部位</th><th>PRIZM baseline</th><th>TOA 规则</th></tr></thead>
+        <tbody>
+          <tr><td>Root</td><td><code>rounded-lg border border-border bg-surface text-fg shadow-sm</code></td><td>用于详情页主 section 和 compact dashboard metric surfaces。</td></tr>
+          <tr><td>Header</td><td>Title + description 区域，使用 <code>p-6</code> 和紧凑 vertical gap。</td><td>普通 row label 不要做成 section heading 的视觉重量。</td></tr>
+          <tr><td>Title</td><td><code>text-lg font-semibold leading-none</code></td><td>只有真正的 card title 才使用 card title scale。</td></tr>
+          <tr><td>Description / body copy</td><td><code>text-sm text-fg-muted</code></td><td>Helper copy 和说明文字保持 body/caption scale。</td></tr>
+          <tr><td>Content</td><td><code>p-6 pt-0</code></td><td>内部组织用 divider / subsection heading，不要 card 套 card。</td></tr>
+          <tr><td>Footer</td><td>Action row，使用 <code>p-6 pt-0</code>。</td><td>Footer 里的操作仍然使用 PRIZM Button variants。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="margin-top:14px"><strong>TOA 约束：</strong>Card 是 grouping surface，不是放大字体的理由。Card 里的文字仍要遵守列表/详情页字体表。除非现有 PRIZM pattern 明确要求，否则避免 <code>rounded-xl</code>。</div>
+    </section>
+
+    <section id="l2-zh">
+      <h2 class="section-title"><span class="icon info">L2.1</span> L2 · List Page 框架</h2>
+      <p class="section-subtitle">这个框架用于 Programmes、Projects、Requests、Applications 列表页。同时定义 L2 列表页如何把用户带入 L3 页面，例如 <code>/programmes/new</code>。</p>
+      <table>
+        <thead><tr><th>L2 区域</th><th>预期 pattern</th><th>PRIZM / TOA 规则</th></tr></thead>
+        <tbody>
+          <tr><td>Page header</td><td>标题、简短上下文、主操作，例如 Create Programme。</td><td>操作按钮用 PRIZM Button。L2 header 本身是 TOA page pattern。</td></tr>
+          <tr><td>Toolbar</td><td>关键词搜索、Columns、已确认的全局筛选。</td><td>Search 用 PRIZM Input。Columns panel 用 Checkbox / Popover，或基于 stable primitives 的 TOA wrapper。</td></tr>
+          <tr><td>Status tabs</td><td>All / Active / Draft / Completed 或页面特定 tabs。</td><td>使用 PRIZM Tabs。数量保持低强调，不要看起来像 status badge。</td></tr>
+          <tr><td>Table/list card</td><td>一个主列表区域，包含表头、行、hover、selected、expanded rows。</td><td>使用 PRIZM Table primitives。<code>SortTh</code> 是 TOA wrapper，不是官方 PRIZM primitive。</td></tr>
+          <tr><td>Programme Status</td><td>客户确认的低强调 dot + ordinary text。</td><td>L2 Programmes list 保留 dot + text。页面代码不能写 raw hex，dot 颜色必须来自 TOA semantic token / utility。</td></tr>
+          <tr><td>Pagination/footer</td><td>显示范围文案 + pagination controls。</td><td>使用 PRIZM Pagination。没有分页时只显示 count copy。</td></tr>
+          <tr><td>Empty state</td><td>区分 true empty 和 filtered-zero。</td><td>使用 PRIZM Empty State。只有 true empty data 才放 CTA。</td></tr>
+          <tr><td>L2 → L3 handoff</td><td>Create / edit / detail 操作从列表进入任务页。</td><td>Programmes list 的 Create Programme CTA 进入 L3 <code>/programmes/new</code>。返回时保持列表状态可预期。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="detail-typography-zh">
+      <h2 class="section-title"><span class="icon info">L2.2</span> L2 · 详情页字体层级</h2>
+      <p class="section-subtitle">Operational detail page 使用清晰层级：breadcrumb → H1 object name + primary status → actions → summary dashboard（需要时）→ metadata summary → task sections。</p>
+      <table>
+        <thead><tr><th>元素</th><th>批准的 scale</th><th>规则</th></tr></thead>
+        <tbody>
+          <tr><td>Page title</td><td><code>text-headline-lg text-fg</code></td><td>只用于一次对象名称。</td></tr>
+          <tr><td>Header status</td><td><code>StatusBadge</code> / <code>Badge</code></td><td>只用于真实对象 lifecycle status。</td></tr>
+          <tr><td>Dashboard metric value</td><td><code>text-headline-md text-fg</code> 或已批准 metric token</td><td>保持 compact，不超过页面批准的 metric/headline scale。</td></tr>
+          <tr><td>Dashboard metric label</td><td><code>text-caption text-fg-muted</code></td><td>Label 保持次级、易扫描。</td></tr>
+          <tr><td>Card title</td><td>Major card 用 <code>text-headline-md</code>，compact subsection 用 <code>text-body-sm font-medium</code></td><td>普通 row label 不用 heading scale。</td></tr>
+          <tr><td>Metadata label</td><td><code>text-caption text-fg-muted</code></td><td>Label 不应抢 value 的视觉权重。</td></tr>
+          <tr><td>Metadata value</td><td><code>text-body-sm font-medium text-fg</code></td><td>用于 key-value facts 和 compact summary。</td></tr>
+          <tr><td>Long generated prose</td><td><code>text-body-sm leading-relaxed</code>，配合 <code>max-w-[70ch-80ch]</code></td><td>保持 WCAG AA 可读性，避免详情页正文过大。</td></tr>
+          <tr><td>Detail table header</td><td>PRIZM <code>TableHead</code> default 或 <code>text-table-header</code></td><td>用于 sortable/detail tables。</td></tr>
+          <tr><td>Detail table body</td><td>PRIZM <code>TableCell</code> default <code>text-sm</code></td><td>普通 table cell 不要放大成 heading scale。</td></tr>
+          <tr><td>Table-cell badge</td><td><code>Badge</code> + <code>text-caption font-normal</code> 或等效样式</td><td>Badge 文本不要比行内容更重，除非状态需要强调。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="margin-top:14px"><strong>Accessibility：</strong>Completed / locked 页面不要使用 page-wide opacity。使用明确的 disabled/read-only state，并保持 WCAG AA contrast。</div>
+    </section>
+
+    <section id="new-page-zh">
+      <h2 class="section-title"><span class="icon warn">L3.1</span> L3 · Programme 创建扫描</h2>
+      <div class="callout"><strong>范围修正：</strong>当前 Details step 已经没有 Internship Category，所以不应该再把它列为本页问题。当前页面包含 AppShell、breadcrumb、stepper、Details form card、Education Level options、Eligibility Criteria summary row、Programme Description 和 sticky footer actions。</div>
+      <table style="margin-top:14px">
+        <thead><tr><th>页面区域</th><th>当前组件 / pattern</th><th>PRIZM 判断</th><th>写入 guide 的规则</th></tr></thead>
+        <tbody>
+          <tr><td>App shell</td><td>Top bar、sidebar、workstream switch、global search、profile。</td><td><span class="status warn">TOA pattern</span></td><td>不是官方 PRIZM Enterprise template。可组合 Navigation Menu、Input、Button、Avatar、Menu、Separator。</td></tr>
+          <tr><td>Breadcrumb</td><td>Programmes › Create Programme。</td><td><span class="status ok">PRIZM stable primitive</span></td><td>使用 PRIZM Breadcrumb。</td></tr>
+          <tr><td>3-step progress</td><td>Details → Intakes → Review。</td><td><span class="status warn">TOA Stepper wrapper</span></td><td>PRIZM 没有官方 Stepper/Wizard primitive。加入 unpublished / not-official component area。</td></tr>
+          <tr><td>Details card</td><td>白色表单卡片，带 section heading 和 divider。</td><td><span class="status ok">PRIZM Card 或 TOA page card</span></td><td>使用 semantic surface、border、radius 和 restrained shadow。</td></tr>
+          <tr><td>Programme Title</td><td>带 label 和 helper copy 的 text input。</td><td><span class="status ok">PRIZM Field + Label + Input</span></td><td>保留 accessible label 和 accent focus ring。</td></tr>
+          <tr><td>Education Level</td><td>带边框的 radio-card options。</td><td><span class="status info">PRIZM Radio Group semantics + TOA option-card visual</span></td><td>单选用 Radio Group；多选用 Checkbox group。卡片视觉是 TOA wrapper。</td></tr>
+          <tr><td>Eligibility Criteria</td><td>Disabled “Not configured” summary row，带 icon 和 chevron。</td><td><span class="status warn">TOA CriteriaSummaryRow</span></td><td>不是 PRIZM primitive。禁用时不要显示可点击 chevron。</td></tr>
+          <tr><td>Programme Description</td><td>Textarea。</td><td><span class="status ok">PRIZM Field + Label + Textarea</span></td><td>使用 body-scale helper text 和 semantic focus state。</td></tr>
+          <tr><td>Sticky footer</td><td>Cancel、Save as Draft、Next: Intakes。</td><td><span class="status warn">TOA StickyActionFooter + PRIZM Buttons</span></td><td>Footer layout 是 TOA。里面的按钮必须使用 PRIZM Button variants。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="programme-detail-zh">
+      <h2 class="section-title"><span class="icon info">L3.2</span> L3 · Programme Detail</h2>
+      <p class="section-subtitle">Programme detail 是 existing programme 的 Level 3 operational detail page。Programme 创建完成后，它应沿用 create-programme Step 2 / Step 3 的信息模型。</p>
+      <table>
+        <thead><tr><th>Required IA</th><th>预期内容</th><th>规则</th></tr></thead>
+        <tbody>
+          <tr><td>Header</td><td>Programme name、primary lifecycle status、actions。</td><td>Status 是真实数据。不要在多个 section 重复状态。</td></tr>
+          <tr><td>Summary dashboard</td><td>Intakes、assigned projects、shared projects、placements。</td><td>使用 compact PRIZM Card surfaces；metric labels 保持 caption-scale。</td></tr>
+          <tr><td>Programme Details</td><td>Education level、application form 等稳定 metadata。</td><td>使用 label/value typography，不要放大成正文。</td></tr>
+          <tr><td>Eligibility Requirements</td><td>Generated criteria summary 和 criteria detail action。</td><td>长文本使用 <code>text-body-sm leading-relaxed</code>，并满足 WCAG AA contrast。</td></tr>
+          <tr><td>Intake Windows</td><td>Application period、internship period、assigned project relationship。</td><td>Projects 属于 intakes。Assigned projects 放在 selected/expanded intake window 里。</td></tr>
+          <tr><td>Assigned Projects</td><td>当前 selected intake 下的 projects，需要时显示 shared scope。</td><td>使用 <code>Assigned Projects</code>，不要用 <code>Confirmed Projects</code>。Section title 边上不要重复 intake period。</td></tr>
+          <tr><td>Programme Timeline</td><td>当页面包含 timeline 时显示。</td><td>放在 description / project relationship 内容之后，并使用 table/timeline typography。</td></tr>
+          <tr><td>Application Form preview</td><td>Read-only modal preview。</td><td>与 programme creation/editing 使用同一个 modal preview pattern，不使用单独的 interactive submission drawer。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="margin-top:14px"><strong>数据关系：</strong>可用时使用 <code>ProjectAttachment</code> 作为 project-to-intake assignment 的 source of truth。Legacy <code>project.programme/intakeId</code> 只能作为 fallback。</div>
+    </section>
+
+    <section id="unpublished-zh">
+      <h2 class="section-title"><span class="icon bad">G1</span> 治理规则 · 未发布组件</h2>
+      <p class="section-subtitle">这里专门标注当前 <code>/programmes/new</code> 相关的 pattern。有些是真正的 PRIZM planned component，有些是 TOA pattern，不能写成官方 PRIZM primitive。</p>
+      <table>
+        <thead><tr><th>组件 / pattern</th><th>Guide 状态</th><th>出现位置 / 可能出现位置</th><th>规则</th></tr></thead>
+        <tbody>
+          <tr><td>Date Picker</td><td><span class="status bad">PRIZM planned / 未发布</span></td><td>当前 Details step 没有；如果 Intakes step 有日期字段，需要处理。</td><td>不要强制 <code>components/ui/date-picker.tsx</code> 为官方 PRIZM。稳定前使用 TOA temporary date-field wrapper。</td></tr>
+          <tr><td>Stepper / Wizard</td><td><span class="status warn">非官方 PRIZM primitive</span></td><td><code>/programmes/new</code> 3-step progress。</td><td>定义为 <code>TOA Stepper</code>。要有 accessible step labels、current state、completed state 和 semantic tokens。</td></tr>
+          <tr><td>Toggle Group</td><td><span class="status bad">PRIZM planned / 未发布</span></td><td>当前没有。只有 chip-style category selection 回来时才相关。</td><td>不要使用伪造的 PRIZM Toggle Group。用 Radio Group 或 Checkbox semantics + TOA option-card visual。</td></tr>
+          <tr><td>Accordion</td><td><span class="status bad">PRIZM planned / 未发布</span></td><td>Review / detail sections 可能需要 collapsible disclosure。</td><td>用 accessible disclosure sections。PRIZM 发布前不要创建官方 <code>accordion.tsx</code>。</td></tr>
+          <tr><td>TOA AppShell</td><td><span class="status warn">TOA product pattern</span></td><td>所有 TOA 页面，包括 <code>/programmes/new</code>。</td><td>不是官方 Enterprise template。组合 stable primitives，并标注文档为 TOA pattern。</td></tr>
+          <tr><td>CriteriaSummaryRow</td><td><span class="status warn">TOA wrapper</span></td><td>Eligibility Criteria disabled row。</td><td>组合 Button/Card/Text/Icon。Disabled state 不能像 active link。</td></tr>
+          <tr><td>StickyActionFooter</td><td><span class="status warn">TOA layout pattern</span></td><td>Create / Modify pages。</td><td>Footer 是 TOA。里面的按钮必须是 PRIZM Buttons。</td></tr>
+          <tr><td>Portal Tour</td><td><span class="status warn">TOA onboarding pattern</span></td><td>当前截图不可见；只保留全局说明。</td><td>如果使用，surface 用 PRIZM Popover、Dialog、Sheet 或 Tooltip。不要写成 PRIZM Tour component。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="md-zh">
+      <h2 class="section-title"><span class="icon info">G2</span> 治理规则 · MD 片段</h2>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>L2 List Page handoff to L3</h3>
+          <div class="codeblock">- L2 list pages are operational entry points. Primary actions such as `Create Programme` may route into L3 task pages.
+- When an L2 page opens an L3 create / modify / review / detail page, keep the L2 list state predictable when the user returns.
+- The Create Programme route `/programmes/new` is an L3 task page entered from the L2 Programmes list.</div>
+        </div>
+        <div class="card">
+          <h3>Stepper / Wizard rule</h3>
+          <div class="codeblock">- Create / Modify pages may use a TOA Stepper wrapper for multi-step workflows. It is not an official PRIZM component.
+- Do not create or document `components/ui/stepper.tsx` as a PRIZM primitive unless it is confirmed stable in the PRIZM registry.
+- The wrapper must use semantic tokens, accessible step labels, visible current-step state, and keyboard-safe navigation.</div>
+        </div>
+        <div class="card">
+          <h3>Education Level option cards</h3>
+          <div class="codeblock">- Education Level selection should use PRIZM Radio Group when only one education level can be selected.
+- If multiple education levels are allowed, use PRIZM Checkbox group instead.
+- The bordered card visual is a TOA option-card wrapper and must preserve radio/checkbox semantics, keyboard access, and visible focus states.</div>
+        </div>
+        <div class="card">
+          <h3>Eligibility Criteria summary row</h3>
+          <div class="codeblock">- Eligibility Criteria summary row is a TOA CriteriaSummaryRow pattern, not a PRIZM primitive.
+- It should compose stable primitives such as Card, Button, Text, and Icon.
+- Do not show a clickable chevron or link affordance when the row is disabled or not configured.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="checklist-zh">
+      <h2 class="section-title"><span class="icon ok">G3</span> 治理规则 · 实施检查清单</h2>
+      <ul class="list">
+        <li>L2 Programmes list 保留客户确认的 Programme Status dot + ordinary text，不要改成 Badge，除非客户确认 pattern 变化。</li>
+        <li><code>/programmes/new</code> 的审查里删除旧的 Internship Category，因为当前页面已经没有。</li>
+        <li>L3 detail pages 使用 PRIZM Card root 作为主 section，并遵守 operational detail typography table。</li>
+        <li>Programme detail 保留一个 primary status，Assigned Projects 放在 selected intake 下，section heading 不重复日期范围。</li>
+        <li>Stepper/Wizard、AppShell、CriteriaSummaryRow、StickyActionFooter、Portal Tour 标注为 TOA wrapper / pattern。</li>
+        <li>Date Picker、Toggle Group、Accordion 标注为 PRIZM planned / unpublished，直到 stable。</li>
+        <li>搜索 raw colours，特别是 status dot hex。Hex 只能集中在 TOA token / utility layer，不能写在页面 TSX。</li>
+        <li>搜索 Enterprise 禁止的 glass：<code>surface-glass</code> 和 <code>variant="glass"</code>。</li>
+      </ul>
+    </section>
+    <div class="footer">Generated for TOA PRIZM 4 compliance review · Updated from L1/L2/L3 MD spec · 2026-07-01</div>
+  </main>
+</div>
+<script>
+  const zhBtn = document.getElementById('zhBtn');
+  const enBtn = document.getElementById('enBtn');
+  zhBtn.addEventListener('click', () => {
+    document.body.classList.add('zh');
+    zhBtn.classList.add('active');
+    enBtn.classList.remove('active');
+    document.documentElement.lang='zh-CN';
+  });
+  enBtn.addEventListener('click', () => {
+    document.body.classList.remove('zh');
+    enBtn.classList.add('active');
+    zhBtn.classList.remove('active');
+    document.documentElement.lang='en';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "name": "dsta-talent-portal",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:clean": "rm -rf .next && next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.99.0",
+    "@base-ui-components/react": "1.0.0-rc.0",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.2.1",
+    "exceljs": "^4.4.0",
+    "lucide-react": "^0.363.0",
+    "next": "14.2.3",
+    "pdfjs-dist": "^5.7.284",
+    "react": "^18.3.1",
+    "react-day-picker": "^10.0.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.0.0-beta.4",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "postcss": "^8.4.38",
+    "tailwindcss": "4.0.0-beta.4",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,2226 @@
+[
+  {
+    "id": "APP-0001",
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "status": "Pending Review",
+    "appliedDate": "2026-04-02",
+    "name": "Tan Wei Ming",
+    "email": "tanweiming@u.nus.edu",
+    "school": "NUS",
+    "course": "Computer Science",
+    "year": 3,
+    "gpa": 3.8,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0001",
+      "PROJ-0006",
+      "PROJ-0002",
+      "PROJ-0007",
+      "PROJ-0003"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 82,
+        "reasoning": "Strong CS background with relevant coursework in network security and cryptography."
+      },
+      {
+        "projectId": "PROJ-0006",
+        "projectTitle": "Autonomous Systems Prototyping",
+        "score": 74,
+        "reasoning": "Some robotics experience from NUS Hackers projects, though limited hardware exposure."
+      },
+      {
+        "projectId": "PROJ-0002",
+        "projectTitle": "AI/ML in Defence Logistics",
+        "score": 78,
+        "reasoning": "Machine learning modules taken; final-year project involves NLP."
+      },
+      {
+        "projectId": "PROJ-0007",
+        "projectTitle": "Drone Payload Optimisation",
+        "score": 61,
+        "reasoning": "Limited mechanical or systems engineering background."
+      },
+      {
+        "projectId": "PROJ-0003",
+        "projectTitle": "Signal Processing R&D",
+        "score": 55,
+        "reasoning": "Minimal signal processing coursework; not a strong fit."
+      }
+    ],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [
+      "NUS Hackers Vice President",
+      "Dean's List AY2024/25"
+    ],
+    "funAnswer": "I'd build an AI system that can predict and prevent supply chain disruptions before they happen — especially for food security. A lot of suffering stems from logistics failures that data could prevent.",
+    "formValues": {
+      "name": "Tan Wei Ming",
+      "email": "tanweiming@u.nus.edu",
+      "name_of_institution": "NUS",
+      "course_of_study": "Computer Science",
+      "gpa_cap_rank_points": "3.8",
+      "preferred_start_date": "2026-05-12",
+      "preferred_end_date": "2026-08-08",
+      "area_of_interest_1": "Software Development",
+      "area_of_interest_2": "Artificial Intelligence",
+      "area_of_interest_3": "Cybersecurity"
+    },
+    "internCategory": "Undergraduate Scholar/Merit Scholar"
+  },
+  {
+    "id": "APP-0002",
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "status": "Pending Review",
+    "appliedDate": "2026-04-05",
+    "name": "Priya Nair",
+    "email": "priya.nair@e.ntu.edu.sg",
+    "school": "NTU",
+    "course": "Electrical Engineering",
+    "year": 3,
+    "gpa": 4.2,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0006",
+      "PROJ-0003",
+      "PROJ-0007",
+      "PROJ-0001",
+      "PROJ-0002"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0006",
+        "projectTitle": "Autonomous Systems Prototyping",
+        "score": 88,
+        "reasoning": "Strong EE foundation with embedded systems and control theory modules. FYP on autonomous navigation."
+      },
+      {
+        "projectId": "PROJ-0007",
+        "projectTitle": "Drone Payload Optimisation",
+        "score": 82,
+        "reasoning": "Good fit for hardware-oriented work; experience with payload mechanics from robotics club."
+      },
+      {
+        "projectId": "PROJ-0003",
+        "projectTitle": "Signal Processing R&D",
+        "score": 85,
+        "reasoning": "Digital signal processing is a core EE module; grades strong."
+      },
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 58,
+        "reasoning": "Limited software security background; CS modules are electives only."
+      },
+      {
+        "projectId": "PROJ-0002",
+        "projectTitle": "AI/ML in Defence Logistics",
+        "score": 64,
+        "reasoning": "Some ML exposure from elective modules but not a core focus."
+      }
+    ],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [
+      "NTU IEEE Student Branch President",
+      "NTU Scholar (Full Scholarship)"
+    ],
+    "funAnswer": "I'd solve the energy grid problem — specifically making renewable energy storage affordable and scalable. Clean energy exists; reliable storage is the bottleneck holding back mass adoption.",
+    "formValues": {
+      "name": "Priya Nair",
+      "email": "priya.nair@e.ntu.edu.sg",
+      "name_of_institution": "NTU",
+      "course_of_study": "Electrical Engineering",
+      "gpa_cap_rank_points": "4.2",
+      "preferred_start_date": "2026-05-19",
+      "preferred_end_date": "2026-08-15",
+      "area_of_interest_1": "Command & Control Systems",
+      "area_of_interest_2": "Advanced Systems",
+      "area_of_interest_3": "Air Systems"
+    },
+    "internCategory": "Undergraduate Student"
+  },
+  {
+    "id": "APP-0003",
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "status": "Pending Review",
+    "appliedDate": "2026-04-07",
+    "name": "Lim Jun Hao",
+    "email": "limjunhao@u.nus.edu",
+    "school": "NUS",
+    "course": "Computer Engineering",
+    "year": 2,
+    "gpa": 4.5,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0001",
+      "PROJ-0006",
+      "PROJ-0002",
+      "PROJ-0003",
+      "PROJ-0007"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 91,
+        "reasoning": "Top-performing CE student with a focus on security. Completed advanced security certifications (CEH). Strong practical background."
+      },
+      {
+        "projectId": "PROJ-0006",
+        "projectTitle": "Autonomous Systems Prototyping",
+        "score": 85,
+        "reasoning": "Drone team captain with hands-on prototyping experience across hardware and software."
+      },
+      {
+        "projectId": "PROJ-0002",
+        "projectTitle": "AI/ML in Defence Logistics",
+        "score": 80,
+        "reasoning": "High academic ability; ML coursework strong. Would adapt quickly."
+      },
+      {
+        "projectId": "PROJ-0003",
+        "projectTitle": "Signal Processing R&D",
+        "score": 76,
+        "reasoning": "Solid DSP fundamentals from CE curriculum."
+      },
+      {
+        "projectId": "PROJ-0007",
+        "projectTitle": "Drone Payload Optimisation",
+        "score": 83,
+        "reasoning": "Direct overlap with drone team experience; payload work mentioned in CV."
+      }
+    ],
+    "previousDSTA": true,
+    "previousDSTADetails": "Long-standing DSTA ecosystem participant since Secondary 3 — YDSP, Research@YDSP, YDSP Congress, industrial attachment, Tech UP, Brainhack, and DSTA Undergraduate Scholar.",
+    "achievements": [
+      "NUS Drone Team Captain — led team to 2nd place at Inter-University Drone Racing Championship 2025",
+      "DSTA Undergraduate Scholar (2022 cohort)",
+      "Dean's List AY2024/25 (CAP 4.93 / 5.00)",
+      "Best Research Presentation — YDSP Congress 2019 (Engineering category)"
+    ],
+    "funAnswer": "Cyber defence that adapts in real-time — systems that learn attacker behaviour patterns and automatically reconfigure themselves before a breach spreads. Too many defences are reactive; I want proactive.",
+    "formValues": {
+      "name": "Lim Jun Hao",
+      "email": "limjunhao@u.nus.edu",
+      "name_of_institution": "NUS",
+      "course_of_study": "Computer Engineering",
+      "gpa_cap_rank_points": "4.5",
+      "preferred_start_date": "2026-06-02",
+      "preferred_end_date": "2026-08-28",
+      "area_of_interest_1": "Software Development",
+      "area_of_interest_2": "Cloud",
+      "area_of_interest_3": "Networks & Infrastructure"
+    },
+    "internCategory": "Tech UP"
+  },
+  {
+    "id": "APP-0004",
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "status": "Shortlisted for Interview",
+    "appliedDate": "2026-04-08",
+    "shortlistedFor": "PROJ-0005",
+    "name": "Chloe Wong",
+    "email": "chloe.wong.2023@smu.edu.sg",
+    "school": "SMU",
+    "course": "Information Systems",
+    "year": 3,
+    "gpa": 3.9,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0006",
+      "PROJ-0007",
+      "PROJ-0001",
+      "PROJ-0002",
+      "PROJ-0003"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0006",
+        "projectTitle": "Autonomous Systems Prototyping",
+        "score": 79,
+        "reasoning": "Systems integration experience from IS curriculum; strong project management skills."
+      },
+      {
+        "projectId": "PROJ-0007",
+        "projectTitle": "Drone Payload Optimisation",
+        "score": 72,
+        "reasoning": "Some hardware exposure from IoT module; good analytical skills."
+      },
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 68,
+        "reasoning": "Cybersecurity specialisation at SMU; practical labs completed."
+      },
+      {
+        "projectId": "PROJ-0002",
+        "projectTitle": "AI/ML in Defence Logistics",
+        "score": 75,
+        "reasoning": "Business analytics focus overlaps well with logistics optimisation."
+      },
+      {
+        "projectId": "PROJ-0003",
+        "projectTitle": "Signal Processing R&D",
+        "score": 44,
+        "reasoning": "Weak match — IS curriculum has limited signal processing content."
+      }
+    ],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [
+      "IMDA SG Digital Scholar",
+      "SMU Dean's List"
+    ],
+    "funAnswer": "A universal digital identity system that's privacy-preserving — where you can prove facts about yourself (age, qualifications, citizenship) without revealing the underlying data. Trust without exposure.",
+    "formValues": {
+      "name": "Chloe Wong",
+      "email": "chloe.wong.2023@smu.edu.sg",
+      "name_of_institution": "SMU",
+      "course_of_study": "Information Systems",
+      "gpa_cap_rank_points": "3.9",
+      "preferred_start_date": "2026-06-09",
+      "preferred_end_date": "2026-09-04",
+      "area_of_interest_1": "Software Development",
+      "area_of_interest_2": "Data Science/Data Analytics",
+      "area_of_interest_3": "Cloud"
+    },
+    "internCategory": "Undergraduate Scholar/Merit Scholar"
+  },
+  {
+    "id": "APP-0005",
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "status": "Rejected",
+    "appliedDate": "2026-04-10",
+    "name": "Ethan Koh",
+    "email": "ethan.koh@u.nus.edu",
+    "school": "NUS",
+    "course": "Data Science and Analytics",
+    "year": 4,
+    "gpa": 3.7,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0002",
+      "PROJ-0001",
+      "PROJ-0003",
+      "PROJ-0006",
+      "PROJ-0007"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0002",
+        "projectTitle": "AI/ML in Defence Logistics",
+        "score": 62,
+        "reasoning": "Data science background is relevant but CV lacks depth in applied ML projects."
+      },
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 48,
+        "reasoning": "No security coursework or certifications evident."
+      },
+      {
+        "projectId": "PROJ-0003",
+        "projectTitle": "Signal Processing R&D",
+        "score": 41,
+        "reasoning": "DSA curriculum has limited signal processing overlap."
+      },
+      {
+        "projectId": "PROJ-0006",
+        "projectTitle": "Autonomous Systems Prototyping",
+        "score": 38,
+        "reasoning": "No robotics or embedded systems experience."
+      },
+      {
+        "projectId": "PROJ-0007",
+        "projectTitle": "Drone Payload Optimisation",
+        "score": 35,
+        "reasoning": "No hardware or aerospace background."
+      }
+    ],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [],
+    "funAnswer": "Better tools for mental health — an AI that can flag early warning signs from digital behaviour patterns and connect people to support before a crisis. Detection is too often too late.",
+    "formValues": {
+      "name": "Ethan Koh",
+      "email": "ethan.koh@u.nus.edu",
+      "name_of_institution": "NUS",
+      "course_of_study": "Data Science and Analytics",
+      "gpa_cap_rank_points": "3.7",
+      "preferred_start_date": "2026-05-05",
+      "preferred_end_date": "2026-07-31",
+      "area_of_interest_1": "Data Science/Data Analytics",
+      "area_of_interest_2": "Artificial Intelligence",
+      "area_of_interest_3": "Software Development"
+    },
+    "internCategory": "Undergraduate Student"
+  },
+  {
+    "id": "APP-0006",
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "status": "Pending Screening",
+    "appliedDate": "2026-05-18",
+    "name": "Sarah Teo",
+    "email": "sarah.teo@e.ntu.edu.sg",
+    "school": "NTU",
+    "course": "Computer Science",
+    "year": 2,
+    "gpa": 4,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0007",
+      "PROJ-0006",
+      "PROJ-0001",
+      "PROJ-0003",
+      "PROJ-0002"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0007",
+        "projectTitle": "Drone Payload Optimisation",
+        "score": 77,
+        "reasoning": "Strong physics and programming background; robotics module completed with distinction."
+      },
+      {
+        "projectId": "PROJ-0006",
+        "projectTitle": "Autonomous Systems Prototyping",
+        "score": 80,
+        "reasoning": "Software engineering skills are strong; autonomous systems elective in progress."
+      },
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 72,
+        "reasoning": "Network security module taken; CTF competition participant."
+      },
+      {
+        "projectId": "PROJ-0003",
+        "projectTitle": "Signal Processing R&D",
+        "score": 65,
+        "reasoning": "Completed signals and systems module; average performance."
+      },
+      {
+        "projectId": "PROJ-0002",
+        "projectTitle": "AI/ML in Defence Logistics",
+        "score": 70,
+        "reasoning": "ML fundamentals solid; limited applied project experience at this stage."
+      }
+    ],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [
+      "Google APAC Scholar",
+      "NTU CN Yang Scholar Programme"
+    ],
+    "funAnswer": "Real-time language translation that preserves tone and cultural nuance, not just words. Miscommunication across languages causes so many unnecessary conflicts — technical and human.",
+    "formValues": {
+      "name": "Sarah Teo",
+      "email": "sarah.teo@e.ntu.edu.sg",
+      "name_of_institution": "NTU",
+      "course_of_study": "Computer Science",
+      "gpa_cap_rank_points": "4",
+      "preferred_start_date": "2026-06-16",
+      "preferred_end_date": "2026-09-11",
+      "area_of_interest_1": "Software Development",
+      "area_of_interest_2": "Artificial Intelligence",
+      "area_of_interest_3": "Cybersecurity"
+    },
+    "internCategory": "Tech UP"
+  },
+  {
+    "id": "APP-0007",
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "status": "Shortlisted for Interview",
+    "appliedDate": "2026-04-12",
+    "shortlistedFor": "PROJ-0004",
+    "name": "Marcus Liu",
+    "email": "marcus.liu@u.nus.edu",
+    "school": "NUS",
+    "course": "Mechanical Engineering",
+    "year": 3,
+    "gpa": 4.1,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0007",
+      "PROJ-0006",
+      "PROJ-0003",
+      "PROJ-0001",
+      "PROJ-0002"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0007",
+        "projectTitle": "Drone Payload Optimisation",
+        "score": 86,
+        "reasoning": "Mechanical engineering with aerospace electives; final year project on UAV structural design. Strong theoretical and practical fit."
+      },
+      {
+        "projectId": "PROJ-0006",
+        "projectTitle": "Autonomous Systems Prototyping",
+        "score": 80,
+        "reasoning": "Systems integration experience from FYP; comfortable with both mechanical and software interfaces."
+      },
+      {
+        "projectId": "PROJ-0003",
+        "projectTitle": "Signal Processing R&D",
+        "score": 66,
+        "reasoning": "Some signal processing from ME instrumentation modules."
+      },
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 42,
+        "reasoning": "Limited software or CS background."
+      },
+      {
+        "projectId": "PROJ-0002",
+        "projectTitle": "AI/ML in Defence Logistics",
+        "score": 55,
+        "reasoning": "Logistics optimisation has some overlap but ML background is thin."
+      }
+    ],
+    "previousDSTA": true,
+    "previousDSTADetails": "DSTA JC Attachment Programme 2022 — 2-week attachment with the Guided Systems division.",
+    "achievements": [
+      "NUS Dean's List AY2024/25",
+      "RC4 Residential College Captain",
+      "NUS Aerospace Systems Design Team"
+    ],
+    "funAnswer": "Smarter prosthetics — ones that learn the user's movement patterns over time and become more natural, not just functional. Technology should feel like an extension of who you are, not an external device.",
+    "formValues": {
+      "name": "Marcus Liu",
+      "email": "marcus.liu@u.nus.edu",
+      "name_of_institution": "NUS",
+      "course_of_study": "Mechanical Engineering",
+      "gpa_cap_rank_points": "4.1",
+      "preferred_start_date": "2026-05-26",
+      "preferred_end_date": "2026-08-21",
+      "area_of_interest_1": "Land Systems",
+      "area_of_interest_2": "Naval Systems",
+      "area_of_interest_3": "Advanced Systems"
+    },
+    "internCategory": "Undergraduate Scholar/Merit Scholar"
+  },
+  {
+    "id": "APP-0008",
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "status": "Rejected",
+    "appliedDate": "2026-04-14",
+    "name": "Amanda Chen",
+    "email": "amanda_chen@mymail.sutd.edu.sg",
+    "school": "SUTD",
+    "course": "Engineering Product Design",
+    "year": 3,
+    "gpa": 3.8,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0006",
+      "PROJ-0007",
+      "PROJ-0002",
+      "PROJ-0001",
+      "PROJ-0003"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0006",
+        "projectTitle": "Autonomous Systems Prototyping",
+        "score": 58,
+        "reasoning": "Product design background shows creativity but limited systems engineering depth for autonomous prototyping."
+      },
+      {
+        "projectId": "PROJ-0007",
+        "projectTitle": "Drone Payload Optimisation",
+        "score": 61,
+        "reasoning": "Some structural design exposure; SUTD design-build projects are relevant but lightweight."
+      },
+      {
+        "projectId": "PROJ-0002",
+        "projectTitle": "AI/ML in Defence Logistics",
+        "score": 50,
+        "reasoning": "No ML coursework evident; general problem-solving skills only."
+      },
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 32,
+        "reasoning": "No security background."
+      },
+      {
+        "projectId": "PROJ-0003",
+        "projectTitle": "Signal Processing R&D",
+        "score": 29,
+        "reasoning": "EPD curriculum does not cover signal processing."
+      }
+    ],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [
+      "SUTD Design Innovation Award 2025"
+    ],
+    "funAnswer": "Modular, affordable housing that can be rapidly deployed in disaster zones. Good design shouldn't be a luxury — it should be the first tool we reach for in a crisis.",
+    "formValues": {
+      "name": "Amanda Chen",
+      "email": "amanda_chen@mymail.sutd.edu.sg",
+      "name_of_institution": "SUTD",
+      "course_of_study": "Engineering Product Design",
+      "gpa_cap_rank_points": "3.8",
+      "preferred_start_date": "2026-06-23",
+      "preferred_end_date": "2026-09-18",
+      "area_of_interest_1": "UI/UX",
+      "area_of_interest_2": "Software Development",
+      "area_of_interest_3": "Simulation & Training Systems"
+    },
+    "internCategory": "Undergraduate Student"
+  },
+  {
+    "id": "APP-0009",
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "status": "Interview Scheduled",
+    "appliedDate": "2026-04-03",
+    "shortlistedFor": "PROJ-0006",
+    "name": "Ryan Ong",
+    "email": "ryan.ong@e.ntu.edu.sg",
+    "school": "NTU",
+    "course": "Aerospace Engineering",
+    "year": 4,
+    "gpa": 4.3,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0006",
+      "PROJ-0007",
+      "PROJ-0003",
+      "PROJ-0001",
+      "PROJ-0002"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0006",
+        "projectTitle": "Autonomous Systems Prototyping",
+        "score": 93,
+        "reasoning": "Exceptional fit. Aerospace FYP on autonomous UAV swarm coordination. Deep understanding of control systems, navigation algorithms, and embedded hardware."
+      },
+      {
+        "projectId": "PROJ-0007",
+        "projectTitle": "Drone Payload Optimisation",
+        "score": 88,
+        "reasoning": "Strong aerodynamics and structural knowledge; published a paper on UAV payload efficiency in NTU journal."
+      },
+      {
+        "projectId": "PROJ-0003",
+        "projectTitle": "Signal Processing R&D",
+        "score": 79,
+        "reasoning": "Signal processing is core aerospace curriculum; sensor fusion experience from FYP."
+      },
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 51,
+        "reasoning": "Limited cybersecurity background; engineering focus."
+      },
+      {
+        "projectId": "PROJ-0002",
+        "projectTitle": "AI/ML in Defence Logistics",
+        "score": 68,
+        "reasoning": "Applied ML in FYP for path planning; relevant but secondary."
+      }
+    ],
+    "previousDSTA": true,
+    "previousDSTADetails": "DSTA Scholarship Finalist 2023 — shortlisted for DSTA postgraduate scholarship; participated in final panel interview.",
+    "achievements": [
+      "NTU President's Research Scholar",
+      "Singapore Aeronautics Olympiad Gold Medallist",
+      "Published: 'Payload Efficiency in Multi-rotor UAVs' (NTU Engineering Journal 2025)"
+    ],
+    "funAnswer": "Autonomous search-and-rescue drones that can operate in GPS-denied environments — disaster zones, collapsed buildings. Current systems are too dependent on infrastructure that's often the first thing to fail.",
+    "formValues": {
+      "name": "Ryan Ong",
+      "email": "ryan.ong@e.ntu.edu.sg",
+      "name_of_institution": "NTU",
+      "course_of_study": "Aerospace Engineering",
+      "gpa_cap_rank_points": "4.3",
+      "preferred_start_date": "2026-07-07",
+      "preferred_end_date": "2026-09-25",
+      "area_of_interest_1": "Air Systems",
+      "area_of_interest_2": "Advanced Systems",
+      "area_of_interest_3": "Simulation & Training Systems"
+    },
+    "internCategory": "Tech UP"
+  },
+  {
+    "id": "APP-0010",
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "status": "Pending Review",
+    "appliedDate": "2026-04-15",
+    "name": "Natasha Sim",
+    "email": "natasha.sim.2023@business.nus.edu",
+    "school": "NUS",
+    "course": "Business Analytics",
+    "year": 3,
+    "gpa": 4,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0002",
+      "PROJ-0001",
+      "PROJ-0006",
+      "PROJ-0003",
+      "PROJ-0007"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0002",
+        "projectTitle": "AI/ML in Defence Logistics",
+        "score": 84,
+        "reasoning": "Business analytics curriculum is a strong match for logistics optimisation. Experience with supply chain modelling and predictive analytics. Strong quantitative skills."
+      },
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 76,
+        "reasoning": "Data analytics skills transfer well to threat detection; some security analytics coursework."
+      },
+      {
+        "projectId": "PROJ-0006",
+        "projectTitle": "Autonomous Systems Prototyping",
+        "score": 52,
+        "reasoning": "Limited technical depth for hardware-oriented project."
+      },
+      {
+        "projectId": "PROJ-0003",
+        "projectTitle": "Signal Processing R&D",
+        "score": 40,
+        "reasoning": "Business curriculum has minimal signal processing overlap."
+      },
+      {
+        "projectId": "PROJ-0007",
+        "projectTitle": "Drone Payload Optimisation",
+        "score": 38,
+        "reasoning": "No relevant engineering background."
+      }
+    ],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [
+      "NUS Student Council President",
+      "NUS Merit Scholarship",
+      "CCA Best Record Award",
+      "President of NUS Data Analytics Club"
+    ],
+    "funAnswer": "A platform that connects retired professionals with young students for free mentorship — not a startup, just infrastructure. So much knowledge disappears when people retire. That's a waste we can fix.",
+    "formValues": {
+      "name": "Natasha Sim",
+      "email": "natasha.sim.2023@business.nus.edu",
+      "name_of_institution": "NUS",
+      "course_of_study": "Business Analytics",
+      "gpa_cap_rank_points": "4",
+      "preferred_start_date": "2026-05-12",
+      "preferred_end_date": "2026-09-04",
+      "area_of_interest_1": "Data Science/Data Analytics",
+      "area_of_interest_2": "Artificial Intelligence",
+      "area_of_interest_3": "Software Development"
+    },
+    "internCategory": "Undergraduate Scholar/Merit Scholar"
+  },
+  {
+    "id": "APP-0011",
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "status": "Pending Screening",
+    "appliedDate": "2026-05-20",
+    "name": "Marcus Loh Jian Wei",
+    "email": "marcus.loh.2022@comp.nus.edu.sg",
+    "school": "NUS",
+    "course": "Information Security",
+    "year": 3,
+    "gpa": 3.7,
+    "eligibilityPass": false,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0001",
+      "PROJ-0002",
+      "PROJ-0006"
+    ],
+    "suitabilityScores": [],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [
+      "NUS School of Computing Dean's List AY2024/25",
+      "Capture the Flag (CTF) Team Captain"
+    ],
+    "funAnswer": "I'd build an AI-powered deception network that automatically adapts to attacker behaviour in real time — making intrusion attempts self-defeating by feeding adversaries convincing false data.",
+    "formValues": {
+      "name": "Marcus Loh Jian Wei",
+      "email": "marcus.loh.2022@comp.nus.edu.sg",
+      "name_of_institution": "NUS",
+      "course_of_study": "Information Security",
+      "gpa_cap_rank_points": "3.7",
+      "preferred_start_date": "2026-05-12",
+      "preferred_end_date": "2026-08-08",
+      "area_of_interest_1": "Infosecurity",
+      "area_of_interest_2": "Cybersecurity",
+      "area_of_interest_3": "Networks & Infrastructure"
+    },
+    "internCategory": "Undergraduate Student"
+  },
+  {
+    "id": "APP-0012",
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "status": "Pending Screening",
+    "appliedDate": "2026-05-21",
+    "name": "Kevin Tan Rui Feng",
+    "email": "kevin.tan.2023@e.ntu.edu.sg",
+    "school": "NTU",
+    "course": "Mechanical Engineering",
+    "year": 2,
+    "gpa": 2.6,
+    "eligibilityPass": false,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0007",
+      "PROJ-0006"
+    ],
+    "suitabilityScores": [],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [
+      "NTU Hall Sports Captain"
+    ],
+    "funAnswer": "A waste-heat recovery system for urban buildings that converts excess thermal energy from server farms into electricity for the surrounding neighbourhood.",
+    "formValues": {
+      "name": "Kevin Tan Rui Feng",
+      "email": "kevin.tan.2023@e.ntu.edu.sg",
+      "name_of_institution": "NTU",
+      "course_of_study": "Mechanical Engineering",
+      "gpa_cap_rank_points": "2.6",
+      "preferred_start_date": "2026-05-19",
+      "preferred_end_date": "2026-08-15",
+      "area_of_interest_1": "Land Systems",
+      "area_of_interest_2": "Naval Systems",
+      "area_of_interest_3": "Advanced Systems"
+    },
+    "internCategory": "Tech UP"
+  },
+  {
+    "id": "APP-0013",
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "status": "Pending Review",
+    "appliedDate": "2026-05-10",
+    "name": "Aisha Binte Rahman",
+    "email": "aisha.rahman.2023@sim.edu.sg",
+    "school": "SIM",
+    "course": "Business Information Systems",
+    "year": 3,
+    "gpa": 3.5,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0002",
+      "PROJ-0001"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0002",
+        "projectTitle": "AI/ML in Defence Logistics",
+        "score": 71,
+        "reasoning": "Business information systems curriculum overlaps well with logistics analytics and data modelling."
+      },
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 58,
+        "reasoning": "Some IS security coursework but limited depth in threat analysis."
+      }
+    ],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [
+      "SIM Director's List 2025",
+      "Microsoft Student Partner"
+    ],
+    "funAnswer": "A platform that maps underserved communities to available government grants in real time — most people who qualify never apply because they don't know the schemes exist.",
+    "formValues": {
+      "name": "Aisha Binte Rahman",
+      "email": "aisha.rahman.2023@sim.edu.sg",
+      "name_of_institution": "SIM",
+      "course_of_study": "Business Information Systems",
+      "gpa_cap_rank_points": "3.5",
+      "preferred_start_date": "2026-06-02",
+      "preferred_end_date": "2026-08-28",
+      "area_of_interest_1": "Software Development",
+      "area_of_interest_2": "Data Science/Data Analytics",
+      "area_of_interest_3": "Cloud"
+    },
+    "internCategory": "Undergraduate Scholar/Merit Scholar"
+  },
+  {
+    "id": "APP-0014",
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "status": "Interview Scheduled",
+    "appliedDate": "2026-04-08",
+    "shortlistedFor": "PROJ-0004",
+    "interviewSlots": [
+      {
+        "date": "2026-06-04",
+        "time": "10:00"
+      },
+      {
+        "date": "2026-06-05",
+        "time": "14:00"
+      },
+      {
+        "date": "2026-06-06",
+        "time": "11:00"
+      }
+    ],
+    "confirmedSlot": 1,
+    "name": "Ethan Koh Wei Jian",
+    "email": "ethan.koh.2022@comp.nus.edu.sg",
+    "school": "NUS",
+    "course": "Computer Engineering",
+    "year": 4,
+    "gpa": 4,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0001",
+      "PROJ-0002",
+      "PROJ-0006"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 87,
+        "reasoning": "Computer engineering with a network security specialisation; FYP on anomaly detection in industrial control systems."
+      },
+      {
+        "projectId": "PROJ-0002",
+        "projectTitle": "AI/ML in Defence Logistics",
+        "score": 74,
+        "reasoning": "Applied ML modules taken; relevant but secondary to cybersecurity focus."
+      },
+      {
+        "projectId": "PROJ-0006",
+        "projectTitle": "Autonomous Systems Prototyping",
+        "score": 69,
+        "reasoning": "Embedded systems experience is a strength; autonomous systems work is adjacent."
+      }
+    ],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [
+      "NUS Computing Merit Scholarship",
+      "GreyHat CTF 2025 — 2nd Place"
+    ],
+    "funAnswer": "An AI co-pilot for critical infrastructure operators — power grids, water treatment — that flags anomalies before they cascade. One human can't watch everything; an AI partner changes that equation.",
+    "formValues": {
+      "name": "Ethan Koh Wei Jian",
+      "email": "ethan.koh.2022@comp.nus.edu.sg",
+      "name_of_institution": "NUS",
+      "course_of_study": "Computer Engineering",
+      "gpa_cap_rank_points": "4",
+      "preferred_start_date": "2026-06-09",
+      "preferred_end_date": "2026-09-04",
+      "area_of_interest_1": "Software Development",
+      "area_of_interest_2": "Cloud",
+      "area_of_interest_3": "Networks & Infrastructure"
+    },
+    "internCategory": "Undergraduate Student"
+  },
+  {
+    "id": "APP-0015",
+    "programmeId": "PROG-0009",
+    "programmeName": "University Internship 2026",
+    "status": "Interview Completed",
+    "appliedDate": "2026-04-06",
+    "shortlistedFor": "PROJ-0003",
+    "interviewSlots": [
+      {
+        "date": "2026-06-02",
+        "time": "09:00"
+      },
+      {
+        "date": "2026-06-03",
+        "time": "15:00"
+      },
+      {
+        "date": "2026-06-04",
+        "time": "11:00"
+      }
+    ],
+    "confirmedSlot": 0,
+    "mentorDecision": "Accepted",
+    "mentorNotes": "Excellent technical depth. Jasmine's understanding of adaptive filtering is well above average for a final-year student. Clear communicator — explained her FYP approach concisely and fielded follow-up questions confidently. Strong initiative; asked thoughtful questions about the project's real-world deployment constraints.",
+    "mentorScores": {
+      "technicalKnowledge": 9,
+      "problemSolving": 8.5,
+      "communication": 9,
+      "initiativeDrive": 8
+    },
+    "name": "Jasmine Wong Li Ting",
+    "email": "jasmine.wong.2022@e.ntu.edu.sg",
+    "school": "NTU",
+    "course": "Electrical Engineering",
+    "year": 4,
+    "gpa": 4.2,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0003",
+      "PROJ-0006",
+      "PROJ-0007"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0003",
+        "projectTitle": "Signal Processing R&D",
+        "score": 91,
+        "reasoning": "Top-performing EE student with a signals and communications specialisation. FYP on adaptive filtering for radar signal enhancement — directly aligned."
+      },
+      {
+        "projectId": "PROJ-0006",
+        "projectTitle": "Autonomous Systems Prototyping",
+        "score": 80,
+        "reasoning": "Strong control theory and embedded systems background from EE curriculum."
+      },
+      {
+        "projectId": "PROJ-0007",
+        "projectTitle": "Drone Payload Optimisation",
+        "score": 72,
+        "reasoning": "Relevant aerodynamics elective taken; good fit for hardware-oriented work."
+      }
+    ],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [
+      "NTU President's Research Scholar",
+      "IEEE Singapore Young Engineer Award 2025"
+    ],
+    "funAnswer": "Hearing aids that don't just amplify everything but intelligently separate the voice you want to hear from background noise — context-aware, not just louder.",
+    "formValues": {
+      "name": "Jasmine Wong Li Ting",
+      "email": "jasmine.wong.2022@e.ntu.edu.sg",
+      "name_of_institution": "NTU",
+      "course_of_study": "Electrical Engineering",
+      "gpa_cap_rank_points": "4.2",
+      "preferred_start_date": "2026-05-05",
+      "preferred_end_date": "2026-07-31",
+      "area_of_interest_1": "Command & Control Systems",
+      "area_of_interest_2": "Advanced Systems",
+      "area_of_interest_3": "Air Systems"
+    },
+    "internCategory": "Tech UP"
+  },
+  {
+    "id": "APP-0017",
+    "programmeId": "PROG-0009",
+    "programmeName": "University Internship 2026",
+    "status": "Interview Completed",
+    "appliedDate": "2026-04-09",
+    "shortlistedFor": "PROJ-0002",
+    "interviewSlots": [
+      {
+        "date": "2026-06-03",
+        "time": "10:00"
+      },
+      {
+        "date": "2026-06-04",
+        "time": "14:00"
+      },
+      {
+        "date": "2026-06-05",
+        "time": "11:00"
+      }
+    ],
+    "confirmedSlot": 1,
+    "name": "Derek Ng Jun Xian",
+    "email": "derek.ng.2022@comp.nus.edu.sg",
+    "school": "NUS",
+    "course": "Computer Science",
+    "year": 3,
+    "gpa": 3.8,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0002",
+      "PROJ-0001",
+      "PROJ-0006"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0002",
+        "projectTitle": "AI/ML in Defence Logistics",
+        "score": 76,
+        "reasoning": "Good ML foundation with relevant coursework, though project experience is mostly academic."
+      },
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 70,
+        "reasoning": "Security elective taken; CTF participation shows initiative but depth is limited."
+      },
+      {
+        "projectId": "PROJ-0006",
+        "projectTitle": "Autonomous Systems Prototyping",
+        "score": 58,
+        "reasoning": "Limited embedded systems or robotics background."
+      }
+    ],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [
+      "NUS Computing Merit Scholarship",
+      "HackerRank Top 500 Singapore"
+    ],
+    "funAnswer": "A real-time platform that aggregates and visualises global supply chain disruptions so companies can reroute before a delay cascades. The world is too dependent on fragile logistics networks.",
+    "formValues": {
+      "name": "Derek Ng Jun Xian",
+      "email": "derek.ng.2022@comp.nus.edu.sg",
+      "name_of_institution": "NUS",
+      "course_of_study": "Computer Science",
+      "gpa_cap_rank_points": "3.8",
+      "preferred_start_date": "2026-06-16",
+      "preferred_end_date": "2026-09-11",
+      "area_of_interest_1": "Software Development",
+      "area_of_interest_2": "Artificial Intelligence",
+      "area_of_interest_3": "Cybersecurity"
+    },
+    "internCategory": "Undergraduate Scholar/Merit Scholar"
+  },
+  {
+    "id": "APP-0018",
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "status": "Interview Completed",
+    "appliedDate": "2026-04-11",
+    "shortlistedFor": "PROJ-0005",
+    "mentorDecision": null,
+    "name": "Lin Mei Xuan",
+    "email": "lin.meixuan@e.ntu.edu.sg",
+    "school": "NTU",
+    "course": "Information Engineering",
+    "year": 4,
+    "gpa": 4.1,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0006",
+      "PROJ-0003",
+      "PROJ-0002"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0006",
+        "projectTitle": "Autonomous Systems Prototyping",
+        "score": 84,
+        "reasoning": "Strong control systems and embedded programming background; FYP on multi-sensor fusion for mobile robots."
+      },
+      {
+        "projectId": "PROJ-0003",
+        "projectTitle": "Signal Processing R&D",
+        "score": 78,
+        "reasoning": "Information engineering curriculum covers DSP extensively; solid theoretical grounding."
+      },
+      {
+        "projectId": "PROJ-0002",
+        "projectTitle": "AI/ML in Defence Logistics",
+        "score": 65,
+        "reasoning": "Some ML exposure but primary focus is on systems rather than analytics."
+      }
+    ],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [
+      "NTU Full Scholarship",
+      "IEEE Robotics & Automation Society — Student Paper Award 2025"
+    ],
+    "funAnswer": "Low-cost sensor networks for elderly fall detection at home — passive, no cameras, no invasion of privacy. The technology exists but nobody has made it simple and affordable enough for mass adoption.",
+    "formValues": {
+      "name": "Lin Mei Xuan",
+      "email": "lin.meixuan@e.ntu.edu.sg",
+      "name_of_institution": "NTU",
+      "course_of_study": "Information Engineering",
+      "gpa_cap_rank_points": "4.1",
+      "preferred_start_date": "2026-05-26",
+      "preferred_end_date": "2026-08-21",
+      "area_of_interest_1": "Software Development",
+      "area_of_interest_2": "Data Science/Data Analytics",
+      "area_of_interest_3": "Cloud"
+    },
+    "internCategory": "Undergraduate Student"
+  },
+  {
+    "id": "APP-0016",
+    "programmeId": "PROG-0009",
+    "programmeName": "University Internship 2026",
+    "status": "Offer Accepted",
+    "appliedDate": "2026-03-28",
+    "shortlistedFor": "PROJ-0002",
+    "mentorDecision": "Accepted",
+    "mentorNotes": "Brandon is exceptional — easily the strongest candidate I have seen in years. Deep theoretical grounding backed by real publications. Self-directed, structured thinker who asks the right questions. Highly recommend.",
+    "mentorScores": {
+      "technicalKnowledge": 9.5,
+      "problemSolving": 9.5,
+      "communication": 9,
+      "initiativeDrive": 10
+    },
+    "name": "Brandon Lee Kai Yang",
+    "email": "brandon.lee.2021@comp.nus.edu.sg",
+    "school": "NUS",
+    "course": "Computer Science",
+    "year": 4,
+    "gpa": 4.5,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0002",
+      "PROJ-0001",
+      "PROJ-0006"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0002",
+        "projectTitle": "AI/ML in Defence Logistics",
+        "score": 95,
+        "reasoning": "Outstanding AI/ML background. Undergraduate thesis on reinforcement learning for multi-agent logistics. Published at NeurIPS 2025 workshop. Exceptional fit."
+      },
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 83,
+        "reasoning": "Strong systems programming skills; prior internship at CSA with threat modelling exposure."
+      },
+      {
+        "projectId": "PROJ-0006",
+        "projectTitle": "Autonomous Systems Prototyping",
+        "score": 78,
+        "reasoning": "Robotics elective and ROS experience; solid foundation for autonomous systems work."
+      }
+    ],
+    "previousDSTA": true,
+    "previousDSTADetails": "DSTA UG Internship 2024 (Summer) — AI Systems Division. Worked on predictive maintenance models for defence logistics fleet.",
+    "achievements": [
+      "NUS University Scholars Programme",
+      "NeurIPS 2025 Workshop — Published Paper",
+      "Google DeepMind Research Mentorship 2024"
+    ],
+    "funAnswer": "An AI system that continuously monitors and summarises global scientific literature so researchers never miss a breakthrough in adjacent fields. The biggest discoveries often happen at the intersection of disciplines no one thought to connect.",
+    "internshipStartDate": "2026-06-09",
+    "internshipEndDate": "2026-08-28",
+    "offerResponse": "Accepted",
+    "welcomeLetterSent": false,
+    "formValues": {
+      "name": "Brandon Lee Kai Yang",
+      "email": "brandon.lee.2021@comp.nus.edu.sg",
+      "name_of_institution": "NUS",
+      "course_of_study": "Computer Science",
+      "gpa_cap_rank_points": "4.5",
+      "preferred_start_date": "2026-06-23",
+      "preferred_end_date": "2026-09-18",
+      "area_of_interest_1": "Software Development",
+      "area_of_interest_2": "Artificial Intelligence",
+      "area_of_interest_3": "Cybersecurity"
+    },
+    "internCategory": "Tech UP"
+  },
+  {
+    "id": "APP-0023",
+    "programmeId": "PROG-0009",
+    "programmeName": "University Internship 2026",
+    "status": "Active Intern",
+    "appliedDate": "2026-03-15",
+    "shortlistedFor": "PROJ-0001",
+    "interviewSlots": [
+      {
+        "date": "2026-05-12",
+        "time": "10:00"
+      }
+    ],
+    "confirmedSlot": 0,
+    "mentorDecision": "Accepted",
+    "mentorNotes": "Strong candidate with excellent cybersecurity fundamentals. Very proactive in asking the right questions.",
+    "mentorScores": {
+      "technicalKnowledge": 8.5,
+      "problemSolving": 8,
+      "communication": 8.5,
+      "initiativeDrive": 9
+    },
+    "offerResponse": "Accepted",
+    "name": "Ryo Tanaka",
+    "email": "ryo.tanaka.2022@u.nus.edu",
+    "school": "NUS",
+    "course": "Information Security",
+    "year": 3,
+    "gpa": 4,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0001",
+      "PROJ-0002"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 88,
+        "reasoning": "Strong background in network security and threat modelling."
+      }
+    ],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [
+      "NUS Dean's List 2025",
+      "CyberSG Talent Award 2025"
+    ],
+    "funAnswer": "A real-time threat intelligence sharing platform that lets different governments and private sector orgs collaborate on defence without compromising classified data.",
+    "internshipStartDate": "2026-05-19",
+    "internshipEndDate": "2026-08-08",
+    "welcomeLetterSent": true,
+    "welcomeLetterSentDate": "2026-05-14",
+    "formValues": {
+      "name": "Ryo Tanaka",
+      "email": "ryo.tanaka.2022@u.nus.edu",
+      "name_of_institution": "NUS",
+      "course_of_study": "Information Security",
+      "gpa_cap_rank_points": "4",
+      "preferred_start_date": "2026-06-02",
+      "preferred_end_date": "2026-08-28",
+      "area_of_interest_1": "Infosecurity",
+      "area_of_interest_2": "Cybersecurity",
+      "area_of_interest_3": "Networks & Infrastructure"
+    },
+    "internCategory": "Undergraduate Scholar/Merit Scholar"
+  },
+  {
+    "id": "APP-0024",
+    "programmeId": "PROG-0009",
+    "programmeName": "University Internship 2026",
+    "status": "Active Intern",
+    "appliedDate": "2026-03-18",
+    "shortlistedFor": "PROJ-0004",
+    "interviewSlots": [
+      {
+        "date": "2026-05-15",
+        "time": "14:00"
+      }
+    ],
+    "confirmedSlot": 0,
+    "mentorDecision": "Accepted",
+    "mentorNotes": "Excellent robotics background. Fatimah brings both theoretical and hands-on skills to the autonomous systems project.",
+    "mentorScores": {
+      "technicalKnowledge": 9,
+      "problemSolving": 8.5,
+      "communication": 8,
+      "initiativeDrive": 8.5
+    },
+    "offerResponse": "Accepted",
+    "name": "Fatimah Binte Abdullah",
+    "email": "fatimah.001@e.ntu.edu.sg",
+    "school": "NTU",
+    "course": "Robotics and Autonomous Systems",
+    "year": 4,
+    "gpa": 4.3,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0004",
+      "PROJ-0006"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0004",
+        "projectTitle": "Autonomous Systems Prototyping",
+        "score": 93,
+        "reasoning": "Ideal fit — FYP on SLAM algorithms directly relevant to the autonomous systems project."
+      }
+    ],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [
+      "NTU School of EEE Gold Medal",
+      "IEEE Singapore Student Paper Award 2025"
+    ],
+    "funAnswer": "Autonomous underwater vehicles that can map the deep ocean without human supervision — we know more about the surface of Mars than the bottom of our own oceans.",
+    "internshipStartDate": "2026-05-19",
+    "internshipEndDate": "2026-08-15",
+    "welcomeLetterSent": true,
+    "welcomeLetterSentDate": "2026-05-14",
+    "formValues": {
+      "name": "Fatimah Binte Abdullah",
+      "email": "fatimah.001@e.ntu.edu.sg",
+      "name_of_institution": "NTU",
+      "course_of_study": "Robotics and Autonomous Systems",
+      "gpa_cap_rank_points": "4.3",
+      "preferred_start_date": "2026-06-09",
+      "preferred_end_date": "2026-09-04",
+      "area_of_interest_1": "Advanced Systems",
+      "area_of_interest_2": "Land Systems",
+      "area_of_interest_3": "Artificial Intelligence"
+    },
+    "internCategory": "Undergraduate Student"
+  },
+  {
+    "id": "APP-0025",
+    "programmeId": "PROG-0007",
+    "programmeName": "University Internship 2025",
+    "status": "Internship Completed",
+    "appliedDate": "2025-10-10",
+    "shortlistedFor": "PROJ-0003",
+    "interviewSlots": [
+      {
+        "date": "2025-12-08",
+        "time": "11:00"
+      }
+    ],
+    "confirmedSlot": 0,
+    "mentorDecision": "Accepted",
+    "mentorNotes": "Wei Zhen exceeded expectations. Completed the full signal processing pipeline ahead of schedule and wrote excellent documentation.",
+    "mentorScores": {
+      "technicalKnowledge": 9.5,
+      "problemSolving": 9,
+      "communication": 8.5,
+      "initiativeDrive": 9.5
+    },
+    "offerResponse": "Accepted",
+    "name": "Wei Zhen",
+    "email": "wei.zhen.2021@e.ntu.edu.sg",
+    "school": "NTU",
+    "course": "Electrical and Electronic Engineering",
+    "year": 4,
+    "gpa": 4.4,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0003",
+      "PROJ-0001"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0003",
+        "projectTitle": "Signal Processing R&D",
+        "score": 96,
+        "reasoning": "Outstanding EE student specialising in signal and communications systems. Near-perfect fit."
+      }
+    ],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [
+      "NTU University Scholar",
+      "Best FYP Award — School of EEE 2025"
+    ],
+    "funAnswer": "A signal processing chip that can decompose any sound environment in real time and isolate specific audio sources — imagine hearing a whispered conversation across a noisy concert hall.",
+    "internshipStartDate": "2025-12-01",
+    "internshipEndDate": "2026-02-27",
+    "welcomeLetterSent": true,
+    "welcomeLetterSentDate": "2025-11-24",
+    "cocSent": true,
+    "cocSentDate": "2026-03-03",
+    "internCategory": "Tech UP"
+  },
+  {
+    "id": "APP-0026",
+    "programmeId": "PROG-0009",
+    "programmeName": "University Internship 2026",
+    "status": "Offer Accepted",
+    "appliedDate": "2026-04-01",
+    "shortlistedFor": "PROJ-0006",
+    "interviewSlots": [
+      {
+        "date": "2026-05-28",
+        "time": "10:00"
+      }
+    ],
+    "confirmedSlot": 0,
+    "mentorDecision": "Accepted",
+    "mentorNotes": "Yusuf showed excellent aerodynamics knowledge and creative thinking during the interview. Looking forward to working with him.",
+    "mentorScores": {
+      "technicalKnowledge": 8,
+      "problemSolving": 8.5,
+      "communication": 9,
+      "initiativeDrive": 8
+    },
+    "offerResponse": "Accepted",
+    "name": "Yusuf Bin Ismail",
+    "email": "yusuf.ismail.2022@u.nus.edu",
+    "school": "NUS",
+    "course": "Mechanical Engineering",
+    "year": 3,
+    "gpa": 4.1,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0006",
+      "PROJ-0004"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0006",
+        "projectTitle": "Drone Payload Optimisation",
+        "score": 85,
+        "reasoning": "Strong mechanical engineering background with UAV design experience from CCA."
+      }
+    ],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [
+      "NUS Merit Scholarship",
+      "NUS Engineering Innovation Award 2025"
+    ],
+    "funAnswer": "Drones that can autonomously form dynamic cargo relay chains — swarms that hand off packages mid-flight to extend delivery range without needing to land.",
+    "internshipStartDate": "2026-06-16",
+    "internshipEndDate": "2026-08-28",
+    "welcomeLetterSent": true,
+    "welcomeLetterSentDate": "2026-05-28",
+    "formValues": {
+      "name": "Yusuf Bin Ismail",
+      "email": "yusuf.ismail.2022@u.nus.edu",
+      "name_of_institution": "NUS",
+      "course_of_study": "Mechanical Engineering",
+      "gpa_cap_rank_points": "4.1",
+      "preferred_start_date": "2026-05-05",
+      "preferred_end_date": "2026-07-31",
+      "area_of_interest_1": "Land Systems",
+      "area_of_interest_2": "Naval Systems",
+      "area_of_interest_3": "Advanced Systems"
+    },
+    "internCategory": "Undergraduate Scholar/Merit Scholar"
+  },
+  {
+    "id": "APP-0028",
+    "programmeId": "PROG-0007",
+    "programmeName": "University Internship 2025",
+    "status": "Internship Completed",
+    "appliedDate": "2025-02-10",
+    "name": "Marcus Tan",
+    "email": "marcus.tan@dsta.gov.sg",
+    "school": "NTU",
+    "course": "Computer Engineering",
+    "year": 3,
+    "gpa": 4.4,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0001",
+      "PROJ-0006",
+      "PROJ-0003"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 89,
+        "disciplineScore": 88,
+        "skillsScore": 90,
+        "reasoning": "Strong computer engineering background with network security modules and relevant project experience."
+      },
+      {
+        "projectId": "PROJ-0006",
+        "projectTitle": "Autonomous Systems Prototyping",
+        "score": 81,
+        "disciplineScore": 82,
+        "skillsScore": 80,
+        "reasoning": "Hardware and embedded systems coursework aligns well with autonomous systems prototyping requirements."
+      },
+      {
+        "projectId": "PROJ-0003",
+        "projectTitle": "Signal Processing R&D",
+        "score": 75,
+        "disciplineScore": 74,
+        "skillsScore": 76,
+        "reasoning": "Digital signal processing module completed; solid mathematics foundation."
+      }
+    ],
+    "shortlistedFor": "PROJ-0001",
+    "internshipStartDate": "2025-12-01",
+    "internshipEndDate": "2026-02-27",
+    "creditBearing": false,
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [
+      "NTU Dean's List AY2024/25",
+      "NTU Computing Club — Technical Lead"
+    ],
+    "funAnswer": "An AI-powered triage system that predicts cybersecurity incident severity in real time so analysts stop wasting time on false positives.",
+    "cocSent": true,
+    "cocSentDate": "2026-03-03",
+    "internCategory": "Undergraduate Student"
+  },
+  {
+    "id": "APP-0029",
+    "programmeId": "PROG-0009",
+    "programmeName": "University Internship 2026",
+    "status": "Active Intern",
+    "appliedDate": "2026-02-14",
+    "shortlistedFor": "PROJ-0001",
+    "offerResponse": "Accepted",
+    "internshipStartDate": "2026-05-05",
+    "internshipEndDate": "2026-08-07",
+    "creditBearing": false,
+    "welcomeLetterSent": true,
+    "welcomeLetterSentDate": "2026-05-20",
+    "name": "Marcus Tan",
+    "email": "marcus.tan@dsta.gov.sg",
+    "school": "NTU",
+    "course": "Computer Engineering",
+    "year": 4,
+    "gpa": 4.5,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0001",
+      "PROJ-0006"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 91,
+        "disciplineScore": 90,
+        "skillsScore": 92,
+        "reasoning": "Returning intern with proven performance in cybersecurity domain; highly recommended."
+      },
+      {
+        "projectId": "PROJ-0006",
+        "projectTitle": "Autonomous Systems Prototyping",
+        "score": 77,
+        "disciplineScore": 76,
+        "skillsScore": 78,
+        "reasoning": "Solid hardware background but primary strength remains in cybersecurity."
+      }
+    ],
+    "previousDSTA": true,
+    "previousDSTADetails": "University Internship 2025 — Cybersecurity Threat Analysis",
+    "achievements": [
+      "NTU Dean's List AY2025/26",
+      "NTU Computing Club — Technical Lead",
+      "DSTA University Internship 2025 — Outstanding Intern Award"
+    ],
+    "funAnswer": "A zero-trust network architecture that adapts its trust boundaries dynamically based on real-time behavioural analytics.",
+    "formValues": {
+      "name": "Marcus Tan",
+      "email": "marcus.tan@dsta.gov.sg",
+      "name_of_institution": "NTU",
+      "course_of_study": "Computer Engineering",
+      "gpa_cap_rank_points": "4.5",
+      "preferred_start_date": "2026-05-26",
+      "preferred_end_date": "2026-08-21",
+      "area_of_interest_1": "Software Development",
+      "area_of_interest_2": "Cloud",
+      "area_of_interest_3": "Networks & Infrastructure"
+    },
+    "internCategory": "Tech UP"
+  },
+  {
+    "id": "APP-7001",
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "status": "Pending Review",
+    "appliedDate": "2026-05-20",
+    "name": "Marcus Tan Wei Jie",
+    "email": "marcus.tan@u.nus.edu",
+    "school": "NUS",
+    "course": "Electrical Engineering",
+    "year": 3,
+    "gpa": 4.5,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0212",
+      "PROJ-0206",
+      "PROJ-0201",
+      "PROJ-0003",
+      "PROJ-0207"
+    ],
+    "suitabilityScores": [],
+    "previousDSTA": true,
+    "previousDSTADetails": null,
+    "achievements": [],
+    "funAnswer": "I'd solve the energy grid problem — specifically making renewable energy storage affordable and scalable. Clean energy exists; reliable storage is the bottleneck holding back mass adoption.",
+    "formValues": {
+      "name": "Priya Nair",
+      "email": "priya.nair@e.ntu.edu.sg",
+      "name_of_institution": "NTU",
+      "course_of_study": "Electrical Engineering",
+      "gpa_cap_rank_points": "4.2",
+      "preferred_start_date": "2026-05-19",
+      "preferred_end_date": "2026-08-15",
+      "area_of_interest_1": "Command & Control Systems",
+      "area_of_interest_2": "Advanced Systems",
+      "area_of_interest_3": "Air Systems"
+    },
+    "internCategory": "Undergraduate Scholar/Merit Scholar"
+  },
+  {
+    "id": "APP-7002",
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "status": "Pending Review",
+    "appliedDate": "2026-05-20",
+    "name": "Chloe Wong",
+    "email": "chloe.wong@e.ntu.edu.sg",
+    "school": "NTU",
+    "course": "Computer Science",
+    "year": 2,
+    "gpa": 4.3,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0201",
+      "PROJ-0205",
+      "PROJ-0207"
+    ],
+    "suitabilityScores": [],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [],
+    "funAnswer": "I'd solve the energy grid problem — specifically making renewable energy storage affordable and scalable. Clean energy exists; reliable storage is the bottleneck holding back mass adoption.",
+    "formValues": {
+      "name": "Priya Nair",
+      "email": "priya.nair@e.ntu.edu.sg",
+      "name_of_institution": "NTU",
+      "course_of_study": "Electrical Engineering",
+      "gpa_cap_rank_points": "4.2",
+      "preferred_start_date": "2026-05-19",
+      "preferred_end_date": "2026-08-15",
+      "area_of_interest_1": "Command & Control Systems",
+      "area_of_interest_2": "Advanced Systems",
+      "area_of_interest_3": "Air Systems"
+    },
+    "internCategory": "Undergraduate Student"
+  },
+  {
+    "id": "APP-7003",
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "status": "Shortlisted for Interview",
+    "appliedDate": "2026-05-20",
+    "name": "Ravi Kumar",
+    "email": "ravi.kumar@u.nus.edu",
+    "school": "NUS",
+    "course": "Computer Engineering",
+    "year": 3,
+    "gpa": 4.1,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0206",
+      "PROJ-0201"
+    ],
+    "suitabilityScores": [],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "achievements": [],
+    "funAnswer": "I'd solve the energy grid problem — specifically making renewable energy storage affordable and scalable. Clean energy exists; reliable storage is the bottleneck holding back mass adoption.",
+    "formValues": {
+      "name": "Priya Nair",
+      "email": "priya.nair@e.ntu.edu.sg",
+      "name_of_institution": "NTU",
+      "course_of_study": "Electrical Engineering",
+      "gpa_cap_rank_points": "4.2",
+      "preferred_start_date": "2026-05-19",
+      "preferred_end_date": "2026-08-15",
+      "area_of_interest_1": "Command & Control Systems",
+      "area_of_interest_2": "Advanced Systems",
+      "area_of_interest_3": "Air Systems"
+    },
+    "shortlistedFor": "PROJ-0206",
+    "internCategory": "Tech UP"
+  },
+  {
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "id": "APP-0030",
+    "status": "Shortlisted for Interview",
+    "appliedDate": "2026-04-18",
+    "name": "Aaron Ng Jun Kai",
+    "email": "aaron.ng@u.nus.edu",
+    "school": "NUS",
+    "course": "Computer Science",
+    "year": 3,
+    "gpa": 4.6,
+    "shortlistedFor": "PROJ-0001",
+    "projectRankings": [
+      "PROJ-0001",
+      "PROJ-0008",
+      "PROJ-0002"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 88,
+        "reasoning": "Strong network security coursework and a CTF background; clear fit for threat analysis."
+      }
+    ],
+    "achievements": [
+      "NUS Greyhats CTF Lead",
+      "Dean's List AY2024/25"
+    ],
+    "funAnswer": "I'd build a self-learning honeypot that adapts to attacker behaviour in real time.",
+    "internCategory": "Undergraduate Scholar/Merit Scholar"
+  },
+  {
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "id": "APP-0031",
+    "status": "Interview Scheduled",
+    "appliedDate": "2026-04-15",
+    "name": "Priya Nair",
+    "email": "priya.nair@e.ntu.edu.sg",
+    "school": "NTU",
+    "course": "Computer Engineering",
+    "year": 3,
+    "gpa": 4.5,
+    "shortlistedFor": "PROJ-0001",
+    "projectRankings": [
+      "PROJ-0001",
+      "PROJ-0006"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 84,
+        "reasoning": "Solid log-analysis and Python skills; prior SOC internship is directly relevant."
+      }
+    ],
+    "achievements": [
+      "SOC Analyst Intern, GovTech",
+      "NTU Dean's List"
+    ],
+    "interviewSlots": [
+      {
+        "date": "2026-06-09",
+        "time": "10:00"
+      },
+      {
+        "date": "2026-06-10",
+        "time": "14:00"
+      },
+      {
+        "date": "2026-06-11",
+        "time": "11:00"
+      }
+    ],
+    "confirmedSlot": 0,
+    "meetingLink": "https://meet.dsta.gov.sg/wjl-priya-nair",
+    "funAnswer": "I'd map every public-sector system into one live threat graph so we see attacks spread early.",
+    "internCategory": "Undergraduate Student"
+  },
+  {
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "id": "APP-0032",
+    "status": "Interview Completed",
+    "appliedDate": "2026-04-10",
+    "name": "Daniel Wong Kai Le",
+    "email": "daniel.wong@u.nus.edu",
+    "school": "NUS",
+    "course": "Information Security",
+    "year": 4,
+    "gpa": 4.3,
+    "shortlistedFor": "PROJ-0001",
+    "projectRankings": [
+      "PROJ-0001",
+      "PROJ-0008"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 80,
+        "reasoning": "Final-year IS student with MITRE ATT&CK project experience; needs to deepen ML exposure."
+      }
+    ],
+    "achievements": [
+      "FYP: Automated SIEM rule generation",
+      "Hack&Roll Finalist"
+    ],
+    "interviewSlots": [
+      {
+        "date": "2026-05-28",
+        "time": "15:00"
+      },
+      {
+        "date": "2026-05-29",
+        "time": "10:00"
+      }
+    ],
+    "confirmedSlot": 1,
+    "funAnswer": "I'd automate the boring 80% of triage so analysts spend time on the 20% that matters.",
+    "internCategory": "Tech UP"
+  },
+  {
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "id": "APP-0033",
+    "status": "Offer Extended",
+    "appliedDate": "2026-04-05",
+    "name": "Sofia Rahman",
+    "email": "sofia.rahman@e.ntu.edu.sg",
+    "school": "NTU",
+    "course": "Computer Science",
+    "year": 4,
+    "gpa": 4.7,
+    "shortlistedFor": "PROJ-0001",
+    "projectRankings": [
+      "PROJ-0001",
+      "PROJ-0002"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 91,
+        "reasoning": "Exceptional candidate: published threat-intel research and strong ML fundamentals."
+      }
+    ],
+    "achievements": [
+      "Co-authored threat-intel paper (SG-CTF)",
+      "NTU President's Scholar"
+    ],
+    "interviewSlots": [
+      {
+        "date": "2026-05-20",
+        "time": "11:00"
+      }
+    ],
+    "confirmedSlot": 0,
+    "mentorDecision": "Accepted",
+    "mentorNotes": "Outstanding. Deep understanding of adversarial ML and a maturity well beyond her year.",
+    "mentorScores": {
+      "technicalKnowledge": 9.5,
+      "problemSolving": 9,
+      "communication": 9,
+      "initiativeDrive": 9.5
+    },
+    "preOfferChecks": "completed",
+    "offerDeadline": "2026-06-13",
+    "offerReminderDays": 3,
+    "funAnswer": "I'd build a threat-intel system that explains its reasoning, so analysts trust and learn from it.",
+    "internCategory": "Undergraduate Scholar/Merit Scholar"
+  },
+  {
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "shortlistedFor": "PROJ-0001",
+    "id": "APP-0034",
+    "status": "Interview Scheduled",
+    "appliedDate": "2026-04-16",
+    "name": "Wong Jia Hui",
+    "email": "jiahui.wong@u.nus.edu",
+    "school": "NUS",
+    "course": "Computer Science",
+    "year": 3,
+    "gpa": 4.6,
+    "projectRankings": [
+      "PROJ-0001",
+      "PROJ-0008"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 87,
+        "reasoning": "Strong CS foundation with security electives and a CTF track record."
+      }
+    ],
+    "achievements": [
+      "NUS Greyhats member",
+      "Dean's List AY2024/25"
+    ],
+    "interviewSlots": [
+      {
+        "date": "2026-06-10",
+        "time": "10:00"
+      },
+      {
+        "date": "2026-06-11",
+        "time": "14:00"
+      }
+    ],
+    "confirmedSlot": 0,
+    "meetingLink": "https://meet.dsta.gov.sg/wjl-wong-jiahui",
+    "internCategory": "Undergraduate Student"
+  },
+  {
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "shortlistedFor": "PROJ-0001",
+    "id": "APP-0035",
+    "status": "Interview Scheduled",
+    "appliedDate": "2026-04-14",
+    "name": "Arjun Pillai",
+    "email": "arjun.pillai@e.ntu.edu.sg",
+    "school": "NTU",
+    "course": "Computer Engineering",
+    "year": 3,
+    "gpa": 4.4,
+    "projectRankings": [
+      "PROJ-0001",
+      "PROJ-0006"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 83,
+        "reasoning": "Solid networking and Python skills; prior SOC exposure is relevant."
+      }
+    ],
+    "achievements": [
+      "NTU Dean's List",
+      "GovTech SOC intern"
+    ],
+    "interviewSlots": [
+      {
+        "date": "2026-06-12",
+        "time": "11:00"
+      }
+    ],
+    "confirmedSlot": 0,
+    "meetingLink": "https://meet.dsta.gov.sg/wjl-arjun-pillai",
+    "internCategory": "Tech UP"
+  },
+  {
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "shortlistedFor": "PROJ-0001",
+    "id": "APP-0036",
+    "status": "Interview Scheduled",
+    "appliedDate": "2026-04-13",
+    "name": "Chloe Tan Hui En",
+    "email": "chloe.tan@u.nus.edu",
+    "school": "NUS",
+    "course": "Information Security",
+    "year": 4,
+    "gpa": 4.5,
+    "projectRankings": [
+      "PROJ-0001",
+      "PROJ-0002"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 85,
+        "reasoning": "Final-year IS student with threat-modelling project experience."
+      }
+    ],
+    "achievements": [
+      "FYP on MITRE ATT&CK detection",
+      "Hack&Roll finalist"
+    ],
+    "interviewSlots": [
+      {
+        "date": "2026-06-13",
+        "time": "15:00"
+      },
+      {
+        "date": "2026-06-16",
+        "time": "09:30"
+      }
+    ],
+    "confirmedSlot": 1,
+    "meetingLink": "https://meet.dsta.gov.sg/wjl-chloe-tan",
+    "internCategory": "Undergraduate Scholar/Merit Scholar"
+  },
+  {
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "shortlistedFor": "PROJ-0001",
+    "id": "APP-0037",
+    "status": "Interview Completed",
+    "appliedDate": "2026-04-09",
+    "name": "Marcus Chia",
+    "email": "marcus.chia@e.ntu.edu.sg",
+    "school": "NTU",
+    "course": "Computer Science",
+    "year": 3,
+    "gpa": 4.3,
+    "projectRankings": [
+      "PROJ-0001",
+      "PROJ-0008"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 81,
+        "reasoning": "Good ML fundamentals; needs deeper security domain exposure."
+      }
+    ],
+    "achievements": [
+      "BrainHack 2025 participant",
+      "NTU CSec Club"
+    ],
+    "interviewSlots": [
+      {
+        "date": "2026-05-29",
+        "time": "10:00"
+      }
+    ],
+    "confirmedSlot": 0,
+    "internCategory": "Undergraduate Student"
+  },
+  {
+    "programmeId": "PROG-0009",
+    "programmeName": "University (Summer 2026)",
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "previousDSTA": false,
+    "previousDSTADetails": null,
+    "shortlistedFor": "PROJ-0001",
+    "id": "APP-0038",
+    "status": "Interview Completed",
+    "appliedDate": "2026-04-08",
+    "name": "Nadia Hassan",
+    "email": "nadia.hassan@u.nus.edu",
+    "school": "NUS",
+    "course": "Computer Science",
+    "year": 4,
+    "gpa": 4.6,
+    "projectRankings": [
+      "PROJ-0001",
+      "PROJ-0007"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 88,
+        "reasoning": "Excellent profile — strong on both ML and network forensics."
+      }
+    ],
+    "achievements": [
+      "Published CTF writeups",
+      "Dean's List x3"
+    ],
+    "interviewSlots": [
+      {
+        "date": "2026-05-30",
+        "time": "14:00"
+      }
+    ],
+    "confirmedSlot": 0,
+    "internCategory": "Tech UP"
+  },
+  {
+    "id": "APP-J001",
+    "programmeId": "PROG-0009",
+    "programmeName": "University Internship 2026",
+    "status": "Offer Accepted",
+    "appliedDate": "2026-03-02",
+    "shortlistedFor": "PROJ-0001",
+    "offerResponse": "Accepted",
+    "internshipStartDate": "2026-06-23",
+    "internshipEndDate": "2026-09-19",
+    "creditBearing": true,
+    "creditBearingDetails": "NUS CP3200 Internship module",
+    "name": "Jenny Aw",
+    "email": "jenny.aw@u.nus.edu",
+    "school": "NUS",
+    "course": "Computer Science",
+    "year": 3,
+    "gpa": 4.6,
+    "eligibilityPass": true,
+    "failedCriteria": [],
+    "projectRankings": [
+      "PROJ-0001",
+      "PROJ-0011"
+    ],
+    "suitabilityScores": [
+      {
+        "projectId": "PROJ-0001",
+        "projectTitle": "Cybersecurity Threat Analysis",
+        "score": 89,
+        "disciplineScore": 88,
+        "skillsScore": 90,
+        "reasoning": "Strong security coursework and CTF experience; excellent fit for threat analysis."
+      },
+      {
+        "projectId": "PROJ-0011",
+        "projectTitle": "Computer Vision for Surveillance",
+        "score": 81,
+        "disciplineScore": 82,
+        "skillsScore": 80,
+        "reasoning": "Solid ML foundation; secondary fit."
+      }
+    ],
+    "previousDSTA": false,
+    "achievements": [
+      "NUS Dean+s List AY2024/25",
+      "NUS Hackers — Core Team"
+    ],
+    "funAnswer": "An AI copilot that triages security alerts and explains them in plain English.",
+    "formValues": {
+      "name": "Jenny Aw",
+      "email": "jenny.aw@u.nus.edu",
+      "name_of_institution": "NUS",
+      "course_of_study": "Computer Science",
+      "gpa_cap_rank_points": "4.6",
+      "area_of_interest_1": "Cybersecurity",
+      "area_of_interest_2": "Artificial Intelligence and Data Analytics",
+      "area_of_interest_3": "Software Development"
+    },
+    "internCategory": "Undergraduate Scholar/Merit Scholar"
+  }
+]
