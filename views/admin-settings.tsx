@@ -17,6 +17,7 @@ import FormBuilder from '@/components/admin/form-builder';
 import PlacementSlots from '@/components/admin/placement-slots';
 import CalendarOfficer from '@/components/admin/calendar-officer';
 import Components from '@/components/admin/components';
+import Playground from '@/components/admin/playground';
 import { DISCIPLINE_SUBJECTS, STANDING_BANDS, DEFAULT_WEIGHTS } from '@/lib/scoring';
 import Button from '@/components/ui-legacy/button';
 import { Switch } from '@/components/ui/switch';
@@ -723,6 +724,9 @@ export default function AdminSettingsPage() {
 
         {/* ── Components panel ──────────────────────────────────────── */}
         {panel === 'components' && <Components />}
+
+        {/* ── Playground panel ──────────────────────────────────────── */}
+        {panel === 'playground' && <Playground />}
 
         </div>{/* content */}
       </div>{/* console grid */}

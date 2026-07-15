@@ -1,0 +1,164 @@
+# Data Access Layer (DAL) — rules for working in `app/data`
+
+> Read this file before touching anything under `app/data/`. It is the source of
+> truth for how data is read, written, and protected in this project. The UI
+> conventions live in the repo-root `CLAUDE.md` / `PRIZM.md`; this file governs
+> data only.
+
+## Why this layer exists
+
+The storage backend is **not decided yet**. The prototype used `localStorage`;
+the production system may end up on a REST API, a database, or something else.
+This layer exists so that decision can be deferred and later changed **in one
+place** without rewriting features. It also enforces **role-based access**:
+different roles (Applicant, Internship Officer, IO Admin, AD (P&C), Director, …)
+can see and do different things, and that is enforced here, not sprinkled across
+the UI.
+
+Two promises this layer keeps, and that you must not break:
+
+1. **Storage is swappable.** Nothing above the adapter knows where data lives.
+2. **Access is enforced centrally.** Every read/write is checked against one
+   policy table, deny-by-default.
+
+## Architecture (top to bottom)
+
+```
+UI / routes (loaders, actions, components)
+        │  calls repositories only
+        ▼
+repositories/*          typed entities (zod schema + createRepository)
+        │
+repository.ts           createRepository(): authorises → validates → stores
+        │  ├── access/   roles, actor, permissions (POLICY), guard (can/authorize)
+        ▼  └── config.ts THE backend switch
+adapters/*              StorageAdapter: localStorage | memory | (future) http/db
+        ▼
+where the bytes actually live
+```
+
+### File map
+
+| File | Responsibility |
+|------|----------------|
+| `index.ts` | Public barrel. Import from `~/data`, not deep paths. |
+| `types.ts` | `Result<T>` + `DataError`. Operations return results, not throws. |
+| `config.ts` | **The backend switch.** Picks the active adapter. |
+| `adapters/adapter.ts` | The `StorageAdapter` contract. |
+| `adapters/local-storage.ts` | Browser backend (current prototype). |
+| `adapters/memory.ts` | In-memory backend (server/SSR default + tests). |
+| `access/roles.ts` | The role registry (`ROLES`, `Role`). |
+| `access/actor.ts` | `Actor` (who is acting) + `ANONYMOUS`. |
+| `access/permissions.ts` | `POLICY` — the who-can-do-what table. |
+| `access/guard.ts` | `can()` / `authorize()` — the enforcement point. |
+| `repository.ts` | `createRepository()` factory. |
+| `repositories/applications.ts` | **Example** repository (a template). |
+
+## The rules (do not break these)
+
+1. **Go through a repository.** Never import an adapter, call `getAdapter()`, or
+   touch `localStorage` from UI/route code. If you find yourself doing storage
+   work outside `app/data`, stop — add or extend a repository instead.
+2. **Always pass an `Actor`.** Every repository method takes the actor as its
+   first argument (or use `repo.as(actor)`). There is no ambient/global "current
+   user" — that is intentional and required for server safety (see below).
+3. **Deny by default.** Access is denied unless `POLICY` grants it. Add rules to
+   the policy table; never add an inline permission check in a component or repo.
+4. **Validate with zod.** Every entity has a schema; `createRepository` validates
+   on write and on read. Do not store unvalidated shapes.
+5. **Handle the `Result`.** Methods return `{ ok: true, data }` or
+   `{ ok: false, error }`. Branch on `res.ok` (or `isOk(res)`); don't assume
+   success. `error.code` is one of: `forbidden`, `not_found`, `validation`,
+   `conflict`, `storage`, `unknown`.
+6. **British English** in user-facing copy and messages (colour, organise…).
+7. **Named exports, `forwardRef` is N/A here, JSDoc the non-obvious.** Match the
+   style already in these files.
+
+## Server vs client (important)
+
+- The current backend (`localStorage`) is **browser-only**. While that is the
+  case, do data access in client code (effects, event handlers), not in React
+  Router loaders/actions that run on the server.
+- On the server, `config.ts` hands out the **memory** adapter (ephemeral). This
+  keeps SSR from crashing, but server data won't persist or match the browser's
+  until a real shared backend is wired in.
+- **Never** introduce a module-level "current actor" singleton. The server
+  handles many users in one process; a global would leak one user's identity
+  into another's request. Resolve the actor per request and pass it explicitly.
+- When the backend moves to an API/DB (see below), data access can move into
+  loaders/actions cleanly, because repositories are already async and adapter-
+  agnostic.
+
+## How to: add a new entity (repository)
+
+1. Create `repositories/<name>.ts`.
+2. Define a zod schema and infer its type:
+   ```ts
+   export const ThingSchema = z.object({ id: z.string().min(1), /* … */ });
+   export type Thing = z.infer<typeof ThingSchema>;
+   ```
+3. Build the repository:
+   ```ts
+   export const thingsRepository = createRepository<Thing>({
+     resource: "things",          // collection name AND policy key
+     schema: ThingSchema,
+     identify: (t) => t.id,
+   });
+   ```
+4. Add an authorisation block for `"things"` to `POLICY` in
+   `access/permissions.ts` (deny-by-default means: without this, no one can
+   touch it). Include a `where` predicate for any row-level/ownership rule.
+5. Re-export from `index.ts`.
+6. Use it: `const res = await thingsRepository.as(actor).list();`
+
+## How to: add or change a role
+
+1. Add the value to `ROLES` and a label to `ROLE_LABELS` in `access/roles.ts`.
+2. Grant it permissions in `POLICY` (`access/permissions.ts`). A role with no
+   entry can do nothing — that's deny-by-default working as intended.
+3. The `Role` type updates automatically; TypeScript will flag any policy entry
+   that references a role you removed.
+
+## How to: define permissions
+
+In `access/permissions.ts`, each role maps to an array of rules:
+```ts
+{ resource: "applications", actions: ["read", "update"], where: owns }
+```
+- `resource`: an entity name, or `"*"` for all.
+- `actions`: subset of `create | read | list | update | delete`, or `"*"`.
+- `where?`: `(actor, record) => boolean` for row-level rules (ownership,
+  same-team, …). Ignored for `create`; applied per-row as a filter for `list`.
+
+`owns` (provided) matches `record.ownerId`/`record.applicantId` against
+`actor.id`. Write your own predicates for other relationships.
+
+> ⚠️ The rules currently in `POLICY` are **illustrative examples**, not a
+> confirmed authorisation matrix. Replace them with the real spec when defined,
+> keeping the same shape.
+
+## How to: swap the storage backend (the deferred decision)
+
+This is the whole point of the layer. To move off `localStorage`:
+
+1. Write an adapter implementing `StorageAdapter` (`adapters/adapter.ts`) — e.g.
+   `adapters/http.ts` exporting `createHttpAdapter(baseUrl)` that calls your API.
+   All methods are already async, so a network backend fits without interface
+   changes.
+2. Return it from `selectAdapter()` in `config.ts`. That is the **only** change
+   needed — repositories, the policy, and all UI keep working unchanged.
+3. For tests, use `setAdapter(createMemoryAdapter())` for isolation, and
+   `setAdapter(null)` to restore the default.
+
+> Note: authorisation here is a client-side/app-side gate. When a real backend
+> exists, enforce the **same** policy on the server too — a client check is for
+> UX, not security. This layer is structured so the policy table can be shared.
+
+## Don't
+
+- Don't read/write `localStorage` (or any storage) outside an adapter.
+- Don't bypass repositories from UI/route code.
+- Don't add inline role checks — extend `POLICY`.
+- Don't introduce a global "current user".
+- Don't store unvalidated data or ignore a `Result`.
+- Don't add external URLs/CDNs (air-gap discipline — see repo-root `CLAUDE.md`).

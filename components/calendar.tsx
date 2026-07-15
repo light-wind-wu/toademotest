@@ -3,7 +3,7 @@
 /* ────────────────────────────────────────────────────────────────────────────
  * Local copy of PRIZM's Calendar (`@/components/ui/calendar`), customised for
  * this app. The vendored PRIZM component is left untouched — this lives in app
- * code (`@/`) so the design system stays pristine and re-pullable.
+ * code (`~/`) so the design system stays pristine and re-pullable.
  *
  * Based on: components/ui/calendar.tsx (PRIZM 4.0)
  * Added:    an optional `captionLayout="dropdown"` header that turns the month +
@@ -14,7 +14,7 @@
  *           ships (with a dropdown header), prefer it over this copy.
  * ──────────────────────────────────────────────────────────────────────────── */
 
-import { buttonVariants } from "@/components/ui-legacy/button";
+import { buttonVariants } from "@/components/ui/button";
 import {
   Select,
   SelectContent,

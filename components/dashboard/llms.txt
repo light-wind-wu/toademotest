@@ -1,0 +1,175 @@
+# Dashboard — customisable widget grid
+
+A draggable, resizable dashboard built on `react-grid-layout` (v2) with PRIZM
+components. Users toggle edit mode to rearrange, resize, add, and remove
+widgets; the arrangement persists to `localStorage`. Widgets are defined as a
+data **catalogue** of *kinds*; the dashboard manages which instances are
+**placed** and where.
+
+## Files
+
+| File | Responsibility |
+|------|----------------|
+| `dashboard.tsx` | `<Dashboard>` — grid, edit-mode toolbar, add/remove/reset, layout state + persistence. The only stateful piece. |
+| `widget.tsx` | The compound `Widget` component (`Widget`, `Widget.Header`, `Widget.Body`) + `WidgetProvider`. Chrome reads per-widget state from context — nothing is prop-drilled. |
+| `types.ts` | `WidgetKind`, `WidgetCatalogue`, `DashboardWidget`. |
+| `widgets/` | One file per widget kind, each exporting a `WidgetKind`. `widgets/index.ts` assembles `WIDGET_CATALOGUE` and `DEFAULT_DASHBOARD`. |
+| `widgets/example.*.tsx` | The shipped demo widgets and their helpers (e.g. `example.tasks.tsx`, `example.kpi.tsx`). See the prefix convention below. |
+
+### The `example.` prefix
+
+Files prefixed `example.` are **throwaway demo content** — they exist to show the
+system working and can all be deleted in one sweep. Real widgets you add should
+**not** carry the prefix, so the two are never confused. If you remove the demos,
+delete the matching imports from `widgets/index.ts` (and any `DEFAULT_DASHBOARD`
+entries) too.
+
+## Two concepts: catalogue vs. placement
+
+- **Catalogue** (`WIDGET_CATALOGUE`): the *kinds* of widget that exist — their
+  constraints and content. Drives the "Add widget" menu. Static config.
+- **Placement** (`DashboardWidget[]`): which instances are currently on the
+  grid and their `x/y/w/h`. Dynamic; lives in component state and `localStorage`.
+
+A kind can have multiple placed instances (e.g. several `notes`) unless it is a
+`singleton`. The `type` on a placed widget references a catalogue key.
+
+## `<Dashboard>` API
+
+```tsx
+import { Dashboard } from "@/components/dashboard/dashboard";
+import { WIDGET_CATALOGUE, DEFAULT_DASHBOARD } from "@/components/dashboard/widgets";
+
+<Dashboard
+  catalogue={WIDGET_CATALOGUE}        // required: the kinds available
+  defaultWidgets={DEFAULT_DASHBOARD}  // required: initial placement (+ "Reset" target)
+  storageKey="prizm-dashboard-layout" // optional: persist arrangement to localStorage
+/>
+```
+
+| Prop | Type | Notes |
+|------|------|-------|
+| `catalogue` | `WidgetCatalogue` | `Record<type, WidgetKind>`. The object key is the widget `type`. |
+| `defaultWidgets` | `DashboardWidget[]` | Initial placed instances; also restored by the toolbar's "Reset". |
+| `storageKey` | `string?` | If set, the arrangement is saved/restored on this device. Saved entries whose `type` is no longer in the catalogue are dropped on load. |
+
+Grid constants live at the top of `dashboard.tsx`: `COLS = 12`, `ROW_HEIGHT = 80`,
+`MARGIN = [16, 16]`. Change them there if you need a denser/looser grid.
+
+## `WidgetKind` (types.ts)
+
+```ts
+interface WidgetKind {
+  title: string;                       // shown in header AND the Add menu (single source)
+  icon: ComponentType<{ className?: string }>; // a lucide-react icon
+  defaultSize: { w: number; h: number };       // grid units used when newly added
+  minW?: number; minH?: number;                // enforced on resize
+  maxW?: number; maxH?: number;
+  locked?: boolean;    // pinned: can't move/resize/remove; others flow around it
+  singleton?: boolean; // only one instance allowed (greyed out in Add menu once placed)
+  content: ReactNode;  // the tile, authored with the <Widget> compound (below)
+}
+```
+
+Sizes are in **grid units**, not pixels (one column wide × `ROW_HEIGHT` tall per
+unit). With `COLS = 12`, `w: 6` is half-width.
+
+## The `Widget` compound component (widget.tsx)
+
+Author a widget's `content` with these. They pull `editing` / `locked` /
+`title` / `icon` / `onRemove` from context (set by the dashboard per instance),
+so you never pass those yourself.
+
+```tsx
+<Widget>            {/* Card frame; adds drag cursor in edit mode */}
+  <Widget.Header /> {/* drag grip + icon + title + pinned badge / remove button */}
+  <Widget.Body>     {/* scrollable content area */}
+    …your content…
+  </Widget.Body>
+</Widget>
+```
+
+- `Widget.Header` renders icon/title from context — leave it empty. Pass
+  `children` to add extra controls before the remove button.
+- `Widget.Header` and `Widget.Body` both accept an optional `className`.
+- Keep `content` a **module-level constant** (as the existing widgets do). It's a
+  stable element, so React skips re-rendering the body on drag/resize; only the
+  lightweight header re-renders.
+
+## How to add a new widget
+
+1. Create `widgets/<name>.tsx` exporting a `WidgetKind`:
+
+   ```tsx
+   import { Gauge } from "lucide-react";
+   import type { WidgetKind } from "../types";
+   import { Widget } from "../widget";
+
+   export const latency: WidgetKind = {
+     title: "Latency",
+     icon: Gauge,
+     defaultSize: { w: 4, h: 2 },
+     minW: 2,
+     minH: 2,
+     singleton: true,
+     content: (
+       <Widget>
+         <Widget.Header />
+         <Widget.Body>
+           <p className="text-3xl font-semibold text-fg">42 ms</p>
+         </Widget.Body>
+       </Widget>
+     ),
+   };
+   ```
+
+2. Register it in `widgets/index.ts`:
+
+   ```ts
+   import { latency } from "./latency";
+
+   export const WIDGET_CATALOGUE: WidgetCatalogue = {
+     …,
+     latency, // object key === the widget `type`
+   };
+   ```
+
+3. (Optional) Add it to `DEFAULT_DASHBOARD` so it appears on first load:
+
+   ```ts
+   { id: "latency", type: "latency", x: 0, y: 8, w: 4, h: 2 },
+   ```
+
+   If you don't, it's still available via the "Add widget" menu.
+
+Nothing in `dashboard.tsx`, `widget.tsx`, or the route needs to change.
+
+### Sharing a presentational piece
+
+If two widgets use the same visual (the demos share `Kpi` from
+`example.kpi.tsx`), put it in its own file under `widgets/` and import it from
+each widget. Keep widget-specific pieces inline in the widget file.
+
+## Conventions & gotchas
+
+- **PRIZM tokens only** — `bg-surface`, `text-fg-muted`, `bg-accent`, etc. No raw
+  colours. British English in copy.
+- **Constraints reflect the catalogue, not storage.** `minW/locked/...` are
+  re-applied from the kind on every render, so editing a kind's constraints takes
+  effect even for already-saved layouts.
+- **`type` keys are persistence keys.** Renaming a catalogue key will drop that
+  widget from any saved layout (handled gracefully — the tile just disappears).
+  Prefer adding a new kind over renaming if users may have saved arrangements.
+- **`process` shim.** `dashboard.tsx` defines `globalThis.process` on the client
+  because `react-draggable` reads `process.env.DRAGGABLE_DEBUG` in its drag/resize
+  handlers; without it the browser throws "process is not defined" and drag/resize
+  silently break. Leave it in place.
+- **SSR.** The grid mounts client-side only (`useContainerWidth({ measureBeforeMount: true })`)
+  to avoid a hydration mismatch from re-measuring the container width.
+
+## Drag/resize behaviour
+
+- Whole card is the drag surface in edit mode; buttons, inputs, textareas, links,
+  selects, and the resize handle are excluded (see `DRAG_CANCEL` in `dashboard.tsx`).
+- Resize is from the bottom-right corner only (`resizeConfig.handles: ["se"]`).
+- Locked widgets are `static`: immovable, no resize handle, no remove button.

@@ -25,7 +25,7 @@ export type AreaDest =
 /** Built-in panels backed by existing functionality. */
 export type AdminPanel =
   | 'users' | 'scoring' | 'automation' | 'reset' | 'sysconfig' | 'dropdowns'
-  | 'menu' | 'edm' | 'microsite' | 'forms' | 'formbuilder' | 'placement' | 'calendar' | 'taxonomy' | 'components';
+  | 'menu' | 'edm' | 'microsite' | 'forms' | 'formbuilder' | 'placement' | 'calendar' | 'taxonomy' | 'components' | 'playground';
 
 export interface AdminArea {
   id:    string;
@@ -72,6 +72,7 @@ export const ADMIN_CATEGORIES: AdminCategory[] = [
     { id: 'dropdowns', label: 'Dropdown lists',       desc: 'Managed list values with versioning history.',                icon: List,      dest: { kind: 'panel', panel: 'dropdowns' } },
     { id: 'config',    label: 'System configuration', desc: 'Global parameters and feature switches.',                     icon: Settings,  dest: { kind: 'panel', panel: 'sysconfig' } },
     { id: 'components',     label: 'PRIZM components',      desc: 'A live gallery of every component used in this project.', meta: 'Utility', icon: RotateCcw, dest: { kind: 'panel', panel: 'components' } },
+    { id: 'playground',     label: 'Playground',      desc: 'A sandbox for building and testing your own components.', meta: 'Utility', icon: RotateCcw, dest: { kind: 'panel', panel: 'playground' } },
     { id: 'reset',     label: 'Reset demo data',      desc: 'Clear local data and reseed everything from the seed files.', meta: 'Utility', icon: RotateCcw, dest: { kind: 'panel', panel: 'reset' } },
   ] },
 ];
