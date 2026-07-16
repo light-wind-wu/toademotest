@@ -37,7 +37,7 @@ const ROLE_SWITCHER: { role: UserRole; icon: typeof ShieldCheck }[] = [
   { role: 'existing-scholar-applicant', icon: Award         },
 ];
 
-export default function Topbar({ navigationHidden = false, collapsed = false, ready = false }: { navigationHidden?: boolean; collapsed?: boolean; ready?: boolean }) {
+export default function Topbar({ navigationHidden = false }: { navigationHidden?: boolean }) {
   const { role, setRole, profile } = useRole();
   const { safeNavigate } = useUnsavedChanges();
   const { roleSwitcher } = useSystemConfig(); // Admin → System config feature switch
@@ -129,8 +129,7 @@ export default function Topbar({ navigationHidden = false, collapsed = false, re
   return (
     <header className={cn(
       'fixed top-0 left-0 w-full flex justify-between items-center h-16 pr-4 md:pr-8 bg-topbar-bg border-b border-topbar-fg/10 shadow-sm z-30',
-      navigationHidden ? 'pl-6 md:pl-10' : (collapsed ? 'pl-14 md:pl-16' : 'pl-14 md:pl-64'),
-      ready && 'transition-all duration-200 ease-in-out',
+      navigationHidden ? 'pl-6 md:pl-10' : 'pl-14 md:pl-6',
     )}>
       <div className="flex items-center gap-3 min-w-0">
         <Image src="/images/dsta-logo.svg" alt="DSTA" width={72} height={40} className="object-contain h-8 w-auto shrink-0" />

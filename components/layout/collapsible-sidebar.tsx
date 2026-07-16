@@ -128,7 +128,7 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
 
       {/* Desktop collapsible sidebar */}
       <aside className={cn(
-        'hidden md:flex fixed left-0 top-0 h-full flex-col border-r border-border bg-surface z-50',
+        'hidden md:flex fixed left-0 top-16 h-[calc(100vh-4rem)] flex-col border-r border-border bg-surface z-20 overflow-x-hidden',
         ready && 'transition-all duration-200 ease-in-out',
         collapsed ? 'w-16' : 'w-64'
       )}>
@@ -157,23 +157,23 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
                 aria-current={active ? 'page' : undefined}
                 title={sectionTip(s, n)}
                 className={cn(
-                  'relative flex items-center mx-3 rounded-lg transition-colors duration-100 group',
-                  collapsed ? 'justify-center h-11 w-11 p-2' : 'gap-3 px-3 py-2.5',
+                  'relative flex items-center rounded-lg transition-colors duration-100 group',
+                  collapsed ? 'justify-center h-10 w-10 mx-3 p-2' : 'gap-3 px-3 py-2.5 mx-3',
                   active ? 'bg-nav-active-bg text-nav-active-fg' : 'text-fg-muted hover:text-nav-active-fg hover:bg-nav-active-bg/50'
                 )}
               >
                 {active && !collapsed && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-nav-active-fg rounded-r" />}
                 <span className="relative shrink-0">
                   <Icon size={20} className={active ? 'text-nav-active-fg' : 'text-fg-muted group-hover:text-nav-active-fg'} />
-                  {n > 0 && (
-                    <span className={cn(
-                      'absolute rounded-full bg-accent',
-                      collapsed ? 'top-0 right-0 w-2 h-2' : '-top-0.5 -right-0.5 w-2 h-2'
-                    )} />
+                  {n > 0 && collapsed && (
+                    <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-accent" />
                   )}
                 </span>
                 {!collapsed && (
-                  <span className="text-body-sm font-semibold truncate">{s.label}</span>
+                  <span className="flex-1 text-body-sm font-semibold truncate text-left">{s.label}</span>
+                )}
+                {n > 0 && !collapsed && (
+                  <span className="w-2 h-2 rounded-full bg-accent shrink-0" />
                 )}
               </button>
             );
