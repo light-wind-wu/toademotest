@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useUnsavedChanges } from '@/lib/unsaved-changes';
 import { buildSearchIndex, buildRecordIndex, runSearch, type SearchEntry } from '@/lib/ia-nav';
 import { useSystemConfig } from '@/lib/portal-config';
+import Image from 'next/image';
 import { signOut, isApplicantRole } from '@/lib/session';
 import {
   getNotificationsForRole, markRead, markAllRead,
@@ -51,6 +52,7 @@ export default function Topbar({ navigationHidden = false }: { navigationHidden?
   const ref       = useRef<HTMLDivElement>(null);
   const bellRef   = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const mentorId = profile.email;
 
@@ -108,23 +110,41 @@ export default function Topbar({ navigationHidden = false }: { navigationHidden?
     return () => document.removeEventListener('click', onClick);
   }, []);
 
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const target = e.target as HTMLElement;
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        setSearchOpen(true);
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
   const unread = notifs.filter(n => !n.read).length;
 
   return (
     <header className={cn(
-      'fixed top-0 left-0 w-full flex justify-between items-center h-[64px] pr-4 md:pr-8 bg-surface border-b border-border shadow-sm z-30',
+      'fixed top-0 left-0 w-full flex justify-between items-center h-[64px] pr-4 md:pr-8 bg-topbar-bg border-b border-topbar-fg/10 shadow-sm z-30',
       navigationHidden ? 'pl-6 md:pl-10' : 'pl-16 md:pl-[136px]',
     )}>
-      <span className="text-headline-md font-bold text-accent truncate">
-        <span className="hidden sm:inline">Talent Outreach &amp; Acquisition</span>
-        <span className="sm:hidden">TOA Portal</span>
-      </span>
+      <div className="flex items-center gap-3 min-w-0">
+        <Image src="/images/dsta-logo.svg" alt="DSTA" width={72} height={40} className="object-contain h-8 w-auto shrink-0" />
+        <span className="text-headline-md font-bold text-topbar-fg truncate hidden sm:inline">
+          Talent Outreach &amp; Acquisition
+        </span>
+        <span className="text-headline-md font-bold text-topbar-fg truncate sm:hidden">TOA Portal</span>
+      </div>
 
       <div className="flex items-center gap-2 md:gap-4 shrink-0">
         {/* Cross-IA search — desktop only. Spans every section the role can reach. */}
         <div className="relative hidden md:flex items-center group" ref={searchRef}>
-          <Search size={18} className="absolute left-3 text-fg-subtle group-focus-within:text-accent transition-colors pointer-events-none" />
+          <Search size={18} className="absolute left-3 text-topbar-fg-muted group-focus-within:text-topbar-fg transition-colors pointer-events-none" />
           <input
+            ref={searchInputRef}
             type="text"
             value={searchQ}
             placeholder="Search across TOA…"
@@ -139,8 +159,11 @@ export default function Topbar({ navigationHidden = false }: { navigationHidden?
               else if (e.key === 'Enter') { e.preventDefault(); pickSearch(searchHi); }
               else if (e.key === 'Escape') { setSearchOpen(false); }
             }}
-            className="w-64 pl-9 pr-4 py-2 bg-bg-subtle border border-border rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+            className="w-64 pl-9 pr-10 py-2 bg-topbar-fg/10 border border-topbar-fg/10 rounded-lg text-body-md text-topbar-fg placeholder:text-topbar-fg-muted focus:outline-none focus:ring-2 focus:ring-topbar-fg/20 focus:border-topbar-fg/20 transition-all"
           />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+            <span className="text-[12px] font-semibold text-topbar-fg-muted border border-topbar-fg/20 rounded px-1.5 py-0.5">/</span>
+          </div>
           {searchOpen && searchQ.trim() && (
             <div id="toa-search-results" role="listbox" className="absolute right-0 top-full mt-2 w-[26rem] bg-surface rounded-2xl shadow-xl border border-border z-50 overflow-hidden">
               <p className="px-4 pt-3 pb-1 text-[12px] font-semibold text-fg-subtle">Searching pages and records across TOA</p>
@@ -183,11 +206,11 @@ export default function Topbar({ navigationHidden = false }: { navigationHidden?
             onClick={e => { e.stopPropagation(); setBellOpen(o => !o); }}
             aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
             aria-expanded={bellOpen}
-            className="relative p-2 text-fg-muted hover:bg-bg-subtle rounded-full transition-all"
+            className="relative p-2 text-topbar-fg-muted hover:bg-topbar-fg/10 rounded-full transition-all"
           >
             <Bell size={20} />
             {unread > 0 && (
-              <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-0.5 bg-danger rounded-full flex items-center justify-center text-[12px] font-black text-white leading-none">
+              <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-0.5 bg-topbar-accent rounded-full flex items-center justify-center text-[12px] font-black text-white leading-none">
                 {unread > 99 ? '99+' : unread}
               </span>
             )}
@@ -262,19 +285,19 @@ export default function Topbar({ navigationHidden = false }: { navigationHidden?
         </div>
 
         {/* Profile */}
-        <div className="relative border-l border-border pl-4" ref={ref}>
+        <div className="relative border-l border-topbar-fg/10 pl-4" ref={ref}>
           <button
             onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }}
-            className="flex items-center gap-3 rounded-xl hover:bg-bg-subtle px-2 py-1 transition-all cursor-pointer"
+            className="flex items-center gap-3 rounded-xl hover:bg-topbar-fg/10 px-2 py-1 transition-all cursor-pointer"
           >
             <div className="text-right hidden sm:block">
-              <p className="text-label-md text-fg font-semibold">{profile.name}</p>
-              <p className="text-caption text-fg-muted">{ROLE_LABELS[role]}</p>
+              <p className="text-label-md text-topbar-fg font-semibold">{profile.name}</p>
+              <p className="text-caption text-topbar-fg-muted">{ROLE_LABELS[role]}</p>
             </div>
-            <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center text-accent-fg font-bold text-body-sm shrink-0">
+            <div className="w-9 h-9 rounded-full bg-topbar-accent flex items-center justify-center text-topbar-bg font-bold text-body-sm shrink-0">
               {profile.initials}
             </div>
-            <ChevronDown size={16} className="text-fg-subtle" />
+            <ChevronDown size={16} className="text-topbar-fg-muted" />
           </button>
 
           {open && (
