@@ -132,7 +132,7 @@ export default function Topbar({ navigationHidden = false }: { navigationHidden?
       navigationHidden ? 'pl-6 md:pl-10' : 'pl-14 md:pl-6',
     )}>
       <div className="flex items-center gap-3 min-w-0">
-        <Image src="/images/dsta-logo.svg" alt="DSTA" width={72} height={40} className="object-contain h-8 w-auto shrink-0" />
+        <Image src="/images/dsta-logo-white.svg" alt="DSTA" width={72} height={40} className="object-contain h-8 w-auto shrink-0" />
         <span className="text-headline-md font-bold text-topbar-fg truncate hidden sm:inline">
           Talent Outreach &amp; Acquisition
         </span>

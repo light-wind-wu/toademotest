@@ -165,7 +165,7 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
                   active ? 'bg-nav-active-bg text-nav-active-fg' : 'text-fg-muted hover:text-nav-active-fg hover:bg-nav-active-bg/50'
                 )}
               >
-                {active && !collapsed && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-nav-active-fg rounded-r" />}
+                {active && !collapsed && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-0 bg-nav-active-fg rounded-r" />}
                 {n > 0 && collapsed && (
                   <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent" />
                 )}

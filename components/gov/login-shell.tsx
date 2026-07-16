@@ -10,7 +10,7 @@ import Image from 'next/image';
 
 export default function LoginShell({ children, tagline }: { children: ReactNode; tagline: string }) {
   return (
-    <div data-zone="enterprise" data-mode="light" className="min-h-screen grid lg:grid-cols-[minmax(0,460px)_1fr]">
+    <div data-zone="d-experience" data-mode="light" className="min-h-screen grid lg:grid-cols-[minmax(0,460px)_1fr]">
       {/* ── Brand hero ───────────────────────────────────────────────────── */}
       <aside
         className="relative hidden lg:flex flex-col justify-between overflow-hidden p-12 text-white"

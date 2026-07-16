@@ -1,0 +1,41 @@
+/* ============================================================
+   D Experience — Light mode
+   ------------------------------------------------------------
+   Surface anatomy theme for D Experience: warm off-white canvas,
+   deep navy top bar, and bright blue accent.
+   ============================================================ */
+
+[data-zone="d-experience"][data-mode="light"] {
+  --prizm-color-bg: oklch(97.55% 0.0067 97.35);
+  --prizm-color-bg-subtle: oklch(100% 0 0);
+  --prizm-color-bg-muted: oklch(96.10% 0.0083 91.48);
+
+  --prizm-color-surface: oklch(100% 0 0);
+  --prizm-color-surface-elevated: oklch(100% 0 0);
+
+  --prizm-color-border: oklch(91.12% 0.0133 82.40);
+  --prizm-color-border-strong: oklch(91.12% 0.0133 82.40);
+
+  --prizm-color-fg: var(--prizm-slate-900);
+  --prizm-color-fg-muted: var(--prizm-slate-600);
+  --prizm-color-fg-subtle: var(--prizm-slate-500);
+
+  --prizm-color-accent: oklch(55.87% 0.2308 262.12);
+  --prizm-color-accent-fg: oklch(100% 0 0);
+  --prizm-color-accent-hover: oklch(48.30% 0.1618 261.54);
+
+  --prizm-color-danger: var(--prizm-red-700);
+  --prizm-color-danger-fg: oklch(100% 0 0);
+  --prizm-color-success: var(--prizm-green-700);
+  --prizm-color-warning: var(--prizm-amber-700);
+  --prizm-color-info: var(--prizm-sky-700);
+
+  /* ---- Surface anatomy: chrome-specific tokens ---- */
+  --prizm-color-topbar-bg: oklch(19.98% 0.0403 258.29);
+  --prizm-color-topbar-fg: oklch(100% 0 0);
+  --prizm-color-topbar-fg-muted: oklch(96.10% 0.0083 91.48);
+  --prizm-color-topbar-accent: oklch(65.26% 0.1458 260.99);
+
+  --prizm-color-nav-active-bg: oklch(96.58% 0.0161 262.75);
+  --prizm-color-nav-active-fg: oklch(55.87% 0.2308 262.12);
+}

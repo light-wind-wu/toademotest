@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-zone="enterprise" data-mode="light" suppressHydrationWarning>
+    <html lang="en" data-zone="d-experience" data-mode="light" suppressHydrationWarning>
       <head>
         {/* Auto-reload if PRIZM CSS variables are missing (stale HMR after server restart).
             Cap reloads so a corrupted .next cache cannot loop forever — then show recovery steps. */}

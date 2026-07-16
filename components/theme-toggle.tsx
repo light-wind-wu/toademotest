@@ -3,7 +3,7 @@ import { Building2, Moon, Radar, Sun } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
-type Zone = "enterprise" | "c3";
+type Zone = "d-experience" | "c3";
 type Mode = "light" | "dark";
 
 const ZONE_KEY = "prizm-zone";
@@ -21,17 +21,17 @@ export function ThemeToggle() {
   // Initialise to the server-rendered defaults so the first client render
   // matches the SSR markup (no hydration mismatch). The real values are read
   // from the DOM in the effect below, after the restore script has run.
-  const [zone, setZone] = useState<Zone>("enterprise");
+  const [zone, setZone] = useState<Zone>("d-experience");
   const [mode, setMode] = useState<Mode>("light");
 
   useEffect(() => {
     const root = document.documentElement;
-    setZone((root.dataset.zone as Zone) ?? "enterprise");
+    setZone((root.dataset.zone as Zone) ?? "d-experience");
     setMode((root.dataset.mode as Mode) ?? "light");
   }, []);
 
   function toggleZone() {
-    const next: Zone = zone === "enterprise" ? "c3" : "enterprise";
+    const next: Zone = zone === "d-experience" ? "c3" : "d-experience";
     document.documentElement.dataset.zone = next;
     localStorage.setItem(ZONE_KEY, next);
     setZone(next);
@@ -49,10 +49,10 @@ export function ThemeToggle() {
       <Button
         variant="outline"
         onClick={toggleZone}
-        aria-label={`Switch to ${zone === "enterprise" ? "C3" : "Enterprise"} zone`}
+        aria-label={`Switch to ${zone === "d-experience" ? "C3" : "D Experience"} zone`}
       >
-        {zone === "enterprise" ? <Building2 /> : <Radar />}
-        {zone === "enterprise" ? "Enterprise" : "C3"}
+        {zone === "d-experience" ? <Building2 /> : <Radar />}
+        {zone === "d-experience" ? "D Experience" : "C3"}
       </Button>
 
       <Button

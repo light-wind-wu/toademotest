@@ -1,0 +1,41 @@
+/* ============================================================
+   D Experience — Dark mode
+   ------------------------------------------------------------
+   Deep navy surfaces with bright blue accents; mirrors the light
+   mode surface anatomy with inverted contrast.
+   ============================================================ */
+
+[data-zone="d-experience"][data-mode="dark"] {
+  --prizm-color-bg: oklch(19.98% 0.0403 258.29);
+  --prizm-color-bg-subtle: oklch(25.27% 0.0497 260.63);
+  --prizm-color-bg-muted: oklch(25.27% 0.0497 260.63);
+
+  --prizm-color-surface: oklch(27.96% 0.0474 258.69);
+  --prizm-color-surface-elevated: oklch(37.19% 0.0713 264.42);
+
+  --prizm-color-border: oklch(38.02% 0.0665 266.50);
+  --prizm-color-border-strong: oklch(38.02% 0.0665 266.50);
+
+  --prizm-color-fg: oklch(96.10% 0.0083 91.48);
+  --prizm-color-fg-muted: oklch(83.01% 0.0219 259.19);
+  --prizm-color-fg-subtle: oklch(65.26% 0.1458 260.99);
+
+  --prizm-color-accent: oklch(65.26% 0.1458 260.99);
+  --prizm-color-accent-fg: oklch(19.98% 0.0403 258.29);
+  --prizm-color-accent-hover: oklch(73.29% 0.1097 263.07);
+
+  --prizm-color-danger: var(--prizm-red-600);
+  --prizm-color-danger-fg: oklch(100% 0 0);
+  --prizm-color-success: var(--prizm-green-500);
+  --prizm-color-warning: var(--prizm-amber-500);
+  --prizm-color-info: var(--prizm-sky-500);
+
+  /* ---- Surface anatomy: chrome-specific tokens ---- */
+  --prizm-color-topbar-bg: oklch(19.98% 0.0403 258.29);
+  --prizm-color-topbar-fg: oklch(96.10% 0.0083 91.48);
+  --prizm-color-topbar-fg-muted: oklch(83.01% 0.0219 259.19);
+  --prizm-color-topbar-accent: oklch(65.26% 0.1458 260.99);
+
+  --prizm-color-nav-active-bg: oklch(37.19% 0.0713 264.42);
+  --prizm-color-nav-active-fg: oklch(65.26% 0.1458 260.99);
+}

@@ -41,6 +41,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import {
   Send, Check, X, FileText, ChevronRight, Filter, MoreVertical, Eye, Bell, CalendarClock, Pencil, Trash2, Ban,
 } from 'lucide-react';
@@ -529,6 +530,7 @@ export default function RequestsPage() {
 
   function handleRequestTabChange(value: string | number | null) {
     setRequestTab(value === 'draft' ? 'draft' : value === 'closed' ? 'closed' : 'open');
+    setAppStatusCF([]);
     setSentPage(1);
     setExpandedPcs(new Set());
   }
@@ -1057,7 +1059,7 @@ export default function RequestsPage() {
       <TableRow
         key={row.key}
         className={cn(
-          'hover:bg-bg-subtle/50 transition-colors group',
+          'hover:bg-bg transition-colors group',
           isPending && 'cursor-pointer',
           isPending && selectedKeys.has(row.key) && 'bg-accent/5',
         )}
@@ -1123,6 +1125,55 @@ export default function RequestsPage() {
   const showEmptyCreateRequest = topTab === 'requests' && draftAndOpenEmpty && (requestTab === 'draft' || requestTab === 'open');
 
 
+  const [appStatusCF,  setAppStatusCF]  = useState<string[]>([]);
+  const [openHeaderFilter, setOpenHeaderFilter] = useState<HeaderFilterKey | null>(null);
+  const [headerFilterPos, setHeaderFilterPos] = useState({ top: 0, left: 0 });
+  
+  type HeaderFilterKey = 'requestDate';
+  const HEADER_FILTERS: Record<HeaderFilterKey, { label: string; options: string[] }> = {
+    requestDate: { label: 'Request Date', options: ['2024', '2025', '2026'] },
+  };
+
+  function getHeaderFilterValues(key: HeaderFilterKey) {
+    return appStatusCF;
+  }
+
+  function setHeaderFilterValues(key: HeaderFilterKey, values: string[]) {
+    setAppStatusCF(values);
+  }
+
+  function toggleHeaderFilterValue(key: HeaderFilterKey, value: string) {
+    const current = getHeaderFilterValues(key);
+    setHeaderFilterValues(key, current.includes(value)
+      ? current.filter(v => v !== value)
+      : [...current, value]
+    );
+  }
+
+  function openFilter(key: HeaderFilterKey, e: React.MouseEvent<HTMLButtonElement>) {
+    e.stopPropagation();
+    const r = e.currentTarget.getBoundingClientRect();
+    setHeaderFilterPos({ top: r.bottom + 6, left: r.left });
+    setOpenHeaderFilter(prev => prev === key ? null : key);
+  }
+
+  function headerFilterButton(key: HeaderFilterKey) {
+    const selected = getHeaderFilterValues(key);
+    const active = selected.length > 0 || openHeaderFilter === key;
+    return (
+      <button
+        type="button"
+        onClick={e => openFilter(key, e)}
+        aria-label={`Filter ${HEADER_FILTERS[key].label}`}
+        className={cn(
+          'p-0.5 rounded transition-colors ml-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
+          active ? 'text-accent bg-accent/10' : 'text-fg-subtle hover:text-fg hover:bg-bg-muted',
+        )}
+      >
+        <Filter size={11} />
+      </button>
+    );
+  }
   return (
     <Shell activeRoute="/requests">
       {/* Header */}
@@ -1139,12 +1190,15 @@ export default function RequestsPage() {
 
       {/* ── Top-level workspace tabs: Project Requests vs Project Submissions ── */}
       <div className="mb-4">
-        <Tabs value={topTab} onValueChange={v => setTopTab(v === 'submissions' ? 'submissions' : 'requests')}>
-          <TabsList aria-label="Project requests workspace">
-            <TabsTrigger value="requests">Project Requests</TabsTrigger>
-            <TabsTrigger value="submissions">Project Submissions ({tabCounts.pending})</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <UnderlineTabs
+          value={topTab}
+          onValueChange={v => setTopTab(v === 'submissions' ? 'submissions' : 'requests')}
+          tabs={[
+            { value: 'requests', label: 'Project Requests' },
+            { value: 'submissions', label: 'Project Submissions', count: tabCounts.pending },
+          ]}
+          ariaLabel="Project requests workspace"
+        />
       </div>
 
       {/* ── Main table card ────────────────────────────────────────────────── */}
@@ -1271,7 +1325,7 @@ export default function RequestsPage() {
                     {sentVisibleCols.programmes  && <SortTh col="programmes" label="Intern Category" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />}
                     <SortTh col="recipient" label="AD(P&C)" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />
                     {sentVisibleCols.placements  && <SortTh col="placements" label="Placements Requested" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />}
-                    {sentVisibleCols.requestDate && <SortTh col="requestDate" label="Request Date" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />}
+                    {sentVisibleCols.requestDate && <SortTh col="requestDate" label="Request Date" sortCol={sortCol} sortDir={sortDir} onSort={doSort} filter={requestTab === 'closed' ? headerFilterButton('requestDate') : undefined} />}
                     {sentVisibleCols.deadline    && <SortTh col="deadline" label="Response Deadline" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />}
                     {sentVisibleCols.status      && <SortTh col="sentStatus" label="Status" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />}
                     <TableHead className="w-16 px-4 text-right text-xs font-semibold text-fg-muted" aria-label="Actions" />
@@ -1296,7 +1350,7 @@ export default function RequestsPage() {
                           onClick={() => setExpandedPcs(prev => {
                             const n = new Set(prev); n.has(gkey) ? n.delete(gkey) : n.add(gkey); return n;
                           })}
-                          className="hover:bg-bg-subtle/50 transition-colors cursor-pointer group"
+                          className="hover:bg-bg transition-colors cursor-pointer group"
                         >
                           {sentVisibleCols.programmeCenter && (
                             <TableCell className="px-4 py-3">
@@ -1357,7 +1411,7 @@ export default function RequestsPage() {
                           return (
                             <TableRow
                               key={`${req.uploadToken ?? req.id ?? req.pc}-${req.internCategory ?? req.educationLevel}`}
-                              className="bg-bg hover:bg-bg-subtle/40"
+                              className="bg-surface hover:bg-bg transition-colors"
                             >
                               {sentVisibleCols.programmeCenter && <TableCell className="px-4 py-2.5" />}
                               {sentVisibleCols.programmes  && (
@@ -1461,6 +1515,48 @@ export default function RequestsPage() {
                   </Pagination>
                 </div>
               </div>
+              {openHeaderFilter && (
+                <>
+                  <div className="fixed inset-0 z-[150]" onClick={() => setOpenHeaderFilter(null)} />
+                  <div
+                    className="fixed bg-surface border border-border rounded-lg shadow-lg z-[200] py-1.5 min-w-[13rem]"
+                    style={{ top: headerFilterPos.top, left: headerFilterPos.left }}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <p className="px-3 py-1 text-caption font-semibold text-fg-subtle uppercase tracking-widest">
+                      {HEADER_FILTERS[openHeaderFilter].label}
+                    </p>
+                    {HEADER_FILTERS[openHeaderFilter].options.map(opt => {
+                      const checked = getHeaderFilterValues(openHeaderFilter).includes(opt);
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => toggleHeaderFilterValue(openHeaderFilter, opt)}
+                          className="w-full flex items-center gap-2.5 px-3 py-1.5 text-body-sm text-fg hover:bg-bg-subtle transition-colors text-left"
+                        >
+                          <Checkbox
+                            checked={checked}
+                            aria-label={`Toggle ${opt}`}
+                            tabIndex={-1}
+                            className="pointer-events-none"
+                          />
+                          {opt}
+                        </button>
+                      );
+                    })}
+                    {getHeaderFilterValues(openHeaderFilter).length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setHeaderFilterValues(openHeaderFilter, [])}
+                        className="mt-1 w-full px-3 py-1.5 text-left text-body-sm text-fg-muted hover:text-danger hover:bg-bg-subtle transition-colors"
+                      >
+                        Clear filter
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
             </>
           )
         ) : (
@@ -1530,7 +1626,7 @@ export default function RequestsPage() {
                       ).size;
                       return (
                         <Fragment key={group.pc}>
-                          <TableRow className="bg-surface transition-colors hover:bg-bg-subtle/50">
+                          <TableRow className="bg-surface transition-colors hover:bg-bg">
                             <TableCell className="px-4 py-3 w-10" onClick={e => e.stopPropagation()}>
                               <Checkbox
                                 checked={allSel}

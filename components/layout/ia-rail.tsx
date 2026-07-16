@@ -228,7 +228,7 @@ export default function IaRail({ activeRoute }: { activeRoute: string }) {
                 const Icon = s.icon;
                 return (
                   <button key={s.id} onClick={() => safeNavigate(s.route)}
-                    className={['w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors', active ? 'bg-accent/10 text-accent' : 'text-fg hover:bg-bg-subtle'].join(' ')}>
+                    className={['w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors', active ? 'bg-nav-active-bg text-nav-active-fg' : 'text-fg hover:bg-bg-subtle'].join(' ')}>
                     <Icon size={20} className="shrink-0" />
                     <span className="flex-1 text-body-md font-semibold">{s.label}</span>
                   </button>
@@ -274,11 +274,11 @@ export default function IaRail({ activeRoute }: { activeRoute: string }) {
                 key={s.id}
                 onClick={() => safeNavigate(s.route)}
                 title={sectionTip(s, n)}
-                className={['relative w-full flex flex-col items-center justify-center py-3 transition-colors duration-100 group', active ? 'text-accent bg-accent/5' : 'text-fg-muted hover:text-accent hover:bg-accent/5'].join(' ')}
+                className={['relative w-full flex flex-col items-center justify-center py-3 transition-colors duration-100 group', active ? 'text-nav-active-fg bg-nav-active-bg' : 'text-fg-muted hover:text-nav-active-fg hover:bg-nav-active-bg/50'].join(' ')}
               >
-                {active && <span className="absolute left-0 top-0 h-full w-1 bg-accent rounded-r" />}
+                {active && <span className="absolute left-0 top-0 h-full w-1 bg-nav-active-fg rounded-r" />}
                 <span className="relative">
-                  <Icon size={22} className={active ? 'text-accent' : 'text-fg-muted group-hover:text-accent'} />
+                  <Icon size={22} className={active ? 'text-nav-active-fg' : 'text-fg-muted group-hover:text-nav-active-fg'} />
                 </span>
                 <span className="text-label-sm font-semibold mt-1 text-center leading-tight px-0.5">{s.label}</span>
               </button>

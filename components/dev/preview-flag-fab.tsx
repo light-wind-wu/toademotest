@@ -37,7 +37,7 @@ export default function PreviewFlagFab() {
     <div
       className="fixed bottom-5 left-5 z-[2147483647] w-[230px] rounded-xl border-2 border-dashed border-warning bg-surface-elevated p-3 shadow-lg"
       style={{ fontFamily: 'ui-monospace, monospace' }}
-      data-zone="enterprise" data-mode="light"
+      data-zone="d-experience" data-mode="light"
     >
       <div className="flex items-center gap-1.5 mb-2">
         <Wrench size={12} className="text-warning" />

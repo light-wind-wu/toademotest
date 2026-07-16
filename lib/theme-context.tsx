@@ -18,7 +18,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-zone', 'enterprise');
+    document.documentElement.setAttribute('data-zone', 'd-experience');
     document.documentElement.setAttribute('data-mode', mode);
     localStorage.setItem('dsta_theme', mode);
   }, [mode]);
