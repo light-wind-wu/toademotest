@@ -130,14 +130,17 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
       <aside className={cn(
         'hidden md:flex fixed left-0 top-16 h-[calc(100vh-4rem)] flex-col border-r border-border bg-surface z-20 overflow-x-hidden',
         ready && 'transition-all duration-200 ease-in-out',
-        collapsed ? 'w-16' : 'w-64'
+        collapsed ? 'w-17' : 'w-64'
       )}>
         {/* Toggle button */}
-        <div className="h-16 flex items-center justify-end px-3 border-b border-border shrink-0">
+        <div className={cn(
+          'h-16 flex items-center shrink-0',
+          collapsed ? 'justify-center px-3' : 'justify-end px-3'
+        )}>
           <button
             onClick={onToggle}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="p-1.5 rounded-lg text-fg-muted hover:bg-bg-subtle hover:text-fg transition-colors"
+            className="p-1.5 border border-border rounded-lg text-fg-muted hover:bg-bg-subtle hover:text-fg transition-colors"
           >
             {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
@@ -158,16 +161,16 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
                 title={sectionTip(s, n)}
                 className={cn(
                   'relative flex items-center rounded-lg transition-colors duration-100 group',
-                  collapsed ? 'justify-center h-10 w-10 mx-3 p-2' : 'gap-3 px-3 py-2.5 mx-3',
+                  collapsed ? 'justify-center h-11 w-11 mx-auto p-2' : 'gap-3 px-3 py-2.5 mx-3',
                   active ? 'bg-nav-active-bg text-nav-active-fg' : 'text-fg-muted hover:text-nav-active-fg hover:bg-nav-active-bg/50'
                 )}
               >
                 {active && !collapsed && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-nav-active-fg rounded-r" />}
+                {n > 0 && collapsed && (
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent" />
+                )}
                 <span className="relative shrink-0">
                   <Icon size={20} className={active ? 'text-nav-active-fg' : 'text-fg-muted group-hover:text-nav-active-fg'} />
-                  {n > 0 && collapsed && (
-                    <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-accent" />
-                  )}
                 </span>
                 {!collapsed && (
                   <span className="flex-1 text-body-sm font-semibold truncate text-left">{s.label}</span>
