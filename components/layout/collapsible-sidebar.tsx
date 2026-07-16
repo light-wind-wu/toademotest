@@ -24,19 +24,28 @@ const BADGE_TOOLTIP: Record<BadgeKey, (n: number) => string> = {
 interface CollapsibleSidebarProps {
   activeRoute: string;
   collapsed: boolean;
+  ready?: boolean;
   onToggle: () => void;
 }
 
-export default function CollapsibleSidebar({ activeRoute, collapsed, onToggle }: CollapsibleSidebarProps) {
+export default function CollapsibleSidebar({ activeRoute, collapsed, ready = false, onToggle }: CollapsibleSidebarProps) {
   const { role, profile } = useRole();
   const { safeNavigate } = useUnsavedChanges();
   const { badges, hasApplied, hasInternship } = useSidebarBadges(role, profile.email, activeRoute);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const burgerRef = useRef<HTMLButtonElement>(null);
+  const prevDrawerOpen = useRef(false);
   const menuVis = useMenuVisibility();
   const sections = getNav(role, { hasApplied, hasInternship }).filter(s => isSectionVisible(role, s.id, menuVis));
 
   useEffect(() => { setDrawerOpen(false); }, [activeRoute]);
+
+  useEffect(() => {
+    if (drawerOpen) {
+      drawerRef.current?.focus();
+    }
+  }, [drawerOpen]);
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -44,8 +53,14 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, onToggle }:
       if (e.key === 'Escape') setDrawerOpen(false);
     }
     document.addEventListener('keydown', onKey);
-    drawerRef.current?.focus();
     return () => document.removeEventListener('keydown', onKey);
+  }, [drawerOpen]);
+
+  useEffect(() => {
+    if (prevDrawerOpen.current && !drawerOpen) {
+      burgerRef.current?.focus();
+    }
+    prevDrawerOpen.current = drawerOpen;
   }, [drawerOpen]);
 
   const sectionBadge = (s: IaSection): number => {
@@ -64,6 +79,7 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, onToggle }:
     <>
       {/* Mobile burger button */}
       <button
+        ref={burgerRef}
         onClick={() => setDrawerOpen(true)}
         aria-label="Open menu"
         aria-expanded={drawerOpen}
@@ -92,6 +108,7 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, onToggle }:
                 const n = sectionBadge(s);
                 return (
                   <button key={s.id} onClick={() => safeNavigate(s.route)}
+                    aria-current={active ? 'page' : undefined}
                     className={cn('w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors', active ? 'bg-nav-active-bg text-nav-active-fg' : 'text-fg hover:bg-bg-subtle')}>
                     <span className="relative">
                       <Icon size={20} />
@@ -108,7 +125,8 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, onToggle }:
 
       {/* Desktop collapsible sidebar */}
       <aside className={cn(
-        'hidden md:flex fixed left-0 top-0 h-full flex-col border-r border-border bg-surface z-50 transition-all duration-200 ease-in-out',
+        'hidden md:flex fixed left-0 top-0 h-full flex-col border-r border-border bg-surface z-50',
+        ready && 'transition-all duration-200 ease-in-out',
         collapsed ? 'w-16' : 'w-64'
       )}>
         {/* Toggle button */}
@@ -133,6 +151,7 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, onToggle }:
                 key={s.id}
                 onClick={() => safeNavigate(s.route)}
                 aria-label={s.label}
+                aria-current={active ? 'page' : undefined}
                 title={sectionTip(s, n)}
                 className={cn(
                   'relative flex items-center mx-3 rounded-lg transition-colors duration-100 group',
