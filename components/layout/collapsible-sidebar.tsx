@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Menu, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRole } from '@/lib/role';
@@ -32,10 +32,21 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, onToggle }:
   const { safeNavigate } = useUnsavedChanges();
   const { badges, hasApplied, hasInternship } = useSidebarBadges(role, profile.email, activeRoute);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
   const menuVis = useMenuVisibility();
   const sections = getNav(role, { hasApplied, hasInternship }).filter(s => isSectionVisible(role, s.id, menuVis));
 
   useEffect(() => { setDrawerOpen(false); }, [activeRoute]);
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setDrawerOpen(false);
+    }
+    document.addEventListener('keydown', onKey);
+    drawerRef.current?.focus();
+    return () => document.removeEventListener('keydown', onKey);
+  }, [drawerOpen]);
 
   const sectionBadge = (s: IaSection): number => {
     let n = s.badge ? badges[s.badge] : 0;
@@ -64,8 +75,12 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, onToggle }:
       {/* Mobile drawer */}
       {drawerOpen && (
         <div className="md:hidden fixed inset-0 z-[60]">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setDrawerOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-[280px] max-w-[82vw] bg-surface shadow-xl flex flex-col">
+          <div className="absolute inset-0 bg-fg/40" onClick={() => setDrawerOpen(false)} />
+          <div
+            ref={drawerRef}
+            tabIndex={-1}
+            className="absolute left-0 top-0 bottom-0 w-[280px] max-w-[82vw] bg-surface shadow-xl flex flex-col outline-none"
+          >
             <div className="h-16 flex items-center justify-between px-4 border-b border-border shrink-0">
               <Image src="/images/dsta-logo.svg" alt="DSTA" width={72} height={40} className="object-contain h-7 w-auto" />
               <button onClick={() => setDrawerOpen(false)} aria-label="Close menu" className="p-1.5 rounded-lg text-fg-muted hover:bg-bg-subtle"><X size={20} /></button>
@@ -117,6 +132,7 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, onToggle }:
               <button
                 key={s.id}
                 onClick={() => safeNavigate(s.route)}
+                aria-label={s.label}
                 title={sectionTip(s, n)}
                 className={cn(
                   'relative flex items-center mx-3 rounded-lg transition-colors duration-100 group',
