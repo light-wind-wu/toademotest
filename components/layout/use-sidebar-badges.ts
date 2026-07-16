@@ -57,6 +57,8 @@ export function useSidebarBadges(
   const [badges, setBadges] = useState<Badges>(ZERO_BADGES);
   const isApplicant = role === 'new-applicant' || role === 'existing-scholar-applicant';
 
+  useEffect(() => { setBadges(ZERO_BADGES); }, [role]);
+
   useEffect(() => {
     if (!isApplicant) { setHasInternship(false); return; }
     void (async () => {

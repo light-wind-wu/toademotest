@@ -95,6 +95,9 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
           <div
             ref={drawerRef}
             tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Main menu"
             className="absolute left-0 top-0 bottom-0 w-[280px] max-w-[82vw] bg-surface shadow-xl flex flex-col outline-none"
           >
             <div className="h-16 flex items-center justify-between px-4 border-b border-border shrink-0">
@@ -150,7 +153,7 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
               <button
                 key={s.id}
                 onClick={() => safeNavigate(s.route)}
-                aria-label={s.label}
+                aria-label={collapsed ? s.label : undefined}
                 aria-current={active ? 'page' : undefined}
                 title={sectionTip(s, n)}
                 className={cn(
