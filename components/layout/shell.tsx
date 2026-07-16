@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import IaRail from './ia-rail';
+import CollapsibleSidebar from './collapsible-sidebar';
 import SectionTabs from './section-tabs';
 import Topbar from './topbar';
 import KineticBounce from './kinetic-bounce';
@@ -16,25 +16,35 @@ interface ShellProps {
   hideNavigation?: boolean;
 }
 
+const SIDEBAR_COLLAPSED_KEY = 'dsta_sidebar_collapsed';
+
 export default function Shell({ children, activeRoute, hideNavigation = false }: ShellProps) {
   const { signedIn } = useSession();
   const { role, roleReady } = useRole();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
   useEffect(() => { setMounted(true); }, []);
 
-  // Each audience owns one half of the portal: candidates live under /apply/*,
-  // internal staff live everywhere else. A signed-in user whose role doesn't match
-  // the route's audience is in the wrong place (e.g. an applicant URL-hopping to a
-  // staff screen, or vice-versa).
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+      if (raw) setCollapsed(raw === 'true');
+    } catch {/* noop */}
+  }, []);
+
+  const handleToggle = () => {
+    setCollapsed(c => {
+      const next = !c;
+      try { localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next)); } catch {/* noop */}
+      return next;
+    });
+  };
+
   const onApplyRoute = activeRoute.startsWith('/apply');
   const roleMismatch = roleReady && isApplicantRole(role) !== onApplyRoute;
 
-  // Auth gate — the portal's scope begins at a sign-in screen. Unauthenticated
-  // visitors are sent to the matching login: candidates (/apply/*) → Singpass
-  // sign-in, internal staff → the Corppass console sign-in. Signed-in users on the
-  // wrong audience's route are bounced to their own role home (no cross-audience
-  // access — protects applicant PII and staff-only tooling).
   useEffect(() => {
     if (!mounted) return;
     if (!signedIn) {
@@ -54,12 +64,9 @@ export default function Shell({ children, activeRoute, hideNavigation = false }:
 
   return (
     <>
-      {!hideNavigation && <IaRail activeRoute={activeRoute} />}
-      <div className={cn('flex min-h-screen flex-col', !hideNavigation && 'md:ml-[112px]')}>
+      {!hideNavigation && <CollapsibleSidebar activeRoute={activeRoute} collapsed={collapsed} onToggle={handleToggle} />}
+      <div className={cn('flex min-h-screen flex-col transition-all duration-200 ease-in-out', !hideNavigation && (collapsed ? 'md:ml-16' : 'md:ml-64'))}>
         <Topbar navigationHidden={hideNavigation} />
-        {/* Design spec: spacious content, responsive max-width ~1440px, fluid
-            below with clamp(24px,2.6vw,40px) side padding. Content scroller gets
-            the kinetic overscroll bounce. */}
         <main className="flex-1 pt-[76px] md:pt-[80px] pb-8">
           <KineticBounce fullBleed={hideNavigation}>
             <div className="mx-auto w-full max-w-[1440px] px-[clamp(24px,2.6vw,40px)]">
