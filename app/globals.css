@@ -145,7 +145,7 @@
 
   [data-zone="enterprise"][data-mode="light"] body,
   [data-zone="d-experience"][data-mode="light"] body {
-    background-image:
+    /*background-image:
       radial-gradient(
         1200px 680px at 100% -8%,
         rgb(var(--toa-blue) / 0.26),
@@ -160,7 +160,7 @@
         1100px 720px at 60% 116%,
         rgb(var(--toa-green) / 0.2),
         transparent 62%
-      );
+      );*/
     background-size: auto, auto, auto, cover;
     background-position: center;
     background-repeat: no-repeat;

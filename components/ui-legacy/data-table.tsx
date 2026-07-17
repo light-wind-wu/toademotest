@@ -1,0 +1,235 @@
+'use client';
+
+import * as React from 'react';
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  flexRender,
+  createColumnHelper,
+  type ColumnDef,
+  type SortingState,
+  type Row,
+  type Table as TanStackTable,
+} from '@tanstack/react-table';
+import { cn } from '@/lib/utils';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+
+export type ColumnSize = 'short' | 'medium' | 'long' | 'icon';
+
+export const DEFAULT_MIN_WIDTHS: Record<ColumnSize, number> = {
+  short: 104,
+  medium: 128,
+  long: 176,
+  icon: 48,
+};
+
+export interface DataTableColumnMeta<TData = unknown, TValue = unknown> {
+  size?: ColumnSize | number;
+  truncate?: boolean;
+  lineClamp?: number;
+}
+
+declare module '@tanstack/react-table' {
+  interface ColumnMeta<TData, TValue> extends DataTableColumnMeta<TData, TValue> {}
+}
+
+export interface DataTableProps<T> {
+  tableKey: string;
+  columns: ColumnDef<T, any>[];
+  data: T[];
+  enableSorting?: boolean;
+  enableResizing?: boolean;
+  getRowId?: (row: T, index: number) => string;
+  onRowClick?: (row: T) => void;
+  className?: string;
+  emptyState?: React.ReactNode;
+  renderSubRows?: (row: Row<T>, table: TanStackTable<T>) => React.ReactNode;
+}
+
+export function getSizeValue(size: ColumnSize | number | undefined): number {
+  if (typeof size === 'number') return size;
+  if (size && size in DEFAULT_MIN_WIDTHS) return DEFAULT_MIN_WIDTHS[size as ColumnSize];
+  return DEFAULT_MIN_WIDTHS.medium;
+}
+
+export function DataTable<T>({
+  tableKey,
+  columns,
+  data,
+  enableSorting = true,
+  enableResizing = true,
+  getRowId,
+  onRowClick,
+  className,
+  emptyState,
+  renderSubRows,
+}: DataTableProps<T>) {
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnSizing, setColumnSizing] = React.useState<Record<string, number>>(() => {
+    try {
+      const saved = localStorage.getItem(`dsta_table_${tableKey}_sizing`);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const tableColumns = React.useMemo<ColumnDef<T, any>[]>(() => {
+    return columns.map((col) => {
+      const size = col.meta?.size;
+      const minSize = getSizeValue(size);
+      return {
+        ...col,
+        minSize,
+        size: col.size ?? minSize,
+      };
+    });
+  }, [columns]);
+
+  const table = useReactTable({
+    data,
+    columns: tableColumns,
+    state: {
+      sorting,
+      columnSizing,
+    },
+    onSortingChange: setSorting,
+    onColumnSizingChange: setColumnSizing,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    enableColumnResizing: enableResizing,
+    columnResizeMode: 'onChange',
+    getRowId,
+  });
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(`dsta_table_${tableKey}_sizing`, JSON.stringify(columnSizing));
+    } catch {}
+  }, [columnSizing, tableKey]);
+
+  const rows = table.getRowModel().rows;
+
+  if (rows.length === 0 && emptyState) {
+    return <>{emptyState}</>;
+  }
+
+  return (
+    <Table className={cn('text-left', className)}>
+      <TableHeader className="bg-bg-subtle">
+        {table.getHeaderGroups().map((headerGroup) => (
+          <TableRow key={headerGroup.id}>
+            {headerGroup.headers.map((header) => {
+              const size = header.column.columnDef.meta?.size;
+              const minWidth = getSizeValue(size);
+              const width = header.getSize();
+              const isResizing = header.column.getIsResizing();
+              const canSort = enableSorting && header.column.getCanSort();
+
+              return (
+                <TableHead
+                  key={header.id}
+                  className={cn(
+                    'relative select-none',
+                    canSort && 'cursor-pointer',
+                  )}
+                  style={{
+                    minWidth,
+                    width,
+                  }}
+                  onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                >
+                  <div className="flex h-10 items-center gap-1 overflow-hidden">
+                    <span className="flex-1 truncate">
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </span>
+                    {canSort && (
+                      <span className="shrink-0">
+                        {header.column.getIsSorted() === 'asc' ? (
+                          <ArrowUp size={13} className="text-accent" />
+                        ) : header.column.getIsSorted() === 'desc' ? (
+                          <ArrowDown size={13} className="text-accent" />
+                        ) : (
+                          <ArrowUpDown size={13} className="text-fg-subtle" />
+                        )}
+                      </span>
+                    )}
+                  </div>
+                  {enableResizing && header.column.getCanResize() && (
+                    <div
+                      onMouseDown={header.getResizeHandler()}
+                      onTouchStart={header.getResizeHandler()}
+                      className={cn(
+                        'absolute right-0 top-0 h-full w-4 cursor-col-resize z-10',
+                        'flex justify-end items-center',
+                        'hover:bg-accent/10',
+                        isResizing && 'bg-accent/15',
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          'h-full transition-all',
+                          isResizing ? 'w-0.5 bg-accent' : 'w-px bg-border hover:bg-accent',
+                        )}
+                      />
+                    </div>
+                  )}
+                </TableHead>
+              );
+            })}
+          </TableRow>
+        ))}
+      </TableHeader>
+      <TableBody>
+        {rows.map((row) => (
+          <React.Fragment key={row.id}>
+            <TableRow
+              onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+              className={cn(onRowClick && 'cursor-pointer')}
+            >
+              {row.getVisibleCells().map((cell) => {
+                const size = cell.column.columnDef.meta?.size;
+                const minWidth = getSizeValue(size);
+                const width = cell.column.getSize();
+                const truncate = cell.column.columnDef.meta?.truncate;
+                const lineClamp = cell.column.columnDef.meta?.lineClamp;
+                const content = flexRender(cell.column.columnDef.cell, cell.getContext());
+
+                return (
+                  <TableCell
+                    key={cell.id}
+                    style={{
+                      minWidth,
+                      width,
+                    }}
+                  >
+                    {truncate ? (
+                      <span className="block truncate">{content}</span>
+                    ) : lineClamp ? (
+                      <span className={cn(`line-clamp-${lineClamp}`)}>{content}</span>
+                    ) : (
+                      content
+                    )}
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+            {renderSubRows && renderSubRows(row, table)}
+          </React.Fragment>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+
+export { createColumnHelper };
+export type { ColumnDef, Row };

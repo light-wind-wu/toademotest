@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, useMemo, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
 import Modal from '@/components/ui-legacy/modal';
 import DatePicker from '@/components/ui-legacy/date-picker';
-import SortTh from '@/components/ui-legacy/sort-th';
 import TableToolbar from '@/components/ui-legacy/table-toolbar';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -16,7 +15,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@/components/ui-legacy/table';
+import {
+  DataTable,
+  createColumnHelper,
+  getSizeValue,
+  type ColumnDef,
+  type Row,
+} from '@/components/ui-legacy/data-table';
+import type { Table as TanStackTable } from '@tanstack/react-table';
 import {
   Menu,
   MenuContent,
@@ -44,6 +51,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import {
   Send, Check, X, FileText, ChevronRight, Filter, MoreVertical, Eye, Bell, CalendarClock, Pencil, Trash2, Ban,
+  ArrowUp, ArrowDown, ArrowUpDown,
 } from 'lucide-react';
 import { CONTACTS, progEducationLevelMap, batchEducationLevel } from '@/lib/data';
 import { projectMatchesRequest } from '@/lib/request-groups';
@@ -75,7 +83,10 @@ type FlatProj = {
   progId: string; progLabel: string; pc: string; headName: string; submittedBy: string;
 };
 
+type PendingPCGroup = { pc: string; rows: FlatProj[] };
+
 type TabKey = 'sent' | 'pending' | 'rejected' | 'approved' | 'all';
+type PCGroup = { key?: string; pc: string; headName: string; requests: ProjectRequest[] };
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 function fmtDate(d: string) {
@@ -350,6 +361,25 @@ function StatusTooltip({ tip, children }: { tip: string; children: React.ReactNo
 const PROJ_STATUS_SORT: Record<string, number>        = { pending: 0, rejected: 2, approved: 3 };
 const REQ_STATUS_ORDER: Record<DisplayRequestStatus, number> = { draft: 0, pending: 1, incomplete: 2, fulfilled: 3, closed: 4, withdrawn: 5 };
 
+function sentGroupMetrics(group: PCGroup) {
+  const placements = group.requests.reduce((s, r) => s + r.placements, 0);
+  const uploaded = group.requests.reduce((s, r) => s + (r.uploaded ?? 0), 0);
+  const earliestDeadline = group.requests.reduce(
+    (min, r) => (!min || r.deadline < min ? r.deadline : min), ''
+  );
+  const latestSent = group.requests.reduce(
+    (max, r) => (!max || r.sentDate > max ? r.sentDate : max), ''
+  );
+  const worstStatus = group.requests.reduce<DisplayRequestStatus>(
+    (worst, r) => {
+      const status = requestDisplayStatus(r);
+      return REQ_STATUS_ORDER[status] < REQ_STATUS_ORDER[worst] ? status : worst;
+    },
+    requestDisplayStatus(group.requests[0])
+  );
+  return { placements, uploaded, earliestDeadline, latestSent, worstStatus };
+}
+
 function StatusBadge({ meta }: { meta: { label: string; cls: string } }) {
   return (
     <span className={cn('badge text-caption font-normal', meta.cls)}>
@@ -363,7 +393,7 @@ function LineStatusFlag({ meta }: { meta: { label: string; cls: string; tip: str
     <StatusTooltip tip={meta.tip}>
       <span className={cn('inline-flex items-center gap-1 text-caption font-medium', meta.cls)}>
         <span aria-hidden className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-current text-[10px] leading-none">!</span>
-        {meta.label}
+        {/*{meta.label}*/}
       </span>
     </StatusTooltip>
   );
@@ -449,6 +479,45 @@ const SENT_DEFAULT_COLS: Record<SentColKey, boolean> = {
 const SENT_COLS_KEY = 'dsta_req_sent_visible_cols';
 const SENT_PAGE_SIZE_OPTIONS = [10, 20, 30] as const;
 type RequestListTab = 'draft' | 'open' | 'closed';
+
+function SortHeader({
+  label,
+  colId,
+  sortCol,
+  sortDir,
+  onSort,
+  filter,
+}: {
+  label: string;
+  colId: string;
+  sortCol: string | null;
+  sortDir: 1 | -1;
+  onSort: (col: string) => void;
+  filter?: React.ReactNode;
+}) {
+  const isSorted = sortCol === colId;
+  return (
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        onSort(colId);
+      }}
+      className="flex h-full items-center gap-1 cursor-pointer select-none"
+    >
+      <span className="truncate">{label}</span>
+      {isSorted ? (
+        sortDir === 1 ? (
+          <ArrowUp size={13} className="text-accent shrink-0" />
+        ) : (
+          <ArrowDown size={13} className="text-accent shrink-0" />
+        )
+      ) : (
+        <ArrowUpDown size={13} className="text-fg-subtle shrink-0" />
+      )}
+      {filter}
+    </div>
+  );
+}
 
 function RequestTabEmptyState({
   title,
@@ -705,6 +774,570 @@ export default function RequestsPage() {
       </Menu>
     );
   }
+
+  const draftColumnHelper = createColumnHelper<PCGroup>();
+  const draftColumns = useMemo(() => [
+    draftColumnHelper.accessor(() => 'draft', {
+      id: 'draft',
+      header: 'Draft',
+      meta: { size: 'medium', truncate: true },
+      cell: () => 'Project Request Draft',
+    }),
+    draftColumnHelper.accessor((group) => {
+      const programmeCentreCount = new Set(group.requests.map(requestProgrammeCenter)).size;
+      const totalPlacements = group.requests.reduce((sum, req) => sum + req.placements, 0);
+      return `${programmeCentreCount} Programme Centre${programmeCentreCount === 1 ? '' : 's'} · ${totalPlacements} placement${totalPlacements === 1 ? '' : 's'} · Draft`;
+    }, {
+      id: 'summary',
+      header: 'Summary',
+      meta: { size: 'long', truncate: true },
+    }),
+    draftColumnHelper.accessor(() => 'No', {
+      id: 'notification',
+      header: 'Notification sent',
+      meta: { size: 'short', truncate: true },
+      cell: () => 'No',
+    }),
+    draftColumnHelper.accessor(() => 'draft', {
+      id: 'status',
+      header: 'Status',
+      meta: { size: 'short' },
+      cell: () => (
+        <StatusTooltip tip={STATUS_META.draft.tip}>
+          <StatusBadge meta={STATUS_META.draft} />
+        </StatusTooltip>
+      ),
+    }),
+    draftColumnHelper.display({
+      id: 'actions',
+      header: '',
+      meta: { size: 'icon' },
+      cell: ({ row }) => (
+        <div className="text-right" onClick={e => e.stopPropagation()}>
+          {sentActionMenu(row.original)}
+        </div>
+      ),
+    }),
+  ], []);
+
+  const sentColumnHelper = createColumnHelper<PCGroup>();
+  const sentColumns: ColumnDef<PCGroup, any>[] = (() => {
+    const cols: ColumnDef<PCGroup, any>[] = [];
+
+    if (sentVisibleCols.programmeCenter) {
+      cols.push(sentColumnHelper.display({
+        id: 'programmeCenter',
+        header: () => (
+          <SortHeader
+            label="Programme Centre"
+            colId="programmeCenter"
+            sortCol={sortCol}
+            sortDir={sortDir}
+            onSort={doSort}
+          />
+        ),
+        meta: { size: 180, truncate: true },
+        cell: ({ row }) => {
+          const group = row.original;
+          const gkey = group.key ?? group.pc;
+          const isExpanded = expandedPcs.has(gkey);
+          return (
+            <div className="flex items-center gap-2">
+              <ChevronRight
+                size={14}
+                className={cn('text-fg-muted shrink-0 transition-transform duration-150', isExpanded && 'rotate-90')}
+              />
+              <span className="text-body-sm font-normal text-fg truncate">
+                {requestProgrammeCenter(group.requests[0])}
+              </span>
+            </div>
+          );
+        },
+      }));
+    }
+
+    if (sentVisibleCols.programmes) {
+      cols.push(sentColumnHelper.display({
+        id: 'programmes',
+        header: () => (
+          <SortHeader
+            label="Intern Category"
+            colId="programmes"
+            sortCol={sortCol}
+            sortDir={sortDir}
+            onSort={doSort}
+          />
+        ),
+        meta: { size: 180, truncate: true },
+        cell: ({ row }) => {
+          const group = row.original;
+          return (
+            <span className="text-body-sm font-normal text-fg truncate">
+              {group.requests.length} intern categor{group.requests.length === 1 ? 'y' : 'ies'}
+            </span>
+          );
+        },
+      }));
+    }
+
+    cols.push(sentColumnHelper.display({
+      id: 'recipient',
+      header: () => (
+          <SortHeader
+          label="AD(P&C)"
+          colId="recipient"
+          sortCol={sortCol}
+          sortDir={sortDir}
+          onSort={doSort}
+        />
+      ),
+      meta: { size: 160, truncate: true },
+      cell: ({ row }) => {
+        const group = row.original;
+        const gkey = group.key ?? group.pc;
+        const isExpanded = expandedPcs.has(gkey);
+        const text = requestAdPnc(group.requests[0]) || '—';
+        if (!sentVisibleCols.programmeCenter) {
+          return (
+            <div className="flex items-center gap-2">
+              <ChevronRight
+                size={14}
+                className={cn('text-fg-muted shrink-0 transition-transform duration-150', isExpanded && 'rotate-90')}
+              />
+              <p className="text-body-sm font-normal text-fg truncate">{text}</p>
+            </div>
+          );
+        }
+        return <p className="text-body-sm font-normal text-fg truncate">{text}</p>;
+      },
+    }));
+
+    if (sentVisibleCols.placements) {
+      cols.push(sentColumnHelper.display({
+        id: 'placements',
+        header: () => (
+          <SortHeader
+            label="Placements Requested"
+            colId="placements"
+            sortCol={sortCol}
+            sortDir={sortDir}
+            onSort={doSort}
+          />
+        ),
+        meta: { size: 170 },
+        cell: ({ row }) => {
+          const group = row.original;
+          const { placements: totalPlacements, uploaded: totalUploaded } = sentGroupMetrics(group);
+          const groupOverTarget = group.requests.some(isOverTarget);
+          return (
+            <div className="flex items-center gap-2">
+              <span className="block truncate">{totalUploaded} / {totalPlacements}</span>
+              {groupOverTarget && <LineStatusFlag meta={LINE_STATUS_META.overTarget} />}
+            </div>
+          );
+        },
+      }));
+    }
+
+    if (sentVisibleCols.requestDate) {
+      cols.push(sentColumnHelper.display({
+        id: 'requestDate',
+        header: () => (
+          <SortHeader
+            label="Request Date"
+            colId="requestDate"
+            sortCol={sortCol}
+            sortDir={sortDir}
+            onSort={doSort}
+            filter={requestTab === 'closed' ? headerFilterButton('requestDate') : undefined}
+          />
+        ),
+        meta: { size: 140, truncate: true },
+        cell: ({ row }) => {
+          const { latestSent } = sentGroupMetrics(row.original);
+          return <span className="text-body-sm font-normal text-fg truncate">{fmtDate(latestSent)}</span>;
+        },
+      }));
+    }
+
+    if (sentVisibleCols.deadline) {
+      cols.push(sentColumnHelper.display({
+        id: 'deadline',
+        header: () => (
+          <SortHeader
+            label="Response Deadline"
+            colId="deadline"
+            sortCol={sortCol}
+            sortDir={sortDir}
+            onSort={doSort}
+          />
+        ),
+        meta: { size: 160, truncate: true },
+        cell: ({ row }) => {
+          const { earliestDeadline } = sentGroupMetrics(row.original);
+          return <span className="text-body-sm font-normal text-fg truncate">{fmtDate(earliestDeadline)}</span>;
+        },
+      }));
+    }
+
+    if (sentVisibleCols.status) {
+      cols.push(sentColumnHelper.display({
+        id: 'sentStatus',
+        header: () => (
+          <SortHeader
+            label="Status"
+            colId="sentStatus"
+            sortCol={sortCol}
+            sortDir={sortDir}
+            onSort={doSort}
+          />
+        ),
+        meta: { size: 120 },
+        cell: ({ row }) => {
+          const { worstStatus } = sentGroupMetrics(row.original);
+          const worstMeta = STATUS_META[worstStatus];
+          return worstMeta ? (
+            <StatusTooltip tip={worstMeta.tip}>
+              <StatusBadge meta={worstMeta} />
+            </StatusTooltip>
+          ) : null;
+        },
+      }));
+    }
+
+    cols.push(sentColumnHelper.display({
+      id: 'actions',
+      header: '',
+      meta: { size: 64 },
+      cell: ({ row }) => (
+        <div className="text-right" onClick={e => e.stopPropagation()}>
+          {sentActionMenu(row.original)}
+        </div>
+      ),
+    }));
+
+    return cols;
+  })();
+
+  const renderSentSubRows = (row: Row<PCGroup>, table: TanStackTable<PCGroup>) => {
+    const group = row.original;
+    const gkey = group.key ?? group.pc;
+    if (!expandedPcs.has(gkey)) return null;
+    return group.requests.map(req => {
+      const reqKey = `${req.uploadToken ?? req.id ?? req.pc}-${req.internCategory ?? req.educationLevel}`;
+      return (
+        <TableRow key={reqKey} className="bg-surface hover:bg-bg transition-colors">
+          {sentVisibleCols.programmeCenter && (
+            <TableCell
+              className="px-4 py-2.5"
+              minWidth={180}
+              style={{ width: table.getColumn('programmeCenter')?.getSize() }}
+            />
+          )}
+          {sentVisibleCols.programmes && (
+            <TableCell
+              className={cn('py-2.5', sentVisibleCols.programmeCenter ? 'px-4' : 'pl-12 pr-4')}
+              minWidth={180}
+              style={{ width: table.getColumn('programmes')?.getSize() }}
+            >
+              <p className="text-body-sm font-normal text-fg-muted truncate">
+                {requestInternCategory(req, progMap)}
+              </p>
+            </TableCell>
+          )}
+          <TableCell
+            className="px-4 py-2.5"
+            minWidth={160}
+            style={{ width: table.getColumn('recipient')?.getSize() }}
+          />
+          {sentVisibleCols.placements && (
+            <TableCell
+              className="px-4 py-2.5 text-body-sm font-normal text-fg-muted"
+              minWidth={170}
+              style={{ width: table.getColumn('placements')?.getSize() }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="block truncate">{req.uploaded ?? 0} / {req.placements}</span>
+                {isOverTarget(req) && <LineStatusFlag meta={LINE_STATUS_META.overTarget} />}
+              </div>
+            </TableCell>
+          )}
+          {sentVisibleCols.requestDate && (
+            <TableCell
+              className="px-4 py-2.5"
+              minWidth={140}
+              style={{ width: table.getColumn('requestDate')?.getSize() }}
+            />
+          )}
+          {sentVisibleCols.deadline && (
+            <TableCell
+              className="px-4 py-2.5"
+              minWidth={160}
+              style={{ width: table.getColumn('deadline')?.getSize() }}
+            />
+          )}
+          {sentVisibleCols.status && (
+            <TableCell
+              className="px-4 py-2.5"
+              minWidth={120}
+              style={{ width: table.getColumn('sentStatus')?.getSize() }}
+            />
+          )}
+          <TableCell
+            className="px-4 py-2.5"
+            style={{ width: table.getColumn('actions')?.getSize() }}
+          />
+        </TableRow>
+      );
+    });
+  };
+
+  const flatColumnHelper = createColumnHelper<FlatProj>();
+  const flatColumns: ColumnDef<FlatProj, any>[] = (() => {
+    const cols: ColumnDef<FlatProj, any>[] = [];
+    if (visibleCols.pc) {
+      cols.push(flatColumnHelper.display({
+        id: 'pc',
+        header: () => <SortHeader label="Programme Centre" colId="pc" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 180, truncate: true },
+        cell: ({ row }) => <span className="text-body-sm text-fg-muted truncate">{row.original.pc}</span>,
+      }));
+    }
+    if (visibleCols.title) {
+      cols.push(flatColumnHelper.display({
+        id: 'title',
+        header: () => <SortHeader label="Project" colId="title" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 240, truncate: true },
+        cell: ({ row }) => {
+          const rowData = row.original;
+          const isPending = rowData.status === 'pending';
+          const isRejected = rowData.status === 'rejected';
+          return (
+            <div>
+              <p className={cn('text-body-sm font-medium truncate', isPending ? 'text-fg group-hover:text-accent transition-colors' : 'text-fg')}>
+                {rowData.title}
+              </p>
+              {isRejected && rowData.remarks && (
+                <p className="text-body-sm mt-0.5 leading-snug italic text-danger truncate">
+                  {rowData.remarks}
+                </p>
+              )}
+            </div>
+          );
+        },
+      }));
+    }
+    if (visibleCols.category) {
+      cols.push(flatColumnHelper.display({
+        id: 'category',
+        header: () => <SortHeader label="Intern Category" colId="category" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 180, truncate: true },
+        cell: ({ row }) => {
+          const category = row.original.educationLevel || row.original.requestedEducationLevels.join(', ') || '—';
+          return <span className="text-body-sm text-fg-muted truncate">{category}</span>;
+        },
+      }));
+    }
+    if (visibleCols.discipline) {
+      cols.push(flatColumnHelper.display({
+        id: 'discipline',
+        header: () => <SortHeader label="Discipline of Study" colId="discipline" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 200, truncate: true },
+        cell: ({ row }) => {
+          const disciplines = parseDisciplines(row.original.discipline);
+          if (disciplines.length === 0) return <span className="text-body-sm text-fg-muted truncate block">—</span>;
+          return (
+            <div className="flex flex-wrap gap-1 max-w-full">
+              {disciplines.map(d => (
+                <span key={d} className="badge bg-bg-muted text-fg-muted text-caption font-normal truncate max-w-full">{d}</span>
+              ))}
+            </div>
+          );
+        },
+      }));
+    }
+    if (visibleCols.slots) {
+      cols.push(flatColumnHelper.display({
+        id: 'slots',
+        header: () => <SortHeader label="Placements" colId="slots" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 120, truncate: true },
+        cell: ({ row }) => <span className="text-body-sm text-fg-muted truncate">{row.original.slots}</span>,
+      }));
+    }
+    return cols;
+  })();
+
+  const pendingColumnHelper = createColumnHelper<PendingPCGroup>();
+  const pendingColumns: ColumnDef<PendingPCGroup, any>[] = (() => {
+    const cols: ColumnDef<PendingPCGroup, any>[] = [];
+    cols.push(pendingColumnHelper.display({
+      id: 'select',
+      header: () => (
+        <Checkbox
+          checked={allPendingSel}
+          data-state={somePendingSel && !allPendingSel ? 'indeterminate' : undefined}
+          aria-label="Select all pending project requests"
+          onCheckedChange={() => {
+            if (allPendingSel) setSelectedKeys(prev => { const n = new Set(prev); pendingKeys.forEach(k => n.delete(k)); return n; });
+            else setSelectedKeys(prev => { const n = new Set(prev); pendingKeys.forEach(k => n.add(k)); return n; });
+          }}
+        />
+      ),
+      meta: { size: 48 },
+      cell: ({ row }) => {
+        const group = row.original;
+        const groupKeys = group.rows.map(r => r.key);
+        const allSel = groupKeys.length > 0 && groupKeys.every(k => selectedKeys.has(k));
+        const someSel = groupKeys.some(k => selectedKeys.has(k));
+        return (
+          <div onClick={e => e.stopPropagation()}>
+            <Checkbox
+              checked={allSel}
+              data-state={someSel && !allSel ? 'indeterminate' : undefined}
+              aria-label={`Select pending projects for ${group.pc}`}
+              onCheckedChange={() => setSelectedKeys(prev => {
+                const n = new Set(prev);
+                if (allSel) groupKeys.forEach(k => n.delete(k));
+                else groupKeys.forEach(k => n.add(k));
+                return n;
+              })}
+            />
+          </div>
+        );
+      },
+    }));
+    if (visibleCols.pc) {
+      cols.push(pendingColumnHelper.display({
+        id: 'pc',
+        header: () => <SortHeader label="Programme Centre" colId="pc" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 180, truncate: true },
+        cell: ({ row }) => {
+          const group = row.original;
+          const collapsed = !expandedSubPcs.has(group.pc);
+          return (
+            <button
+              type="button"
+              onClick={() => togglePcGroup(group.pc)}
+              aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${group.pc} projects`}
+              className="flex min-w-0 items-center gap-2 text-left w-full"
+            >
+              <ChevronRight size={16} className={cn('shrink-0 text-fg-muted transition-transform', !collapsed && 'rotate-90')} />
+              <span className="text-body-sm font-medium text-fg truncate">{group.pc}</span>
+            </button>
+          );
+        },
+      }));
+    }
+    if (visibleCols.title) {
+      cols.push(pendingColumnHelper.display({
+        id: 'title',
+        header: () => <SortHeader label="Project" colId="title" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 240, truncate: true },
+        cell: ({ row }) => <span className="text-body-sm text-fg truncate">{row.original.rows.length} project{row.original.rows.length !== 1 ? 's' : ''} to review</span>,
+      }));
+    }
+    if (visibleCols.category) {
+      cols.push(pendingColumnHelper.display({
+        id: 'category',
+        header: () => <SortHeader label="Intern Category" colId="category" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 180, truncate: true },
+        cell: ({ row }) => {
+          const categoryCount = new Set(row.original.rows.map(r => r.educationLevel || r.requestedEducationLevels.join(', ') || '—')).size;
+          return <span className="text-body-sm text-fg-muted truncate">{categoryCount} intern categor{categoryCount === 1 ? 'y' : 'ies'}</span>;
+        },
+      }));
+    }
+    if (visibleCols.discipline) {
+      cols.push(pendingColumnHelper.display({
+        id: 'discipline',
+        header: () => <SortHeader label="Discipline of Study" colId="discipline" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 200, truncate: true },
+        cell: () => <span className="text-body-sm text-fg-muted truncate">—</span>,
+      }));
+    }
+    if (visibleCols.slots) {
+      cols.push(pendingColumnHelper.display({
+        id: 'slots',
+        header: () => <SortHeader label="Placements" colId="slots" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 120, truncate: true },
+        cell: ({ row }) => {
+          const group = row.original;
+          const groupSlots = group.rows.reduce((s, r) => s + r.slots, 0);
+          const reqMap = new Map<string, number>();
+          group.rows.forEach(r => { if (r.requestId) reqMap.set(r.requestId, r.requestedPlacements); });
+          const requestedTotal = Array.from(reqMap.values()).reduce((a, b) => a + b, 0);
+          return <span className="text-body-sm text-fg truncate">{groupSlots} / {requestedTotal || '—'}</span>;
+        },
+      }));
+    }
+    return cols;
+  })();
+
+  const renderPendingSubRows = (row: Row<PendingPCGroup>, table: TanStackTable<PendingPCGroup>) => {
+    const group = row.original;
+    const collapsed = !expandedSubPcs.has(group.pc);
+    if (collapsed) return null;
+    return group.rows.map(r => {
+      const category = r.educationLevel || r.requestedEducationLevels.join(', ') || '—';
+      const disciplines = parseDisciplines(r.discipline);
+      const isPending = r.status === 'pending';
+      const isRejected = r.status === 'rejected';
+      return (
+        <TableRow
+          key={r.key}
+          className={cn(
+            'hover:bg-bg transition-colors group',
+            isPending && 'cursor-pointer',
+            isPending && selectedKeys.has(r.key) && 'bg-accent/5',
+          )}
+          onClick={isPending ? () => router.push(`/requests/project/${encodeURIComponent(r.batchId)}/${encodeURIComponent(r.projId)}`) : undefined}
+        >
+          <TableCell className="px-4 py-3 w-10" minWidth={48} style={{ width: table.getColumn('select')?.getSize() }} onClick={e => e.stopPropagation()}>
+            <Checkbox
+              checked={selectedKeys.has(r.key)}
+              onCheckedChange={() => toggleSelectProj(r.batchId, r.projId)}
+              aria-label={`Select ${r.title}`}
+            />
+          </TableCell>
+          {visibleCols.pc && (
+            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" minWidth={180} style={{ width: table.getColumn('pc')?.getSize() }} />
+          )}
+          {visibleCols.title && (
+            <TableCell className="px-4 py-3" minWidth={240} style={{ width: table.getColumn('title')?.getSize() }}>
+              <p className={cn('text-body-sm font-medium truncate', isPending ? 'text-fg group-hover:text-accent transition-colors' : 'text-fg')}>
+                {r.title}
+              </p>
+              {isRejected && r.remarks && (
+                <p className="text-body-sm mt-0.5 leading-snug italic text-danger truncate">
+                  {r.remarks}
+                </p>
+              )}
+            </TableCell>
+          )}
+          {visibleCols.category && (
+            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" minWidth={180} style={{ width: table.getColumn('category')?.getSize() }} truncate>{category}</TableCell>
+          )}
+          {visibleCols.discipline && (
+            <TableCell className="px-4 py-3" minWidth={200} style={{ width: table.getColumn('discipline')?.getSize() }}>
+              {disciplines.length === 0 ? (
+                <span className="text-body-sm text-fg-muted truncate block">—</span>
+              ) : (
+                <div className="flex flex-wrap gap-1 max-w-full">
+                  {disciplines.map(d => (
+                    <span key={d} className="badge bg-bg-muted text-fg-muted text-caption font-normal truncate max-w-full">{d}</span>
+                  ))}
+                </div>
+              )}
+            </TableCell>
+          )}
+          {visibleCols.slots && (
+            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" minWidth={120} style={{ width: table.getColumn('slots')?.getSize() }} truncate>{r.slots}</TableCell>
+          )}
+        </TableRow>
+      );
+    });
+  };
+
   function statusHeaderFilterButton() {
     const active = statusCF.length > 0 || statusCFOpen;
     return (
@@ -900,7 +1533,6 @@ export default function RequestsPage() {
   );
 
   /* ── "Requests Sent" tab — grouped by PC Head ───────────────────────── */
-  type PCGroup = { key?: string; pc: string; headName: string; requests: ProjectRequest[] };
   const draftReqs = reqs.filter(req => requestDisplayStatus(req) === 'draft');
   const closedReqs = reqs.filter(req => {
     const status = requestDisplayStatus(req);
@@ -943,24 +1575,6 @@ export default function RequestsPage() {
         requestInternCategory(r, progMap).toLowerCase().includes(sentQlow)
       )
     );
-  const sentGroupMetrics = (group: PCGroup) => {
-    const placements = group.requests.reduce((s, r) => s + r.placements, 0);
-    const uploaded = group.requests.reduce((s, r) => s + (r.uploaded ?? 0), 0);
-    const earliestDeadline = group.requests.reduce(
-      (min, r) => (!min || r.deadline < min ? r.deadline : min), ''
-    );
-    const latestSent = group.requests.reduce(
-      (max, r) => (!max || r.sentDate > max ? r.sentDate : max), ''
-    );
-    const worstStatus = group.requests.reduce<DisplayRequestStatus>(
-      (worst, r) => {
-        const status = requestDisplayStatus(r);
-        return REQ_STATUS_ORDER[status] < REQ_STATUS_ORDER[worst] ? status : worst;
-      },
-      requestDisplayStatus(group.requests[0])
-    );
-    return { placements, uploaded, earliestDeadline, latestSent, worstStatus };
-  };
   const sortedSentGroups = [...sentGroups].sort((a, b) => {
     if (!sortCol) return 0;
     const aMetrics = sentGroupMetrics(a);
@@ -1048,67 +1662,6 @@ export default function RequestsPage() {
       .filter(page => page >= 1 && page <= subTotalPages)),
   ).sort((a, b) => a - b);
 
-  /* One submitted-project row (columns mirror the old Projects pending-review:
-     Programme Centre · Project · Intern Category · Mentor · Slots · Status).
-     `showPc` is false for PC-grouped children — the PC sits on the group header. */
-  const renderSubmissionRow = (row: FlatProj, showPc = true) => {
-    const isPending  = row.status === 'pending';
-    const isRejected = row.status === 'rejected';
-    const category   = row.educationLevel || row.requestedEducationLevels.join(', ') || '—';
-    return (
-      <TableRow
-        key={row.key}
-        className={cn(
-          'hover:bg-bg transition-colors group',
-          isPending && 'cursor-pointer',
-          isPending && selectedKeys.has(row.key) && 'bg-accent/5',
-        )}
-        onClick={isPending ? () => router.push(`/requests/project/${encodeURIComponent(row.batchId)}/${encodeURIComponent(row.projId)}`) : undefined}
-      >
-        {tab === 'pending' && (
-          <TableCell className="px-4 py-3 w-10" onClick={e => e.stopPropagation()}>
-            <Checkbox
-              checked={selectedKeys.has(row.key)}
-              onCheckedChange={() => toggleSelectProj(row.batchId, row.projId)}
-              aria-label={`Select ${row.title}`}
-            />
-          </TableCell>
-        )}
-        {visibleCols.pc && <TableCell className="px-4 py-3 text-body-sm text-fg-muted">{showPc ? row.pc : ''}</TableCell>}
-        {visibleCols.title && (
-          <TableCell className="px-4 py-3">
-            <p className={cn('text-body-sm font-medium', isPending ? 'text-fg group-hover:text-accent transition-colors' : 'text-fg')}>
-              {row.title}
-            </p>
-            {isRejected && row.remarks && (
-              <p className="text-body-sm mt-0.5 leading-snug italic text-danger">
-                {row.remarks}
-              </p>
-            )}
-          </TableCell>
-        )}
-        {visibleCols.category && <TableCell className="px-4 py-3 text-body-sm text-fg-muted">{category}</TableCell>}
-        {visibleCols.discipline && (
-          <TableCell className="px-4 py-3">
-            {(() => {
-              const disciplines = parseDisciplines(row.discipline);
-              return disciplines.length === 0 ? (
-                <span className="text-body-sm text-fg-muted">—</span>
-              ) : (
-                <div className="flex flex-wrap gap-1">
-                  {disciplines.map(d => (
-                    <span key={d} className="badge bg-bg-muted text-fg-muted text-caption font-normal">{d}</span>
-                  ))}
-                </div>
-              );
-            })()}
-          </TableCell>
-        )}
-        {visibleCols.slots  && <TableCell className="px-4 py-3 text-body-sm text-fg-muted">{row.slots}</TableCell>}
-      </TableRow>
-    );
-  };
-
   const tabCounts = {
     sent:     pcGroups.length,
     pending:  flatRows.filter(r => r.status === 'pending').length,
@@ -1117,9 +1670,6 @@ export default function RequestsPage() {
     all:      flatRows.length,
   };
 
-  /* ── Visible col count for colSpan ───────────────────────────────────── */
-  const visibleCount = (tab === 'pending' ? 1 : 0) +
-    Object.values(visibleCols as Record<string, boolean>).filter(Boolean).length;
   const draftAndOpenEmpty = draftReqs.length === 0 && openReqs.length === 0;
   const showHeaderCreateRequest = topTab === 'submissions' || !draftAndOpenEmpty;
   const showEmptyCreateRequest = topTab === 'requests' && draftAndOpenEmpty && (requestTab === 'draft' || requestTab === 'open');
@@ -1278,170 +1828,31 @@ export default function RequestsPage() {
               ) : undefined}
             />
           ) : requestTab === 'draft' && draftGroups.length > 0 ? (
-            <Table className="text-left">
-              <TableHeader className="bg-bg-subtle">
-                <TableRow>
-                  <TableHead className="px-4 text-xs font-semibold text-fg-muted">Draft</TableHead>
-                  <TableHead className="px-4 text-xs font-semibold text-fg-muted">Summary</TableHead>
-                  <TableHead className="px-4 text-xs font-semibold text-fg-muted">Notification sent</TableHead>
-                  <TableHead className="px-4 text-xs font-semibold text-fg-muted">Status</TableHead>
-                  <TableHead className="w-16 px-4 text-right text-xs font-semibold text-fg-muted" aria-label="Actions" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {draftGroups.map((draftGroup, index) => {
-                  const programmeCentreCount = new Set(draftGroup.requests.map(requestProgrammeCenter)).size;
-                  const totalPlacements = draftGroup.requests.reduce((sum, req) => sum + req.placements, 0);
-                  const draftKey = draftRequestGroupKey(draftGroup.requests[0]);
-                  const statusMeta = STATUS_META.draft;
-                  return (
-                    <TableRow key={draftKey} className="transition-colors hover:bg-bg-subtle/50">
-                      <TableCell className="px-4 py-3">
-                        <span className="text-body-sm font-normal text-fg">Project Request Draft</span>
-                      </TableCell>
-                      <TableCell className="px-4 py-3 text-body-sm font-normal text-fg-muted">
-                        {programmeCentreCount} Programme Centre{programmeCentreCount === 1 ? '' : 's'} · {totalPlacements} placement{totalPlacements === 1 ? '' : 's'} · Draft
-                      </TableCell>
-                      <TableCell className="px-4 py-3 text-body-sm font-normal text-fg">No</TableCell>
-                      <TableCell className="px-4 py-3">
-                        <StatusTooltip tip={statusMeta.tip}>
-                          <StatusBadge meta={statusMeta} />
-                        </StatusTooltip>
-                      </TableCell>
-                      <TableCell className="px-4 py-3 text-right" onClick={event => event.stopPropagation()}>
-                        {sentActionMenu(draftGroup)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <DataTable
+              tableKey="requests_draft"
+              columns={draftColumns}
+              data={draftGroups}
+              enableSorting={false}
+              getRowId={group => draftRequestGroupKey(group.requests[0])}
+            />
           ) : (
             <>
-              <Table className="text-left">
-                <TableHeader className="bg-bg-subtle">
-                  <TableRow>
-                    {sentVisibleCols.programmeCenter && <SortTh col="programmeCenter" label="Programme Centre" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />}
-                    {sentVisibleCols.programmes  && <SortTh col="programmes" label="Intern Category" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />}
-                    <SortTh col="recipient" label="AD(P&C)" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />
-                    {sentVisibleCols.placements  && <SortTh col="placements" label="Placements Requested" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />}
-                    {sentVisibleCols.requestDate && <SortTh col="requestDate" label="Request Date" sortCol={sortCol} sortDir={sortDir} onSort={doSort} filter={requestTab === 'closed' ? headerFilterButton('requestDate') : undefined} />}
-                    {sentVisibleCols.deadline    && <SortTh col="deadline" label="Response Deadline" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />}
-                    {sentVisibleCols.status      && <SortTh col="sentStatus" label="Status" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />}
-                    <TableHead className="w-16 px-4 text-right text-xs font-semibold text-fg-muted" aria-label="Actions" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pagedSentGroups.map(group => {
-                    const gkey = group.key ?? group.pc;
-                    const isExpanded = expandedPcs.has(gkey);
-                    const {
-                      placements: totalPlacements,
-                      uploaded: totalUploaded,
-                      earliestDeadline,
-                      latestSent,
-                      worstStatus,
-                    } = sentGroupMetrics(group);
-                    const worstMeta = STATUS_META[worstStatus];
-                    const groupOverTarget = group.requests.some(isOverTarget);
-                    return (
-                      <Fragment key={gkey}>
-                        <TableRow
-                          onClick={() => setExpandedPcs(prev => {
-                            const n = new Set(prev); n.has(gkey) ? n.delete(gkey) : n.add(gkey); return n;
-                          })}
-                          className="hover:bg-bg transition-colors cursor-pointer group"
-                        >
-                          {sentVisibleCols.programmeCenter && (
-                            <TableCell className="px-4 py-3">
-                              <div className="flex items-center gap-2">
-                                <ChevronRight
-                                  size={14}
-                                  className={cn('text-fg-muted shrink-0 transition-transform duration-150', isExpanded && 'rotate-90')}
-                                />
-                                <span className="text-body-sm font-normal text-fg">
-                                  {requestProgrammeCenter(group.requests[0])}
-                                </span>
-                              </div>
-                            </TableCell>
-                          )}
-                          {sentVisibleCols.programmes && (
-                            <TableCell className="px-4 py-3 text-body-sm font-normal text-fg">
-                              {group.requests.length} intern categor{group.requests.length === 1 ? 'y' : 'ies'}
-                            </TableCell>
-                          )}
-                          <TableCell className="px-4 py-3">
-                            {sentVisibleCols.programmeCenter ? (
-                              <p className="text-body-sm font-normal text-fg">{requestAdPnc(group.requests[0]) || '—'}</p>
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                <ChevronRight
-                                  size={14}
-                                  className={cn('text-fg-muted shrink-0 transition-transform duration-150', isExpanded && 'rotate-90')}
-                                />
-                                <p className="text-body-sm font-normal text-fg">{requestAdPnc(group.requests[0]) || '—'}</p>
-                              </div>
-                            )}
-                          </TableCell>
-                          {sentVisibleCols.placements  && (
-                            <TableCell className="px-4 py-3 text-body-sm font-normal text-fg">
-                              <div className="flex items-center gap-2">
-                                <span>{totalUploaded} / {totalPlacements}</span>
-                                {groupOverTarget && <LineStatusFlag meta={LINE_STATUS_META.overTarget} />}
-                              </div>
-                            </TableCell>
-                          )}
-                          {sentVisibleCols.requestDate && <TableCell className="px-4 py-3 text-body-sm font-normal text-fg">{fmtDate(latestSent)}</TableCell>}
-                          {sentVisibleCols.deadline    && <TableCell className="px-4 py-3 text-body-sm font-normal text-fg">{fmtDate(earliestDeadline)}</TableCell>}
-                          {sentVisibleCols.status && (
-                            <TableCell className="px-4 py-3">
-                              {worstMeta && (
-                                <StatusTooltip tip={worstMeta.tip}>
-                                  <StatusBadge meta={worstMeta} />
-                                </StatusTooltip>
-                              )}
-                            </TableCell>
-                          )}
-                          <TableCell className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
-                            {sentActionMenu(group)}
-                          </TableCell>
-                        </TableRow>
-
-                        {isExpanded && group.requests.map(req => {
-                          return (
-                            <TableRow
-                              key={`${req.uploadToken ?? req.id ?? req.pc}-${req.internCategory ?? req.educationLevel}`}
-                              className="bg-surface hover:bg-bg transition-colors"
-                            >
-                              {sentVisibleCols.programmeCenter && <TableCell className="px-4 py-2.5" />}
-                              {sentVisibleCols.programmes  && (
-                                <TableCell className={cn('py-2.5', sentVisibleCols.programmeCenter ? 'px-4' : 'pl-12 pr-4')}>
-                                  <p className="text-body-sm font-normal text-fg-muted">
-                                    {requestInternCategory(req, progMap)}
-                                  </p>
-                                </TableCell>
-                              )}
-                              <TableCell className="px-4 py-2.5" />
-                              {sentVisibleCols.placements  && (
-                                <TableCell className="px-4 py-2.5 text-body-sm font-normal text-fg-muted">
-                                  <div className="flex items-center gap-2">
-                                    <span>{req.uploaded ?? 0} / {req.placements}</span>
-                                    {isOverTarget(req) && <LineStatusFlag meta={LINE_STATUS_META.overTarget} />}
-                                  </div>
-                                </TableCell>
-                              )}
-                              {sentVisibleCols.requestDate && <TableCell className="px-4 py-2.5" />}
-                              {sentVisibleCols.deadline    && <TableCell className="px-4 py-2.5" />}
-                              {sentVisibleCols.status && <TableCell className="px-4 py-2.5" />}
-                              <TableCell className="px-4 py-2.5" />
-                            </TableRow>
-                          );
-                        })}
-                      </Fragment>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+              <DataTable
+                tableKey="requests_sent"
+                columns={sentColumns}
+                data={pagedSentGroups}
+                enableSorting={false}
+                onRowClick={(group) => {
+                  const gkey = group.key ?? group.pc;
+                  setExpandedPcs(prev => {
+                    const n = new Set(prev);
+                    n.has(gkey) ? n.delete(gkey) : n.add(gkey);
+                    return n;
+                  });
+                }}
+                renderSubRows={renderSentSubRows}
+                getRowId={group => group.key ?? group.pc}
+              />
               <div className="flex flex-col gap-3 border-t border-border bg-surface px-4 py-3 text-body-sm text-fg-muted md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-2">
                   <span>Rows per page:</span>
@@ -1579,92 +1990,31 @@ export default function RequestsPage() {
               </div>
             )}
 
-            <Table className="text-left">
-              <TableHeader className="bg-bg-subtle">
-                <TableRow>
-                  {tab === 'pending' && (
-                    <TableHead className="px-4 py-3 w-10">
-                      <Checkbox
-                        checked={allPendingSel}
-                        data-state={somePendingSel && !allPendingSel ? 'indeterminate' : undefined}
-                        aria-label="Select all pending project requests"
-                        onCheckedChange={() => {
-                          if (allPendingSel) setSelectedKeys(prev => { const n = new Set(prev); pendingKeys.forEach(k => n.delete(k)); return n; });
-                          else setSelectedKeys(prev => { const n = new Set(prev); pendingKeys.forEach(k => n.add(k)); return n; });
-                        }}
-                      />
-                    </TableHead>
-                  )}
-                  {visibleCols.pc       && <SortTh col="pc" label="Programme Centre" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />}
-                  {visibleCols.title    && <SortTh col="title" label="Project" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />}
-                  {visibleCols.category && <SortTh col="category" label="Intern Category" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />}
-                  {visibleCols.discipline && <SortTh col="discipline" label="Discipline of Study" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />}
-                  {visibleCols.slots    && <SortTh col="slots" label="Placements" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />}
-                </TableRow>
-              </TableHeader>
-                <TableBody>
-                  {tableRows.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={visibleCount} className="px-6 py-16 text-center text-body-sm text-fg-muted">
-                        No projects match your filters.
-                      </TableCell>
-                    </TableRow>
-                  ) : tab === 'pending' ? (
-                    /* PC-grouped, collapsible — the Projects-style Pending Review layout. */
-                    pagedPendingGroups.map(group => {
-                      const collapsed  = !expandedSubPcs.has(group.pc);
-                      const groupKeys  = group.rows.map(r => r.key);
-                      const allSel     = groupKeys.length > 0 && groupKeys.every(k => selectedKeys.has(k));
-                      const someSel    = groupKeys.some(k => selectedKeys.has(k));
-                      const groupSlots = group.rows.reduce((s, r) => s + r.slots, 0);
-                      // Placements requested = sum over the DISTINCT requests these submissions answer.
-                      const reqMap = new Map<string, number>();
-                      group.rows.forEach(r => { if (r.requestId) reqMap.set(r.requestId, r.requestedPlacements); });
-                      const requestedTotal = Array.from(reqMap.values()).reduce((a, b) => a + b, 0);
-                      const categoryCount = new Set(
-                        group.rows.map(r => r.educationLevel || r.requestedEducationLevels.join(', ') || '—'),
-                      ).size;
-                      return (
-                        <Fragment key={group.pc}>
-                          <TableRow className="bg-surface transition-colors hover:bg-bg">
-                            <TableCell className="px-4 py-3 w-10" onClick={e => e.stopPropagation()}>
-                              <Checkbox
-                                checked={allSel}
-                                data-state={someSel && !allSel ? 'indeterminate' : undefined}
-                                aria-label={`Select pending projects for ${group.pc}`}
-                                onCheckedChange={() => setSelectedKeys(prev => {
-                                  const n = new Set(prev);
-                                  if (allSel) groupKeys.forEach(k => n.delete(k));
-                                  else groupKeys.forEach(k => n.add(k));
-                                  return n;
-                                })}
-                              />
-                            </TableCell>
-                            {visibleCols.pc && (
-                              <TableCell className="px-4 py-3">
-                                <button
-                                  type="button"
-                                  onClick={() => togglePcGroup(group.pc)}
-                                  aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${group.pc} projects`}
-                                  className="flex min-w-0 items-center gap-2 text-left"
-                                >
-                                  <ChevronRight size={16} className={cn('shrink-0 text-fg-muted transition-transform', !collapsed && 'rotate-90')} />
-                                  <span className="text-body-sm font-medium text-fg">{group.pc}</span>
-                                </button>
-                              </TableCell>
-                            )}
-                            {visibleCols.title    && <TableCell className="px-4 py-3 text-body-sm text-fg">{group.rows.length} project{group.rows.length !== 1 ? 's' : ''} to review</TableCell>}
-                            {visibleCols.category   && <TableCell className="px-4 py-3 text-body-sm text-fg-muted">{categoryCount} intern categor{categoryCount === 1 ? 'y' : 'ies'}</TableCell>}
-                            {visibleCols.discipline && <TableCell className="px-4 py-3 text-body-sm text-fg-muted">—</TableCell>}
-                            {visibleCols.slots    && <TableCell className="px-4 py-3 text-body-sm text-fg">{groupSlots} / {requestedTotal || '—'}</TableCell>}
-                          </TableRow>
-                          {!collapsed && group.rows.map(r => renderSubmissionRow(r, false))}
-                        </Fragment>
-                      );
-                    })
-                  ) : pagedFlatRows.map(r => renderSubmissionRow(r))}
-                </TableBody>
-              </Table>
+            {tab === 'pending' ? (
+              <DataTable
+                tableKey="requests_submissions_pending"
+                columns={pendingColumns}
+                data={pagedPendingGroups}
+                enableSorting={false}
+                renderSubRows={renderPendingSubRows}
+                getRowId={group => group.pc}
+                emptyState={<div className="px-6 py-16 text-center text-body-sm text-fg-muted">No projects match your filters.</div>}
+              />
+            ) : (
+              <DataTable
+                tableKey="requests_submissions_flat"
+                columns={flatColumns}
+                data={pagedFlatRows}
+                enableSorting={false}
+                onRowClick={(row) => {
+                  if (row.status === 'pending') {
+                    router.push(`/requests/project/${encodeURIComponent(row.batchId)}/${encodeURIComponent(row.projId)}`);
+                  }
+                }}
+                getRowId={row => row.key}
+                emptyState={<div className="px-6 py-16 text-center text-body-sm text-fg-muted">No projects match your filters.</div>}
+              />
+            )}
 
             <div className="flex flex-col gap-3 border-t border-border bg-surface px-4 py-3 text-body-sm text-fg-muted md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-3">

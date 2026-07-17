@@ -117,10 +117,10 @@ export default function KineticBounce({ children, fullBleed = false }: { childre
     }
     function onTouchEnd() { touchY = null; touchActive = false; start(); }
 
-    window.addEventListener('wheel', onWheel, { passive: true });
-    window.addEventListener('touchstart', onTouchStart, { passive: true });
-    window.addEventListener('touchmove', onTouchMove, { passive: false });
-    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    // window.addEventListener('wheel', onWheel, { passive: true });
+    // window.addEventListener('touchstart', onTouchStart, { passive: true });
+    // window.addEventListener('touchmove', onTouchMove, { passive: false });
+    // window.addEventListener('touchend', onTouchEnd, { passive: true });
     return () => {
       if (rafId != null) cancelAnimationFrame(rafId);
       window.removeEventListener('wheel', onWheel);

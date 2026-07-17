@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
 import DatePicker from '@/components/ui-legacy/date-picker';
-import DateRangePicker from '@/components/ui-legacy/date-range-picker';
+import { DateRangePicker, type DateRange } from '@/components/date-range-picker';
+import { parseISO, formatISO } from 'date-fns';
 import { parseMMMYY, formatMMMYY, MONTHS, INTAKE_BASE_YEAR, DEFAULT_INTAKE_YEAR, INTAKE_YEARS, shiftMMMYY, mmmyyToISO, mmmyyToISOEnd, toMonthIndex, INTERNSHIP_WINDOWS } from '@/lib/internship-period';
 import {
   Dialog,
@@ -26,7 +27,7 @@ import {
 } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui-legacy/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -43,9 +44,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Send, Eye, AlertCircle, ArrowLeft, Clock, Info,
+  Send, Eye, AlertCircle, ArrowLeft, ArrowLeftToLine, Clock, Info,
   ChevronDown, ChevronRight, ChevronsDownUp, Plus, Minus, Trash2,
-  Paperclip, Download, Check,
+  Paperclip, Download, Check, Users,
 } from 'lucide-react';
 import { CONTACTS, toEducationLevel } from '@/lib/data';
 import { downloadRequestTemplateXLSX } from '@/lib/request-template';
@@ -188,6 +189,12 @@ function recipientLabel(email: string): string {
    so the Internship HQ team is copied on every request). */
 const HQ_CC_RECIPIENTS = ['Jasline', 'Jenyn'];
 
+/** Parse a comma-separated Cc string into a list of names/emails. */
+function parseCcList(cc: string | undefined): string[] {
+  if (!cc) return [];
+  return cc.split(',').map(s => s.trim()).filter(Boolean);
+}
+
 /** "Jun26" → "Jun 2026". */
 function mmmyyLabel(mmmyy: string): string {
   const idx = parseMMMYY(mmmyy);
@@ -301,11 +308,13 @@ function Stepper({ value, onChange }: { value: number; onChange: (n: number) => 
 }
 
 /* ── Section divider — shared section-heading style across creation forms ── */
-function SectionDivider({ label }: { label: string }) {
+function SectionDivider({ label, uppercase = true, showLine = true }: { label: string; uppercase?: boolean; showLine?: boolean }) {
   return (
     <div className="mb-4 flex items-center gap-3">
-      <span className="whitespace-nowrap text-label-sm font-semibold uppercase tracking-wider text-fg-muted">{label}</span>
-      <div className="flex-1 border-t border-border" />
+      <span className={cn('whitespace-nowrap tracking-wider text-fg-muted', uppercase && 'uppercase')}>
+        <span className="text-label-sm font-semibold">{label}</span>
+      </span>
+      {showLine && <div className="flex-1 border-t border-border" />}
     </div>
   );
 }
@@ -331,17 +340,18 @@ function FieldHelpTooltip({ label, children }: { label: string; children: string
   );
 }
 
-function RecipientChip({ email, role }: { email: string; role: string }) {
+function RecipientChip({ email, role, badgeVariant }: { email: string; role: string; badgeVariant?: 'info' | 'neutral' | 'subtle' }) {
   return (
-    <div className="inline-flex h-9 max-w-full items-center gap-2 rounded-md border border-border bg-surface px-3 py-1 text-sm shadow-sm">
+    <span className="inline-flex h-9 max-w-full items-center gap-2 text-sm">
       <span className="min-w-0 truncate text-sm font-medium text-fg">{recipientLabel(email)}</span>
-      <Badge variant="neutral" className="shrink-0 text-caption font-medium">{role}</Badge>
-    </div>
+      <Badge variant={badgeVariant || 'neutral'} className="shrink-0 text-caption font-medium">{role}</Badge>
+    </span>
   );
 }
 
-function DerivedRecipients({ pcHead, adpnc, hasProgrammeCentre }: { pcHead: string; adpnc: string; hasProgrammeCentre: boolean }) {
-  const [showAllRecipients, setShowAllRecipients] = useState(false);
+function DerivedRecipients({ pcHead, adpnc, hasProgrammeCentre, ccEmails }: { pcHead: string; adpnc: string; hasProgrammeCentre: boolean; ccEmails?: string }) {
+  const [showAllRecipients, setShowAllRecipients] = useState(true);
+  const ccList = ccEmails ? parseCcList(ccEmails) : HQ_CC_RECIPIENTS;
 
   if (!pcHead && !adpnc) {
     return (
@@ -352,20 +362,33 @@ function DerivedRecipients({ pcHead, adpnc, hasProgrammeCentre }: { pcHead: stri
   }
 
   return (
-    <div className="flex min-h-9 flex-wrap items-center gap-2">
-      {pcHead && <RecipientChip email={pcHead} role="PC Head" />}
-      {adpnc && <RecipientChip email={adpnc} role="AD (P&C)" />}
+    <div className="rounded-lg border border-border bg-bg-subtle p-4">
+      <div className="flex min-h-9 flex-wrap items-center gap-2">
+        <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">To</span>
+        {pcHead && <RecipientChip email={pcHead} role="PC Head" badgeVariant="info" />}
+        {pcHead && adpnc && <span className="text-fg-muted">,</span>}
+        {adpnc && <RecipientChip email={adpnc} role="AD (P&C)" badgeVariant="info" />}
+      </div>
       {showAllRecipients ? (
-        <div className="ml-1 flex min-h-9 flex-wrap items-center gap-2 border-l border-border pl-3">
-          <span className="text-caption font-semibold uppercase tracking-wider text-fg-muted">CC</span>
-          {HQ_CC_RECIPIENTS.map(name => (
-            <RecipientChip key={name} email={name} role="HQ" />
+        <div className="flex min-h-9 flex-wrap items-center gap-2">
+          <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">CC</span>
+          {ccList.map((name, i) => (
+            <Fragment key={name}>
+              <RecipientChip email={name} role="HQ" badgeVariant="subtle" />
+              {i < ccList.length - 1 && <span className="text-fg-muted">,</span>}
+            </Fragment>
           ))}
+          <Button variant="outline" size="sm" onClick={() => setShowAllRecipients(false)}>
+            <ArrowLeftToLine size={14} />Collapse
+          </Button>
         </div>
       ) : (
-        <Button variant="outline" size="sm" onClick={() => setShowAllRecipients(true)}>
-          View {HQ_CC_RECIPIENTS.length} CC recipients
-        </Button>
+        <div className="flex min-h-9 flex-wrap items-center gap-2">
+          <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">CC</span>
+          <Button variant="outline" size="sm" onClick={() => setShowAllRecipients(true)}>
+            <Users size={14} />View {ccList.length} CC recipients
+          </Button>
+        </div>
       )}
     </div>
   );
@@ -373,7 +396,7 @@ function DerivedRecipients({ pcHead, adpnc, hasProgrammeCentre }: { pcHead: stri
 
 /* ── Request card ────────────────────────────────────────────────── */
 function RequestCard({
-  entry, number, showErrors, onChange, onRemove, canRemove = true, guided = false, hideAddInternCategory = false, highlightedSection = null,
+  entry, number, showErrors, onChange, onRemove, canRemove = true, guided = false, hideAddInternCategory = false, highlightedSection = null, ccEdit,
 }: {
   entry: ReqEntry;
   number: number;
@@ -384,6 +407,7 @@ function RequestCard({
   guided?: boolean;
   hideAddInternCategory?: boolean;
   highlightedSection?: ReadinessKey | null;
+  ccEdit?: string;
 }) {
   const filledLevels = entry.levels.filter(l => l.level).length;
   const totalPlacements = entry.levels.reduce((sum, level) => sum + Math.max(0, level.placements || 0), 0);
@@ -446,96 +470,99 @@ function RequestCard({
         <div className={cn('space-y-6 px-5 pb-5', guided ? 'pt-5' : 'pt-1')}>
           {/* Recipients */}
           <div>
-            <SectionDivider label="Recipients" />
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-4 lg:items-start">
-            <Field className={highlightClassFor('programmeCentre')}>
-              <FieldLabel>
-                Programme Centre <span className="text-danger">*</span>
-              </FieldLabel>
-              <Select
-                value={entry.programmeCentre}
-                onValueChange={value => {
-                  const programmeCentre = value ?? '';
-                  const pcHead = pcHeadForProgrammeCentre(programmeCentre);
-                  onChange({
-                    programmeCentre,
-                    department: departmentForProgrammeCentre(programmeCentre),
-                    pcHead,
-                    adpnc: adPncForProgrammeCentre(programmeCentre),
-                  });
-                }}
-              >
-                <SelectTrigger className={cn(showErrors && !entry.programmeCentre && 'border-danger')}><SelectValue placeholder="Select programme centre" /></SelectTrigger>
-                <SelectContent>
-                  {programmeCentreOptions().map(option => (
-                    <SelectItem key={option.value} value={option.value}>{option.value}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field className="lg:col-span-2">
-              <FieldLabel className="flex items-center gap-1.5">
-                {!entry.programmeCentre && <ArrowLeft size={13} className="text-fg-subtle" aria-hidden="true" />}
-                Recipients
-              </FieldLabel>
-              <DerivedRecipients pcHead={entry.pcHead} adpnc={entry.adpnc} hasProgrammeCentre={Boolean(entry.programmeCentre)} />
-            </Field>
-            <Field className={highlightClassFor('deadline')}>
-              <FieldLabel>
-                Response deadline <span className="text-danger">*</span>
-              </FieldLabel>
-              <DatePicker value={entry.deadline} onChange={d => onChange({ deadline: d })} placeholder="Pick a date" align="right" error={showErrors && !entry.deadline} />
-            </Field>
+            <SectionDivider label="Recipients" uppercase={false} showLine={false} />
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
+              <Field className={highlightClassFor('programmeCentre')}>
+                <FieldLabel>
+                  Programme Centre <span className="text-danger">*</span>
+                </FieldLabel>
+                <Select
+                  value={entry.programmeCentre}
+                  onValueChange={value => {
+                    const programmeCentre = value ?? '';
+                    const pcHead = pcHeadForProgrammeCentre(programmeCentre);
+                    onChange({
+                      programmeCentre,
+                      department: departmentForProgrammeCentre(programmeCentre),
+                      pcHead,
+                      adpnc: adPncForProgrammeCentre(programmeCentre),
+                    });
+                  }}
+                >
+                  <SelectTrigger className={cn(showErrors && !entry.programmeCentre && 'border-danger')}><SelectValue placeholder="Select programme centre" /></SelectTrigger>
+                  <SelectContent>
+                    {programmeCentreOptions().map(option => (
+                      <SelectItem key={option.value} value={option.value}>{option.value}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field className={highlightClassFor('deadline')}>
+                <FieldLabel>
+                  Response deadline <span className="text-danger">*</span>
+                </FieldLabel>
+                <DatePicker value={entry.deadline} onChange={d => onChange({ deadline: d })} placeholder="Pick a date" align="right" error={showErrors && !entry.deadline} />
+              </Field>
+            </div>
+            <div className={cn('mt-3 grid grid-cols-1 gap-3', (entry.pcHead || entry.adpnc) ? '' : 'lg:grid-cols-2')}>
+              <Field>
+                <FieldLabel className="flex items-center gap-1.5">
+                  {!entry.programmeCentre && <ArrowLeft size={13} className="text-fg-subtle" aria-hidden="true" />}
+                  Recipients
+                </FieldLabel>
+                <DerivedRecipients pcHead={entry.pcHead} adpnc={entry.adpnc} hasProgrammeCentre={Boolean(entry.programmeCentre)} ccEmails={ccEdit} />
+              </Field>
             </div>
           </div>
 
           {/* Placement requirements */}
           <div className={highlightClassFor('placements')}>
-            <SectionDivider label="Placement requirements" />
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-              <FieldLabelText className="flex items-center gap-1.5">
-                Internship year
-                <FieldHelpTooltip label="Internship year">The calendar year these internship windows are for — the window options shift to this year.</FieldHelpTooltip>
-              </FieldLabelText>
-              <Select
-                value={String(entry.intakeYear ?? BASE_YEAR)}
-                onValueChange={v => {
-                  if (!v) return;
-                  const ny = parseInt(v, 10);
-                  const dy = ny - (entry.intakeYear ?? BASE_YEAR);
-                  onChange({
-                    intakeYear: ny,
-                    levels: entry.levels.map(l => {
-                      if (l.customWindow || !l.calendarStart || !l.calendarEnd) return l;
-                      const cs = shiftIsoYears(l.calendarStart, dy), ce = shiftIsoYears(l.calendarEnd, dy);
-                      return { ...l, calendarStart: cs, calendarEnd: ce, calendarPeriod: monthRangeLabel(cs, ce) };
-                    }),
-                  });
-                }}
-              >
-                <SelectTrigger className="h-9 w-28"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {INTAKE_YEARS.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <SectionDivider label="Placement requirements" uppercase={false} showLine={false} />
+            <div className="mb-4">
+              <Field className="w-fit">
+                <FieldLabel className="flex items-center gap-1.5">
+                  Internship year <span className="text-danger">*</span>
+                  <FieldHelpTooltip label="Internship year">The calendar year these internship windows are for — the window options shift to this year.</FieldHelpTooltip>
+                </FieldLabel>
+                <Select
+                  value={String(entry.intakeYear ?? BASE_YEAR)}
+                  onValueChange={v => {
+                    if (!v) return;
+                    const ny = parseInt(v, 10);
+                    const dy = ny - (entry.intakeYear ?? BASE_YEAR);
+                    onChange({
+                      intakeYear: ny,
+                      levels: entry.levels.map(l => {
+                        if (l.customWindow || !l.calendarStart || !l.calendarEnd) return l;
+                        const cs = shiftIsoYears(l.calendarStart, dy), ce = shiftIsoYears(l.calendarEnd, dy);
+                        return { ...l, calendarStart: cs, calendarEnd: ce, calendarPeriod: monthRangeLabel(cs, ce) };
+                      }),
+                    });
+                  }}
+                >
+                  <SelectTrigger className="h-9 w-28"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {INTAKE_YEARS.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
             </div>
             <div className="flex flex-col gap-1.5">
             {/* Column headers for the level + placements inputs */}
-            <div className="hidden gap-3 lg:grid lg:grid-cols-[minmax(18rem,1fr)_16rem_8rem_8rem_36px]">
+            <div className="hidden gap-3 lg:grid lg:grid-cols-[1fr_1fr_1fr_1fr]">
               <FieldLabelText className="flex items-center gap-1.5">
-                Intern category
+                Intern category <span className="text-danger">*</span>
                 <FieldHelpTooltip label="Intern category">The type of intern the project is for</FieldHelpTooltip>
               </FieldLabelText>
               <FieldLabelText className="flex items-center gap-1.5">
-                Internship window
+                Internship window <span className="text-danger">*</span>
                 <FieldHelpTooltip label="Internship window">Proposed projects should be able to run within this period</FieldHelpTooltip>
               </FieldLabelText>
               <FieldLabelText className="flex items-center gap-1.5">
-                Project duration
+                Project duration <span className="text-danger">*</span>
                 <FieldHelpTooltip label="Project duration">Proposed projects should last around this length of time</FieldHelpTooltip>
               </FieldLabelText>
-              <FieldLabelText>Placements</FieldLabelText>
-              <span />
+              <FieldLabelText>Placements <span className="text-danger">*</span></FieldLabelText>
             </div>
             <div className="space-y-2">
               {entry.levels.map((lvl, idx) => {
@@ -553,10 +580,10 @@ function RequestCard({
                 const winMonths = (winStart !== null && winEnd !== null && winEnd >= winStart) ? (winEnd - winStart + 1) : 0;
                 const durOptions = winMonths ? DURATIONS.filter(d => parseInt(d, 10) <= winMonths) : [...DURATIONS];
                 return (
-                  <div key={idx} className="grid gap-3 lg:grid-cols-[minmax(18rem,1fr)_16rem_8rem_8rem_36px] lg:items-center">
+                  <div key={idx} className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_1fr] lg:items-center">
                     <Field>
                       <FieldLabel className="flex items-center gap-1.5 lg:hidden">
-                        Intern category
+                        Intern category <span className="text-danger">*</span>
                         <FieldHelpTooltip label="Intern category">The type of intern the project is for</FieldHelpTooltip>
                       </FieldLabel>
                       <Select value={lvl.level} onValueChange={v => updateLevel(idx, { level: v ?? '', calendarStart: '', calendarEnd: '', calendarPeriod: '', customWindow: false })}>
@@ -572,7 +599,7 @@ function RequestCard({
                     </Field>
                     <Field>
                       <FieldLabel className="flex items-center gap-1.5 lg:hidden">
-                        Internship window
+                        Internship window <span className="text-danger">*</span>
                         <FieldHelpTooltip label="Internship window">Options follow the selected intern category; pick Customise for a bespoke window</FieldHelpTooltip>
                       </FieldLabel>
                       {!lvl.level ? (
@@ -582,9 +609,13 @@ function RequestCard({
                       ) : winCustom ? (
                         <div className="space-y-1">
                           <DateRangePicker
-                            start={lvl.calendarStart}
-                            end={lvl.calendarEnd}
-                            onChange={(calendarStart, calendarEnd) => {
+                            value={{
+                              from: lvl.calendarStart ? parseISO(lvl.calendarStart) : undefined,
+                              to: lvl.calendarEnd ? parseISO(lvl.calendarEnd) : undefined,
+                            }}
+                            onChange={(range: DateRange) => {
+                              const calendarStart = range.from ? formatISO(range.from, { representation: 'date' }) : '';
+                              const calendarEnd = range.to ? formatISO(range.to, { representation: 'date' }) : '';
                               const s = toMonthIndex(calendarStart), e = toMonthIndex(calendarEnd);
                               const wm = (s !== null && e !== null && e >= s) ? (e - s + 1) : 0;
                               const patch: Partial<ReqLevel> = { calendarStart, calendarEnd, calendarPeriod: monthRangeLabel(calendarStart, calendarEnd) };
@@ -592,7 +623,7 @@ function RequestCard({
                               updateLevel(idx, patch);
                             }}
                             placeholder="Select start and end date"
-                            error={showErrors && (!lvl.calendarStart || !lvl.calendarEnd)}
+                            className={cn('w-full', showErrors && (!lvl.calendarStart || !lvl.calendarEnd) && 'border-danger')}
                           />
                           {winPresets.length > 0 && (
                             <button type="button" className="text-label-sm text-accent hover:underline" onClick={() => updateLevel(idx, { customWindow: false, calendarStart: '', calendarEnd: '', calendarPeriod: '' })}>Use a preset window</button>
@@ -622,7 +653,7 @@ function RequestCard({
                     </Field>
                     <Field>
                       <FieldLabel className="flex items-center gap-1.5 lg:hidden">
-                        Project duration
+                        Project duration <span className="text-danger">*</span>
                         <FieldHelpTooltip label="Project duration">Proposed projects should last around this length of time</FieldHelpTooltip>
                       </FieldLabel>
                       <Select value={lvl.duration} onValueChange={v => updateLevel(idx, { duration: v ?? '' })}>
@@ -632,19 +663,21 @@ function RequestCard({
                         </SelectContent>
                       </Select>
                     </Field>
-                    <Field>
-                      <FieldLabel className="lg:hidden">Placements</FieldLabel>
-                      <Stepper value={lvl.placements} onChange={n => updateLevel(idx, { placements: n })} />
-                    </Field>
-                    <button
-                      type="button"
-                      disabled={entry.levels.length === 1}
-                      onClick={() => removeLevel(idx)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-fg-muted transition-colors hover:bg-danger-bg hover:text-danger disabled:cursor-not-allowed disabled:opacity-30"
-                      aria-label="Remove intern category"
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <Field>
+                        <FieldLabel className="lg:hidden">Placements <span className="text-danger">*</span></FieldLabel>
+                        <Stepper value={lvl.placements} onChange={n => updateLevel(idx, { placements: n })} />
+                      </Field>
+                      <button
+                        type="button"
+                        disabled={entry.levels.length === 1}
+                        onClick={() => removeLevel(idx)}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-fg-muted transition-colors hover:bg-danger-bg hover:text-danger disabled:cursor-not-allowed disabled:opacity-90"
+                        aria-label="Remove intern category"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -672,26 +705,34 @@ function ReviewField({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ReviewRecipientChips({ entry }: { entry: ReqEntry }) {
+function ReviewRecipientChips({ entry, ccEmails }: { entry: ReqEntry; ccEmails?: string }) {
+  const ccList = ccEmails ? parseCcList(ccEmails) : HQ_CC_RECIPIENTS;
   return (
-    <div className="flex min-h-9 flex-wrap items-center gap-2">
-      {entry.pcHead && <RecipientChip email={entry.pcHead} role="PC Head" />}
-      {entry.adpnc && <RecipientChip email={entry.adpnc} role="AD (P&C)" />}
-      <div className="ml-1 flex min-h-9 flex-wrap items-center gap-2 border-l border-border pl-3">
-        <span className="text-caption font-semibold uppercase tracking-wider text-fg-muted">CC</span>
-        {HQ_CC_RECIPIENTS.map(name => (
-          <RecipientChip key={name} email={name} role="HQ" />
+    <div className="rounded-lg border border-border bg-bg-subtle p-4">
+      <div className="flex min-h-9 flex-wrap items-center gap-2">
+        <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">To</span>
+        {entry.pcHead && <RecipientChip email={entry.pcHead} role="PC Head" badgeVariant="info" />}
+        {entry.pcHead && entry.adpnc && <span className="text-fg-muted">,</span>}
+        {entry.adpnc && <RecipientChip email={entry.adpnc} role="AD (P&C)" badgeVariant="info" />}
+      </div>
+      <div className="flex min-h-9 flex-wrap items-center gap-2">
+        <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">CC</span>
+        {ccList.map((name, i) => (
+          <Fragment key={name}>
+            <RecipientChip email={name} role="HQ" badgeVariant="subtle" />
+            {i < ccList.length - 1 && <span className="text-fg-muted">,</span>}
+          </Fragment>
         ))}
       </div>
     </div>
   );
 }
 
-function ReviewDetails({ entry, onPreview }: { entry: ReqEntry; onPreview: () => void }) {
+function ReviewDetails({ entry, onPreview, ccEdit }: { entry: ReqEntry; onPreview: () => void; ccEdit?: string }) {
   return (
     <div className="space-y-5 px-5 pb-5 pt-4">
       <div>
-        <SectionDivider label="Recipients" />
+        <SectionDivider label="Recipients" uppercase={false} showLine={false} />
         <div className="space-y-5">
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <ReviewField label="Programme Centre" value={entry.programmeCentre} />
@@ -699,12 +740,12 @@ function ReviewDetails({ entry, onPreview }: { entry: ReqEntry; onPreview: () =>
           </div>
           <Field>
             <FieldLabel className="text-fg-muted">Recipients</FieldLabel>
-            <ReviewRecipientChips entry={entry} />
+            <ReviewRecipientChips entry={entry} ccEmails={ccEdit} />
           </Field>
         </div>
       </div>
       <div>
-        <SectionDivider label="Placement requirements" />
+        <SectionDivider label="Placement requirements" uppercase={false} showLine={false} />
         <PlacementsTable rows={entry.levels.map(l => ({
           label: l.level,
           calendarPeriod: calendarPeriodLabel(l),
@@ -721,7 +762,7 @@ function ReviewDetails({ entry, onPreview }: { entry: ReqEntry; onPreview: () =>
   );
 }
 
-function ReviewCard({ entry, number, onPreview }: { entry: ReqEntry; number: number; onPreview: () => void }) {
+function ReviewCard({ entry, number, onPreview, ccEdit }: { entry: ReqEntry; number: number; onPreview: () => void; ccEdit?: string }) {
   const [open, setOpen] = useState(true);
   const totalPlacements = entry.levels.reduce((s, l) => s + l.placements, 0);
 
@@ -746,7 +787,7 @@ function ReviewCard({ entry, number, onPreview }: { entry: ReqEntry; number: num
         </span>
       </button>
       {open && (
-        <ReviewDetails entry={entry} onPreview={onPreview} />
+        <ReviewDetails entry={entry} onPreview={onPreview} ccEdit={ccEdit} />
       )}
     </div>
   );
@@ -758,12 +799,14 @@ function ReviewListLayout({
   numberById,
   onSelect,
   onPreview,
+  emailEdits,
 }: {
   reqs: ReqEntry[];
   activeReq: ReqEntry | undefined;
   numberById: Map<number, number>;
   onSelect: (id: number) => void;
   onPreview: (id: number) => void;
+  emailEdits: Record<number, EmailEdit>;
 }) {
   return (
     <section className="grid min-h-[560px] min-w-0 overflow-hidden rounded-xl border border-border bg-surface shadow-sm lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]">
@@ -794,40 +837,49 @@ function ReviewListLayout({
                 type="button"
                 onClick={() => onSelect(r.id)}
                 className={cn(
-                  'relative grid min-w-0 grid-cols-[minmax(0,1fr)_64px] items-center gap-3 border-b border-border px-4 py-3 text-left transition-colors',
+                  'group relative box-border w-full min-w-0 border-b px-4 py-3 text-left transition-colors',
                   isActive
-                    ? 'z-10 border-y border-accent/25 bg-accent/5 before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-accent after:absolute after:right-[-14px] after:top-1/2 after:h-7 after:w-4 after:-translate-y-1/2 after:bg-accent/5 after:[clip-path:polygon(0_0,100%_50%,0_100%)]'
-                    : 'bg-surface hover:bg-bg-muted',
+                    ? 'z-10 border-y border-[#E7E4DD] bg-[#F4F2EC]'
+                    : 'border-border bg-surface hover:bg-bg-muted',
                 )}
               >
-                <span className={cn('min-w-0', isActive && 'pr-3')}>
-                  <span className="block truncate text-body-sm font-semibold text-fg">
-                    Request {number} - {r.programmeCentre}
+                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_64px] items-center gap-3">
+                  <span className={cn('min-w-0', isActive && 'pr-3')}>
+                    <span className="block truncate text-body-sm font-semibold text-fg">
+                      Request {number} - {r.programmeCentre}
+                    </span>
+                    <span className="mt-1 block truncate text-caption text-fg-muted">
+                      {filledLevels} intern categor{filledLevels === 1 ? 'y' : 'ies'} · {totalPlacements} placement{totalPlacements === 1 ? '' : 's'}
+                    </span>
                   </span>
-                  <span className="mt-1 block truncate text-caption text-fg-muted">
-                    {filledLevels} intern categor{filledLevels === 1 ? 'y' : 'ies'} · {totalPlacements} placement{totalPlacements === 1 ? '' : 's'}
+                  <span className="flex justify-end">
+                    <Check size={15} className="text-success" aria-label="Ready" />
                   </span>
-                </span>
-                <span className="flex justify-end">
-                  <Check size={15} className="text-success" aria-label="Ready" />
-                </span>
+                </div>
+                {isActive && (
+                  <span
+                    className="absolute right-[-11px] top-1/2 z-10 h-full w-[11px] -translate-y-1/2 bg-[length:auto_100%] bg-right bg-no-repeat"
+                    style={{ backgroundImage: 'url(/assets/request-arrow.svg)' }}
+                    aria-hidden="true"
+                  />
+                )}
               </button>
             );
           })}
         </div>
       </aside>
 
-      <section className="flex min-h-0 min-w-0 flex-col bg-surface">
-        <div className="flex flex-col gap-1 border-b border-accent/25 bg-accent/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="text-label-md font-semibold text-accent">
-              {activeReq ? `Review - Request ${numberById.get(activeReq.id) ?? 0}` : 'Select a request to review'}
-            </h3>
-            <p className="mt-0.5 text-caption text-fg-muted">Check the request before sending.</p>
+        <section className="flex min-h-0 min-w-0 flex-col bg-surface">
+          <div className="flex flex-col gap-1 border-b border-[#E7E4DD] bg-[#F9F8F4] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-label-md font-semibold text-[#0F172B]">
+                {activeReq ? `Review - Request ${numberById.get(activeReq.id) ?? 0}` : 'Select a request to review'}
+              </h3>
+              <p className="mt-0.5 text-caption text-fg-muted">Check the request before sending.</p>
+            </div>
           </div>
-        </div>
         {activeReq ? (
-          <ReviewDetails entry={activeReq} onPreview={() => onPreview(activeReq.id)} />
+          <ReviewDetails entry={activeReq} onPreview={() => onPreview(activeReq.id)} ccEdit={emailEdits[activeReq.id]?.cc} />
         ) : (
           <div className="flex min-h-72 items-center justify-center p-6 text-body-sm text-fg-muted">
             Select a request to review.
@@ -1114,7 +1166,8 @@ export default function ProjectRequestFormPage() {
   );
 
   return (
-    <Shell activeRoute="/requests">
+    <TooltipProvider>
+      <Shell activeRoute="/requests">
       <div className="flex min-h-[calc(100vh-112px)] flex-col">
 
         {/* Breadcrumb */}
@@ -1138,19 +1191,19 @@ export default function ProjectRequestFormPage() {
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          <div className="w-full sm:w-40">
+          <div className="w-full sm:w-40 hidden">
             {layoutControl}
           </div>
         </div>
 
         {/* Stepper */}
-        <div className="mb-4 shrink-0">
+        <div className="mb-4 shrink-0 hidden">
           <StepIndicator step={step} onStepClick={setStep} />
         </div>
 
         {step === 1 && (
-          <Alert variant="info" className="mb-6 shrink-0">
-            <Info size={16} className="shrink-0" />
+          <Alert variant="default" className="mb-6 shrink-0 bg-[#F3EFE5] border-[#E7E4DD]">
+            <Info size={16} className="shrink-0 text-fg-muted" />
             <AlertDescription>
               Add or select a request from the left panel. Complete the details on the right.
             </AlertDescription>
@@ -1163,7 +1216,7 @@ export default function ProjectRequestFormPage() {
             {buildLayout === 'Layout 1' ? (
             <div className="flex-1 space-y-4">
               <section className="grid min-h-[560px] min-w-0 overflow-hidden rounded-xl border border-border bg-surface shadow-sm lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]">
-                <aside className="relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-border bg-surface shadow-sm lg:overflow-visible lg:border-b-0 lg:border-r">
+                <aside className="relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-border bg-surface shadow-lg lg:overflow-visible lg:border-b-0 lg:border-r">
                   <div className="space-y-3 border-b border-border bg-surface px-4 py-3.5">
                     <div className="flex items-center justify-between gap-3">
                       <div>
@@ -1179,7 +1232,7 @@ export default function ProjectRequestFormPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-[minmax(0,1fr)_64px] border-b border-border px-4 py-3 text-caption text-fg-muted">
+                  <div className="grid grid-cols-[minmax(0,1fr)_64px] border-b border-border px-4 py-3 text-caption text-fg-muted bg-[#FDFCFA]">
                     <span>Request</span>
                     <span className="flex items-center justify-end gap-1">
                       Missing
@@ -1197,11 +1250,18 @@ export default function ProjectRequestFormPage() {
                         <div
                           key={r.id}
                           className={cn(
-                            'group relative box-border w-full min-w-0 border-b border-border px-4 py-3 transition-colors',
-                            isActive
-                              ? 'z-10 border-y border-accent/25 bg-accent/5 before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-accent after:absolute after:right-[-14px] after:top-1/2 after:h-7 after:w-4 after:-translate-y-1/2 after:bg-accent/5 after:[clip-path:polygon(0_0,100%_50%,0_100%)]'
-                              : 'bg-surface hover:bg-bg-muted',
+                            'group relative box-border w-full min-w-0 border-b px-4 py-3 transition-colors',
+                            isActive && showErrors && missingCount > 0
+                              ? 'z-10 border-y border-[#F8A4A8] bg-white'
+                              : isActive
+                                ? 'z-10 border-y border-[#E7E4DD] bg-[#F4F2EC]'
+                                : 'border-border bg-surface hover:bg-bg-muted',
                           )}
+                          style={
+                            isActive && showErrors && missingCount > 0
+                              ? { backgroundImage: 'linear-gradient(rgba(251,44,54,0.1), rgba(251,44,54,0.1))' }
+                              : undefined
+                          }
                         >
                           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_72px] items-center gap-3">
 	                            <button
@@ -1238,6 +1298,15 @@ export default function ProjectRequestFormPage() {
                               </div>
                             </div>
                           </div>
+                          {isActive && (
+                            <span
+                              className="absolute right-[-11px] top-1/2 z-10 h-full w-[11px] -translate-y-1/2 bg-[length:auto_100%] bg-right bg-no-repeat"
+                              style={{
+                                backgroundImage: `url(${showErrors && missingCount > 0 ? '/assets/request-error-arrow.svg' : '/assets/request-arrow.svg'})`,
+                              }}
+                              aria-hidden="true"
+                            />
+                          )}
                         </div>
                       );
                     })}
@@ -1245,9 +1314,9 @@ export default function ProjectRequestFormPage() {
                 </aside>
 
                 <section className="flex min-h-0 min-w-0 flex-col bg-surface">
-                  <div className="flex flex-col gap-3 border-b border-accent/25 bg-accent/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-col gap-3 border-b border-[#E7E4DD] bg-[#F9F8F4] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <h3 className="text-label-md font-semibold text-accent">
+                      <h3 className="text-label-md font-semibold text-[#0F172B]">
                         {activeReq ? `Current Editing - Request ${numberById.get(activeReq.id) ?? 0}` : 'Add a request to begin'}
                       </h3>
                     </div>
@@ -1262,6 +1331,7 @@ export default function ProjectRequestFormPage() {
                       onRemove={() => removeReq(activeReq.id)}
                       guided
                       highlightedSection={highlightedReadiness}
+                      ccEdit={emailEdits[activeReq.id]?.cc}
                     />
                   ) : (
                     <div className="flex min-h-72 items-center justify-center p-6 text-body-sm text-fg-muted">
@@ -1304,6 +1374,7 @@ export default function ProjectRequestFormPage() {
                       onRemove={() => removeReq(r.id)}
                       canRemove={reqs.length > 1}
                       highlightedSection={highlightedReadiness}
+                      ccEdit={emailEdits[r.id]?.cc}
                     />
                   ))}
                 </section>
@@ -1324,8 +1395,8 @@ export default function ProjectRequestFormPage() {
         {/* ── Step 2: Review ── */}
         {step === 2 && (
           <div className="flex-1">
-            <Alert variant="info" className="mb-4">
-              <Clock />
+            <Alert variant="default" className="mb-4 bg-[#F3EFE5] border-[#E7E4DD]">
+              <Clock className="text-fg-muted" />
               <AlertDescription>
                 Automatic reminders will be sent {AUTO_REMINDER_DAYS.join(' and ')} days before the deadline.
               </AlertDescription>
@@ -1337,6 +1408,7 @@ export default function ProjectRequestFormPage() {
                 numberById={numberById}
                 onSelect={selectReq}
                 onPreview={setPreviewId}
+                emailEdits={emailEdits}
               />
             ) : (
               <section className="rounded-xl border border-border bg-surface shadow-sm">
@@ -1345,7 +1417,7 @@ export default function ProjectRequestFormPage() {
                   <p className="mt-0.5 text-body-sm text-fg-muted">Check each request before sending. Use “Preview email” to see the message a recipient will receive.</p>
                 </div>
                 {reqs.map(r => (
-                  <ReviewCard key={r.id} entry={r} number={numberById.get(r.id) ?? 0} onPreview={() => setPreviewId(r.id)} />
+                  <ReviewCard key={r.id} entry={r} number={numberById.get(r.id) ?? 0} onPreview={() => setPreviewId(r.id)} ccEdit={emailEdits[r.id]?.cc} />
                 ))}
               </section>
             )}
@@ -1363,6 +1435,7 @@ export default function ProjectRequestFormPage() {
               </>
             ) : (
               <>
+                <Button variant="outline" size="md" onClick={() => setStep(1)}><ArrowLeft size={16} />Back</Button>
                 <Button variant="outline" size="md" onClick={() => safeNavigate('/requests')}>Cancel</Button>
                 <Button variant="outline" size="md" onClick={handleSaveDraft}>Save as Draft</Button>
                 <Button size="md" onClick={() => setConfirmSendOpen(true)}><Send size={16} />Confirm Send</Button>
@@ -1489,5 +1562,6 @@ export default function ProjectRequestFormPage() {
         </DialogContent>
       </Dialog>
     </Shell>
+    </TooltipProvider>
   );
 }

@@ -1,5 +1,6 @@
 import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { type CSSProperties } from 'react';
 
 export default function SortTh({
   col,
@@ -12,6 +13,8 @@ export default function SortTh({
   className,
   children,
   filter,
+  minWidth,
+  maxWidth,
 }: {
   col: string;
   label: string;
@@ -26,8 +29,14 @@ export default function SortTh({
      button. When provided, the header lays the sort button and filter out in a
      flex row instead of a single full-width button. */
   filter?: React.ReactNode;
+  minWidth?: number | string;
+  maxWidth?: number | string;
 }) {
   const active = sortCol === col;
+  const computedStyle: CSSProperties = {
+    minWidth: typeof minWidth === 'number' ? `${minWidth}px` : minWidth,
+    maxWidth: typeof maxWidth === 'number' ? `${maxWidth}px` : maxWidth,
+  };
   const sortButton = (
     <button
       type="button"
@@ -57,6 +66,7 @@ export default function SortTh({
         active ? 'text-accent' : 'text-fg-muted',
         className,
       )}
+      style={computedStyle}
     >
       {filter ? (
         <div

@@ -72,7 +72,7 @@ export default function Shell({ children, activeRoute, hideNavigation = false }:
         <Topbar navigationHidden={hideNavigation} />
         <main className="flex-1 pt-[76px] md:pt-[80px] pb-8">
           <KineticBounce fullBleed={hideNavigation}>
-            <div className="mx-auto w-full max-w-[1440px] px-[clamp(24px,2.6vw,40px)]">
+            <div className="mx-auto w-full px-[clamp(24px,2.6vw,40px)]">
               {!hideNavigation && <SectionTabs activeRoute={activeRoute} />}
               {children}
             </div>

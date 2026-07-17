@@ -1,96 +1,79 @@
 import { cn } from "@/lib/utils";
 import {
-  type HTMLAttributes,
+  Table as BaseTable,
+  TableBody as BaseTableBody,
+  TableCaption as BaseTableCaption,
+  TableCell as BaseTableCell,
+  TableFooter as BaseTableFooter,
+  TableHead as BaseTableHead,
+  TableHeader as BaseTableHeader,
+  TableRow as BaseTableRow,
+} from "@/components/ui/table";
+import {
+  forwardRef,
+  type CSSProperties,
   type TdHTMLAttributes,
   type ThHTMLAttributes,
-  forwardRef,
 } from "react";
 
-export const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(
-  ({ className, ...props }, ref) => (
-    <div className="w-full overflow-x-auto">
-      <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
-    </div>
-  ),
-);
-Table.displayName = "Table";
+export const Table = BaseTable;
+export const TableBody = BaseTableBody;
+export const TableHeader = BaseTableHeader;
+export const TableRow = BaseTableRow;
+export const TableFooter = BaseTableFooter;
+export const TableCaption = BaseTableCaption;
 
-export const TableHeader = forwardRef<
-  HTMLTableSectionElement,
-  HTMLAttributes<HTMLTableSectionElement>
->(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("[&_tr]:border-b [&_tr]:border-border", className)} {...props} />
-));
-TableHeader.displayName = "TableHeader";
+export interface TableCellProps extends TdHTMLAttributes<HTMLTableCellElement> {
+  minWidth?: number | string;
+  maxWidth?: number | string;
+  truncate?: boolean;
+  lineClamp?: number;
+}
 
-export const TableBody = forwardRef<
-  HTMLTableSectionElement,
-  HTMLAttributes<HTMLTableSectionElement>
->(({ className, ...props }, ref) => (
-  <tbody ref={ref} className={cn("[&_tr:last-child]:border-0", className)} {...props} />
-));
-TableBody.displayName = "TableBody";
+export const TableCell = forwardRef<HTMLTableCellElement, TableCellProps>(
+  (
+    { minWidth, maxWidth, truncate, lineClamp, className, children, style, ...props },
+    ref,
+  ) => {
+    const computedStyle: CSSProperties = {
+      ...style,
+      minWidth: typeof minWidth === "number" ? `${minWidth}px` : minWidth,
+      maxWidth: typeof maxWidth === "number" ? `${maxWidth}px` : maxWidth,
+    };
 
-export const TableFooter = forwardRef<
-  HTMLTableSectionElement,
-  HTMLAttributes<HTMLTableSectionElement>
->(({ className, ...props }, ref) => (
-  <tfoot
-    ref={ref}
-    className={cn("border-t border-border bg-bg-muted/50 font-medium", className)}
-    {...props}
-  />
-));
-TableFooter.displayName = "TableFooter";
+    const content = lineClamp ? (
+      <span className={cn(`line-clamp-${lineClamp}`)}>{children}</span>
+    ) : truncate ? (
+      <span className="block truncate">{children}</span>
+    ) : (
+      children
+    );
 
-export const TableRow = forwardRef<HTMLTableRowElement, HTMLAttributes<HTMLTableRowElement>>(
-  ({ className, ...props }, ref) => (
-    <tr
-      ref={ref}
-      className={cn(
-        "border-b border-border transition-colors hover:bg-bg-muted/50 data-[state=selected]:bg-bg-muted",
-        className,
-      )}
-      {...props}
-    />
-  ),
-);
-TableRow.displayName = "TableRow";
-
-export const TableHead = forwardRef<HTMLTableCellElement, ThHTMLAttributes<HTMLTableCellElement>>(
-  ({ className, ...props }, ref) => (
-    <th
-      ref={ref}
-      className={cn(
-        "h-10 px-3 text-left align-middle text-xs font-semibold text-fg-muted",
-        "[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
-        className,
-      )}
-      {...props}
-    />
-  ),
-);
-TableHead.displayName = "TableHead";
-
-export const TableCell = forwardRef<HTMLTableCellElement, TdHTMLAttributes<HTMLTableCellElement>>(
-  ({ className, ...props }, ref) => (
-    <td
-      ref={ref}
-      className={cn(
-        "px-3 py-2.5 align-middle text-sm text-fg",
-        "[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
-        className,
-      )}
-      {...props}
-    />
-  ),
+    return (
+      <BaseTableCell ref={ref} className={className} style={computedStyle} {...props}>
+        {content}
+      </BaseTableCell>
+    );
+  },
 );
 TableCell.displayName = "TableCell";
 
-export const TableCaption = forwardRef<
-  HTMLTableCaptionElement,
-  HTMLAttributes<HTMLTableCaptionElement>
->(({ className, ...props }, ref) => (
-  <caption ref={ref} className={cn("mt-4 text-sm text-fg-muted", className)} {...props} />
-));
-TableCaption.displayName = "TableCaption";
+export interface TableHeadProps extends ThHTMLAttributes<HTMLTableCellElement> {
+  minWidth?: number | string;
+  maxWidth?: number | string;
+}
+
+export const TableHead = forwardRef<HTMLTableCellElement, TableHeadProps>(
+  ({ minWidth, maxWidth, className, style, ...props }, ref) => {
+    const computedStyle: CSSProperties = {
+      ...style,
+      minWidth: typeof minWidth === "number" ? `${minWidth}px` : minWidth,
+      maxWidth: typeof maxWidth === "number" ? `${maxWidth}px` : maxWidth,
+    };
+
+    return (
+      <BaseTableHead ref={ref} className={className} style={computedStyle} {...props} />
+    );
+  },
+);
+TableHead.displayName = "TableHead";
