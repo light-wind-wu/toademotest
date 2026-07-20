@@ -285,7 +285,7 @@ export default function AdPncEditSubmissionPage() {
 
   return (
     <Shell activeRoute="/submissions" hideNavigation>
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-1xl">
         {/* Breadcrumb */}
         <nav className="mb-3 flex items-center gap-2 text-body-sm text-fg-muted">
           <button type="button" onClick={() => router.push('/submissions')} className="hover:text-accent">

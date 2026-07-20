@@ -703,7 +703,7 @@ export default function ProjectNewPage() {
 
     return (
       <Shell activeRoute={backRoute} hideNavigation>
-        <div className="mx-auto max-w-1xl">
+        <div className="mx-auto max-w-1xl min-h-[calc(100vh-160px)]">
           <nav className="mb-3 flex items-center gap-2 text-body-sm text-fg-muted">
             <button type="button" onClick={() => router.push(backRoute)} className="hover:text-accent">
               Project request

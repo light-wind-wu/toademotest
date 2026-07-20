@@ -1395,127 +1395,129 @@ export default function AdPncRespondPage() {
               />
             </div>
           ) : (
-            <section className="min-h-[calc(100vh-390px)] space-y-4">
-              {showCategoryTabs && (
-                <UnderlineTabs
-                  value={activeCategory}
-                  onValueChange={(value) => value && setActiveCategory(value)}
-                  ariaLabel="Intern category"
-                  tabs={categories.map(category => ({
-                    value: category,
-                    label: categoryLabel(category),
-                    count: visibleProjects.filter(project => projectCategoryKey(project) === category).length,
-                  }))}
-                  className="mb-4"
-                />
-              )}
-
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    id="select-all-tab"
-                    checked={allActiveSelected}
-                    onCheckedChange={toggleSelectAllInTab}
+            <div className="flex min-h-[calc(100vh-390px)] flex-col gap-4">
+              <section className="flex-1 space-y-4">
+                {showCategoryTabs && (
+                  <UnderlineTabs
+                    value={activeCategory}
+                    onValueChange={(value) => value && setActiveCategory(value)}
+                    ariaLabel="Intern category"
+                    tabs={categories.map(category => ({
+                      value: category,
+                      label: categoryLabel(category),
+                      count: visibleProjects.filter(project => projectCategoryKey(project) === category).length,
+                    }))}
+                    className="mb-4"
                   />
-                  <label htmlFor="select-all-tab" className="text-body-sm text-fg">
-                    Select all in tab
-                  </label>
-                </div>
-                <div className="flex items-center rounded-lg border border-border p-1">
-                  <button
-                    type="button"
-                    aria-label="Grid view"
-                    aria-pressed={viewMode === 'grid'}
-                    onClick={() => setViewMode('grid')}
-                    className={cn(
-                      'rounded p-1.5 transition-colors',
-                      viewMode === 'grid' ? 'bg-bg-subtle text-fg' : 'text-fg-muted hover:text-fg'
-                    )}
-                  >
-                    <LayoutGrid size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="List view"
-                    aria-pressed={viewMode === 'list'}
-                    onClick={() => setViewMode('list')}
-                    className={cn(
-                      'rounded p-1.5 transition-colors',
-                      viewMode === 'list' ? 'bg-bg-subtle text-fg' : 'text-fg-muted hover:text-fg'
-                    )}
-                  >
-                    <List size={16} />
-                  </button>
-                </div>
-              </div>
+                )}
 
-              {shownProjects.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border bg-surface px-4 py-8 text-center text-body-sm text-fg-muted">
-                  No projects for {categoryLabel(activeCategory)} yet.
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="select-all-tab"
+                      checked={allActiveSelected}
+                      onCheckedChange={toggleSelectAllInTab}
+                    />
+                    <label htmlFor="select-all-tab" className="text-body-sm text-fg">
+                      Select all in tab
+                    </label>
+                  </div>
+                  <div className="flex items-center rounded-lg border border-border p-1">
+                    <button
+                      type="button"
+                      aria-label="Grid view"
+                      aria-pressed={viewMode === 'grid'}
+                      onClick={() => setViewMode('grid')}
+                      className={cn(
+                        'rounded p-1.5 transition-colors',
+                        viewMode === 'grid' ? 'bg-bg-subtle text-fg' : 'text-fg-muted hover:text-fg'
+                      )}
+                    >
+                      <LayoutGrid size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="List view"
+                      aria-pressed={viewMode === 'list'}
+                      onClick={() => setViewMode('list')}
+                      className={cn(
+                        'rounded p-1.5 transition-colors',
+                        viewMode === 'list' ? 'bg-bg-subtle text-fg' : 'text-fg-muted hover:text-fg'
+                      )}
+                    >
+                      <List size={16} />
+                    </button>
+                  </div>
                 </div>
-              ) : (
-                <div className={cn(
-                  'grid gap-4',
-                  viewMode === 'grid'
-                    ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-                    : 'grid-cols-1'
-                )}>
-                  {shownProjects.map(project => {
-                    const batch = batches.find(item => item.uploadToken === token && item.projects.some(row => row.id === project.id));
-                    const matchedRequest = group.requests.find(request => projectMatchesRequest(project, request));
-                    const isSelected = selectedProjectIds.has(project.id);
-                    return (
-                      <ProjectCard
-                        key={project.id}
-                        project={project}
-                        request={matchedRequest}
-                        batchId={isUploadMode ? undefined : batch?.id}
-                        selected={isSelected}
-                        onToggleSelect={() => toggleProjectSelection(project.id)}
-                        canManage={true}
-                        onViewDetails={batch?.id ? () => router.push(`/submissions/project/${encodeURIComponent(batch.id)}/${encodeURIComponent(project.id)}`) : undefined}
-                        onEdit={() => {
-                          if (isUploadMode) {
-                            setEditingDraftProjectId(project.id);
-                            return;
-                          }
-                          if (batch?.id) {
-                            router.push(`/submissions/edit/${encodeURIComponent(batch.id)}/${encodeURIComponent(project.id)}`);
-                          }
-                        }}
-                        onDelete={() => deleteDraftProject(project.id)}
-                        onWithdraw={() => withdrawProject(project.id)}
-                      />
-                    );
-                  })}
-                </div>
+
+                {shownProjects.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-border bg-surface px-4 py-8 text-center text-body-sm text-fg-muted">
+                    No projects for {categoryLabel(activeCategory)} yet.
+                  </div>
+                ) : (
+                  <div className={cn(
+                    'grid gap-4',
+                    viewMode === 'grid'
+                      ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                      : 'grid-cols-1'
+                  )}>
+                    {shownProjects.map(project => {
+                      const batch = batches.find(item => item.uploadToken === token && item.projects.some(row => row.id === project.id));
+                      const matchedRequest = group.requests.find(request => projectMatchesRequest(project, request));
+                      const isSelected = selectedProjectIds.has(project.id);
+                      return (
+                        <ProjectCard
+                          key={project.id}
+                          project={project}
+                          request={matchedRequest}
+                          batchId={isUploadMode ? undefined : batch?.id}
+                          selected={isSelected}
+                          onToggleSelect={() => toggleProjectSelection(project.id)}
+                          canManage={true}
+                          onViewDetails={batch?.id ? () => router.push(`/submissions/project/${encodeURIComponent(batch.id)}/${encodeURIComponent(project.id)}`) : undefined}
+                          onEdit={() => {
+                            if (isUploadMode) {
+                              setEditingDraftProjectId(project.id);
+                              return;
+                            }
+                            if (batch?.id) {
+                              router.push(`/submissions/edit/${encodeURIComponent(batch.id)}/${encodeURIComponent(project.id)}`);
+                            }
+                          }}
+                          onDelete={() => deleteDraftProject(project.id)}
+                          onWithdraw={() => withdrawProject(project.id)}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+
+              {isUploadMode && (
+                <section className="border-t px-5 py-5">
+                  <h2 className="text-label-lg font-semibold text-fg">Submission declaration</h2>
+                  <p className="text-body-sm text-fg-muted mt-1">
+                    Please complete all required steps and select all checkboxes below before submitting the projects to HR.
+                  </p>
+                  <div className="mt-4 space-y-3">
+                    <CheckRow
+                      checked={pcCleared}
+                      disabled={false}
+                      title="PC Head approval obtained"
+                      description="I confirm that all projects have been reviewed and approved by the Programme Centre Head."
+                      onCheckedChange={setPcCleared}
+                    />
+                    <CheckRow
+                      checked={securityCleared}
+                      disabled={false}
+                      title="Security review completed"
+                      description="I confirm that all projects have been reviewed for security and data protection considerations."
+                      onCheckedChange={setSecurityCleared}
+                    />
+                  </div>
+                </section>
               )}
-            </section>
-          )}
-
-          {isUploadMode && visibleProjects.length > 0 && (
-            <section className="rounded-lg border border-border bg-surface px-5 py-5">
-              <h2 className="text-label-lg font-semibold text-fg">Submission declaration</h2>
-              <p className="text-body-sm text-fg-muted mt-1">
-                Please complete all required steps and select all checkboxes below before submitting the projects to HR.
-              </p>
-              <div className="mt-4 space-y-3">
-                <CheckRow
-                  checked={pcCleared}
-                  disabled={false}
-                  title="PC Head approval obtained"
-                  description="I confirm that all projects have been reviewed and approved by the Programme Centre Head."
-                  onCheckedChange={setPcCleared}
-                />
-                <CheckRow
-                  checked={securityCleared}
-                  disabled={false}
-                  title="Security review completed"
-                  description="I confirm that all projects have been reviewed for security and data protection considerations."
-                  onCheckedChange={setSecurityCleared}
-                />
-              </div>
-            </section>
+            </div>
           )}
 
           <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-bg-subtle px-[clamp(24px,2.6vw,40px)] py-2">
@@ -1932,7 +1934,7 @@ function CheckRow({
 }) {
   return (
     <label className={cn(
-      'flex cursor-pointer items-start gap-3 rounded-lg px-4 py-3 transition-colors',
+      'flex cursor-pointer items-start gap-3 rounded-lg px-4 py-3 pl-0 transition-colors',
       checked && 'border-accent bg-accent/5',
       disabled && 'cursor-not-allowed bg-bg-subtle',
     )}>
