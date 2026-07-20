@@ -4,16 +4,17 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
+import { Badge } from '@/components/ui-legacy/badge';
 import EmptyState from '@/components/ui-legacy/empty-state';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Inbox, ArrowRight, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
+import { Inbox, CheckCircle2, Calendar } from 'lucide-react';
 import { loadLiveProgrammeOptions, CONTACTS } from '@/lib/data';
 import { loadRequests, loadSubmissions } from '@/lib/storage';
 import { useRole } from '@/lib/role';
 import { useToast, Toast } from '@/components/ui-legacy/toast';
 import {
-  groupRequests, isGroupClosed, groupTotals, daysLeft, submittedForGroup,
+  groupRequests, isGroupClosed, groupTotals, submittedForGroup,
   type RequestGroup,
 } from '@/lib/request-groups';
 import type { ProjectRequest, ProjectSubmissionBatch } from '@/lib/types';
@@ -61,6 +62,76 @@ function requestCategoryTotals(requests: ProjectRequest[], progMap: Record<strin
   return Array.from(totals.values());
 }
 
+/* ── Card status helpers ─────────────────────────────────────────────────── */
+
+type RequestBadge = {
+  label: string;
+  variant: 'warning' | 'info' | 'success';
+};
+
+function getGroupBadge(
+  group: RequestGroup,
+  batches: ProjectSubmissionBatch[],
+): RequestBadge {
+  const submitted = submittedForGroup(group, batches);
+  const hasRejected = submitted.some(p => p.status === 'rejected');
+  const { uploaded, placements } = groupTotals(group);
+
+  if (hasRejected) return { label: 'Returned for Update', variant: 'warning' };
+  if (placements > 0 && uploaded >= placements) return { label: 'Fulfilled', variant: 'success' };
+  if (uploaded > 0) return { label: 'Incomplete', variant: 'warning' };
+  return { label: 'Pending', variant: 'info' };
+}
+
+type ProjectStatusCounts = {
+  notSubmitted: number;
+  pending: number;
+  returnedForUpdate: number;
+  approved: number;
+};
+
+function getProjectStatusCounts(
+  group: RequestGroup,
+  batches: ProjectSubmissionBatch[],
+): ProjectStatusCounts {
+  const submitted = submittedForGroup(group, batches);
+  const { uploaded, placements } = groupTotals(group);
+
+  return {
+    notSubmitted: Math.max(0, placements - uploaded),
+    pending: submitted.filter(p => p.status === 'pending').length,
+    returnedForUpdate: submitted.filter(p => p.status === 'rejected').length,
+    approved: submitted.filter(p => p.status === 'approved').length,
+  };
+}
+
+function getRejectedProjects(
+  group: RequestGroup,
+  batches: ProjectSubmissionBatch[],
+) {
+  return submittedForGroup(group, batches).filter(p => p.status === 'rejected');
+}
+
+function getCardAction(
+  group: RequestGroup,
+  batches: ProjectSubmissionBatch[],
+): { label: string; mode: 'upload' | 'view' } {
+  const submitted = submittedForGroup(group, batches);
+  const hasRejected = submitted.some(p => p.status === 'rejected');
+  const { uploaded, placements } = groupTotals(group);
+
+  if (hasRejected) return { label: 'Update Returned Project', mode: 'view' };
+  if (uploaded === 0) return { label: 'Start Submission', mode: 'upload' };
+  if (uploaded < placements) return { label: 'Continue Submission', mode: 'upload' };
+  return { label: 'View Submission', mode: 'view' };
+}
+
+function getContextMessage(uploaded: number, placements: number): string {
+  if (uploaded === 0) return 'No project placements have been submitted yet.';
+  if (uploaded < placements) return 'Some placements are submitted, but the requested total has not been met.';
+  return 'Placement target met. Waiting for remaining IO review outcomes.';
+}
+
 /* ── Page ─────────────────────────────────────────────────────────────────── */
 export default function AdPncSubmissionsPage() {
   const { toast: toastMsg, showToast } = useToast();
@@ -105,11 +176,6 @@ export default function AdPncSubmissionsPage() {
   const doneGroups = groups.filter(isGroupClosed);
   const visibleGroups = tab === 'open' ? openGroups : doneGroups;
 
-  // Projects the IO rejected — AD (P&C) needs to revise and resubmit these.
-  const rejectedItems = batches.flatMap(b =>
-    b.projects.filter(p => p.status === 'rejected').map(p => ({ batch: b, proj: p })),
-  );
-
   function upload(group: RequestGroup) {
     router.push(`/submissions/respond?token=${encodeURIComponent(group.key)}&mode=upload`);
   }
@@ -123,47 +189,16 @@ export default function AdPncSubmissionsPage() {
     <Shell activeRoute="/submissions" hideNavigation>
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-headline-lg text-fg mb-1">Respond to request from internship HQ</h1>
+        <h1 className="text-headline-lg text-fg mb-1">Respond to Requests from Internship HQ</h1>
         <p className="text-body-sm text-fg-muted">
-          Submit projects to respond to this project request before deadline indicated.
-          <br />
-          IO will review your submission.
+          Review placement requirements and manage project submissions for each request.
         </p>
       </div>
 
-      {/* Rejected projects — surfaced so AD (P&C) can revise and resubmit them */}
-      {rejectedItems.length > 0 && (
-        <div className="mb-6 overflow-hidden rounded-lg border border-warning/40 bg-warning-bg">
-          <div className="flex items-center gap-2 border-b border-warning/30 px-4 py-3">
-            <AlertTriangle size={16} className="text-warning" />
-            <p className="text-label-md font-semibold text-fg">
-              Needs revision ({rejectedItems.length})
-            </p>
-          </div>
-          <div className="divide-y divide-warning/20">
-            {rejectedItems.map(({ batch, proj }) => (
-              <div key={proj.id} className="flex items-start justify-between gap-4 bg-surface px-4 py-3">
-                <div className="min-w-0">
-                  <p className="text-body-sm font-medium text-fg truncate">{proj.title || 'Untitled project'}</p>
-                  {proj.remarks && (
-                    <p className="mt-0.5 text-caption text-fg-muted line-clamp-2">
-                      <span className="font-semibold text-warning">IO feedback: </span>{proj.remarks}
-                    </p>
-                  )}
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="shrink-0"
-                  onClick={() => router.push(`/submissions/edit/${encodeURIComponent(batch.id)}/${encodeURIComponent(proj.id)}`)}
-                >
-                  Edit &amp; resubmit
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="mb-6 rounded-lg border border-border px-4 py-3 border-[#E6E1D8] bg-[#F3EFE5]">
+        <p className="text-label-md font-semibold text-fg">How it works</p>
+        <p className="text-body-sm text-fg-muted">1. Review the request 2. Manage and submit projects</p>
+      </div>
 
       {requests.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface">
@@ -177,12 +212,16 @@ export default function AdPncSubmissionsPage() {
       ) : (
         <>
           {/* Tabs */}
-          <Tabs value={tab} onValueChange={value => setTab(value as 'open' | 'done')} className="mb-5">
-            <TabsList aria-label="Project request status">
-              <TabsTrigger value="open">Open {openGroups.length}</TabsTrigger>
-              <TabsTrigger value="done">Closed {doneGroups.length}</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <UnderlineTabs
+            value={tab}
+            onValueChange={value => value && setTab(value as 'open' | 'done')}
+            ariaLabel="Project request status"
+            tabs={[
+              { value: 'open', label: 'Open Requests', count: openGroups.length },
+              { value: 'done', label: 'Closed Requests', count: doneGroups.length },
+            ]}
+            className="mb-5"
+          />
 
           {/* Request cards */}
           {visibleGroups.length === 0 ? (
@@ -195,7 +234,7 @@ export default function AdPncSubmissionsPage() {
               />
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {visibleGroups.map(group => (
                 <RequestCard
                   key={group.key}
@@ -228,76 +267,121 @@ function RequestCard({
 }) {
   const { placements, uploaded } = groupTotals(group);
   const categoryTotals = requestCategoryTotals(group.requests, progMap);
-  const days = daysLeft(group.deadline);
-  const open = !isGroupClosed(group);
+  const badge = getGroupBadge(group, batches);
+  const counts = getProjectStatusCounts(group, batches);
+  const rejected = getRejectedProjects(group, batches);
+  const action = getCardAction(group, batches);
+  const pc = group.requests[0]?.programmeCenter ?? '—';
 
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
-      {/* Top row: sender and deadline */}
-      <div className="flex flex-col gap-2 border-b border-border bg-bg-subtle/40 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
-        <p className="min-w-0 truncate text-body-sm text-fg-muted">
-          Request from <span className="font-semibold text-fg">{group.senderName ?? 'IO Admin'}</span>
-          <span className="text-fg-subtle"> · sent {fmtDate(group.sentDate)}</span>
-        </p>
-        <div className="flex shrink-0 items-center gap-2 text-body-sm">
-          <span className="text-caption text-fg-muted">Deadline</span>
-          <span className="font-semibold text-fg">{fmtDate(group.deadline)}</span>
-          {open && days >= 0 && (
-            <span className={cn(
-              'rounded-full px-2 py-0.5 text-caption font-semibold',
-              days <= 3 ? 'bg-danger-bg text-danger' : days <= 7 ? 'bg-warning-bg text-warning' : 'bg-bg-subtle text-fg-muted',
-            )}>
-              {days} days left
-            </span>
-          )}
-          {open && days < 0 && (
-            <span className="rounded-full bg-danger-bg px-2 py-0.5 text-caption font-semibold text-danger">
-              {Math.abs(days)} days overdue
-            </span>
-          )}
+      {/* Header */}
+      <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="text-headline-sm text-fg">
+            Request from {group.senderName ?? 'IO Admin'}
+          </h3>
+          <p className="mt-0.5 text-body-sm text-fg-muted">
+            Sent {fmtDate(group.sentDate)} · {pc}
+          </p>
         </div>
+        <Badge variant={badge.variant} className="shrink-0">{badge.label}</Badge>
       </div>
 
-      {/* Body: requested tasks · actions */}
-      <div className="grid gap-5 px-5 py-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-        <div className="min-w-0">
-          <p className="mb-2 text-caption text-fg-muted">Requested placements</p>
-          <div className="max-w-xl">
-            <ul className="space-y-1">
-              {categoryTotals.map(item => (
-                <li key={item.label} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-6 text-body-sm">
-                  <span className="font-medium text-fg">{item.label}</span>
-                  <span className="text-fg-muted tabular-nums">
-                    {item.uploaded} submitted of {item.placements}
+      {/* Body */}
+      <div className="space-y-6 px-5 py-5">
+        {/* Placement Fulfilment */}
+        <div>
+          <h4 className="text-label-md mb-3 font-semibold text-fg">Placement Fulfilment</h4>
+          <ul className="space-y-2">
+            {categoryTotals.map(item => {
+              const req = group.requests.find(r => requestCategoryLabel(r, progMap) === item.label);
+              const period = req?.periodStart && req?.periodEnd
+                ? `${req.periodStart} – ${req.periodEnd}`
+                : '';
+              const duration = req?.duration ? ` · ${req.duration}` : '';
+              return (
+                <li key={item.label} className="flex items-center justify-between text-body-sm">
+                  <span className="text-fg-muted">
+                    {item.label}
+                    {period && (
+                      <span className="text-fg-subtle"> · {period}{duration}</span>
+                    )}
+                  </span>
+                  <span className="tabular-nums text-fg">
+                    {item.uploaded} of {item.placements} submitted
                   </span>
                 </li>
-              ))}
-            </ul>
-            <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-body-sm">
-              <span className="font-semibold text-fg">Total submitted</span>
-              <span className="font-semibold text-fg tabular-nums">
-                {uploaded} of {placements}
-              </span>
-            </div>
+              );
+            })}
+          </ul>
+          <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-body-sm">
+            <span className="font-semibold text-fg">Total placements</span>
+            <span className="font-semibold text-fg tabular-nums">
+              {uploaded} of {placements} submitted
+            </span>
           </div>
+          <p className="mt-2 text-body-sm text-fg-muted">{getContextMessage(uploaded, placements)}</p>
         </div>
 
-        {/* Primary action */}
-        <div className="flex flex-col gap-3 lg:w-28 lg:justify-self-end">
-          {open ? (
-            <Button size="sm" onClick={onUpload} className="w-full justify-center">
-              Upload
-              <ArrowRight size={16} />
-            </Button>
+        {/* Project Statuses */}
+        <div>
+          <h4 className="text-label-md mb-3 font-semibold text-fg">Project Statuses</h4>
+          {counts.notSubmitted + counts.pending + counts.returnedForUpdate + counts.approved === 0 ? (
+            <p className="text-body-sm text-fg-muted">No project yet.</p>
           ) : (
-            <span className="inline-flex items-center justify-center gap-1.5 text-body-sm font-semibold text-fg-muted">
-              <CheckCircle2 size={15} />
-              Closed
-            </span>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-body-sm">
+              {counts.notSubmitted > 0 && (
+                <span className="text-fg-muted">
+                  <span className="font-semibold text-fg">{counts.notSubmitted}</span> Not submitted
+                </span>
+              )}
+              {counts.pending > 0 && (
+                <span className="text-info">
+                  <span className="font-semibold">{counts.pending}</span> Pending
+                </span>
+              )}
+              {counts.returnedForUpdate > 0 && (
+                <span className="text-warning">
+                  <span className="font-semibold">{counts.returnedForUpdate}</span> Returned for update
+                </span>
+              )}
+              {counts.approved > 0 && (
+                <span className="text-success">
+                  <span className="font-semibold">{counts.approved}</span> Approved
+                </span>
+              )}
+            </div>
           )}
-          <Button size="sm" variant="outline" onClick={onViewProject} className="w-full justify-center">
-            View Submission
+          <p className="mt-2 text-caption text-fg-muted">
+            These do not replace the request status shown above.
+          </p>
+        </div>
+
+        {/* Returned for update alert */}
+        {rejected.length > 0 && (
+          <Alert variant="warning" className="border-[rgba(187,77,0,0.3)] bg-[rgba(254,154,0,0.15)] text-[rgba(187,77,0,1)]">
+            <AlertTitle>
+              {rejected.length} project{rejected.length === 1 ? '' : 's'} require{rejected.length === 1 ? 's' : ''} an update
+            </AlertTitle>
+            <AlertDescription>
+              {rejected.map(p => p.remarks || `Please review "${p.title || 'Untitled project'}".`).join(' ')}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Footer action */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Button
+            size="sm"
+            onClick={action.mode === 'upload' ? onUpload : onViewProject}
+          >
+            {action.label}
           </Button>
+          <div className="flex items-center gap-2 text-body-sm text-fg-muted">
+            <Calendar size={16} />
+            <span>Deadline · {fmtDate(group.deadline)}</span>
+          </div>
         </div>
       </div>
     </div>

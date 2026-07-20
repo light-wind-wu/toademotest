@@ -4,25 +4,26 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import AiSparkleIcon from '@/components/ui-legacy/ai-sparkle-icon';
+import { Badge } from '@/components/ui-legacy/badge';
 import Button from '@/components/ui-legacy/button';
 import EmptyState from '@/components/ui-legacy/empty-state';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Modal from '@/components/ui-legacy/modal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toast, useToast } from '@/components/ui-legacy/toast';
+import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import {
   AlertTriangle,
   Calendar,
   Check,
   ChevronRight,
   Clock,
-  Edit2,
   Eye,
   Inbox,
+  LayoutGrid,
+  List,
   Plus,
-  Send,
   Trash2,
   Upload,
   User,
@@ -90,12 +91,12 @@ const REQUEST_CATEGORY_LABELS: Record<string, string> = {
   'Tech UP': 'Tech UP',
 };
 
-const STATUS_META: Record<SubmittedProject['status'], { label: string; cls: string }> = {
-  draft: { label: 'Draft', cls: 'bg-bg-muted text-fg-muted' },
-  pending: { label: 'Pending Review', cls: 'bg-warning-bg text-warning' },
-  approved: { label: 'Approved', cls: 'bg-success-bg text-success' },
-  rejected: { label: 'Rejected', cls: 'bg-danger-bg text-danger' },
-  withdrawn: { label: 'Withdrawn', cls: 'bg-bg-muted text-fg-muted' },
+const STATUS_META: Record<SubmittedProject['status'], { label: string; cls: string; text: string }> = {
+  draft: { label: 'Not submitted', cls: 'bg-bg-muted text-fg-muted', text: 'text-md-muted' },
+  pending: { label: 'Pending', cls: 'bg-info-bg text-info', text: 'text-info' },
+  approved: { label: 'Approved', cls: 'bg-success-bg text-success', text: 'text-success' },
+  rejected: { label: 'Returned for Update', cls: 'bg-warning-bg text-warning', text: 'text-warning' },
+  withdrawn: { label: 'Withdrawn', cls: 'bg-bg-muted text-fg-muted', text: 'text-fg-muted' },
 };
 
 function categoryLabel(value: string) {
@@ -119,8 +120,37 @@ function fmtDate(date: string) {
   return new Date(date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function requestTitle(group: RequestGroup) {
-  return `Request from ${group.senderName ?? 'IO Admin'} · sent ${fmtDate(group.sentDate)}`;
+function requestYearLabel(group: RequestGroup): string {
+  const start = group.requests[0]?.periodStart || group.requests[0]?.calendarPeriod;
+  if (!start) return new Date().getFullYear().toString();
+  const year = new Date(start).getFullYear();
+  return isNaN(year) ? new Date().getFullYear().toString() : year.toString();
+}
+
+function requestStatusForGroup(
+  group: RequestGroup,
+  batches: ProjectSubmissionBatch[],
+): { label: string; variant: 'warning' | 'info' | 'success' } {
+  const submitted = submittedForGroup(group, batches);
+  const hasRejected = submitted.some(p => p.status === 'rejected');
+  const placements = group.requests.reduce((sum, r) => sum + r.placements, 0);
+  const uploaded = group.requests.reduce((sum, r) => sum + (r.uploaded ?? 0), 0);
+
+  if (hasRejected) return { label: 'Returned for Update', variant: 'warning' };
+  if (placements > 0 && uploaded >= placements) return { label: 'Fulfilled', variant: 'success' };
+  if (uploaded > 0) return { label: 'Incomplete', variant: 'warning' };
+  return { label: 'Pending', variant: 'info' };
+}
+
+function requestContextSubtitle(group: RequestGroup): string {
+  const categories = group.requests.map(r => requestCategoryLabel(r));
+  const uniqueCategories = [...new Set(categories)];
+  const parts = [
+    fmtDate(group.sentDate),
+    group.requests[0]?.programmeCenter || '—',
+    ...uniqueCategories,
+  ].filter(Boolean);
+  return parts.join(' · ');
 }
 
 function requestPeriodForProject(request: ProjectRequest | undefined): { start: string; end: string } {
@@ -154,13 +184,12 @@ function projectDuration(project: SubmittedProject) {
 type AiCheckResultStatus = 'pass' | 'warn' | 'fail';
 
 function aiCheckStatusLabel(result: AiCheckResultStatus) {
-  if (result === 'pass') return 'Passed';
-  if (result === 'fail') return 'Must fix';
-  return 'Needs review';
+  if (result === 'pass') return 'AI checked';
+  return 'AI recommend review';
 }
 
 function aiCheckStatusClass(result: AiCheckResultStatus) {
-  if (result === 'pass') return 'bg-success-bg text-success';
+  if (result === 'pass') return 'bg-info-bg text-info';
   if (result === 'fail') return 'bg-danger-bg text-danger';
   return 'bg-warning-bg text-warning';
 }
@@ -915,10 +944,12 @@ export default function AdPncRespondPage() {
   const [editingDraftProjectId, setEditingDraftProjectId] = useState<string | null>(null);
   const [editingSubmittedProject, setEditingSubmittedProject] = useState<{ batchId: string; projectId: string } | null>(null);
   const [uploadReview, setUploadReview] = useState<UploadReview | null>(null);
-  const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
   const [pcCleared, setPcCleared] = useState(false);
   const [securityCleared, setSecurityCleared] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('');
+  const [selectedProjectIds, setSelectedProjectIds] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -996,6 +1027,39 @@ export default function AdPncRespondPage() {
   useEffect(() => {
     if (categories.length && !categories.includes(activeCategory)) setActiveCategory(categories[0]);
   }, [categories, activeCategory]);
+
+  const requestStatus = group ? requestStatusForGroup(group, batches) : null;
+  const requestYear = group ? requestYearLabel(group) : '';
+  const breadcrumbLabel = useMemo(() => {
+    if (!group) return '';
+    if (isUploadMode) return visibleProjects.length === 0 ? 'Update' : 'Continue Submission';
+    return visibleProjects.some(p => p.status === 'rejected') ? 'Update returned project' : 'Request Project';
+  }, [group, isUploadMode, visibleProjects]);
+
+  const activeCategoryProjects = shownProjects;
+  const activeSelectedCount = activeCategoryProjects.filter(p => selectedProjectIds.has(p.id)).length;
+  const allActiveSelected = activeCategoryProjects.length > 0 && activeSelectedCount === activeCategoryProjects.length;
+
+  function toggleSelectAllInTab() {
+    setSelectedProjectIds(prev => {
+      const next = new Set(prev);
+      if (allActiveSelected) {
+        activeCategoryProjects.forEach(p => next.delete(p.id));
+      } else {
+        activeCategoryProjects.forEach(p => next.add(p.id));
+      }
+      return next;
+    });
+  }
+
+  function toggleProjectSelection(projectId: string) {
+    setSelectedProjectIds(prev => {
+      const next = new Set(prev);
+      if (next.has(projectId)) next.delete(projectId);
+      else next.add(projectId);
+      return next;
+    });
+  }
 
   function activeSubmittedProjects(projects: SubmittedProject[]) {
     return projects.filter(project => project.status !== 'rejected' && project.status !== 'withdrawn');
@@ -1137,10 +1201,6 @@ export default function AdPncRespondPage() {
     router.push('/submissions');
   }
 
-  function confirmSubmitResponse() {
-    handleSubmitResponse();
-    setSubmitConfirmOpen(false);
-  }
 
   function requestOptionLabel(request: ProjectRequest) {
     const parts = [
@@ -1254,38 +1314,48 @@ export default function AdPncRespondPage() {
   return (
     <Shell activeRoute="/submissions" hideNavigation>
       {!group ? (
-        <div className="rounded-lg border border-border bg-surface">
-          <EmptyState
-            icon={Inbox}
-            title="Request not found"
-            description="Return to Project Requests and choose an available request."
-            action={<Button variant="outline" onClick={() => router.push('/submissions')}>Back to Project Requests</Button>}
-            size="sm"
-          />
-        </div>
+        <>
+          <div className="rounded-lg border border-border bg-surface">
+            <EmptyState
+              icon={Inbox}
+              title="Request not found"
+              description="Return to Project Requests and choose an available request."
+              size="sm"
+            />
+          </div>
+          <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-end gap-3 border-t border-border bg-bg-subtle px-[clamp(24px,2.6vw,40px)] py-2">
+            <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>Back to Project Requests</Button>
+          </div>
+        </>
       ) : (
         <div className="space-y-6">
+          {/* Header */}
           <div>
-            <nav className="mb-5 flex items-center gap-2 text-body-sm text-fg-muted">
+            <nav className="mb-3 flex items-center gap-2 text-body-sm text-fg-muted">
               <button type="button" onClick={() => router.push('/submissions')} className="hover:text-accent">
-                Project Requests
+                Project request
               </button>
               <ChevronRight size={14} className="text-fg-subtle" />
-              <span className="font-medium text-fg">{isUploadMode ? 'Upload' : 'Request Project'}</span>
+              <span className="font-medium text-fg">{breadcrumbLabel}</span>
             </nav>
 
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <h1 className="text-headline-lg text-fg mb-1">{requestTitle(group)}</h1>
+                <div className="flex flex-wrap items-center gap-3">
+                  <h1 className="text-headline-lg text-fg mb-1">Request for {requestYear} Projects</h1>
+                  {requestStatus && (
+                    <Badge variant={requestStatus.variant}>{requestStatus.label}</Badge>
+                  )}
+                </div>
                 <p className="text-body-sm text-fg-muted">
-                  {visibleProjects.length} project{visibleProjects.length !== 1 ? 's' : ''} ready.
+                  {visibleProjects.length} project{visibleProjects.length !== 1 ? 's' : ''} · {selectedProjectIds.size} selected across tabs
                 </p>
               </div>
               {isUploadMode && (
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={triggerUpload}>
                     <Upload size={15} />
-                    Upload Excel
+                    Upload excel
                   </Button>
                   <input
                     ref={fileInputRef}
@@ -1296,49 +1366,112 @@ export default function AdPncRespondPage() {
                   />
                   <Button onClick={handleCreateProject}>
                     <Plus size={15} />
-                    Create Project
+                    Create a New Project
                   </Button>
                 </div>
               )}
             </div>
           </div>
 
+          {/* Request Context */}
+          <div className="rounded-lg border border-border bg-surface p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-caption text-fg-muted">Request Context</p>
+                <h2 className="text-headline-sm text-fg mt-1">Request from {group.senderName ?? 'IO Admin'}</h2>
+                <p className="text-body-sm text-fg-muted mt-0.5">{requestContextSubtitle(group)}</p>
+              </div>
+              <span className="text-body-sm text-accent cursor-pointer hover:underline">
+                Show Details
+              </span>
+            </div>
+          </div>
+
           {visibleProjects.length === 0 ? (
-            <EmptyProjectsCard
-              isUploadMode={isUploadMode}
-              onUpload={triggerUpload}
-            />
+            <div className="min-h-[calc(100vh-390px)]">
+              <EmptyProjectsCard
+                isUploadMode={isUploadMode}
+                onUpload={triggerUpload}
+              />
+            </div>
           ) : (
-            <section>
+            <section className="min-h-[calc(100vh-390px)] space-y-4">
               {showCategoryTabs && (
-                <Tabs value={activeCategory} onValueChange={setActiveCategory} className="mb-4">
-                  <TabsList aria-label="Intern category" className="h-auto flex-wrap justify-start">
-                    {categories.map(category => (
-                      <TabsTrigger key={category} value={category}>
-                        {categoryLabel(category)}
-                        <span className="ml-1.5 text-caption text-fg-muted">
-                          {visibleProjects.filter(project => projectCategoryKey(project) === category).length}
-                        </span>
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                </Tabs>
+                <UnderlineTabs
+                  value={activeCategory}
+                  onValueChange={(value) => value && setActiveCategory(value)}
+                  ariaLabel="Intern category"
+                  tabs={categories.map(category => ({
+                    value: category,
+                    label: categoryLabel(category),
+                    count: visibleProjects.filter(project => projectCategoryKey(project) === category).length,
+                  }))}
+                  className="mb-4"
+                />
               )}
+
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="select-all-tab"
+                    checked={allActiveSelected}
+                    onCheckedChange={toggleSelectAllInTab}
+                  />
+                  <label htmlFor="select-all-tab" className="text-body-sm text-fg">
+                    Select all in tab
+                  </label>
+                </div>
+                <div className="flex items-center rounded-lg border border-border p-1">
+                  <button
+                    type="button"
+                    aria-label="Grid view"
+                    aria-pressed={viewMode === 'grid'}
+                    onClick={() => setViewMode('grid')}
+                    className={cn(
+                      'rounded p-1.5 transition-colors',
+                      viewMode === 'grid' ? 'bg-bg-subtle text-fg' : 'text-fg-muted hover:text-fg'
+                    )}
+                  >
+                    <LayoutGrid size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="List view"
+                    aria-pressed={viewMode === 'list'}
+                    onClick={() => setViewMode('list')}
+                    className={cn(
+                      'rounded p-1.5 transition-colors',
+                      viewMode === 'list' ? 'bg-bg-subtle text-fg' : 'text-fg-muted hover:text-fg'
+                    )}
+                  >
+                    <List size={16} />
+                  </button>
+                </div>
+              </div>
+
               {shownProjects.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-border bg-surface px-4 py-8 text-center text-body-sm text-fg-muted">
                   No projects for {categoryLabel(activeCategory)} yet.
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className={cn(
+                  'grid gap-4',
+                  viewMode === 'grid'
+                    ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                    : 'grid-cols-1'
+                )}>
                   {shownProjects.map(project => {
                     const batch = batches.find(item => item.uploadToken === token && item.projects.some(row => row.id === project.id));
                     const matchedRequest = group.requests.find(request => projectMatchesRequest(project, request));
+                    const isSelected = selectedProjectIds.has(project.id);
                     return (
                       <ProjectCard
                         key={project.id}
                         project={project}
                         request={matchedRequest}
                         batchId={isUploadMode ? undefined : batch?.id}
+                        selected={isSelected}
+                        onToggleSelect={() => toggleProjectSelection(project.id)}
                         canManage={true}
                         onViewDetails={batch?.id ? () => router.push(`/submissions/project/${encodeURIComponent(batch.id)}/${encodeURIComponent(project.id)}`) : undefined}
                         onEdit={() => {
@@ -1347,7 +1480,7 @@ export default function AdPncRespondPage() {
                             return;
                           }
                           if (batch?.id) {
-                            setEditingSubmittedProject({ batchId: batch.id, projectId: project.id });
+                            router.push(`/submissions/edit/${encodeURIComponent(batch.id)}/${encodeURIComponent(project.id)}`);
                           }
                         }}
                         onDelete={() => deleteDraftProject(project.id)}
@@ -1360,15 +1493,87 @@ export default function AdPncRespondPage() {
             </section>
           )}
 
-          {isUploadMode && (
-            <ReadyToSendPanel
-              hasProjects={activeVisibleProjects.length > 0}
-              onSaveDraft={() => router.push('/submissions')}
-              onSubmit={() => setSubmitConfirmOpen(true)}
-            />
+          {isUploadMode && visibleProjects.length > 0 && (
+            <section className="rounded-lg border border-border bg-surface px-5 py-5">
+              <h2 className="text-label-lg font-semibold text-fg">Submission declaration</h2>
+              <p className="text-body-sm text-fg-muted mt-1">
+                Please complete all required steps and select all checkboxes below before submitting the projects to HR.
+              </p>
+              <div className="mt-4 space-y-3">
+                <CheckRow
+                  checked={pcCleared}
+                  disabled={false}
+                  title="PC Head approval obtained"
+                  description="I confirm that all projects have been reviewed and approved by the Programme Centre Head."
+                  onCheckedChange={setPcCleared}
+                />
+                <CheckRow
+                  checked={securityCleared}
+                  disabled={false}
+                  title="Security review completed"
+                  description="I confirm that all projects have been reviewed for security and data protection considerations."
+                  onCheckedChange={setSecurityCleared}
+                />
+              </div>
+            </section>
           )}
+
+          <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-bg-subtle px-[clamp(24px,2.6vw,40px)] py-2">
+            <p className="text-body-sm text-fg">
+              {isUploadMode
+                ? visibleProjects.length > 0
+                  ? `Submitting ${selectedProjectIds.size} of ${activeVisibleProjects.length} project${activeVisibleProjects.length !== 1 ? 's' : ''}`
+                  : 'No projects added yet'
+                : visibleProjects.length > 0
+                  ? `${visibleProjects.length} project${visibleProjects.length !== 1 ? 's' : ''}`
+                  : 'No projects submitted'}
+            </p>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>Back</Button>
+              {isUploadMode && visibleProjects.length === 0 && (
+                <>
+                  <Button variant="outline" size="md" onClick={triggerUpload}>
+                    <Upload size={15} />
+                    Upload Excel
+                  </Button>
+                  <Button size="md" onClick={handleCreateProject}>
+                    <Plus size={15} />
+                    Create a New Project
+                  </Button>
+                </>
+              )}
+              {isUploadMode && visibleProjects.length > 0 && (
+                <>
+                  <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>Save and Exit</Button>
+                  <Button size="md" disabled={!canSubmit} onClick={() => setConfirmSubmitOpen(true)}>
+                    Submit
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       )}
+      <Dialog open={confirmSubmitOpen} onOpenChange={setConfirmSubmitOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Submit project response?</DialogTitle>
+            <DialogDescription>
+              {activeVisibleProjects.length > 0
+                ? `This will submit ${activeVisibleProjects.length} project${activeVisibleProjects.length !== 1 ? 's' : ''} for IO review.`
+                : 'This will submit the project response for IO review.'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmSubmitOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => { setConfirmSubmitOpen(false); handleSubmitResponse(); }}>
+              Submit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {createProjectPickerOpen && (
         <Modal open onClose={() => setCreateProjectPickerOpen(false)} maxWidth="lg" labelledBy="select-request-line-title">
           <h2 id="select-request-line-title" className="mb-2 text-headline-sm text-fg">
@@ -1426,18 +1631,6 @@ export default function AdPncRespondPage() {
           onClose={() => setUploadReview(null)}
           onImport={confirmUploadImport}
           onImportDemo={importDemoUploadDrafts}
-        />
-      )}
-      {submitConfirmOpen && (
-        <SubmitConfirmationDialog
-          hasProjects={activeVisibleProjects.length > 0}
-          pcCleared={pcCleared}
-          securityCleared={securityCleared}
-          canSubmit={canSubmit}
-          onPcClearedChange={setPcCleared}
-          onSecurityClearedChange={setSecurityCleared}
-          onClose={() => setSubmitConfirmOpen(false)}
-          onSubmit={confirmSubmitResponse}
         />
       )}
       <Toast message={toast} />
@@ -1583,6 +1776,8 @@ function ProjectCard({
   project,
   request,
   batchId,
+  selected,
+  onToggleSelect,
   canManage,
   onEdit,
   onViewDetails,
@@ -1592,6 +1787,8 @@ function ProjectCard({
   project: SubmittedProject;
   request?: ProjectRequest;
   batchId?: string;
+  selected: boolean;
+  onToggleSelect: () => void;
   canManage: boolean;
   onEdit: () => void;
   onViewDetails?: () => void;
@@ -1600,56 +1797,32 @@ function ProjectCard({
 }) {
   const status = STATUS_META[project.status] ?? STATUS_META.pending;
   const aiMeta = aiCheckMeta(project);
-  const showStatus = project.status !== 'draft';
-  const showAiMeta = project.status === 'draft';
+  const showAiMeta = project.status !== 'approved' && project.status !== 'withdrawn';
   const canEdit = canManage && (project.status === 'draft' || (Boolean(batchId) && (project.status === 'rejected' || project.status === 'withdrawn')));
   const canDelete = canManage && project.status === 'draft';
   const canWithdraw = canManage && project.status === 'pending';
+  const [confirmWithdrawOpen, setConfirmWithdrawOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   return (
-    <article className="rounded-lg border border-border bg-surface px-5 py-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h2 className="text-label-lg font-semibold text-fg">{project.title || 'Untitled project'}</h2>
+    <>
+      <article className="rounded-lg border border-border bg-surface p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-body-lg font-semibold text-fg leading-tight">{project.title || 'Untitled project'}</h2>
+          <p className={cn('mt-1 text-body-sm', status.text)}>
+            {status.label}
+          </p>
         </div>
-        <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-            {showStatus && (
-              <span className={cn('badge text-caption font-normal', status.cls)}>{status.label}</span>
-            )}
-            {showAiMeta && (
-              <span className={cn('badge inline-flex items-center gap-1 text-caption font-normal', aiMeta.cls)}>
-                <AiCheckStatusIcon result={aiMeta.result} />{aiMeta.label}
-              </span>
-            )}
-          </div>
-          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-            {onViewDetails && (
-              <Button variant="outline" size="sm" onClick={onViewDetails}>
-                <Eye size={14} />
-                View Details
-              </Button>
-            )}
-            {canWithdraw && (
-              <Button variant="outline" size="sm" onClick={onWithdraw}>
-                Withdraw
-              </Button>
-            )}
-            {canEdit && (
-              <Button variant="outline" size="sm" onClick={onEdit}>
-                <Edit2 size={14} />
-                Edit
-              </Button>
-            )}
-            {canDelete && (
-              <Button variant="outline" size="sm" onClick={onDelete} aria-label="Delete draft project">
-                <Trash2 size={14} />
-              </Button>
-            )}
-          </div>
-        </div>
+        <Checkbox
+          checked={selected}
+          onCheckedChange={onToggleSelect}
+          aria-label={`Select ${project.title || 'Untitled project'}`}
+          className="mt-1"
+        />
       </div>
-      <div className="mt-8 flex flex-wrap gap-x-8 gap-y-2 text-body-sm text-fg">
+
+      <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-body-sm text-fg">
         <span className="inline-flex items-center gap-2">
           <Calendar size={14} className="text-fg-muted" />
           {projectPeriod(project, request)}
@@ -1667,91 +1840,80 @@ function ProjectCard({
           {project.mentor || 'Mentor not set'}
         </span>
       </div>
-    </article>
-  );
-}
 
-function ReadyToSendPanel({
-  hasProjects,
-  onSaveDraft,
-  onSubmit,
-}: {
-  hasProjects: boolean;
-  onSaveDraft: () => void;
-  onSubmit: () => void;
-}) {
-  return (
-    <section className="rounded-lg border border-border bg-surface px-5 py-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-label-lg font-semibold text-fg">Ready to send to HR?</h2>
-          <p className="mt-1 text-body-sm text-fg-muted">Confirm the required checks when you submit.</p>
-        </div>
-        <div className="flex gap-2 sm:justify-end">
-          <Button variant="outline" onClick={onSaveDraft}>Save and exit</Button>
-          <Button disabled={!hasProjects} onClick={onSubmit}>
-            <Send size={15} />
-            Submit
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+        {canEdit && (
+          project.status === 'rejected' ? (
+            <Button variant="primary" size="sm" onClick={onEdit}>Continue Editing</Button>
+          ) : (
+            <Button variant="outline" size="sm" onClick={onEdit}>Edit</Button>
+          )
+        )}
+        {onViewDetails && (
+          <Button variant="outline" size="sm" onClick={onViewDetails}>
+            <Eye size={14} />
+            View
           </Button>
+        )}
+        {canWithdraw && (
+          <Button variant="danger" size="sm" onClick={() => setConfirmWithdrawOpen(true)}>
+            Withdraw
+          </Button>
+        )}
+        {canDelete && (
+          <Button variant="outline" size="sm" onClick={() => setConfirmDeleteOpen(true)} aria-label="Delete draft project">
+            <Trash2 size={14} />
+            Delete
+          </Button>
+        )}
         </div>
+        {showAiMeta && (
+          <span className="badge inline-flex items-center gap-1 text-caption font-normal border border-[rgba(37,99,235,0.3)] bg-[rgba(37,99,235,0.05)] text-[rgba(26,101,248,1)]">
+            <AiSparkleIcon size={12} />{aiMeta.label}
+          </span>
+        )}
       </div>
-    </section>
-  );
-}
+      </article>
 
-function SubmitConfirmationDialog({
-  hasProjects,
-  pcCleared,
-  securityCleared,
-  canSubmit,
-  onPcClearedChange,
-  onSecurityClearedChange,
-  onClose,
-  onSubmit,
-}: {
-  hasProjects: boolean;
-  pcCleared: boolean;
-  securityCleared: boolean;
-  canSubmit: boolean;
-  onPcClearedChange: (value: boolean) => void;
-  onSecurityClearedChange: (value: boolean) => void;
-  onClose: () => void;
-  onSubmit: () => void;
-}) {
-  return (
-    <Dialog open onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
-      <DialogContent className="max-w-2xl gap-0 overflow-hidden p-0">
-        <DialogHeader className="border-b border-border px-6 py-4 pr-14">
-          <DialogTitle className="text-headline-sm text-fg">Confirm submission</DialogTitle>
-          <DialogDescription>
-            Complete both checks before submitting projects to HR.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3 px-6 py-5">
-          <CheckRow
-            checked={pcCleared}
-            disabled={!hasProjects}
-            title="Cleared with PC Head"
-            description="All projects have been reviewed and approved by the Programme Committee Head."
-            onCheckedChange={onPcClearedChange}
-          />
-          <CheckRow
-            checked={securityCleared}
-            disabled={!hasProjects}
-            title="Cleared with Security"
-            description="All projects have been reviewed for security and data protection concerns."
-            onCheckedChange={onSecurityClearedChange}
-          />
-        </div>
-        <DialogFooter className="border-t border-border px-6 py-4">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button disabled={!canSubmit} onClick={onSubmit}>
-            <Send size={15} />
-            Submit
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <Dialog open={confirmWithdrawOpen} onOpenChange={setConfirmWithdrawOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Withdraw project?</DialogTitle>
+            <DialogDescription>
+              This project will be withdrawn and no longer under IO review.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmWithdrawOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={() => { setConfirmWithdrawOpen(false); onWithdraw(); }}>
+              Withdraw
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete project?</DialogTitle>
+            <DialogDescription>
+              This draft project will be removed. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={() => { setConfirmDeleteOpen(false); onDelete(); }}>
+              <Trash2 size={14} />Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -1770,7 +1932,7 @@ function CheckRow({
 }) {
   return (
     <label className={cn(
-      'flex cursor-pointer items-start gap-3 rounded-lg border border-border px-4 py-3 transition-colors',
+      'flex cursor-pointer items-start gap-3 rounded-lg px-4 py-3 transition-colors',
       checked && 'border-accent bg-accent/5',
       disabled && 'cursor-not-allowed bg-bg-subtle',
     )}>
@@ -1781,7 +1943,7 @@ function CheckRow({
         className="mt-1"
       />
       <span>
-        <span className="block text-body-sm font-medium text-fg">{title}</span>
+        <span className="block text-body-sm font-medium text-fg">{title}<span className="text-danger ml-1">*</span></span>
         <span className="mt-0.5 block text-body-sm text-fg-muted">{description}</span>
       </span>
     </label>

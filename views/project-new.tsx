@@ -10,7 +10,7 @@ import SingleCombobox from "@/components/ui-legacy/single-combobox";
 import Combobox from "@/components/ui-legacy/combobox";
 import AiSuggestField from "@/components/ui-legacy/ai-suggest-field";
 import { DISCIPLINE_OPTIONS, parseDisciplines, toggleDiscipline } from "@/lib/disciplines";
-import { ChevronRight, Plus, X, Check, Save, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle } from "lucide-react";
+import { ChevronRight, Plus, Minus, X, Check, Save, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle } from "lucide-react";
 import { CONTACTS, PROJECT_SUBMISSION_COLUMNS, toEducationLevel } from "@/lib/data";
 import {
   loadProjects, saveProjects,
@@ -40,6 +40,14 @@ import { Field, FieldDescription, FieldError, FieldLabel, FieldLabelText } from 
 import { useProgramme } from "@/lib/programme-context";
 import { useRole } from "@/lib/role";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type {
   ProjectEntry,
   SubmittedProject,
@@ -266,6 +274,7 @@ export default function ProjectNewPage() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [confirmAddOpen, setConfirmAddOpen] = useState(false);
 
   // The request(s) this submission is responding to — all intern categories sent under
   // the same token. Drives both the level-mismatch and over-submission warnings.
@@ -687,60 +696,58 @@ export default function ProjectNewPage() {
     : [];
 
   if (isSimpleAdRequest) {
+    const hasRejectedProjects = loadSubmissions().some(
+      b => b.uploadToken === requestToken && b.projects.some(p => p.status === 'rejected'),
+    );
+    const respondLabel = hasRejectedProjects ? 'Update Returned Project' : 'Respond to Request';
+
     return (
       <Shell activeRoute={backRoute} hideNavigation>
-        <div className="mx-auto max-w-5xl">
-          <nav className="mb-5 flex items-center gap-2 text-body-sm text-fg-muted">
+        <div className="mx-auto max-w-1xl">
+          <nav className="mb-3 flex items-center gap-2 text-body-sm text-fg-muted">
             <button type="button" onClick={() => router.push(backRoute)} className="hover:text-accent">
-              Project Requests
+              Project request
             </button>
             <ChevronRight size={14} className="text-fg-subtle" />
-            <span className="font-medium text-fg">Create Project</span>
+            <span>{respondLabel}</span>
+            <ChevronRight size={14} className="text-fg-subtle" />
+            <span className="font-medium text-fg">Create a new Project</span>
           </nav>
 
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <h1 className="text-headline-sm text-fg">Create project</h1>
-            </div>
+          <h1 className="text-headline-lg text-fg mb-6">Create a new Project</h1>
 
-            <div className="space-y-5 px-6 py-5">
-              {requestContext.length > 0 && (
-                <div className="rounded-lg border border-border bg-bg-subtle px-4 py-3">
-                  <FieldLabelText>Request context</FieldLabelText>
-                  <div className="mt-1.5 grid grid-cols-1 gap-3 sm:grid-cols-4">
-                    {requestContext.map(item => (
-                      <Field key={item.label}>
-                        <FieldLabel className="text-fg-muted">{item.label}</FieldLabel>
-                        <p className="truncate text-body-sm font-medium text-fg">{item.value}</p>
-                      </Field>
-                    ))}
+          {requestContext.length > 0 && (
+            <div className="rounded-lg border border-border bg-surface p-5 mb-6">
+              <p className="text-caption text-fg-muted mb-3">Request Context</p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+                {requestContext.map(item => (
+                  <div key={item.label}>
+                    <p className="text-caption text-fg-muted">{item.label}</p>
+                    <p className="text-body-sm font-medium text-fg">{item.value}</p>
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
+            </div>
+          )}
 
+          <div className="rounded-lg border border-border bg-surface p-6">
+            <div className="space-y-5">
               <FormField label="Project title" required error={errors.title}>
-                <AiSuggestField
-                  value={title}
-                  onChange={(value) => { setTitle(value); clearError("title"); }}
-                  generate={titleSuggest}
+                <input
+                  className={cn(INPUT_CLS, errors.title && ERROR_CLS)}
                   placeholder="Type a project name, e.g. AI-Driven Threat Detection System"
-                  inputClass={INPUT_CLS}
-                  errorClass={ERROR_CLS}
-                  hasError={!!errors.title}
+                  value={title}
+                  onChange={(event) => { setTitle(event.target.value); clearError("title"); }}
                 />
               </FormField>
 
               <FormField label="Project scope" required error={errors.description}>
-                <AiSuggestField
-                  multiline
+                <textarea
                   rows={5}
-                  value={description}
-                  onChange={(value) => { setDescription(value); clearError("description"); }}
-                  generate={scopeSuggest}
+                  className={cn(INPUT_CLS, 'resize-none', errors.description && ERROR_CLS)}
                   placeholder="Interns will work on..."
-                  inputClass={INPUT_CLS}
-                  errorClass={ERROR_CLS}
-                  hasError={!!errors.description}
+                  value={description}
+                  onChange={(event) => { setDescription(event.target.value); clearError("description"); }}
                 />
               </FormField>
 
@@ -779,7 +786,7 @@ export default function ProjectNewPage() {
                 </FormField>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <FormField label="Primary Mentor Name" required error={errors.mentor}>
                   <input
                     className={cn(INPUT_CLS, errors.mentor && ERROR_CLS)}
@@ -803,7 +810,7 @@ export default function ProjectNewPage() {
                 </FormField>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <FormField label="Secondary Mentor Name">
                   <input
                     className={INPUT_CLS}
@@ -827,26 +834,66 @@ export default function ProjectNewPage() {
                 </FormField>
               </div>
 
-              <FormField label="Number of placements" required error={errors.slots} hint={stillNeedPlacementsLabel}>
-                <input
-                  type="number"
-                  min={1}
-                  className={cn("max-w-32", INPUT_CLS, errors.slots && ERROR_CLS)}
-                  value={slots}
-                  onChange={(event) => { setSlots(event.target.value); clearError("slots"); }}
-                />
+              <FormField label="Number of placements" required error={errors.slots}>
+                <div className="flex items-center gap-3">
+                  <div className="inline-flex items-center rounded-lg border border-border bg-surface">
+                    <button
+                      type="button"
+                      onClick={() => { setSlots(String(Math.max(1, (parseInt(slots, 10) || 1) - 1))); clearError("slots"); }}
+                      className="grid h-9 w-9 place-items-center text-fg hover:bg-bg-subtle"
+                      aria-label="Decrease placements"
+                    >
+                      <Minus size={16} />
+                    </button>
+                    <span className="flex h-9 w-12 items-center justify-center border-x border-border text-body-md font-medium text-fg">
+                      {slots || 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => { setSlots(String((parseInt(slots, 10) || 1) + 1)); clearError("slots"); }}
+                      className="grid h-9 w-9 place-items-center text-fg hover:bg-bg-subtle"
+                      aria-label="Increase placements"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
+                </div>
+                <p className="text-body-sm text-fg-muted">
+                  You may offer more placements than requested on this project. New project rows cannot be added once the requested project count for this category is reached.
+                </p>
+                {errors.slots && <p className="text-caption text-danger mt-1">{errors.slots}</p>}
               </FormField>
-
-            </div>
-
-            <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
-              <Button variant="outline" onClick={() => router.push(backRoute)}>Cancel</Button>
-              <Button onClick={handleSimpleAdRequestSubmit} disabled={saving}>
-                {saving ? "Saving..." : "Save"}
-              </Button>
             </div>
           </div>
         </div>
+
+        <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-end gap-3 border-t border-border bg-bg-subtle px-[clamp(24px,2.6vw,40px)] py-2">
+          <Button variant="outline" size="md" onClick={() => router.push(backRoute)}>Back</Button>
+          <Button variant="outline" size="md" onClick={() => router.push(backRoute)}>Cancel</Button>
+          <Button size="md" onClick={() => setConfirmAddOpen(true)} disabled={saving}>
+            {saving ? "Saving..." : "Add Project"}
+          </Button>
+        </div>
+
+        <Dialog open={confirmAddOpen} onOpenChange={setConfirmAddOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add project?</DialogTitle>
+              <DialogDescription>
+                This will create a new project request for the selected requirement.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setConfirmAddOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => { setConfirmAddOpen(false); handleSimpleAdRequestSubmit(); }}>
+                <Plus size={14} />Add Project
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <Toast message={toast} />
       </Shell>
     );
@@ -1246,7 +1293,7 @@ export default function ProjectNewPage() {
         </div>
 
         {/* Footer — full-bleed sticky action bar (matches the project-request wizard) */}
-        <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-surface/95 px-[clamp(24px,2.6vw,40px)] py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] backdrop-blur">
+        <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-end gap-3 border-t border-border bg-surface/95 px-[clamp(24px,2.6vw,40px)] py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] backdrop-blur">
           {step === 1 ? (
             <Button variant="outline" onClick={() => router.push(backRoute)}>Cancel</Button>
           ) : (
@@ -1254,23 +1301,21 @@ export default function ProjectNewPage() {
               <ArrowLeft size={16} />Back
             </Button>
           )}
-          <div className="flex items-center gap-3">
-            {canDraft && (
-              <Button variant="outline" onClick={handleSaveDraft}>
-                <Save size={15} />Save Draft
-              </Button>
-            )}
-            {step < 4 ? (
-              <Button onClick={step === 1 ? goToStep2 : step === 2 ? goToStep3 : goToStep4}>
-                Next: {STEP_DEFS[step].label} <ArrowRight size={16} />
-              </Button>
-            ) : (
-              <Button onClick={handleSubmit} disabled={saving}>
-                <CheckCircle2 size={16} />
-                {saving ? "Saving…" : isAd ? "Submit Project" : "Create Project"}
-              </Button>
-            )}
-          </div>
+          {canDraft && (
+            <Button variant="outline" onClick={handleSaveDraft}>
+              <Save size={15} />Save Draft
+            </Button>
+          )}
+          {step < 4 ? (
+            <Button onClick={step === 1 ? goToStep2 : step === 2 ? goToStep3 : goToStep4}>
+              Next: {STEP_DEFS[step].label} <ArrowRight size={16} />
+            </Button>
+          ) : (
+            <Button onClick={handleSubmit} disabled={saving}>
+              <CheckCircle2 size={16} />
+              {saving ? "Saving…" : isAd ? "Submit Project" : "Create Project"}
+            </Button>
+          )}
         </div>
       </div>
       <Toast message={toast} />

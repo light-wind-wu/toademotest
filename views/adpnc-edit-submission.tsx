@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
+import { Badge } from '@/components/ui-legacy/badge';
+import AiSparkleIcon from '@/components/ui-legacy/ai-sparkle-icon';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, Check, RotateCcw, AlertTriangle } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, RotateCcw, AlertTriangle, Clock, History, Minus, Plus } from 'lucide-react';
 import { PROJECT_SUBMISSION_COLUMNS, loadLiveProgrammeOptions, type ProjectSubmissionColumn } from '@/lib/data';
 import { useToast, Toast } from '@/components/ui-legacy/toast';
 import { addNotification } from '@/lib/notifications';
@@ -13,6 +15,14 @@ import { runAiCheck } from '@/lib/ai-check';
 import { cn } from '@/lib/utils';
 import { loadSubmissions, saveSubmissions } from '@/lib/storage';
 import type { ProjectSubmissionBatch, SubmittedProject } from '@/lib/types';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 /* ── Storage ────────────────────────────────────────────────────────────────── */
 const PROJ_TPL_KEY         = 'dsta_proj_template_columns';
@@ -25,6 +35,11 @@ function loadLiveColumns(): ProjectSubmissionColumn[] {
     const raw = localStorage.getItem(PROJ_TPL_KEY);
     return raw ? JSON.parse(raw) : PROJECT_SUBMISSION_COLUMNS;
   } catch { return PROJECT_SUBMISSION_COLUMNS; }
+}
+
+function fmtDate(d: string) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 /* ── Editable fields ────────────────────────────────────────────────────────── */
@@ -50,6 +65,7 @@ interface EditState {
   mentorAppointment: string;
   mentorUserId:      string;
   secondaryMentor:   string;
+  secondaryMentorAppointment: string;
   secondaryMentorEmail: string;
   mentorBio:         string;
   skillsRaw:         string;
@@ -65,6 +81,7 @@ function toEditState(proj: SubmittedProject): EditState {
     mentorAppointment: proj.mentorAppointment ?? '',
     mentorUserId:      proj.mentorUserId ?? '',
     secondaryMentor:   proj.secondaryMentor ?? '',
+    secondaryMentorAppointment: proj.secondaryMentorAppointment ?? '',
     secondaryMentorEmail: proj.secondaryMentorEmail ?? '',
     mentorBio:         proj.mentorBio,
     skillsRaw:         proj.skills.join(', '),
@@ -94,6 +111,67 @@ function getDropdown(colName: string): string[] {
   return PROJECT_SUBMISSION_COLUMNS.find(column => column.name === colName)?.dropdownValues ?? [];
 }
 
+/* ── AI check helpers ───────────────────────────────────────────────────────── */
+function AiCheckHint({ title, description, educationLevel, skills }: {
+  title: string;
+  description?: string;
+  educationLevel: string;
+  skills: string[];
+}) {
+  const result = runAiCheck(
+    title,
+    description ?? '',
+    educationLevel,
+    skills,
+    skills[0] ?? '',
+  );
+  const scope = description !== undefined;
+  const ok = scope
+    ? result.grammar === 'pass' && result.publicReadiness === 'pass'
+    : result.grammar === 'pass';
+  const note = result.notes[0] ?? (ok ? 'Looks clear for applicant-facing use.' : 'Check wording for clarity.');
+  const label = ok ? 'AI checked' : 'AI recommend review';
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      <span className={cn(
+        'badge inline-flex items-center gap-1 text-caption font-normal',
+        'border border-[rgba(37,99,235,0.3)] bg-[rgba(37,99,235,0.05)] text-[rgba(26,101,248,1)]',
+      )}>
+        <AiSparkleIcon size={12} />{label}
+      </span>
+      <span className="text-body-sm text-fg-muted">{note}</span>
+    </div>
+  );
+}
+
+/* ── Audit log ─────────────────────────────────────────────────────────────── */
+function buildAuditLog(proj: SubmittedProject, pc: string) {
+  const entries: { date: string; label: string; description: string }[] = [];
+  if (proj.submittedAt) {
+    entries.push({
+      date: fmtDate(proj.submittedAt),
+      label: 'Pending review',
+      description: `Project submitted to IO for review under ${pc || 'PC'}.`,
+    });
+  }
+  if (proj.remarks && proj.status === 'rejected') {
+    entries.push({
+      date: proj.submittedAt ? fmtDate(proj.submittedAt) : '—',
+      label: 'Returned for Update',
+      description: proj.remarks,
+    });
+  }
+  if (proj.resubmittedAt) {
+    entries.push({
+      date: fmtDate(proj.resubmittedAt),
+      label: 'Resubmitted',
+      description: `Project resubmitted for IO review under ${pc || 'PC'}.`,
+    });
+  }
+  return entries;
+}
+
 /* ── Page ───────────────────────────────────────────────────────────────────── */
 export default function AdPncEditSubmissionPage() {
   const params   = useParams();
@@ -109,6 +187,8 @@ export default function AdPncEditSubmissionPage() {
   const [declC,    setDeclC]    = useState(false);
   const [declP,    setDeclP]    = useState(false);
   const [saving,   setSaving]   = useState(false);
+  const [auditOpen, setAuditOpen] = useState(false);
+  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
 
   useEffect(() => {
     const opts = loadLiveProgrammeOptions();
@@ -140,6 +220,8 @@ export default function AdPncEditSubmissionPage() {
   const missingDecl = !declC || !declP;
   const missingFields = EDIT_FIELDS.filter(f => f.required && !String(edit?.[f.field] ?? '').trim()).map(f => f.label);
 
+  const auditLog = proj ? buildAuditLog(proj, edit?.pc ?? proj.pc ?? '') : [];
+
   function handleSave() {
     if (!edit || !batch || !proj || !canSave) return;
     setSaving(true);
@@ -155,6 +237,7 @@ export default function AdPncEditSubmissionPage() {
         mentorAppointment:  edit.mentorAppointment.trim() || undefined,
         mentorUserId:       edit.mentorUserId.trim() || undefined,
         secondaryMentor:    edit.secondaryMentor.trim() || undefined,
+        secondaryMentorAppointment: edit.secondaryMentorAppointment.trim() || undefined,
         secondaryMentorEmail: edit.secondaryMentorEmail.trim() || undefined,
         mentorBio:          edit.mentorBio.trim(),
         skills,
@@ -202,176 +285,262 @@ export default function AdPncEditSubmissionPage() {
 
   return (
     <Shell activeRoute="/submissions" hideNavigation>
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-label-md mb-5">
-        <button
-          onClick={() => router.push('/submissions')}
-          className="text-fg-muted hover:text-accent transition-colors flex items-center gap-1"
-        >
-          <ChevronLeft size={14} />Submissions
-        </button>
-        <span className="text-fg-subtle">/</span>
-        <span className="text-fg font-semibold truncate">Resubmit Project</span>
-      </nav>
+      <div className="mx-auto max-w-5xl">
+        {/* Breadcrumb */}
+        <nav className="mb-3 flex items-center gap-2 text-body-sm text-fg-muted">
+          <button type="button" onClick={() => router.push('/submissions')} className="hover:text-accent">
+            Project request
+          </button>
+          <ChevronRight size={14} className="text-fg-subtle" />
+          <span>Update Returned Project</span>
+          <ChevronRight size={14} className="text-fg-subtle" />
+          <span className="font-medium text-fg">Edit Project</span>
+        </nav>
 
-      <div className="mx-auto max-w-6xl pb-10">
-        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        {/* Header */}
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <h1 className="text-headline-lg text-fg">{proj.title}</h1>
+          <Badge variant="warning">Returned for Update</Badge>
+        </div>
 
-          {/* Main column — header + edit form */}
-          <div className="min-w-0 space-y-6">
-            {/* Header */}
-            <div className="rounded-2xl border border-border bg-surface px-6 py-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h1 className="text-headline-lg font-bold text-fg truncate">{proj.title}</h1>
-                  <p className="text-body-md text-fg-muted mt-0.5">
-                    {progMap[batch?.programme ?? ''] ?? batch?.programme} · {proj.mentor}
-                  </p>
-                </div>
-                <span className="badge bg-warning-bg text-warning shrink-0">Returned for Revision</span>
+        <div className="space-y-6">
+          {/* IO feedback */}
+          {proj.remarks && (
+            <div className="rounded-lg border border-warning/30 bg-warning-bg px-5 py-4">
+              <div className="flex items-center gap-2 mb-1.5">
+                <AlertTriangle size={14} className="text-warning shrink-0" />
+                <p className="text-caption font-semibold uppercase tracking-wide text-warning">IO feedback</p>
               </div>
+              <p className="text-body-sm text-fg">{proj.remarks}</p>
             </div>
+          )}
 
-            {/* Edit form — two-up grid, long text fields span full width */}
-            <div className="rounded-2xl border border-border bg-surface px-6 py-5">
-              <h2 className="text-label-lg font-semibold text-fg mb-5">Edit Project Details</h2>
-              <div className="space-y-5">
-                <Field label="Project title" required>
-                  <input className={INPUT_CLS} value={edit.title} onChange={e => setEdit(prev => prev ? { ...prev, title: e.target.value } : prev)} />
+          {/* Edit form */}
+          <div className="rounded-lg border border-border bg-surface p-6">
+            <div className="space-y-5">
+              <Field label="Project title" required>
+                <input
+                  className={INPUT_CLS}
+                  value={edit.title}
+                  onChange={e => setEdit(prev => prev ? { ...prev, title: e.target.value } : prev)}
+                />
+                <AiCheckHint
+                  title={edit.title}
+                  educationLevel={proj.educationLevel ?? ''}
+                  skills={edit.skillsRaw.split(',').map(s => s.trim()).filter(Boolean)}
+                />
+              </Field>
+
+              <Field label="Project scope" required>
+                <textarea
+                  rows={5}
+                  className={TEXTAREA_CLS}
+                  value={edit.description}
+                  onChange={e => setEdit(prev => prev ? { ...prev, description: e.target.value } : prev)}
+                />
+                <AiCheckHint
+                  title={edit.title}
+                  description={edit.description}
+                  educationLevel={proj.educationLevel ?? ''}
+                  skills={edit.skillsRaw.split(',').map(s => s.trim()).filter(Boolean)}
+                />
+              </Field>
+
+              <Field label="Programme centre" required>
+                <Select value={edit.pc} onValueChange={value => setEdit(prev => prev ? { ...prev, pc: value ?? '' } : prev)}>
+                  <SelectTrigger aria-label="Programme centre">
+                    <SelectValue placeholder="Select programme centre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getDropdown('PC').map(value => <SelectItem key={value} value={value}>{value}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <div>
+                <p className="mb-2 text-label-sm text-fg">
+                  Tech Competency (up to 3)<span className="text-danger">*</span>
+                </p>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  {[0, 1, 2].map(index => {
+                    const selected = edit.skillsRaw.split(',').map(item => item.trim()).filter(Boolean);
+                    return (
+                      <Field key={index} label={`Option ${index + 1}`}>
+                        <Select value={selected[index] ?? ''} onValueChange={value => setTechCompetency(index, value ?? '')}>
+                          <SelectTrigger aria-label={`Tech competency option ${index + 1}`}>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getDropdown('Tech Domain').map(value => <SelectItem key={value} value={value}>{value}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <Field label="Primary Mentor Name" required>
+                  <input className={INPUT_CLS} value={edit.mentor} onChange={e => setEdit(prev => prev ? { ...prev, mentor: e.target.value } : prev)} />
                 </Field>
-                <Field label="Project scope" required>
-                  <textarea rows={5} className={TEXTAREA_CLS} value={edit.description} onChange={e => setEdit(prev => prev ? { ...prev, description: e.target.value } : prev)} />
+                <Field label="Primary Mentor Appointment" required>
+                  <input className={INPUT_CLS} value={edit.mentorAppointment} onChange={e => setEdit(prev => prev ? { ...prev, mentorAppointment: e.target.value } : prev)} />
                 </Field>
-                <Field label="Programme centre" required>
-                  <Select value={edit.pc} onValueChange={value => setEdit(prev => prev ? { ...prev, pc: value ?? '' } : prev)}>
-                    <SelectTrigger aria-label="Programme centre">
-                      <SelectValue placeholder="Select programme centre" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getDropdown('PC').map(value => <SelectItem key={value} value={value}>{value}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                <Field label="Primary Mentor Email" required>
+                  <input className={cn(INPUT_CLS, edit.mentorUserId && !EMAIL_RE.test(edit.mentorUserId.trim()) && ERROR_CLS)} value={edit.mentorUserId} onChange={e => setEdit(prev => prev ? { ...prev, mentorUserId: e.target.value } : prev)} />
                 </Field>
-                <div>
-                  <p className="mb-2 text-label-sm text-fg">
-                    Tech competency (3 options)<span className="text-danger">*</span>
-                  </p>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    {[0, 1, 2].map(index => {
-                      const selected = edit.skillsRaw.split(',').map(item => item.trim()).filter(Boolean);
-                      return (
-                        <Field key={index} label={`Option ${index + 1}`}>
-                          <Select value={selected[index] ?? ''} onValueChange={value => setTechCompetency(index, value ?? '')}>
-                            <SelectTrigger aria-label={`Tech competency option ${index + 1}`}>
-                              <SelectValue placeholder="Select" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getDropdown('Tech Domain').map(value => <SelectItem key={value} value={value}>{value}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </Field>
-                      );
-                    })}
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <Field label="Secondary Mentor Name">
+                  <input className={INPUT_CLS} value={edit.secondaryMentor} onChange={e => setEdit(prev => prev ? { ...prev, secondaryMentor: e.target.value } : prev)} />
+                </Field>
+                <Field label="Secondary Mentor Appointment">
+                  <input className={INPUT_CLS} value={edit.secondaryMentorAppointment} onChange={e => setEdit(prev => prev ? { ...prev, secondaryMentorAppointment: e.target.value } : prev)} />
+                </Field>
+                <Field label="Secondary Mentor Email">
+                  <input className={cn(INPUT_CLS, edit.secondaryMentorEmail && !EMAIL_RE.test(edit.secondaryMentorEmail.trim()) && ERROR_CLS)} value={edit.secondaryMentorEmail} onChange={e => setEdit(prev => prev ? { ...prev, secondaryMentorEmail: e.target.value } : prev)} />
+                </Field>
+              </div>
+
+              <Field label="Number of placements" required>
+                <div className="flex items-center gap-3">
+                  <div className="inline-flex items-center rounded-lg border border-border bg-surface">
+                    <button
+                      type="button"
+                      onClick={() => setEdit(prev => prev ? { ...prev, slots: Math.max(1, prev.slots - 1) } : prev)}
+                      className="grid h-9 w-9 place-items-center text-fg hover:bg-bg-subtle"
+                      aria-label="Decrease placements"
+                    >
+                      <Minus size={16} />
+                    </button>
+                    <span className="flex h-9 w-12 items-center justify-center border-x border-border text-body-md font-medium text-fg">
+                      {edit.slots || 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setEdit(prev => prev ? { ...prev, slots: prev.slots + 1 } : prev)}
+                      className="grid h-9 w-9 place-items-center text-fg hover:bg-bg-subtle"
+                      aria-label="Increase placements"
+                    >
+                      <Plus size={16} />
+                    </button>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <Field label="Primary Mentor Name" required>
-                    <input className={INPUT_CLS} value={edit.mentor} onChange={e => setEdit(prev => prev ? { ...prev, mentor: e.target.value } : prev)} />
-                  </Field>
-                  <Field label="Primary Mentor Appointment" required>
-                    <input className={INPUT_CLS} value={edit.mentorAppointment} onChange={e => setEdit(prev => prev ? { ...prev, mentorAppointment: e.target.value } : prev)} />
-                  </Field>
-                  <Field label="Primary Mentor Email" required>
-                    <input className={cn(INPUT_CLS, edit.mentorUserId && !EMAIL_RE.test(edit.mentorUserId.trim()) && ERROR_CLS)} value={edit.mentorUserId} onChange={e => setEdit(prev => prev ? { ...prev, mentorUserId: e.target.value } : prev)} />
-                  </Field>
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <Field label="Secondary Mentor Name">
-                    <input className={INPUT_CLS} value={edit.secondaryMentor} onChange={e => setEdit(prev => prev ? { ...prev, secondaryMentor: e.target.value } : prev)} />
-                  </Field>
-                  <Field label="Secondary Mentor Email">
-                    <input className={cn(INPUT_CLS, edit.secondaryMentorEmail && !EMAIL_RE.test(edit.secondaryMentorEmail.trim()) && ERROR_CLS)} value={edit.secondaryMentorEmail} onChange={e => setEdit(prev => prev ? { ...prev, secondaryMentorEmail: e.target.value } : prev)} />
-                  </Field>
-                </div>
-                <Field label="Number of placements" required>
-                  <input
-                    type="number"
-                    min={1}
-                    className={cn('max-w-32', INPUT_CLS)}
-                    value={edit.slots === 0 ? '' : edit.slots}
-                    onChange={e => {
-                      const next = parseInt(e.target.value, 10);
-                      setEdit(prev => prev ? { ...prev, slots: Number.isNaN(next) ? 0 : next } : prev);
-                    }}
-                  />
-                </Field>
-              </div>
+                <p className="text-body-sm text-fg-muted mt-2">
+                  You may offer more placements than requested on this project. New project rows cannot be added once the requested project count for this category is reached.
+                </p>
+              </Field>
             </div>
           </div>
 
-          {/* Sidebar — feedback, declarations, resubmit (sticky) */}
-          <div className="space-y-5 lg:sticky lg:top-6">
-            {/* IO feedback */}
-            {proj.remarks && (
-              <div className="rounded-xl border border-warning/30 bg-warning-bg px-5 py-4">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <AlertTriangle size={14} className="text-warning shrink-0" />
-                  <p className="text-[12px] font-black text-warning uppercase tracking-wide">IO Feedback — address before resubmitting</p>
-                </div>
-                <p className="text-body-md text-fg">{proj.remarks}</p>
-              </div>
+          {/* Declarations */}
+          <div className={cn(
+            'rounded-lg border px-6 py-5 space-y-4 transition-colors',
+            missingDecl ? 'border-warning/40 bg-warning-bg/40' : 'border-border bg-surface',
+          )}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-label-lg font-semibold text-fg">Declarations</h2>
+              {missingDecl && (
+                <span className="text-[12px] font-bold text-warning bg-warning/10 px-2 py-0.5 rounded-full">
+                  {[!declC, !declP].filter(Boolean).length} remaining
+                </span>
+              )}
+            </div>
+            {[
+              { state: declC, set: setDeclC, text: 'I confirm that security clearance for all projects in this submission has been obtained.' },
+              { state: declP, set: setDeclP, text: 'I confirm that all projects in this submission have received PC Head approval.' },
+            ].map(({ state, set, text }, i) => (
+              <label key={i} className="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked={state} onChange={e => set(e.target.checked)} className="mt-0.5 accent-accent shrink-0" />
+                <span className="text-body-sm text-fg leading-snug">{text}</span>
+              </label>
+            ))}
+            {missingFields.length > 0 && (
+              <p className="text-body-sm text-danger text-center">
+                Required fields missing: {missingFields.join(', ')}.
+              </p>
             )}
+            {missingDecl && missingFields.length === 0 && (
+              <p className="text-body-sm text-warning text-center">
+                Check both declarations above to enable saving.
+              </p>
+            )}
+          </div>
 
-            {/* Declarations + submit */}
-            <div className={cn(
-              'rounded-2xl border px-6 py-5 space-y-4 transition-colors',
-              missingDecl ? 'border-warning/40 bg-warning-bg/40' : 'border-border bg-surface',
-            )}>
-              <div className="flex items-center justify-between">
-                <h2 className="text-label-lg font-semibold text-fg">Declarations</h2>
-                {missingDecl && (
-                  <span className="text-[12px] font-bold text-warning bg-warning/10 px-2 py-0.5 rounded-full">
-                    {[!declC, !declP].filter(Boolean).length} remaining
-                  </span>
-                )}
+          {/* Audit Log */}
+          <div className="rounded-lg border border-border bg-surface p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <h2 className="text-label-lg font-semibold text-fg">Audit Log</h2>
+                <div className="flex items-center gap-2 text-body-sm text-fg-muted">
+                  <Clock size={14} />
+                  <span>Current status</span>
+                  <Badge variant="warning">Returned for Update</Badge>
+                </div>
               </div>
-              {[
-                { state: declC, set: setDeclC, text: 'I confirm that security clearance for all projects in this submission has been obtained.' },
-                { state: declP, set: setDeclP, text: 'I confirm that all projects in this submission have received PC Head approval.' },
-              ].map(({ state, set, text }, i) => (
-                <label key={i} className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" checked={state} onChange={e => set(e.target.checked)} className="mt-0.5 accent-accent shrink-0" />
-                  <span className="text-body-sm text-fg leading-snug">{text}</span>
-                </label>
-              ))}
-
-              <div className="pt-2 space-y-2">
-                <Button
-                  className="w-full justify-center"
-                  disabled={!canSave || saving}
-                  onClick={handleSave}
-                >
-                  <RotateCcw size={15} />{saving ? 'Resubmitting…' : 'Resubmit for IO Review'}
-                </Button>
-                {missingFields.length > 0 && (
-                  <p className="text-body-sm text-danger text-center">
-                    Required fields missing: {missingFields.join(', ')}.
-                  </p>
-                )}
-                {missingDecl && missingFields.length === 0 && (
-                  <p className="text-body-sm text-warning text-center">
-                    Check both declarations above to enable resubmission.
-                  </p>
-                )}
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setAuditOpen(o => !o)}
+              >
+                <History size={14} />
+                {auditOpen ? 'Collapse Audit Log' : 'View All Audit Log'}
+              </Button>
             </div>
 
-            <Button variant="ghost" onClick={() => router.push('/submissions')} className="w-full justify-center">
-              Cancel — go back
-            </Button>
+            {auditOpen && (
+              <div className="mt-5 space-y-4">
+                {auditLog.length === 0 ? (
+                  <p className="text-body-sm text-fg-muted">No audit log entries available.</p>
+                ) : (
+                  auditLog.map((entry, index) => (
+                    <div key={index} className="flex items-start gap-4 border-t border-border pt-4 first:border-t-0 first:pt-0">
+                      <span className="w-28 shrink-0 text-body-sm text-fg-muted">{entry.date}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-body-sm font-medium text-fg">{entry.label}</p>
+                        <p className="text-body-sm text-fg-muted">{entry.description}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-end gap-3 border-t border-border bg-bg-subtle px-[clamp(24px,2.6vw,40px)] py-2">
+        <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>
+          <ChevronLeft size={16} />Back
+        </Button>
+        <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>Cancel</Button>
+        <Button size="md" disabled={!canSave || saving} onClick={() => setConfirmSaveOpen(true)}>
+          <Check size={16} />
+          {saving ? 'Saving…' : 'Save Changes'}
+        </Button>
+      </div>
+
+      <Dialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Save changes?</DialogTitle>
+            <DialogDescription>
+              This will resubmit the updated project for IO review.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmSaveOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => { setConfirmSaveOpen(false); handleSave(); }}>
+              <Check size={14} />Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Toast message={toastMsg} />
     </Shell>
