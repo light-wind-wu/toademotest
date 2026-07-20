@@ -1301,13 +1301,30 @@ export default function ProjectsPage() {
                     <SortTh col="mentor" label="Mentor" sortCol={projSortCol} sortDir={projSortDir} onSort={projSort} />
                   )}
                   {projVisibleCols.mentorAppointment && (
-                    <SortTh col="mentorAppointment" label="Mentor Appointment" sortCol={projSortCol} sortDir={projSortDir} onSort={projSort} />
+                    <SortTh
+                      col="mentorAppointment"
+                      label="Mentor Appointment"
+                      sortCol={projSortCol}
+                      sortDir={projSortDir}
+                      onSort={projSort}
+                      buttonClassName="min-h-10 h-auto"
+                      labelClassName="whitespace-normal"
+                    />
                   )}
                   {projVisibleCols.placements && (
                     <SortTh col="placements" label="Placements" sortCol={projSortCol} sortDir={projSortDir} onSort={projSort} center />
                   )}
                   {projVisibleCols.firstChoice && (
-                    <SortTh col="firstChoice" label="Total Applications" sortCol={projSortCol} sortDir={projSortDir} onSort={projSort} center>
+                    <SortTh
+                      col="firstChoice"
+                      label="Total Applications"
+                      sortCol={projSortCol}
+                      sortDir={projSortDir}
+                      onSort={projSort}
+                      center
+                      buttonClassName="min-h-10 h-auto"
+                      labelClassName="whitespace-normal"
+                    >
                       <span title="Applicants who ranked this project as their 1st choice" className="cursor-help">
                         <Info size={12} className="text-fg-subtle" />
                       </span>

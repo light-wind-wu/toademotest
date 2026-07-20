@@ -11,6 +11,8 @@ export default function SortTh({
   right = false,
   center = false,
   className,
+  buttonClassName,
+  labelClassName,
   children,
   filter,
   minWidth,
@@ -24,6 +26,8 @@ export default function SortTh({
   right?: boolean;
   center?: boolean;
   className?: string;
+  buttonClassName?: string;
+  labelClassName?: string;
   children?: React.ReactNode;
   /* Optional filter control (e.g. a funnel button) rendered beside the sort
      button. When provided, the header lays the sort button and filter out in a
@@ -42,14 +46,15 @@ export default function SortTh({
       type="button"
       onClick={() => onSort(col)}
       className={cn(
-        'flex h-10 items-center gap-1 px-3 select-none rounded-sm whitespace-nowrap',
+        'flex h-10 items-center gap-1 px-3 select-none rounded-sm',
         !filter && 'w-full',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
         right && 'justify-end',
         center && 'justify-center',
+        buttonClassName,
       )}
     >
-      {label}
+      <span className={cn('whitespace-nowrap', labelClassName)}>{label}</span>
       {active
         ? (sortDir === 1 ? <ArrowUp size={13} className="text-accent" /> : <ArrowDown size={13} className="text-accent" />)
         : <ArrowUpDown size={13} className="text-fg-subtle" />

@@ -64,6 +64,11 @@
   --color-warning: var(--prizm-color-warning);
   --color-info: var(--prizm-color-info);
 
+  --color-success-bg: color-mix(in oklch, var(--prizm-color-success) 15%, transparent);
+  --color-warning-bg: color-mix(in oklch, var(--prizm-color-warning) 15%, transparent);
+  --color-danger-bg: color-mix(in oklch, var(--prizm-color-danger) 15%, transparent);
+  --color-info-bg: color-mix(in oklch, var(--prizm-color-info) 15%, transparent);
+
   --color-topbar-bg: var(--prizm-color-topbar-bg);
   --color-topbar-fg: var(--prizm-color-topbar-fg);
   --color-topbar-fg-muted: var(--prizm-color-topbar-fg-muted);

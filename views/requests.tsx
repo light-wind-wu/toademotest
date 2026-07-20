@@ -317,15 +317,16 @@ function ColFilterDropdown({
 }
 
 /* ── Status config ────────────────────────────────────────────────────────── */
-type DisplayRequestStatus = 'draft' | 'pending' | 'incomplete' | 'fulfilled' | 'closed' | 'withdrawn';
+type DisplayRequestStatus = 'draft' | 'pending' | 'incomplete' | 'fulfilled' | 'closed' | 'withdrawn' | 'expired';
 
 const STATUS_META: Record<DisplayRequestStatus, { label: string; cls: string; tip: string }> = {
-  draft:      { label: 'Draft',      cls: 'bg-bg-muted text-fg-muted',    tip: 'Request has not been sent.'                         },
-  pending:    { label: 'Pending',    cls: 'bg-bg-muted text-fg-muted',    tip: 'Request sent. Awaiting project submission.'          },
-  incomplete: { label: 'Incomplete', cls: 'bg-warning-bg text-warning',   tip: 'Requested placements are not fully fulfilled.'       },
-  fulfilled:  { label: 'Fulfilled',  cls: 'bg-success-bg text-success',   tip: 'Requested placements have been fulfilled.'           },
-  closed:     { label: 'Closed',     cls: 'bg-bg-muted text-fg-subtle',   tip: 'Response deadline has passed. The request is closed.' },
-  withdrawn:  { label: 'Withdrawn',  cls: 'bg-danger-bg text-danger',     tip: 'Request withdrawn by the IO. Raise a new request to re-issue.' },
+  draft:      { label: 'Draft',      cls: 'bg-[rgba(244,242,236,1)] text-[rgba(69,85,108,1)]',   tip: 'Request has not been sent.'                         },
+  pending:    { label: 'Pending',    cls: 'bg-[rgba(0,166,244,0.15)] text-[rgba(0,105,168,1)]',  tip: 'Request sent. Awaiting project submission.'          },
+  incomplete: { label: 'Incomplete', cls: 'bg-[rgba(254,154,0,0.15)] text-[rgba(187,77,0,1)]',   tip: 'Requested placements are not fully fulfilled.'       },
+  fulfilled:  { label: 'Fulfilled',  cls: 'bg-[rgba(0,201,80,0.15)] text-[rgba(0,130,54,1)]',    tip: 'Requested placements have been fulfilled.'           },
+  closed:     { label: 'Closed',     cls: 'bg-[rgba(244,242,236,1)] text-[rgba(69,85,108,1)]',   tip: 'Response deadline has passed. The request is closed.' },
+  withdrawn:  { label: 'Withdrawn',  cls: 'bg-[rgba(251,44,54,0.15)] text-[rgba(193,0,7,1)]',  tip: 'Request withdrawn by the IO. Raise a new request to re-issue.' },
+  expired:    { label: 'Expired',    cls: 'bg-[rgba(251,44,54,0.15)] text-[rgba(193,0,7,1)]',    tip: 'Request has expired.'                                },
 };
 
 const LINE_STATUS_META = {
@@ -359,7 +360,7 @@ function StatusTooltip({ tip, children }: { tip: string; children: React.ReactNo
 }
 
 const PROJ_STATUS_SORT: Record<string, number>        = { pending: 0, rejected: 2, approved: 3 };
-const REQ_STATUS_ORDER: Record<DisplayRequestStatus, number> = { draft: 0, pending: 1, incomplete: 2, fulfilled: 3, closed: 4, withdrawn: 5 };
+const REQ_STATUS_ORDER: Record<DisplayRequestStatus, number> = { draft: 0, pending: 1, incomplete: 2, fulfilled: 3, closed: 4, withdrawn: 5, expired: 6 };
 
 function sentGroupMetrics(group: PCGroup) {
   const placements = group.requests.reduce((s, r) => s + r.placements, 0);
@@ -487,6 +488,7 @@ function SortHeader({
   sortDir,
   onSort,
   filter,
+  labelClassName,
 }: {
   label: string;
   colId: string;
@@ -494,17 +496,26 @@ function SortHeader({
   sortDir: 1 | -1;
   onSort: (col: string) => void;
   filter?: React.ReactNode;
+  labelClassName?: string;
 }) {
   const isSorted = sortCol === colId;
+  const allowWrap =
+    typeof labelClassName === 'string' &&
+    (labelClassName.includes('whitespace-normal') ||
+      labelClassName.includes('whitespace-pre-wrap') ||
+      labelClassName.includes('whitespace-pre-line'));
   return (
     <div
       onClick={(e) => {
         e.stopPropagation();
         onSort(colId);
       }}
-      className="flex h-full items-center gap-1 cursor-pointer select-none"
+      className={cn(
+        'flex h-full items-center gap-1 cursor-pointer select-none',
+        allowWrap && 'min-h-10',
+      )}
     >
-      <span className="truncate">{label}</span>
+      <span className={cn(!allowWrap && 'truncate', labelClassName)}>{label}</span>
       {isSorted ? (
         sortDir === 1 ? (
           <ArrowUp size={13} className="text-accent shrink-0" />
@@ -834,9 +845,10 @@ export default function RequestsPage() {
             sortCol={sortCol}
             sortDir={sortDir}
             onSort={doSort}
+            labelClassName="whitespace-normal"
           />
         ),
-        meta: { size: 180, truncate: true },
+        meta: { size: 120, truncate: true, labelClassName: 'whitespace-normal' },
         cell: ({ row }) => {
           const group = row.original;
           const gkey = group.key ?? group.pc;
@@ -891,7 +903,7 @@ export default function RequestsPage() {
           onSort={doSort}
         />
       ),
-      meta: { size: 160, truncate: true },
+      meta: { size: 120, truncate: true },
       cell: ({ row }) => {
         const group = row.original;
         const gkey = group.key ?? group.pc;
@@ -922,9 +934,10 @@ export default function RequestsPage() {
             sortCol={sortCol}
             sortDir={sortDir}
             onSort={doSort}
+            labelClassName="whitespace-normal"
           />
         ),
-        meta: { size: 170 },
+        meta: { size: 120, labelClassName: 'whitespace-normal' },
         cell: ({ row }) => {
           const group = row.original;
           const { placements: totalPlacements, uploaded: totalUploaded } = sentGroupMetrics(group);
@@ -950,9 +963,10 @@ export default function RequestsPage() {
             sortDir={sortDir}
             onSort={doSort}
             filter={requestTab === 'closed' ? headerFilterButton('requestDate') : undefined}
+            labelClassName="whitespace-normal"
           />
         ),
-        meta: { size: 140, truncate: true },
+        meta: { size: 80, truncate: true, labelClassName: 'whitespace-normal' },
         cell: ({ row }) => {
           const { latestSent } = sentGroupMetrics(row.original);
           return <span className="text-body-sm font-normal text-fg truncate">{fmtDate(latestSent)}</span>;
@@ -970,9 +984,10 @@ export default function RequestsPage() {
             sortCol={sortCol}
             sortDir={sortDir}
             onSort={doSort}
+            labelClassName="whitespace-normal"
           />
         ),
-        meta: { size: 160, truncate: true },
+        meta: { size: 120, truncate: true, labelClassName: 'whitespace-normal' },
         cell: ({ row }) => {
           const { earliestDeadline } = sentGroupMetrics(row.original);
           return <span className="text-body-sm font-normal text-fg truncate">{fmtDate(earliestDeadline)}</span>;
@@ -1008,7 +1023,7 @@ export default function RequestsPage() {
     cols.push(sentColumnHelper.display({
       id: 'actions',
       header: '',
-      meta: { size: 64 },
+      meta: { size: 40, noResizable: true, thClassName: 'px-0' },
       cell: ({ row }) => (
         <div className="text-right" onClick={e => e.stopPropagation()}>
           {sentActionMenu(row.original)}
@@ -1030,15 +1045,13 @@ export default function RequestsPage() {
           {sentVisibleCols.programmeCenter && (
             <TableCell
               className="px-4 py-2.5"
-              minWidth={180}
-              style={{ width: table.getColumn('programmeCenter')?.getSize() }}
+              maxWidth={table.getColumn('programmeCenter')?.getSize()}
             />
           )}
           {sentVisibleCols.programmes && (
             <TableCell
               className={cn('py-2.5', sentVisibleCols.programmeCenter ? 'px-4' : 'pl-12 pr-4')}
-              minWidth={180}
-              style={{ width: table.getColumn('programmes')?.getSize() }}
+              maxWidth={table.getColumn('programmes')?.getSize()}
             >
               <p className="text-body-sm font-normal text-fg-muted truncate">
                 {requestInternCategory(req, progMap)}
@@ -1047,14 +1060,12 @@ export default function RequestsPage() {
           )}
           <TableCell
             className="px-4 py-2.5"
-            minWidth={160}
-            style={{ width: table.getColumn('recipient')?.getSize() }}
+            maxWidth={table.getColumn('recipient')?.getSize()}
           />
           {sentVisibleCols.placements && (
             <TableCell
               className="px-4 py-2.5 text-body-sm font-normal text-fg-muted"
-              minWidth={170}
-              style={{ width: table.getColumn('placements')?.getSize() }}
+              maxWidth={table.getColumn('placements')?.getSize()}
             >
               <div className="flex items-center gap-2">
                 <span className="block truncate">{req.uploaded ?? 0} / {req.placements}</span>
@@ -1065,27 +1076,24 @@ export default function RequestsPage() {
           {sentVisibleCols.requestDate && (
             <TableCell
               className="px-4 py-2.5"
-              minWidth={140}
-              style={{ width: table.getColumn('requestDate')?.getSize() }}
+              maxWidth={table.getColumn('requestDate')?.getSize()}
             />
           )}
           {sentVisibleCols.deadline && (
             <TableCell
               className="px-4 py-2.5"
-              minWidth={160}
-              style={{ width: table.getColumn('deadline')?.getSize() }}
+              maxWidth={table.getColumn('deadline')?.getSize()}
             />
           )}
           {sentVisibleCols.status && (
             <TableCell
               className="px-4 py-2.5"
-              minWidth={120}
-              style={{ width: table.getColumn('sentStatus')?.getSize() }}
+              maxWidth={table.getColumn('sentStatus')?.getSize()}
             />
           )}
           <TableCell
             className="px-4 py-2.5"
-            style={{ width: table.getColumn('actions')?.getSize() }}
+            maxWidth={table.getColumn('actions')?.getSize()}
           />
         </TableRow>
       );
@@ -1292,7 +1300,7 @@ export default function RequestsPage() {
           )}
           onClick={isPending ? () => router.push(`/requests/project/${encodeURIComponent(r.batchId)}/${encodeURIComponent(r.projId)}`) : undefined}
         >
-          <TableCell className="px-4 py-3 w-10" minWidth={48} style={{ width: table.getColumn('select')?.getSize() }} onClick={e => e.stopPropagation()}>
+          <TableCell className="px-4 py-3 w-10" maxWidth={table.getColumn('select')?.getSize()} onClick={e => e.stopPropagation()}>
             <Checkbox
               checked={selectedKeys.has(r.key)}
               onCheckedChange={() => toggleSelectProj(r.batchId, r.projId)}
@@ -1300,10 +1308,10 @@ export default function RequestsPage() {
             />
           </TableCell>
           {visibleCols.pc && (
-            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" minWidth={180} style={{ width: table.getColumn('pc')?.getSize() }} />
+            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('pc')?.getSize()} />
           )}
           {visibleCols.title && (
-            <TableCell className="px-4 py-3" minWidth={240} style={{ width: table.getColumn('title')?.getSize() }}>
+            <TableCell className="px-4 py-3" maxWidth={table.getColumn('title')?.getSize()}>
               <p className={cn('text-body-sm font-medium truncate', isPending ? 'text-fg group-hover:text-accent transition-colors' : 'text-fg')}>
                 {r.title}
               </p>
@@ -1315,10 +1323,10 @@ export default function RequestsPage() {
             </TableCell>
           )}
           {visibleCols.category && (
-            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" minWidth={180} style={{ width: table.getColumn('category')?.getSize() }} truncate>{category}</TableCell>
+            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('category')?.getSize()} truncate>{category}</TableCell>
           )}
           {visibleCols.discipline && (
-            <TableCell className="px-4 py-3" minWidth={200} style={{ width: table.getColumn('discipline')?.getSize() }}>
+            <TableCell className="px-4 py-3" maxWidth={table.getColumn('discipline')?.getSize()}>
               {disciplines.length === 0 ? (
                 <span className="text-body-sm text-fg-muted truncate block">—</span>
               ) : (
@@ -1331,7 +1339,7 @@ export default function RequestsPage() {
             </TableCell>
           )}
           {visibleCols.slots && (
-            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" minWidth={120} style={{ width: table.getColumn('slots')?.getSize() }} truncate>{r.slots}</TableCell>
+            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('slots')?.getSize()} truncate>{r.slots}</TableCell>
           )}
         </TableRow>
       );

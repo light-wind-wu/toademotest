@@ -36,6 +36,10 @@ export interface DataTableColumnMeta<TData = unknown, TValue = unknown> {
   size?: ColumnSize | number;
   truncate?: boolean;
   lineClamp?: number;
+  headerClassName?: string;
+  labelClassName?: string;
+  thClassName?: string;
+  noResizable?: boolean;
 }
 
 declare module '@tanstack/react-table' {
@@ -74,14 +78,6 @@ export function DataTable<T>({
   renderSubRows,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnSizing, setColumnSizing] = React.useState<Record<string, number>>(() => {
-    try {
-      const saved = localStorage.getItem(`dsta_table_${tableKey}_sizing`);
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
 
   const tableColumns = React.useMemo<ColumnDef<T, any>[]>(() => {
     return columns.map((col) => {
@@ -91,6 +87,7 @@ export function DataTable<T>({
         ...col,
         minSize,
         size: col.size ?? minSize,
+        enableResizing: col.meta?.noResizable !== true,
       };
     });
   }, [columns]);
@@ -100,22 +97,14 @@ export function DataTable<T>({
     columns: tableColumns,
     state: {
       sorting,
-      columnSizing,
     },
     onSortingChange: setSorting,
-    onColumnSizingChange: setColumnSizing,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     enableColumnResizing: enableResizing,
     columnResizeMode: 'onChange',
     getRowId,
   });
-
-  React.useEffect(() => {
-    try {
-      localStorage.setItem(`dsta_table_${tableKey}_sizing`, JSON.stringify(columnSizing));
-    } catch {}
-  }, [columnSizing, tableKey]);
 
   const rows = table.getRowModel().rows;
 
@@ -134,6 +123,13 @@ export function DataTable<T>({
               const width = header.getSize();
               const isResizing = header.column.getIsResizing();
               const canSort = enableSorting && header.column.getCanSort();
+              const labelClassName = header.column.columnDef.meta?.labelClassName;
+              const headerClassName = header.column.columnDef.meta?.headerClassName;
+              const allowWrap =
+                typeof labelClassName === 'string' &&
+                (labelClassName.includes('whitespace-normal') ||
+                  labelClassName.includes('whitespace-pre-wrap') ||
+                  labelClassName.includes('whitespace-pre-line'));
 
               return (
                 <TableHead
@@ -141,6 +137,7 @@ export function DataTable<T>({
                   className={cn(
                     'relative select-none',
                     canSort && 'cursor-pointer',
+                    header.column.columnDef.meta?.thClassName,
                   )}
                   style={{
                     minWidth,
@@ -148,8 +145,20 @@ export function DataTable<T>({
                   }}
                   onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                 >
-                  <div className="flex h-10 items-center gap-1 overflow-hidden">
-                    <span className="flex-1 truncate">
+                  <div
+                    className={cn(
+                      'flex items-center gap-1',
+                      allowWrap ? 'min-h-10' : 'h-10 overflow-hidden',
+                      headerClassName,
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'flex-1',
+                        !allowWrap && 'truncate',
+                        labelClassName,
+                      )}
+                    >
                       {flexRender(header.column.columnDef.header, header.getContext())}
                     </span>
                     {canSort && (
@@ -178,7 +187,7 @@ export function DataTable<T>({
                       <div
                         className={cn(
                           'h-full transition-all',
-                          isResizing ? 'w-0.5 bg-accent' : 'w-px bg-border hover:bg-accent',
+                          isResizing ? 'w-0.5 bg-accent' : 'w-0 bg-border hover:bg-accent',
                         )}
                       />
                     </div>
