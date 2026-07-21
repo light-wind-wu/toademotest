@@ -149,7 +149,7 @@ export function Calendar({
               >
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent data-calendar-dropdown>
                 {MONTHS.map((m) => (
                   <SelectItem key={m} value={m}>
                     {m}
@@ -158,7 +158,7 @@ export function Calendar({
               </SelectContent>
             </Select>
             <Select
-              value={year}
+              value={String(year)}
               onValueChange={(value) =>
                 setViewDate(new Date(Number(value), month, 1))
               }
@@ -169,9 +169,9 @@ export function Calendar({
               >
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent data-calendar-dropdown>
                 {years.map((y) => (
-                  <SelectItem key={y} value={y}>
+                  <SelectItem key={y} value={String(y)}>
                     {y}
                   </SelectItem>
                 ))}

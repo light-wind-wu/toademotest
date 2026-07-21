@@ -47,6 +47,10 @@ export interface DateRangePickerProps {
   fromYear?: number;
   /** Last selectable year in the header dropdown (overrides `yearRange`). */
   toYear?: number;
+  /** Hides the "Start date" / "End date" labels above each calendar. */
+  hideLabels?: boolean;
+  /** Hides the footer showing the selected range and the Clear button. */
+  hideFooter?: boolean;
 }
 
 /** Midnight today — the boundary for "no dates in the past" rules. */
@@ -108,6 +112,8 @@ export function DateRangePicker({
   yearRange,
   fromYear,
   toYear,
+  hideLabels = false,
+  hideFooter = false,
 }: DateRangePickerProps) {
   // Forwarded to both calendars; relies on the local Calendar fork's dropdown header.
   const calendarYearProps = {
@@ -148,15 +154,17 @@ export function DateRangePicker({
         )}
       >
         <CalendarDays className="h-4 w-4 shrink-0 text-fg-muted" />
-        <span className="truncate">{formatRange(range, placeholder)}</span>
+        <span className="min-w-0 flex-1 truncate">{formatRange(range, placeholder)}</span>
       </PopoverTrigger>
 
       <PopoverContent className="w-auto p-0">
         <div className="flex flex-col divide-y divide-border sm:flex-row sm:divide-x sm:divide-y-0">
           <div>
-            <Text size="xs" variant="muted" className="px-3 pt-3 font-medium">
-              Start date
-            </Text>
+            {!hideLabels && (
+              <Text size="xs" variant="muted" className="px-3 pt-3 font-medium">
+                Start date
+              </Text>
+            )}
             <Calendar
               {...calendarYearProps}
               selected={range?.from}
@@ -166,9 +174,11 @@ export function DateRangePicker({
             />
           </div>
           <div>
-            <Text size="xs" variant="muted" className="px-3 pt-3 font-medium">
-              End date
-            </Text>
+            {!hideLabels && (
+              <Text size="xs" variant="muted" className="px-3 pt-3 font-medium">
+                End date
+              </Text>
+            )}
             <Calendar
               {...calendarYearProps}
               selected={range?.to}
@@ -182,20 +192,24 @@ export function DateRangePicker({
           </div>
         </div>
 
-        <Separator />
-        <div className="flex items-center justify-between gap-2 p-3">
-          <Text size="xs" variant="muted">
-            {formatRange(range, "No range selected")}
-          </Text>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={!range?.from && !range?.to}
-            onClick={() => setRange({})}
-          >
-            Clear
-          </Button>
-        </div>
+        {!hideFooter && (
+          <>
+            <Separator />
+            <div className="flex items-center justify-between gap-2 p-3">
+              <Text size="xs" variant="muted">
+                {formatRange(range, "No range selected")}
+              </Text>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={!range?.from && !range?.to}
+                onClick={() => setRange({})}
+              >
+                Clear
+              </Button>
+            </div>
+          </>
+        )}
       </PopoverContent>
     </Popover>
   );

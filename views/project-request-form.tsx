@@ -46,7 +46,7 @@ import {
 import {
   Send, Eye, AlertCircle, ArrowLeft, ArrowLeftToLine, Clock, Info,
   ChevronDown, ChevronRight, ChevronsDownUp, Plus, Minus, Trash2,
-  Paperclip, Download, Check, Users,
+  Paperclip, Download, Check, Users, ArrowUp,
 } from 'lucide-react';
 import { CONTACTS, toEducationLevel } from '@/lib/data';
 import { downloadRequestTemplateXLSX } from '@/lib/request-template';
@@ -74,6 +74,14 @@ const INTERN_CATEGORIES = [
   'Young Defence Scientist Programme',
 ] as const;
 const DURATIONS = ['1 Month', '2 Months', '3 Months', '4 Months', '6 Months', '12 Months'] as const;
+
+function FieldRequired({ show }: { show: boolean }) {
+  return (
+    <div className="min-h-4">
+      {show ? <p className="text-xs leading-relaxed text-danger">This field is required.</p> : null}
+    </div>
+  );
+}
 
 
 /* The window presets above are anchored to the base intake year; a per-request
@@ -471,7 +479,7 @@ function RequestCard({
           {/* Recipients */}
           <div>
             <SectionDivider label="Recipients" uppercase={false} showLine={false} />
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-4 lg:items-start">
               <Field className={highlightClassFor('programmeCentre')}>
                 <FieldLabel>
                   Programme Centre <span className="text-danger">*</span>
@@ -489,25 +497,27 @@ function RequestCard({
                     });
                   }}
                 >
-                  <SelectTrigger className={cn(showErrors && !entry.programmeCentre && 'border-danger')}><SelectValue placeholder="Select programme centre" /></SelectTrigger>
+                  <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !entry.programmeCentre && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select programme centre" /></SelectTrigger>
                   <SelectContent>
                     {programmeCentreOptions().map(option => (
                       <SelectItem key={option.value} value={option.value}>{option.value}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <FieldRequired show={showErrors && !entry.programmeCentre} />
               </Field>
               <Field className={highlightClassFor('deadline')}>
                 <FieldLabel>
                   Response deadline <span className="text-danger">*</span>
                 </FieldLabel>
                 <DatePicker value={entry.deadline} onChange={d => onChange({ deadline: d })} placeholder="Pick a date" align="right" error={showErrors && !entry.deadline} />
+                <FieldRequired show={showErrors && !entry.deadline} />
               </Field>
             </div>
             <div className={cn('mt-3 grid grid-cols-1 gap-3', (entry.pcHead || entry.adpnc) ? '' : 'lg:grid-cols-2')}>
               <Field>
                 <FieldLabel className="flex items-center gap-1.5">
-                  {!entry.programmeCentre && <ArrowLeft size={13} className="text-fg-subtle" aria-hidden="true" />}
+                  {!entry.programmeCentre && <ArrowUp size={13} className="text-fg-subtle" aria-hidden="true" />}
                   Recipients
                 </FieldLabel>
                 <DerivedRecipients pcHead={entry.pcHead} adpnc={entry.adpnc} hasProgrammeCentre={Boolean(entry.programmeCentre)} ccEmails={ccEdit} />
@@ -540,7 +550,7 @@ function RequestCard({
                     });
                   }}
                 >
-                  <SelectTrigger className="h-9 w-28"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-9 w-28"><SelectValue className="truncate block" /></SelectTrigger>
                   <SelectContent>
                     {INTAKE_YEARS.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
                   </SelectContent>
@@ -549,7 +559,7 @@ function RequestCard({
             </div>
             <div className="flex flex-col gap-1.5">
             {/* Column headers for the level + placements inputs */}
-            <div className="hidden gap-3 lg:grid lg:grid-cols-[1fr_1fr_1fr_1fr]">
+            <div className="hidden gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
               <FieldLabelText className="flex items-center gap-1.5">
                 Intern category <span className="text-danger">*</span>
                 <FieldHelpTooltip label="Intern category">The type of intern the project is for</FieldHelpTooltip>
@@ -580,7 +590,7 @@ function RequestCard({
                 const winMonths = (winStart !== null && winEnd !== null && winEnd >= winStart) ? (winEnd - winStart + 1) : 0;
                 const durOptions = winMonths ? DURATIONS.filter(d => parseInt(d, 10) <= winMonths) : [...DURATIONS];
                 return (
-                  <div key={idx} className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_1fr] lg:items-center">
+                  <div key={idx} className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
                     <Field>
                       <FieldLabel className="flex items-center gap-1.5 lg:hidden">
                         Intern category <span className="text-danger">*</span>
@@ -588,7 +598,7 @@ function RequestCard({
                       </FieldLabel>
                       <Select value={lvl.level} onValueChange={v => updateLevel(idx, { level: v ?? '', calendarStart: '', calendarEnd: '', calendarPeriod: '', customWindow: false })}>
                         <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !lvl.level && 'border-danger')}>
-                          <SelectValue className="min-w-0 flex-1 truncate text-left" placeholder="Select intern category" />
+                          <SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select intern category" />
                         </SelectTrigger>
                         <SelectContent className="max-w-[min(28rem,var(--available-width))]">
                           {INTERN_CATEGORIES.map(l => (
@@ -596,6 +606,7 @@ function RequestCard({
                           ))}
                         </SelectContent>
                       </Select>
+                      <FieldRequired show={showErrors && !lvl.level} />
                     </Field>
                     <Field>
                       <FieldLabel className="flex items-center gap-1.5 lg:hidden">
@@ -604,7 +615,7 @@ function RequestCard({
                       </FieldLabel>
                       {!lvl.level ? (
                         <Select disabled>
-                          <SelectTrigger><SelectValue placeholder="Select intern category first" /></SelectTrigger>
+                          <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !lvl.calendarStart && 'border-danger disabled:opacity-100')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select intern category first" /></SelectTrigger>
                         </Select>
                       ) : winCustom ? (
                         <div className="space-y-1">
@@ -623,10 +634,12 @@ function RequestCard({
                               updateLevel(idx, patch);
                             }}
                             placeholder="Select start and end date"
-                            className={cn('w-full', showErrors && (!lvl.calendarStart || !lvl.calendarEnd) && 'border-danger')}
+                            hideLabels
+                            hideFooter
+                            className={cn('w-full min-w-0', showErrors && !!lvl.level && (!lvl.calendarStart || !lvl.calendarEnd) && 'border-danger')}
                           />
                           {winPresets.length > 0 && (
-                            <button type="button" className="text-label-sm text-accent hover:underline" onClick={() => updateLevel(idx, { customWindow: false, calendarStart: '', calendarEnd: '', calendarPeriod: '' })}>Use a preset window</button>
+                            <button type="button" className="text-label-sm text-accent hover:underline hidden" onClick={() => updateLevel(idx, { customWindow: false, calendarStart: '', calendarEnd: '', calendarPeriod: '' })}>Use a preset window</button>
                           )}
                         </div>
                       ) : (
@@ -643,13 +656,14 @@ function RequestCard({
                             updateLevel(idx, patch);
                           }}
                         >
-                          <SelectTrigger className={cn(showErrors && !lvl.calendarStart && 'border-danger')}><SelectValue placeholder="Select internship window" /></SelectTrigger>
+                          <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !lvl.calendarStart && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select internship window" /></SelectTrigger>
                           <SelectContent>
                             {winPresets.map(p => <SelectItem key={p.label} value={p.label}>{p.label}</SelectItem>)}
                             <SelectItem value="__custom__">Customise…</SelectItem>
                           </SelectContent>
                         </Select>
                       )}
+                      <FieldRequired show={showErrors && (!lvl.calendarStart || !lvl.calendarEnd)} />
                     </Field>
                     <Field>
                       <FieldLabel className="flex items-center gap-1.5 lg:hidden">
@@ -657,26 +671,30 @@ function RequestCard({
                         <FieldHelpTooltip label="Project duration">Proposed projects should last around this length of time</FieldHelpTooltip>
                       </FieldLabel>
                       <Select value={lvl.duration} onValueChange={v => updateLevel(idx, { duration: v ?? '' })}>
-                        <SelectTrigger className={cn(showErrors && !lvl.duration && 'border-danger')}><SelectValue placeholder="Project duration" /></SelectTrigger>
+                        <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !lvl.duration && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Project duration" /></SelectTrigger>
                         <SelectContent>
                           {durOptions.map(duration => <SelectItem key={duration} value={duration}>{duration}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </Field>
-                    <div className="flex items-center gap-2">
-                      <Field>
-                        <FieldLabel className="lg:hidden">Placements <span className="text-danger">*</span></FieldLabel>
-                        <Stepper value={lvl.placements} onChange={n => updateLevel(idx, { placements: n })} />
-                      </Field>
-                      <button
-                        type="button"
-                        disabled={entry.levels.length === 1}
-                        onClick={() => removeLevel(idx)}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-fg-muted transition-colors hover:bg-danger-bg hover:text-danger disabled:cursor-not-allowed disabled:opacity-90"
-                        aria-label="Remove intern category"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      </SelectContent>
+                    </Select>
+                    <FieldRequired show={showErrors && !lvl.duration} />
+                  </Field>
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center gap-2">
+                        <Field>
+                          <FieldLabel className="lg:hidden">Placements <span className="text-danger">*</span></FieldLabel>
+                          <Stepper value={lvl.placements} onChange={n => updateLevel(idx, { placements: n })} />
+                        </Field>
+                        <button
+                          type="button"
+                          disabled={entry.levels.length === 1}
+                          onClick={() => removeLevel(idx)}
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-fg-muted transition-colors hover:bg-danger-bg hover:text-danger disabled:cursor-not-allowed disabled:opacity-90"
+                          aria-label="Remove intern category"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                      <FieldRequired show={showErrors && lvl.placements < 1} />
                     </div>
                   </div>
                 );
@@ -1155,7 +1173,7 @@ export default function ProjectRequestFormPage() {
     <Field>
       <Select value={buildLayout} onValueChange={value => setBuildLayout(value as BuildLayout)}>
         <SelectTrigger className="h-8 text-body-sm">
-          <SelectValue />
+          <SelectValue className="truncate block" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="Layout 1">Layout 1</SelectItem>
@@ -1224,7 +1242,7 @@ export default function ProjectRequestFormPage() {
                         <p className="mt-0.5 text-caption text-fg-muted">
                           {reqs.length} request{reqs.length !== 1 ? 's' : ''} ·{' '}
                           <span className={missingReqCount > 0 ? 'font-semibold text-danger' : 'text-success'}>
-                            {missingReqCount} missing
+                            {missingReqCount} filed missing
                           </span>
                         </p>
                       </div>
@@ -1269,10 +1287,10 @@ export default function ProjectRequestFormPage() {
 	                              onClick={() => selectReq(r.id)}
 	                              className={cn('min-w-0 text-left', isActive && 'pr-3')}
 	                            >
-                              <span className="block truncate text-body-sm font-semibold text-fg">
+                              <span className={`block truncate text-body-sm font-semibold ${showErrors && missingCount > 0 ? 'text-danger' : 'text-fg'}`}>
                                 Request {number} - {r.programmeCentre || 'Start editing'}
                               </span>
-                              <span className="mt-1 block truncate text-caption text-fg-muted">
+                              <span className={`mt-1 block truncate text-caption ${showErrors && missingCount > 0 ? 'text-danger' : 'text-fg-muted'}`}>
                                 {r.levels.filter(l => l.level).length || 0} intern categor{r.levels.filter(l => l.level).length === 1 ? 'y' : 'ies'} · {totalSlots} placement{totalSlots === 1 ? '' : 's'}
                               </span>
                             </button>
@@ -1425,7 +1443,7 @@ export default function ProjectRequestFormPage() {
         )}
 
         {/* Footer actions */}
-        <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-end gap-3 border-t border-border bg-bg-subtle px-[clamp(24px,2.6vw,40px)] py-2">
+        <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-end gap-3 border-t border-border bg-gradient-to-b from-surface to-bg px-[clamp(24px,2.6vw,40px)] py-2">
           <div className="flex items-center gap-3">
             {step === 1 ? (
               <>

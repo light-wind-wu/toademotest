@@ -37,9 +37,9 @@ export function UnderlineTabs({
               key={tab.value}
               value={tab.value}
               className={cn(
-                'relative whitespace-nowrap px-3 py-2 text-sm font-medium transition-colors',
+                'relative whitespace-nowrap px-3 py-2 text-sm transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2',
-                selected ? 'text-accent' : 'text-fg-muted hover:text-fg',
+                selected ? 'font-semibold text-accent' : 'font-normal text-fg-muted hover:text-fg',
                 'after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-0.5 after:rounded-t-full after:transition-colors',
                 selected ? 'after:bg-accent' : 'after:bg-transparent',
               )}

@@ -371,7 +371,7 @@ function RequestCard({
         )}
 
         {/* Footer action */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <Button
             size="sm"
             onClick={action.mode === 'upload' ? onUpload : onViewProject}

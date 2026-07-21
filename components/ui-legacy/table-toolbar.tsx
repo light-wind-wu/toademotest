@@ -31,6 +31,7 @@ interface Props {
   onExport?:     () => void;
   dateRangeControl?: React.ReactNode;
   extraActions?: React.ReactNode;
+  className?: string;
 }
 
 const BTN_ACTIVE = 'border-accent bg-accent/10 text-accent hover:bg-accent/10 hover:text-accent';
@@ -40,7 +41,7 @@ export default function TableToolbar({
   filterDefs, filters, onFiltersChange,
   colDefs, visibleCols, onToggleCol,
   columnsLabel = 'Columns',
-  onExport, dateRangeControl, extraActions,
+  onExport, dateRangeControl, extraActions, className,
 }: Props) {
   const [colOpen, setColOpen] = useState(false);
   const [colPos,  setColPos]  = useState({ top: 0, left: 0 });
@@ -63,7 +64,7 @@ export default function TableToolbar({
         <div className="fixed inset-0 z-[150]" onClick={() => setColOpen(false)} />
       )}
 
-      <div className="p-3 sm:p-4 border-b border-border flex flex-wrap items-center gap-2 sm:gap-3 bg-surface">
+      <div className={cn('p-3 sm:p-4 border-b border-border flex flex-wrap items-center gap-2 sm:gap-3 bg-surface', className)}>
         {/* Search */}
         <div className="relative w-64 shrink-0">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted pointer-events-none" />

@@ -3,7 +3,7 @@
 import { format, isValid, parse } from 'date-fns';
 import { CalendarDays, Lock } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Calendar } from '@/components/ui/calendar';
+import { Calendar } from '@/components/calendar';
 import { cn } from '@/lib/utils';
 
 interface DatePickerProps {
@@ -47,7 +47,11 @@ export default function DatePicker({
   useEffect(() => {
     if (!open) return;
     function handlePointerDown(event: MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (rootRef.current?.contains(target)) return;
+      const dropdown = document.querySelector('[data-calendar-dropdown]');
+      if (dropdown?.contains(target)) return;
+      setOpen(false);
     }
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') setOpen(false);
@@ -84,25 +88,27 @@ export default function DatePicker({
           error && 'border-danger',
         )}
       >
-        <span>{displayDate(value) || placeholder}</span>
+        <span className="min-w-0 flex-1 truncate">{displayDate(value) || placeholder}</span>
         <CalendarDays size={16} className="shrink-0 text-fg-muted" />
       </button>
-      {open && (
-        <div className={cn(
-          'absolute top-full z-50 mt-1 rounded-lg border border-border bg-surface-elevated p-1 shadow-md',
-          align === 'right' ? 'right-0' : 'left-0',
-        )}>
-          <Calendar
-            selected={selected}
-            defaultMonth={selected ?? min}
-            disabled={date => (min ? date < min : false)}
-            onSelect={date => {
-              onChange(format(date, 'yyyy-MM-dd'));
-              setOpen(false);
-            }}
-          />
-        </div>
-      )}
+        {open && (
+          <div className={cn(
+            'absolute top-full z-50 mt-1 min-w-[280px] rounded-lg border border-border bg-surface-elevated p-1 shadow-md',
+            align === 'right' ? 'right-0' : 'left-0',
+          )}>
+            <Calendar
+              selected={selected}
+              defaultMonth={selected ?? min}
+              captionLayout="dropdown"
+              className="w-full"
+              disabled={date => (min ? date < min : false)}
+              onSelect={date => {
+                onChange(format(date, 'yyyy-MM-dd'));
+                setOpen(false);
+              }}
+            />
+          </div>
+        )}
     </div>
   );
 }

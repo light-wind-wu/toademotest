@@ -112,7 +112,7 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
                 return (
                   <button key={s.id} onClick={() => safeNavigate(s.route)}
                     aria-current={active ? 'page' : undefined}
-                    className={cn('w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors', active ? 'bg-nav-active-bg text-nav-active-fg' : 'text-fg hover:bg-bg-subtle')}>
+                    className={cn('w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors', active ? 'bg-nav-active-bg text-nav-active-fg' : 'text-fg hover:bg-bg-muted')}>
                     <span className="relative">
                       <Icon size={20} />
                       {n > 0 && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent" />}
@@ -162,7 +162,7 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
                 className={cn(
                   'relative flex items-center rounded-lg transition-colors duration-100 group',
                   collapsed ? 'justify-center h-11 w-11 mx-auto p-2' : 'gap-3 px-3 py-2.5 mx-3',
-                  active ? 'bg-nav-active-bg text-nav-active-fg' : 'text-fg-muted hover:text-nav-active-fg hover:bg-nav-active-bg/50'
+                  active ? 'bg-nav-active-bg text-nav-active-fg' : 'text-fg-muted hover:bg-bg-muted'
                 )}
               >
                 {active && !collapsed && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-0 bg-nav-active-fg rounded-r" />}
@@ -170,7 +170,7 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
                   <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent" />
                 )}
                 <span className="relative shrink-0">
-                  <Icon size={20} className={active ? 'text-nav-active-fg' : 'text-fg-muted group-hover:text-nav-active-fg'} />
+                  <Icon size={20} className={active ? 'text-nav-active-fg' : 'text-fg-muted'} />
                 </span>
                 {!collapsed && (
                   <span className="flex-1 text-body-sm font-semibold truncate text-left">{s.label}</span>

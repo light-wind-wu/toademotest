@@ -51,7 +51,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import {
   Send, Check, X, FileText, ChevronRight, Filter, MoreVertical, Eye, Bell, CalendarClock, Pencil, Trash2, Ban,
-  ArrowUp, ArrowDown, ArrowUpDown,
+  ArrowUp, ArrowDown, ArrowUpDown, CornerDownRight,
 } from 'lucide-react';
 import { CONTACTS, progEducationLevelMap, batchEducationLevel } from '@/lib/data';
 import { projectMatchesRequest } from '@/lib/request-groups';
@@ -469,13 +469,15 @@ const SENT_COL_DEFS = [
   { key: 'programmeCenter', label: 'Programme Centre' },
   { key: 'programmes', label: 'Intern Category'      },
   { key: 'placements', label: 'Placements Requested' },
+  { key: 'internshipWindow', label: 'Internship Window' },
+  { key: 'projectDuration', label: 'Project Duration' },
   { key: 'requestDate', label: 'Request Date'        },
   { key: 'deadline',   label: 'Response Deadline'    },
   { key: 'status',     label: 'Status'               },
 ] as const;
 type SentColKey = typeof SENT_COL_DEFS[number]['key'];
 const SENT_DEFAULT_COLS: Record<SentColKey, boolean> = {
-  programmeCenter: true, programmes: true, placements: true, requestDate: true, deadline: true, status: true,
+  programmeCenter: true, programmes: true, placements: true, internshipWindow: true, projectDuration: true, requestDate: true, deadline: true, status: true,
 };
 const SENT_COLS_KEY = 'dsta_req_sent_visible_cols';
 const SENT_PAGE_SIZE_OPTIONS = [10, 20, 30] as const;
@@ -952,6 +954,42 @@ export default function RequestsPage() {
       }));
     }
 
+    if (sentVisibleCols.internshipWindow) {
+      cols.push(sentColumnHelper.display({
+        id: 'internshipWindow',
+        header: () => (
+          <SortHeader
+            label="Internship Window"
+            colId="internshipWindow"
+            sortCol={sortCol}
+            sortDir={sortDir}
+            onSort={doSort}
+            labelClassName="whitespace-normal"
+          />
+        ),
+        meta: { size: 170, truncate: true, labelClassName: 'whitespace-normal' },
+        cell: () => null,
+      }));
+    }
+
+    if (sentVisibleCols.projectDuration) {
+      cols.push(sentColumnHelper.display({
+        id: 'projectDuration',
+        header: () => (
+          <SortHeader
+            label="Project Duration"
+            colId="projectDuration"
+            sortCol={sortCol}
+            sortDir={sortDir}
+            onSort={doSort}
+            labelClassName="whitespace-normal"
+          />
+        ),
+        meta: { size: 120, truncate: true, labelClassName: 'whitespace-normal' },
+        cell: () => null,
+      }));
+    }
+
     if (sentVisibleCols.requestDate) {
       cols.push(sentColumnHelper.display({
         id: 'requestDate',
@@ -979,7 +1017,7 @@ export default function RequestsPage() {
         id: 'deadline',
         header: () => (
           <SortHeader
-            label="Response Deadline"
+            label="Request Deadline"
             colId="deadline"
             sortCol={sortCol}
             sortDir={sortDir}
@@ -1054,6 +1092,7 @@ export default function RequestsPage() {
               maxWidth={table.getColumn('programmes')?.getSize()}
             >
               <p className="text-body-sm font-normal text-fg-muted truncate">
+                <CornerDownRight size={16} className="inline" />
                 {requestInternCategory(req, progMap)}
               </p>
             </TableCell>
@@ -1071,6 +1110,26 @@ export default function RequestsPage() {
                 <span className="block truncate">{req.uploaded ?? 0} / {req.placements}</span>
                 {isOverTarget(req) && <LineStatusFlag meta={LINE_STATUS_META.overTarget} />}
               </div>
+            </TableCell>
+          )}
+          {sentVisibleCols.internshipWindow && (
+            <TableCell
+              className="px-4 py-2.5 text-body-sm font-normal text-fg-muted"
+              maxWidth={table.getColumn('internshipWindow')?.getSize()}
+            >
+              {req.calendarPeriod
+                ? req.calendarPeriod
+                : req.periodStart && req.periodEnd
+                ? (req.periodStart === req.periodEnd ? req.periodStart : `${req.periodStart} – ${req.periodEnd}`)
+                : '—'}
+            </TableCell>
+          )}
+          {sentVisibleCols.projectDuration && (
+            <TableCell
+              className="px-4 py-2.5 text-body-sm font-normal text-fg-muted"
+              maxWidth={table.getColumn('projectDuration')?.getSize()}
+            >
+              {req.duration || '—'}
             </TableCell>
           )}
           {sentVisibleCols.requestDate && (
@@ -1592,6 +1651,8 @@ export default function RequestsPage() {
     if (sortCol === 'programmeCenter') { va = requestProgrammeCenter(a.requests[0]); vb = requestProgrammeCenter(b.requests[0]); }
     if (sortCol === 'programmes')  { va = a.requests.length; vb = b.requests.length; }
     if (sortCol === 'placements')  { va = aMetrics.placements; vb = bMetrics.placements; }
+    if (sortCol === 'internshipWindow') { va = a.requests[0].calendarPeriod || a.requests[0].periodStart || ''; vb = b.requests[0].calendarPeriod || b.requests[0].periodStart || ''; }
+    if (sortCol === 'projectDuration') { va = a.requests[0].duration || ''; vb = b.requests[0].duration || ''; }
     if (sortCol === 'requestDate') { va = aMetrics.latestSent; vb = bMetrics.latestSent; }
     if (sortCol === 'deadline')    { va = aMetrics.earliestDeadline; vb = bMetrics.earliestDeadline; }
     if (sortCol === 'sentStatus')  { va = REQ_STATUS_ORDER[aMetrics.worstStatus] ?? 99; vb = REQ_STATUS_ORDER[bMetrics.worstStatus] ?? 99; }
@@ -1741,7 +1802,7 @@ export default function RequestsPage() {
         </div>
         {showHeaderCreateRequest && (
           <Button onClick={() => router.push('/requests/new')} className="self-start">
-            <Send size={15} />Create Project Request
+            <Send size={15} />Create project request
           </Button>
         )}
       </div>
@@ -1764,6 +1825,7 @@ export default function RequestsPage() {
 
         {/* Search + filters at the top — above the tabs (shared across tabs) */}
         <TableToolbar
+          className="border-b-0 pb-0 sm:pb-0"
           search={search} onSearch={handleSearch}
           placeholder="Search by…"
           columnsLabel="Edit Columns"
@@ -1780,11 +1842,19 @@ export default function RequestsPage() {
             visibleCols: sentVisibleCols, onToggleCol: (k: string) => toggleSentCol(k as SentColKey),
             onExport: () => exportToCSV(
               'requests-sent',
-              ['Programme Centre', 'Intern Category', 'AD(P&C)', 'Placements Submitted', 'Placements Requested', 'Request Date', 'Response Deadline', 'Status'],
-              sortedSentGroups.flatMap(g => g.requests.map(r => [
-                requestProgrammeCenter(r), requestInternCategory(r, progMap), requestAdPnc(r),
-                r.uploaded ?? 0, r.placements, fmtDate(r.sentDate), fmtDate(r.deadline), STATUS_META[requestDisplayStatus(r)].label,
-              ])),
+              ['Programme Centre', 'Intern Category', 'AD(P&C)', 'Placements Submitted', 'Placements Requested', 'Internship Window', 'Project Duration', 'Request Date', 'Response Deadline', 'Status'],
+              sortedSentGroups.flatMap(g => g.requests.map(r => {
+                const window = r.calendarPeriod
+                  ? r.calendarPeriod
+                  : r.periodStart && r.periodEnd
+                  ? (r.periodStart === r.periodEnd ? r.periodStart : `${r.periodStart} – ${r.periodEnd}`)
+                  : '';
+                return [
+                  requestProgrammeCenter(r), requestInternCategory(r, progMap), requestAdPnc(r),
+                  r.uploaded ?? 0, r.placements, window, r.duration || '',
+                  fmtDate(r.sentDate), fmtDate(r.deadline), STATUS_META[requestDisplayStatus(r)].label,
+                ];
+              })),
             ),
           })}
         />
@@ -1831,7 +1901,7 @@ export default function RequestsPage() {
               description={requestTab === 'draft' ? 'Draft requests will appear here before they are sent.' : requestTab === 'closed' ? 'Requests move here automatically once their response deadline has passed.' : 'Send a project request to an AD (P&C) to get started.'}
               action={showEmptyCreateRequest ? (
                 <Button onClick={() => router.push('/requests/new')}>
-                  <Send size={15} />Create Project Request
+                  <Send size={15} />Create project request
                 </Button>
               ) : undefined}
             />
