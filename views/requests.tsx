@@ -53,7 +53,7 @@ import {
   Send, Check, X, FileText, ChevronRight, Filter, MoreVertical, Eye, Bell, CalendarClock, Pencil, Trash2, Ban,
   ArrowUp, ArrowDown, ArrowUpDown, CornerDownRight,
 } from 'lucide-react';
-import { CONTACTS, progEducationLevelMap, batchEducationLevel } from '@/lib/data';
+import { CONTACTS, STATUS_COLOURS, progEducationLevelMap, batchEducationLevel } from '@/lib/data';
 import { projectMatchesRequest } from '@/lib/request-groups';
 import { parseDisciplines } from '@/lib/disciplines';
 import { downloadRequestTemplateXLSX } from '@/lib/request-template';
@@ -320,13 +320,13 @@ function ColFilterDropdown({
 type DisplayRequestStatus = 'draft' | 'pending' | 'incomplete' | 'fulfilled' | 'closed' | 'withdrawn' | 'expired';
 
 const STATUS_META: Record<DisplayRequestStatus, { label: string; cls: string; tip: string }> = {
-  draft:      { label: 'Draft',      cls: 'bg-[rgba(244,242,236,1)] text-[rgba(69,85,108,1)]',   tip: 'Request has not been sent.'                         },
-  pending:    { label: 'Pending',    cls: 'bg-[rgba(0,166,244,0.15)] text-[rgba(0,105,168,1)]',  tip: 'Request sent. Awaiting project submission.'          },
-  incomplete: { label: 'Incomplete', cls: 'bg-[rgba(254,154,0,0.15)] text-[rgba(187,77,0,1)]',   tip: 'Requested placements are not fully fulfilled.'       },
-  fulfilled:  { label: 'Fulfilled',  cls: 'bg-[rgba(0,201,80,0.15)] text-[rgba(0,130,54,1)]',    tip: 'Requested placements have been fulfilled.'           },
-  closed:     { label: 'Closed',     cls: 'bg-[rgba(244,242,236,1)] text-[rgba(69,85,108,1)]',   tip: 'Response deadline has passed. The request is closed.' },
-  withdrawn:  { label: 'Withdrawn',  cls: 'bg-[rgba(251,44,54,0.15)] text-[rgba(193,0,7,1)]',  tip: 'Request withdrawn by the IO. Raise a new request to re-issue.' },
-  expired:    { label: 'Expired',    cls: 'bg-[rgba(251,44,54,0.15)] text-[rgba(193,0,7,1)]',    tip: 'Request has expired.'                                },
+  draft:      { label: 'Draft',      cls: STATUS_COLOURS.draft,      tip: 'Request has not been sent.' },
+  pending:    { label: 'Pending',    cls: STATUS_COLOURS.pending,    tip: 'Request sent. Awaiting project submission.' },
+  incomplete: { label: 'Incomplete', cls: STATUS_COLOURS.incomplete, tip: 'Requested placements are not fully fulfilled.' },
+  fulfilled:  { label: 'Fulfilled',  cls: STATUS_COLOURS.fulfilled,  tip: 'Requested placements have been fulfilled.' },
+  closed:     { label: 'Closed',     cls: STATUS_COLOURS.closed,     tip: 'Response deadline has passed. The request is closed.' },
+  withdrawn:  { label: 'Withdrawn',  cls: STATUS_COLOURS.withdrawn,  tip: 'Request withdrawn by the IO. Raise a new request to re-issue.' },
+  expired:    { label: 'Expired',    cls: STATUS_COLOURS.expired,    tip: 'Request has expired.' },
 };
 
 const LINE_STATUS_META = {
@@ -1372,10 +1372,12 @@ export default function RequestsPage() {
           {visibleCols.title && (
             <TableCell className="px-4 py-3" maxWidth={table.getColumn('title')?.getSize()}>
               <p className={cn('text-body-sm font-medium truncate', isPending ? 'text-fg group-hover:text-accent transition-colors' : 'text-fg')}>
+                <CornerDownRight size={16} className="inline" />
                 {r.title}
               </p>
               {isRejected && r.remarks && (
                 <p className="text-body-sm mt-0.5 leading-snug italic text-danger truncate">
+                  <CornerDownRight size={16} className="inline" />
                   {r.remarks}
                 </p>
               )}

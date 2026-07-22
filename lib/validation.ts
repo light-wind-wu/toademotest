@@ -91,6 +91,7 @@ export const projectSimpleAdSchema = z.object({
   title: z.string().trim().min(1, 'Project title is required.'),
   description: z.string().trim().min(1, 'Project scope is required.'),
   pc: z.string().trim().min(1, 'Programme centre is required.'),
+  educationLevel: z.string().trim().min(1, 'Intern category is required.'),
   skills: z.array(z.string()).min(1, 'Select at least one tech competency.'),
   discipline: z.string().trim().refine((v) => parseDisciplines(v).length > 0, {
     message: 'Select at least one discipline of study.',

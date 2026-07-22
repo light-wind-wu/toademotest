@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
 import DatePicker from '@/components/ui-legacy/date-picker';
+import FieldRequired from '@/components/ui-legacy/field-required';
 import { DateRangePicker, type DateRange } from '@/components/date-range-picker';
 import { parseISO, formatISO } from 'date-fns';
 import { parseMMMYY, formatMMMYY, MONTHS, INTAKE_BASE_YEAR, DEFAULT_INTAKE_YEAR, INTAKE_YEARS, shiftMMMYY, mmmyyToISO, mmmyyToISOEnd, toMonthIndex, INTERNSHIP_WINDOWS } from '@/lib/internship-period';
@@ -74,15 +75,6 @@ const INTERN_CATEGORIES = [
   'Young Defence Scientist Programme',
 ] as const;
 const DURATIONS = ['1 Month', '2 Months', '3 Months', '4 Months', '6 Months', '12 Months'] as const;
-
-function FieldRequired({ show }: { show: boolean }) {
-  return (
-    <div className="min-h-4">
-      {show ? <p className="text-xs leading-relaxed text-danger">This field is required.</p> : null}
-    </div>
-  );
-}
-
 
 /* The window presets above are anchored to the base intake year; a per-request
    Intake Year shifts every preset forward, so the same seasonal windows work for a

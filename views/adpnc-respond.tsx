@@ -6,11 +6,13 @@ import Shell from '@/components/layout/shell';
 import AiSparkleIcon from '@/components/ui-legacy/ai-sparkle-icon';
 import { Badge } from '@/components/ui-legacy/badge';
 import Button from '@/components/ui-legacy/button';
+import Combobox from '@/components/ui-legacy/combobox';
 import EmptyState from '@/components/ui-legacy/empty-state';
+import RequestContextTable from '@/components/ui-legacy/request-context-table';
+import AiCheckBlock from '@/components/ui-legacy/ai-check-block';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Modal from '@/components/ui-legacy/modal';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Toast, useToast } from '@/components/ui-legacy/toast';
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import {
@@ -40,7 +42,8 @@ import {
   saveSubmissions,
 } from '@/lib/storage';
 import { addNotification } from '@/lib/notifications';
-import { PROJECT_SUBMISSION_COLUMNS, toEducationLevel } from '@/lib/data';
+import { PROJECT_SUBMISSION_COLUMNS, STATUS_COLOURS, toEducationLevel } from '@/lib/data';
+import { DISCIPLINE_OPTIONS, parseDisciplines, toggleDiscipline } from '@/lib/disciplines';
 import {
   runAiCheck,
   runPublicProjectCheck,
@@ -91,12 +94,12 @@ const REQUEST_CATEGORY_LABELS: Record<string, string> = {
   'Tech UP': 'Tech UP',
 };
 
-const STATUS_META: Record<SubmittedProject['status'], { label: string; cls: string; text: string }> = {
-  draft: { label: 'Not submitted', cls: 'bg-bg-muted text-fg-muted', text: 'text-md-muted' },
-  pending: { label: 'Pending', cls: 'bg-info-bg text-info', text: 'text-info' },
-  approved: { label: 'Approved', cls: 'bg-success-bg text-success', text: 'text-success' },
-  rejected: { label: 'Returned for Update', cls: 'bg-warning-bg text-warning', text: 'text-warning' },
-  withdrawn: { label: 'Withdrawn', cls: 'bg-bg-muted text-fg-muted', text: 'text-fg-muted' },
+const STATUS_LABELS: Record<SubmittedProject['status'], string> = {
+  draft: 'Not submitted',
+  pending: 'Pending',
+  approved: 'Approved',
+  rejected: 'Returned for Update',
+  withdrawn: 'Withdrawn',
 };
 
 function categoryLabel(value: string) {
@@ -245,65 +248,6 @@ function FormField({
   );
 }
 
-function AiCheckHint({
-  check,
-  scope,
-}: {
-  check: ReturnType<typeof runPublicProjectCheck>;
-  scope: 'title' | 'scope';
-}) {
-  const scopedNotes = check.notes.filter(note => {
-    if (scope === 'title') return /title/i.test(note);
-    return /scope|applicant|public|sensitive|wording|intern/i.test(note);
-  });
-  const notes = scopedNotes.length > 0 ? scopedNotes.slice(0, 2) : check.notes.slice(0, 1);
-  const result =
-    scope === 'title'
-      ? strongestAiCheckResult([check.grammar], scopedNotes.length > 0)
-      : strongestAiCheckResult([check.grammar, check.publicReadiness], scopedNotes.length > 0);
-  const hasIssue = result !== 'pass';
-
-  return (
-    <div className={cn(
-      'mt-2 rounded-lg border px-3 py-2',
-      result === 'fail'
-        ? 'border-danger/30 bg-danger-bg/40'
-        : hasIssue
-          ? 'border-warning/30 bg-warning-bg/40'
-          : 'border-border bg-bg-subtle',
-    )}>
-      <div className="flex items-start gap-2">
-        <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md bg-accent/10">
-          <AiSparkleIcon size={13} />
-        </span>
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-caption font-semibold text-fg">AI check</p>
-            <span className={cn(
-              'badge inline-flex items-center gap-1 text-[11px] font-medium',
-              aiCheckStatusClass(result),
-            )}>
-              <AiCheckStatusIcon result={result} />
-              {aiCheckStatusLabel(result)}
-            </span>
-          </div>
-          {hasIssue ? (
-            <ul className="mt-1 space-y-0.5">
-              {notes.map((note, index) => (
-                <li key={`${scope}-${index}`} className="text-caption leading-snug text-fg-muted">
-                  {note}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-1 text-caption text-fg-muted">Looks clear for applicant-facing use.</p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function EditProjectDialog({
   project,
   request,
@@ -322,28 +266,22 @@ function EditProjectDialog({
   const [title, setTitle] = useState(project.title);
   const [description, setDescription] = useState(project.description);
   const [skills, setSkills] = useState<string[]>(project.skills.slice(0, 3));
+  const [discipline, setDiscipline] = useState<string>(project.discipline ?? '');
   const [mentor, setMentor] = useState(project.mentor);
   const [mentorAppointment, setMentorAppointment] = useState(project.mentorAppointment ?? '');
   const [mentorUserId, setMentorUserId] = useState(project.mentorUserId ?? '');
   const [secondaryMentor, setSecondaryMentor] = useState(project.secondaryMentor ?? '');
+  const [secondaryMentorAppointment, setSecondaryMentorAppointment] = useState(project.secondaryMentorAppointment ?? '');
   const [secondaryMentorEmail, setSecondaryMentorEmail] = useState(project.secondaryMentorEmail ?? '');
   const [slots, setSlots] = useState(String(project.slots || 1));
   const [pcHeadCleared, setPcHeadCleared] = useState(false);
   const [securityCleared, setSecurityCleared] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const techCompetencyOptions = getDropdown('Tech Domain');
-  const programmeCentre = project.pc || request?.programmeCenter || 'Programme centre from request';
+  const programmeCentre = project.pc || request?.programmeCenter || '—';
   const internCategory = request ? requestRawCategory(request) : project.educationLevel ?? '';
-  const primaryTechCompetency = skills[0] || project.techDomain || '';
   const requiresResubmitChecks = mode === 'resubmit';
   const canSave = !requiresResubmitChecks || (pcHeadCleared && securityCleared);
-  const aiCheck = runPublicProjectCheck(
-    title.trim(),
-    description.trim(),
-    internCategory,
-    skills,
-    primaryTechCompetency,
-  );
 
   function clearError(key: string) {
     setErrors(previous => {
@@ -351,16 +289,6 @@ function EditProjectDialog({
       delete next[key];
       return next;
     });
-  }
-
-  function setTechCompetency(index: number, value: string) {
-    setSkills(previous => {
-      const next = previous.slice(0, 3);
-      if (value) next[index] = value;
-      else next.splice(index, 1);
-      return next.filter(Boolean).slice(0, 3);
-    });
-    clearError('skills');
   }
 
   function validate() {
@@ -393,7 +321,9 @@ function EditProjectDialog({
       mentorAppointment: mentorAppointment.trim() || undefined,
       mentorUserId: mentorUserId.trim() || undefined,
       secondaryMentor: secondaryMentor.trim() || undefined,
+      secondaryMentorAppointment: secondaryMentorAppointment.trim() || undefined,
       secondaryMentorEmail: secondaryMentorEmail.trim() || undefined,
+      discipline: discipline.trim() || project.discipline,
       skills: nextSkills,
       slots: parseInt(slots, 10),
       pc: project.pc || request?.programmeCenter || undefined,
@@ -413,7 +343,7 @@ function EditProjectDialog({
     <Dialog open onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
       <DialogContent className="max-h-[88vh] max-w-3xl gap-0 overflow-hidden p-0">
         <DialogHeader className="border-b border-border px-6 py-4 pr-14">
-          <DialogTitle className="text-headline-sm text-fg">Edit project</DialogTitle>
+          <DialogTitle className="text-headline-sm text-fg">Edit Project</DialogTitle>
           <DialogDescription className="sr-only">
             {requiresResubmitChecks
               ? 'Edit the returned project and resubmit it for IO review.'
@@ -435,6 +365,23 @@ function EditProjectDialog({
               </div>
             )}
 
+            {request && (
+              <RequestContextTable requests={[request]} title="Placement requirements" />
+            )}
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FormField label="Programme centre" required>
+                <div className={cn(INPUT_CLS, 'flex min-h-9 items-center bg-bg-muted text-fg')}>
+                  {programmeCentre}
+                </div>
+              </FormField>
+              <FormField label="Intern category" required>
+                <div className={cn(INPUT_CLS, 'flex min-h-9 items-center bg-bg-muted text-fg')}>
+                  {internCategory}
+                </div>
+              </FormField>
+            </div>
+
             <FormField label="Project title" required error={errors.title}>
               <input
                 className={cn(INPUT_CLS, errors.title && ERROR_CLS)}
@@ -442,7 +389,11 @@ function EditProjectDialog({
                 value={title}
                 onChange={event => { setTitle(event.target.value); clearError('title'); }}
               />
-              <AiCheckHint check={aiCheck} scope="title" />
+              <AiCheckBlock
+                title={title}
+                educationLevel={internCategory}
+                skills={skills}
+              />
             </FormField>
 
             <FormField label="Project scope" required error={errors.description}>
@@ -453,41 +404,44 @@ function EditProjectDialog({
                 value={description}
                 onChange={event => { setDescription(event.target.value); clearError('description'); }}
               />
-              <AiCheckHint check={aiCheck} scope="scope" />
+              <AiCheckBlock
+                title={title}
+                description={description}
+                educationLevel={internCategory}
+                skills={skills}
+              />
             </FormField>
-
-            <FormField label="Programme centre" required>
-              <div className={cn(INPUT_CLS, 'flex min-h-9 items-center bg-bg-muted text-fg')}>
-                {programmeCentre}
-              </div>
-            </FormField>
-
-            <div>
-              <p className="mb-2 text-label-sm text-fg">
-                Tech competency (3 options)<span className="text-danger">*</span>
-              </p>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {[0, 1, 2].map(index => (
-                  <FormField key={index} label={`Option ${index + 1}`} error={index === 0 ? errors.skills : undefined}>
-                    <Select
-                      value={skills[index] ?? ''}
-                      onValueChange={(value) => setTechCompetency(index, value ?? '')}
-                    >
-                      <SelectTrigger aria-label={`Tech competency option ${index + 1}`} className={cn(index === 0 && errors.skills && ERROR_CLS)}>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {techCompetencyOptions.map(value => (
-                          <SelectItem key={value} value={value}>{value}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormField>
-                ))}
-              </div>
-            </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FormField label="Tech competency (up to 3)" required error={errors.skills}>
+                <Combobox
+                  selected={skills}
+                  onToggle={(opt) => {
+                    const next = skills.includes(opt) ? skills.filter(s => s !== opt) : skills.length < 3 ? [...skills, opt] : skills;
+                    setSkills(next);
+                    clearError('skills');
+                  }}
+                  options={techCompetencyOptions}
+                  placeholder="Select tech competencies…"
+                  chipClassName="bg-bg-muted text-[rgba(69,85,108,1)]"
+                  chips="inline"
+                />
+              </FormField>
+              <FormField label="Discipline of Study (up to 3)" required>
+                <Combobox
+                  selected={parseDisciplines(discipline)}
+                  onToggle={(opt) => {
+                    setDiscipline((prev) => toggleDiscipline(prev, opt));
+                  }}
+                  options={DISCIPLINE_OPTIONS}
+                  placeholder="Select disciplines…"
+                  chipClassName="bg-bg-muted text-[rgba(69,85,108,1)]"
+                  chips="inline"
+                />
+              </FormField>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <FormField label="Primary Mentor Name" required error={errors.mentor}>
                 <input
                   className={cn(INPUT_CLS, errors.mentor && ERROR_CLS)}
@@ -511,12 +465,19 @@ function EditProjectDialog({
               </FormField>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <FormField label="Secondary Mentor Name">
                 <input
                   className={INPUT_CLS}
                   value={secondaryMentor}
                   onChange={event => setSecondaryMentor(event.target.value)}
+                />
+              </FormField>
+              <FormField label="Secondary Mentor Appointment">
+                <input
+                  className={INPUT_CLS}
+                  value={secondaryMentorAppointment}
+                  onChange={event => setSecondaryMentorAppointment(event.target.value)}
                 />
               </FormField>
               <FormField label="Secondary Mentor Email" error={errors.secondaryMentorEmail}>
@@ -950,6 +911,7 @@ export default function AdPncRespondPage() {
   const [selectedProjectIds, setSelectedProjectIds] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
+  const [showRequestDetails, setShowRequestDetails] = useState(false);
 
   useEffect(() => {
     try {
@@ -1381,10 +1343,29 @@ export default function AdPncRespondPage() {
                 <h2 className="text-headline-sm text-fg mt-1">Request from {group.senderName ?? 'IO Admin'}</h2>
                 <p className="text-body-sm text-fg-muted mt-0.5">{requestContextSubtitle(group)}</p>
               </div>
-              <span className="text-body-sm text-accent cursor-pointer hover:underline">
-                Show Details
-              </span>
+              <button
+                type="button"
+                onClick={() => setShowRequestDetails(v => !v)}
+                className="text-body-sm text-accent hover:underline"
+              >
+                {showRequestDetails ? 'Hide Details' : 'Show Details'}
+              </button>
             </div>
+            {showRequestDetails && (
+              <div className="mt-4 border-t border-border pt-4">
+                <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <p className="text-caption text-fg-muted">Programme centre</p>
+                    <p className="mt-1 text-body-sm font-medium text-fg">{group.requests[0]?.programmeCenter || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-caption text-fg-muted">Response deadline</p>
+                    <p className="mt-1 text-body-sm font-medium text-fg">{fmtDate(group.requests[0]?.deadline)}</p>
+                  </div>
+                </div>
+                <RequestContextTable requests={group.requests} title="Placement requirements" />
+              </div>
+            )}
           </div>
 
           {visibleProjects.length === 0 ? (
@@ -1520,7 +1501,7 @@ export default function AdPncRespondPage() {
             </div>
           )}
 
-          <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-bg-subtle px-[clamp(24px,2.6vw,40px)] py-2">
+          <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-gradient-to-b from-surface to-bg px-[clamp(24px,2.6vw,40px)] py-2">
             <p className="text-body-sm text-fg">
               {isUploadMode
                 ? visibleProjects.length > 0
@@ -1531,7 +1512,6 @@ export default function AdPncRespondPage() {
                   : 'No projects submitted'}
             </p>
             <div className="flex items-center gap-3">
-              <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>Back</Button>
               {isUploadMode && visibleProjects.length === 0 && (
                 <>
                   <Button variant="outline" size="md" onClick={triggerUpload}>
@@ -1797,7 +1777,8 @@ function ProjectCard({
   onDelete: () => void;
   onWithdraw: () => void;
 }) {
-  const status = STATUS_META[project.status] ?? STATUS_META.pending;
+  const statusLabel = STATUS_LABELS[project.status] ?? STATUS_LABELS.pending;
+  const statusCls = STATUS_COLOURS[project.status] ?? STATUS_COLOURS.pending;
   const aiMeta = aiCheckMeta(project);
   const showAiMeta = project.status !== 'approved' && project.status !== 'withdrawn';
   const canEdit = canManage && (project.status === 'draft' || (Boolean(batchId) && (project.status === 'rejected' || project.status === 'withdrawn')));
@@ -1812,9 +1793,9 @@ function ProjectCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h2 className="text-body-lg font-semibold text-fg leading-tight">{project.title || 'Untitled project'}</h2>
-          <p className={cn('mt-1 text-body-sm', status.text)}>
-            {status.label}
-          </p>
+          <span className={cn('mt-1 badge text-[14px] font-normal', statusCls)}>
+            {statusLabel}
+          </span>
         </div>
         <Checkbox
           checked={selected}

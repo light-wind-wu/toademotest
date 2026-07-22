@@ -40,6 +40,21 @@ export interface ProjectSubmissionColumn {
   section:         ColumnSection;
 }
 
+/* Status badge colours (shared between request and project status badges). These
+   exact bg/text pairs are used by the product prototypes in requests.tsx. */
+export const STATUS_COLOURS = {
+  draft:      'bg-[rgba(244,242,236,1)] text-[rgba(69,85,108,1)]',
+  pending:    'bg-[rgba(0,166,244,0.15)] text-[rgba(0,105,168,1)]',
+  incomplete: 'bg-[rgba(254,154,0,0.15)] text-[rgba(187,77,0,1)]',
+  fulfilled:  'bg-[rgba(0,201,80,0.15)] text-[rgba(0,130,54,1)]',
+  closed:     'bg-[rgba(244,242,236,1)] text-[rgba(69,85,108,1)]',
+  withdrawn:  'bg-[rgba(251,44,54,0.15)] text-[rgba(193,0,7,1)]',
+  expired:    'bg-[rgba(251,44,54,0.15)] text-[rgba(193,0,7,1)]',
+  // Project-only statuses that map to the same semantic colours
+  approved:   'bg-[rgba(0,201,80,0.15)] text-[rgba(0,130,54,1)]',
+  rejected:   'bg-[rgba(251,44,54,0.15)] text-[rgba(193,0,7,1)]',
+} as const;
+
 /* Competency Domains (from SDP) — the approved Tech Competency list used by the
    project templates and the project forms. Column B of the SDP source list. */
 export const COMPETENCY_DOMAINS = [

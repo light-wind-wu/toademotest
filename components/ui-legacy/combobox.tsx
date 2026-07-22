@@ -12,10 +12,12 @@ interface ComboboxProps {
   placeholder?:  string;
   searchOnly?:   boolean;  // hide all options until user types
   className?:    string;
+  chipClassName?: string;
+  chips?:        'inline' | 'below';
 }
 
 export default function Combobox({
-  selected, onToggle, options = [], groups, placeholder = 'Select…', searchOnly = false, className,
+  selected, onToggle, options = [], groups, placeholder = 'Select…', searchOnly = false, className, chipClassName, chips = 'below',
 }: ComboboxProps) {
   const [open, setOpen]     = useState(false);
   const [query, setQuery]   = useState('');
@@ -61,6 +63,10 @@ export default function Combobox({
     return options.map(o => <OptionRow key={o} label={o} checked={selected.includes(o)} onToggle={onToggle} />);
   }
 
+  const inlineChips = chips === 'inline' && selected.length > 0
+    ? renderInlineChips(selected, chipClassName, onToggle)
+    : null;
+
   return (
     <div ref={containerRef} className={cn('relative', className)}>
       {/* Trigger */}
@@ -68,23 +74,31 @@ export default function Combobox({
         type="button"
         onClick={() => setOpen(v => !v)}
         className={cn(
-          'w-full flex items-center justify-between gap-2 px-3 py-1.5 border rounded-lg text-body-sm bg-surface transition-colors text-left',
+          'w-full flex items-center gap-2 px-3 py-1.5 border rounded-lg text-body-sm bg-surface transition-colors text-left',
           open ? 'border-accent ring-1 ring-accent/30' : 'border-border hover:border-fg-muted',
+          chips === 'inline' && 'min-h-[38px]',
         )}
       >
-        <span className={selected.length === 0 ? 'text-fg-muted' : 'text-fg'}>
-          {selected.length === 0 ? placeholder : `${selected.length} selected`}
+        <span className={cn('flex-1 flex items-center gap-1.5 truncate', selected.length === 0 ? 'text-fg-muted' : 'text-fg')}>
+          {chips === 'inline' ? (
+            selected.length === 0 ? placeholder : inlineChips
+          ) : (
+            selected.length === 0 ? placeholder : `${selected.length} selected`
+          )}
         </span>
         <ChevronDown size={14} className={cn('text-fg-muted shrink-0 transition-transform', open && 'rotate-180')} />
       </button>
 
       {/* Selected chips */}
-      {selected.length > 0 && (
+      {chips === 'below' && selected.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-1.5">
           {selected.map(s => (
-            <span key={s} className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent/10 text-accent rounded text-[13px] font-medium max-w-[200px]">
+            <span key={s} className={cn(
+              'inline-flex items-center gap-1 px-2 py-0.5 rounded text-[13px] font-medium max-w-[200px]',
+              chipClassName ?? 'bg-accent/10 text-accent',
+            )}>
               <span className="truncate">{s}</span>
-              <button type="button" onClick={() => onToggle(s)} className="hover:text-danger transition-colors shrink-0"><X size={10} /></button>
+              <button type="button" onClick={() => onToggle(s)} className="hover:text-fg transition-colors shrink-0"><X size={10} /></button>
             </span>
           ))}
         </div>
@@ -138,5 +152,41 @@ function OptionRow({ label, checked, onToggle }: { label: string; checked: boole
       </span>
       <span className="flex-1">{label}</span>
     </button>
+  );
+}
+
+function InlineChip({ label, chipClassName, onRemove }: { label: string; chipClassName?: string; onRemove: () => void }) {
+  return (
+    <span className={cn(
+      'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] font-medium max-w-[160px] text-[rgba(69,85,108,1)]',
+      chipClassName,
+    )}>
+      <span className="truncate">{label}</span>
+      <span
+        role="button"
+        tabIndex={0}
+        onClick={(e) => { e.stopPropagation(); onRemove(); }}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); onRemove(); } }}
+        className="shrink-0 cursor-pointer hover:opacity-80"
+        aria-label={`Remove ${label}`}
+      >
+        <X size={10} className="text-current" />
+      </span>
+    </span>
+  );
+}
+
+function renderInlineChips(selected: string[], chipClassName: string | undefined, onToggle: (val: string) => void) {
+  const MAX_VISIBLE = 3;
+  if (selected.length <= MAX_VISIBLE) {
+    return selected.map(s => <InlineChip key={s} label={s} chipClassName={chipClassName} onRemove={() => onToggle(s)} />);
+  }
+  const visible = selected.slice(0, MAX_VISIBLE);
+  const overflow = selected.length - MAX_VISIBLE;
+  return (
+    <>
+      {visible.map(s => <InlineChip key={s} label={s} chipClassName={chipClassName} onRemove={() => onToggle(s)} />)}
+      <span className="text-caption text-fg-muted">+{overflow}</span>
+    </>
   );
 }

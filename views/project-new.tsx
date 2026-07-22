@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Fragment } from "react";
+import { useState, useEffect, useMemo, Fragment } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Shell from "@/components/layout/shell";
 import Button from "@/components/ui-legacy/button";
@@ -9,6 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import SingleCombobox from "@/components/ui-legacy/single-combobox";
 import Combobox from "@/components/ui-legacy/combobox";
 import AiSuggestField from "@/components/ui-legacy/ai-suggest-field";
+import RequestContextTable from "@/components/ui-legacy/request-context-table";
+import AiCheckBlock from "@/components/ui-legacy/ai-check-block";
+import FieldRequired from "@/components/ui-legacy/field-required";
 import { DISCIPLINE_OPTIONS, parseDisciplines, toggleDiscipline } from "@/lib/disciplines";
 import { ChevronRight, Plus, Minus, X, Check, Save, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle } from "lucide-react";
 import { CONTACTS, PROJECT_SUBMISSION_COLUMNS, toEducationLevel } from "@/lib/data";
@@ -19,7 +22,7 @@ import {
   loadSubmissions,
   loadProjectDrafts, saveProjectDrafts,
 } from "@/lib/storage";
-import { projectMatchesRequest } from "@/lib/request-groups";
+import { groupRequests, projectMatchesRequest, requestRawCategory } from "@/lib/request-groups";
 import {
   runPublicProjectCheck,
   generateTitleSuggestion, generateSampleTitle,
@@ -36,7 +39,7 @@ const isoDay = (v: string, isEnd: boolean): string => {
   return m ? (isEnd ? mmmyyToISOEnd(m) : mmmyyToISO(m)) : "";
 };
 import DateRangePicker from "@/components/ui-legacy/date-range-picker";
-import { Field, FieldDescription, FieldError, FieldLabel, FieldLabelText } from "@/components/ui-legacy/field";
+import { Field, FieldDescription, FieldLabel, FieldLabelText } from "@/components/ui-legacy/field";
 import { useProgramme } from "@/lib/programme-context";
 import { useRole } from "@/lib/role";
 import { cn } from "@/lib/utils";
@@ -85,6 +88,17 @@ function getDropdown(colName: string): string[] {
   );
 }
 
+function normalizeTechCompetencies(
+  techDomain: string | undefined | null,
+  skills: string[] | undefined,
+  options: string[],
+): string[] {
+  const valid = new Set(options);
+  const values = [techDomain, ...(skills || [])].filter((s): s is string => !!s);
+  const matched = values.filter((s) => valid.has(s));
+  return Array.from(new Set(matched)).slice(0, 3);
+}
+
 function requestPeriodForProject(request: ProjectRequest | undefined): { start: string; end: string } {
   if (!request) return { start: "", end: "" };
   const parts = (request.calendarPeriod ?? '')
@@ -121,7 +135,7 @@ function FormField({
       </FieldLabel>
       {children}
       {hint && !error && <FieldDescription>{hint}</FieldDescription>}
-      {error && <FieldError>{error}</FieldError>}
+      {error && <FieldRequired show message={error} />}
     </Field>
   );
 }
@@ -291,6 +305,18 @@ export default function ProjectNewPage() {
   const effectiveEducationLevel = educationLevel || requestDefaultLevel;
   const selectedLevel = effectiveEducationLevel ? toEducationLevel(effectiveEducationLevel) : null;
   const isSimpleAdRequest = isAd && !!requestToken;
+  const internCategoryOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const list: string[] = [];
+    for (const req of tokenRequests) {
+      const category = requestRawCategory(req);
+      if (category && !seen.has(category)) {
+        seen.add(category);
+        list.push(category);
+      }
+    }
+    return list;
+  }, [tokenRequests]);
   // The specific request line for the level being submitted against.
   const matchingRequest = requestFromId ?? (selectedLevel
     ? tokenRequests.find((r) => toEducationLevel(requestCategoryFor(r)) === selectedLevel)
@@ -369,8 +395,9 @@ export default function ProjectNewPage() {
     setTitle(draftProject.title);
     setDescription(draftProject.description);
     setPc(draftProject.pc ?? requestProgrammeCentre);
-    setSkills(draftProject.skills.slice(0, 3));
-    setTechDomain(draftProject.techDomain ?? draftProject.skills[0] ?? "");
+    const techComps = normalizeTechCompetencies(draftProject.techDomain, draftProject.skills, getDropdown("Tech Domain"));
+    setSkills(techComps);
+    setTechDomain(techComps[0] ?? "");
     setEmergingArea(draftProject.emergingArea ?? "");
     setMentor(draftProject.mentor);
     setMentorAppointment(draftProject.mentorAppointment ?? "");
@@ -409,11 +436,12 @@ export default function ProjectNewPage() {
     setSecondaryMentorEmail(payload.secondaryMentorEmail ?? "");
     setMentorBio(payload.mentorBio);
     setDiscipline(payload.discipline);
-    setSkills(payload.skills);
+    const techComps = normalizeTechCompetencies(payload.techDomain, payload.skills, getDropdown("Tech Domain"));
+    setSkills(techComps);
+    setTechDomain(techComps[0] ?? "");
     setSlots(payload.slots);
     setProgramme(payload.programme);
     setPc(payload.pc);
-    setTechDomain(payload.techDomain);
     setEmergingArea(payload.emergingArea);
     setEducationLevel(payload.requestCategory ?? payload.educationLevel);
     setInternshipDuration(payload.internshipDuration);
@@ -466,6 +494,7 @@ export default function ProjectNewPage() {
       title,
       description,
       pc,
+      educationLevel: effectiveEducationLevel,
       skills,
       discipline,
       mentor,
@@ -475,6 +504,15 @@ export default function ProjectNewPage() {
       slots,
     });
     return flattenErrors(result);
+  }
+
+  function handleAddProjectClick() {
+    const e = validateSimpleAdRequest();
+    if (Object.keys(e).length > 0) {
+      setErrors(e);
+      return;
+    }
+    setConfirmAddOpen(true);
   }
 
   function handleSimpleAdRequestSubmit() {
@@ -686,14 +724,6 @@ export default function ProjectNewPage() {
 
   const disciplineList = parseDisciplines(discipline);
   const techCompetencyOptions = getDropdown("Tech Domain");
-  const requestContext = matchingRequest
-    ? [
-        { label: "Intern Category", value: requestCategoryFor(matchingRequest) },
-        { label: "Internship Window", value: matchingRequest.calendarPeriod || "Not provided" },
-        { label: "Project Duration", value: matchingRequest.duration || "Not provided" },
-        { label: "Requested Placements", value: String(matchingRequest.placements) },
-      ]
-    : [];
 
   if (isSimpleAdRequest) {
     const hasRejectedProjects = loadSubmissions().some(
@@ -716,22 +746,30 @@ export default function ProjectNewPage() {
 
           <h1 className="text-headline-lg text-fg mb-6">Create a new Project</h1>
 
-          {requestContext.length > 0 && (
-            <div className="rounded-lg border border-border bg-surface p-5 mb-6">
-              <p className="text-caption text-fg-muted mb-3">Request Context</p>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-                {requestContext.map(item => (
-                  <div key={item.label}>
-                    <p className="text-caption text-fg-muted">{item.label}</p>
-                    <p className="text-body-sm font-medium text-fg">{item.value}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {tokenRequests.length > 0 && (
+            <RequestContextTable requests={tokenRequests} className="mb-6 p-5 border border-border" highlightedCategory={effectiveEducationLevel} />
           )}
 
           <div className="rounded-lg border border-border bg-surface p-6">
             <div className="space-y-5">
+              <FormField label="Programme centre" required error={errors.pc}>
+                <div className={cn(INPUT_CLS, 'flex min-h-9 items-center bg-bg-muted text-fg max-w-[33%]')}>
+                  {pc || requestProgrammeCentre || 'Programme centre from request'}
+                </div>
+              </FormField>
+
+              <FormField label="Intern category" required error={errors.educationLevel}>
+                <select
+                  className={cn(SELECT_CLS, 'max-w-[33%]', errors.educationLevel && ERROR_CLS)}
+                  value={educationLevel || requestDefaultLevel || ''}
+                  onChange={(event) => { setEducationLevel(event.target.value); clearError("educationLevel"); }}
+                >
+                  {internCategoryOptions.map((category: string) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </FormField>
+
               <FormField label="Project title" required error={errors.title}>
                 <input
                   className={cn(INPUT_CLS, errors.title && ERROR_CLS)}
@@ -739,52 +777,60 @@ export default function ProjectNewPage() {
                   value={title}
                   onChange={(event) => { setTitle(event.target.value); clearError("title"); }}
                 />
+                <AiCheckBlock
+                  title={title}
+                  educationLevel={effectiveEducationLevel}
+                  skills={skills}
+                />
               </FormField>
 
               <FormField label="Project scope" required error={errors.description}>
                 <textarea
                   rows={5}
-                  className={cn(INPUT_CLS, 'resize-none', errors.description && ERROR_CLS)}
+                  className={cn(INPUT_CLS, 'resize-none max-w-[66%]', errors.description && ERROR_CLS)}
                   placeholder="Interns will work on..."
                   value={description}
                   onChange={(event) => { setDescription(event.target.value); clearError("description"); }}
                 />
+                <AiCheckBlock
+                  title={title}
+                  description={description}
+                  educationLevel={effectiveEducationLevel}
+                  skills={skills}
+                />
               </FormField>
 
-              <FormField label="Programme centre" required error={errors.pc}>
-                <div className={cn(INPUT_CLS, 'flex min-h-9 items-center bg-bg-muted text-fg')}>
-                  {pc || 'Programme centre from request'}
-                </div>
+              <FormField label="Tech competency (up to 3)" required error={errors.skills} hint="">
+                <Combobox
+                  selected={skills}
+                  onToggle={(opt) => {
+                    const next = skills.includes(opt) ? skills.filter((s) => s !== opt) : skills.length < 3 ? [...skills, opt] : skills;
+                    setSkills(next);
+                    setTechDomain(next[0] ?? "");
+                    clearError("skills");
+                  }}
+                  options={techCompetencyOptions}
+                  placeholder="Tech UP"
+                  chipClassName="bg-bg-muted text-[rgba(69,85,108,1)]"
+                  chips="inline"
+                />
               </FormField>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FormField label="Tech competency (up to 3)" required error={errors.skills} hint="Choose up to 3 technology domains.">
-                  <Combobox
-                    selected={skills}
-                    onToggle={(opt) => {
-                      const next = skills.includes(opt) ? skills.filter((s) => s !== opt) : skills.length < 3 ? [...skills, opt] : skills;
-                      setSkills(next);
-                      setTechDomain(next[0] ?? "");
-                      clearError("skills");
-                    }}
-                    options={techCompetencyOptions}
-                    placeholder="Select tech competencies…"
-                  />
-                </FormField>
-                <FormField label="Discipline of study (up to 3)" required error={errors.discipline} hint="Fields of study an intern should come from.">
-                  <Combobox
-                    selected={disciplineList}
-                    onToggle={(opt) => {
-                      const list = parseDisciplines(discipline);
-                      if (!list.includes(opt) && list.length >= 3) return;
-                      setDiscipline((prev) => toggleDiscipline(prev, opt));
-                      clearError("discipline");
-                    }}
-                    options={DISCIPLINE_OPTIONS}
-                    placeholder="Select disciplines…"
-                  />
-                </FormField>
-              </div>
+              <FormField label="Discipline of study (up to 3)" required error={errors.discipline} hint="">
+                <Combobox
+                  selected={disciplineList}
+                  onToggle={(opt) => {
+                    const list = parseDisciplines(discipline);
+                    if (!list.includes(opt) && list.length >= 3) return;
+                    setDiscipline((prev) => toggleDiscipline(prev, opt));
+                    clearError("discipline");
+                  }}
+                  options={DISCIPLINE_OPTIONS}
+                  placeholder="Select up to 3…"
+                  chipClassName="bg-bg-muted text-[rgba(69,85,108,1)]"
+                  chips="inline"
+                />
+              </FormField>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <FormField label="Primary Mentor Name" required error={errors.mentor}>
@@ -861,16 +907,15 @@ export default function ProjectNewPage() {
                 <p className="text-body-sm text-fg-muted">
                   You may offer more placements than requested on this project. New project rows cannot be added once the requested project count for this category is reached.
                 </p>
-                {errors.slots && <p className="text-caption text-danger mt-1">{errors.slots}</p>}
+                {errors.slots && <FieldRequired show message={errors.slots} />}
               </FormField>
             </div>
           </div>
         </div>
 
         <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-end gap-3 border-t border-border bg-bg-subtle px-[clamp(24px,2.6vw,40px)] py-2">
-          <Button variant="outline" size="md" onClick={() => router.push(backRoute)}>Back</Button>
           <Button variant="outline" size="md" onClick={() => router.push(backRoute)}>Cancel</Button>
-          <Button size="md" onClick={() => setConfirmAddOpen(true)} disabled={saving}>
+          <Button size="md" onClick={handleAddProjectClick} disabled={saving}>
             {saving ? "Saving..." : "Add Project"}
           </Button>
         </div>
@@ -1282,7 +1327,7 @@ export default function ProjectNewPage() {
                     </div>
                   </label>
                   {errors.declaration && (
-                    <p className="text-caption text-danger">{errors.declaration}</p>
+                    <FieldRequired show message={errors.declaration} />
                   )}
                 </div>
               </div>

@@ -4,24 +4,31 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
-import { Badge } from '@/components/ui-legacy/badge';
-import { ArrowLeft, ChevronRight } from 'lucide-react';
-import { loadRequests, loadSubmissions } from '@/lib/storage';
+import { ArrowLeft, ChevronRight, Clock, History, FileClock } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { loadRequests, loadSubmissions, saveSubmissions } from '@/lib/storage';
 import { findGroup, projectMatchesRequest, requestRawCategory } from '@/lib/request-groups';
 import { periodLabelToMMMYY } from '@/lib/internship-period';
+import { STATUS_COLOURS } from '@/lib/data';
+import RequestContextTable from '@/components/ui-legacy/request-context-table';
 import type { ProjectRequest, ProjectSubmissionBatch, SubmittedProject } from '@/lib/types';
 
-const STATUS_META: Record<SubmittedProject['status'], { label: string; variant: 'neutral' | 'success' | 'warning' | 'danger' }> = {
-  draft: { label: 'Draft', variant: 'neutral' },
-  pending: { label: 'Pending Review', variant: 'warning' },
-  approved: { label: 'Approved', variant: 'success' },
-  rejected: { label: 'Rejected', variant: 'danger' },
-  withdrawn: { label: 'Withdrawn', variant: 'neutral' },
+const STATUS_LABELS: Record<SubmittedProject['status'], string> = {
+  draft: 'Draft',
+  pending: 'Pending Review',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  withdrawn: 'Withdrawn',
 };
 
 function fmtValue(value: string | number | undefined | null) {
   if (value === undefined || value === null || value === '') return '—';
   return String(value);
+}
+
+function fmtDate(date: string | undefined) {
+  if (!date) return '—';
+  return new Date(date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function requestPeriodForProject(request: ProjectRequest | undefined): { start: string; end: string } {
@@ -70,6 +77,7 @@ export default function AdPncProjectDetailPage() {
   const [batch, setBatch] = useState<ProjectSubmissionBatch | null>(null);
   const [project, setProject] = useState<SubmittedProject | null>(null);
   const [requests, setRequests] = useState<ProjectRequest[]>([]);
+  const [auditOpen, setAuditOpen] = useState(false);
 
   useEffect(() => {
     const batches = loadSubmissions();
@@ -97,7 +105,29 @@ export default function AdPncProjectDetailPage() {
     );
   }
 
-  const status = STATUS_META[project.status] ?? STATUS_META.pending;
+  const statusLabel = STATUS_LABELS[project.status] ?? STATUS_LABELS.pending;
+  const statusCls = STATUS_COLOURS[project.status] ?? STATUS_COLOURS.pending;
+
+  function handleWithdraw() {
+    if (!batch || !project) return;
+    const batches = loadSubmissions();
+    const batchIndex = batches.findIndex(b => b.id === batch.id);
+    if (batchIndex < 0) return;
+    const nextBatch = { ...batches[batchIndex] };
+    const projectIndex = nextBatch.projects.findIndex(p => p.id === project.id);
+    if (projectIndex < 0) return;
+    const nextProject: SubmittedProject = {
+      ...nextBatch.projects[projectIndex],
+      status: 'withdrawn',
+      withdrawnAt: new Date().toISOString(),
+    };
+    nextBatch.projects[projectIndex] = nextProject;
+    const nextBatches = [...batches];
+    nextBatches[batchIndex] = nextBatch;
+    saveSubmissions(nextBatches);
+    setProject(nextProject);
+    setBatch(nextBatch);
+  }
 
   return (
     <Shell activeRoute="/submissions" hideNavigation>
@@ -117,77 +147,127 @@ export default function AdPncProjectDetailPage() {
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <h1 className="text-headline-lg text-fg">{project.title || 'Untitled project'}</h1>
-            <Badge variant={status.variant} className="text-caption font-normal">{status.label}</Badge>
+            <span className={cn('badge text-caption font-normal', statusCls)}>{statusLabel}</span>
           </div>
           <p className="text-body-sm text-fg-muted">
             Submitted by {batch.submittedBy || batch.pcHead || 'AD (P&C)'}
           </p>
         </div>
-        <Button variant="outline" onClick={() => router.push(backHref)}>
-          <ArrowLeft size={15} />
-          Back
-        </Button>
       </div>
 
-      <div className="space-y-5">
-        <section className="rounded-lg border border-border bg-surface p-5">
-          <h2 className="mb-3 text-label-lg font-semibold text-fg">Project scope</h2>
-          <p className="whitespace-pre-wrap text-body-md leading-relaxed text-fg">
-            {project.description || '—'}
-          </p>
-        </section>
-
-        <section className="rounded-lg border border-border bg-surface p-5">
-          <h2 className="mb-4 text-label-lg font-semibold text-fg">Project details</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <DetailItem label="Intern Category" value={matchedRequest ? requestRawCategory(matchedRequest) : project.educationLevel} />
-            <DetailItem label="Internship Window" value={projectPeriod(project, matchedRequest)} />
-            <DetailItem label="Project Duration" value={projectDuration(project)} />
-            <DetailItem label="Placements" value={project.slots} />
-            <DetailItem label="Programme Centre" value={project.pc} />
-          </div>
-        </section>
-
-        <section className="rounded-lg border border-border bg-surface p-5">
-          <h2 className="mb-4 text-label-lg font-semibold text-fg">Mentor information</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <DetailItem label="Primary Mentor" value={project.mentor} />
-            <DetailItem label="Appointment" value={project.mentorAppointment} />
-            <DetailItem label="Email" value={project.mentorUserId} />
-            <DetailItem label="Secondary Mentor" value={project.secondaryMentor} />
-            <DetailItem label="Secondary Email" value={project.secondaryMentorEmail} />
-          </div>
-          {project.mentorBio && (
-            <p className="mt-4 whitespace-pre-wrap border-t border-border pt-4 text-body-sm leading-relaxed text-fg">
-              {project.mentorBio}
-            </p>
-          )}
-        </section>
-
-        {(project.skills.length > 0 || project.discipline || project.additionalRequirements) && (
+      <div className="space-y-5 min-h-[calc(100vh-280px)]">
+        {group && (
           <section className="rounded-lg border border-border bg-surface p-5">
-            <h2 className="mb-4 text-label-lg font-semibold text-fg">Requirements</h2>
-            <div className="space-y-4">
-              {project.skills.length > 0 && (
-                <div>
-                  <p className="mb-2 text-caption font-semibold uppercase tracking-wide text-fg-subtle">Tech competency</p>
-                  <div className="flex flex-wrap gap-2">
-                    {project.skills.map(skill => (
-                      <span key={skill} className="badge border border-border bg-bg-subtle text-fg">{skill}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <DetailItem label="Discipline of Study" value={project.discipline} />
-              {project.additionalRequirements && (
-                <div>
-                  <p className="mb-2 text-caption font-semibold uppercase tracking-wide text-fg-subtle">Additional Requirements</p>
-                  <p className="whitespace-pre-wrap text-body-sm leading-relaxed text-fg">{project.additionalRequirements}</p>
-                </div>
-              )}
-            </div>
+            <RequestContextTable requests={group.requests} title="Request Context" />
           </section>
         )}
+
+        <section className="rounded-lg border border-border bg-surface p-5">
+          <h2 className="mb-4 text-label-lg font-semibold text-fg">View Project</h2>
+
+          {(project.status === 'pending' || project.status === 'approved') && (
+            <div className="mb-4 rounded-lg border border-info/30 bg-info-bg px-4 py-3">
+              <p className="text-body-sm text-info">
+                This project is pending and can no longer be edited here. To change placements after submission, withdraw the project below, then edit and resubmit it while the window is open.
+              </p>
+            </div>
+          )}
+
+          <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <DetailItem label="Programme centre" value={project.pc || batch.pc} />
+            <DetailItem label="Intern category" value={matchedRequest ? requestRawCategory(matchedRequest) : project.educationLevel} />
+          </div>
+
+          <div className="mb-4 space-y-4">
+            <DetailItem label="Project title" value={project.title} />
+            <div>
+              <p className="text-caption font-semibold uppercase tracking-wide text-fg-subtle">Project scope</p>
+              <p className="mt-1 whitespace-pre-wrap text-body-sm leading-relaxed text-fg">{project.description || '—'}</p>
+            </div>
+          </div>
+
+          <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <p className="text-caption font-semibold uppercase tracking-wide text-fg-subtle">Tech Competency</p>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {project.skills.length > 0 ? (
+                  project.skills.map(skill => (
+                    <span key={skill} className="badge border border-border bg-bg-subtle text-fg">{skill}</span>
+                  ))
+                ) : (
+                  <span className="text-body-sm text-fg">—</span>
+                )}
+              </div>
+            </div>
+            <DetailItem label="Discipline of Study" value={project.discipline} />
+          </div>
+
+          <div className="mb-4">
+            <p className="text-caption font-semibold uppercase tracking-wide text-fg-subtle mb-2">Primary Mentor</p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <DetailItem label="Name" value={project.mentor} />
+              <DetailItem label="Appointment" value={project.mentorAppointment} />
+              <DetailItem label="Email" value={project.mentorUserId} />
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <p className="text-caption font-semibold uppercase tracking-wide text-fg-subtle mb-2">Secondary Mentor</p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <DetailItem label="Name" value={project.secondaryMentor} />
+              <DetailItem label="Appointment" value={project.secondaryMentorAppointment} />
+              <DetailItem label="Email" value={project.secondaryMentorEmail} />
+            </div>
+          </div>
+
+          <DetailItem label="Number of placements" value={project.slots} />
+        </section>
+
+        <section className="rounded-lg border border-border bg-surface p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h2 className="text-label-lg font-semibold text-fg">Audit Log</h2>
+              <div className="flex items-center gap-2 text-body-sm text-fg-muted hidden">
+                <Clock size={14} />
+                <span>Current status</span>
+                <span className={cn('badge text-caption font-normal', statusCls)}>{statusLabel}</span>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAuditOpen(o => !o)}
+            >
+              <FileClock size={14} />
+              {auditOpen ? 'Collapse Audit Log' : 'View All Audit Log'}
+            </Button>
+          </div>
+          {auditOpen && (
+            <div className="space-y-3">
+              <div className="flex gap-4">
+                <span className="w-28 shrink-0 text-body-sm text-fg-muted">{fmtDate(project.submittedAt || batch.uploadedAt)}</span>
+                <div>
+                  <p className="text-body-sm font-medium text-fg">{statusLabel}</p>
+                  <p className="text-body-sm text-fg-muted">
+                    Project submitted to IO for review under {project.pc || batch.pc || '—'}.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      </div>
+
+      <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-gradient-to-b from-surface to-bg px-[clamp(24px,2.6vw,40px)] py-2">
+        <p className="text-body-sm text-fg-muted">Read-only project details</p>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={() => router.push(backHref)}>
+            Back
+          </Button>
+          <Button variant="danger" onClick={handleWithdraw}>
+            Withdraw Project
+          </Button>
+        </div>
       </div>
     </Shell>
   );

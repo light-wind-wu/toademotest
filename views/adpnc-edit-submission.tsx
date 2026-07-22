@@ -1,20 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
 import { Badge } from '@/components/ui-legacy/badge';
-import AiSparkleIcon from '@/components/ui-legacy/ai-sparkle-icon';
+import RequestContextTable from '@/components/ui-legacy/request-context-table';
+import AiCheckBlock from '@/components/ui-legacy/ai-check-block';
+import Combobox from '@/components/ui-legacy/combobox';
+import FieldRequired from '@/components/ui-legacy/field-required';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronRight, ChevronLeft, Check, RotateCcw, AlertTriangle, Clock, History, Minus, Plus } from 'lucide-react';
-import { PROJECT_SUBMISSION_COLUMNS, loadLiveProgrammeOptions, type ProjectSubmissionColumn } from '@/lib/data';
+import { ChevronRight, ChevronLeft, Check, AlertTriangle, Clock, History, Minus, Plus, FileClock } from 'lucide-react';
+import { PROJECT_SUBMISSION_COLUMNS, loadLiveProgrammeOptions, toEducationLevel, type ProjectSubmissionColumn } from '@/lib/data';
+import { DISCIPLINE_OPTIONS, parseDisciplines, toggleDiscipline } from '@/lib/disciplines';
 import { useToast, Toast } from '@/components/ui-legacy/toast';
 import { addNotification } from '@/lib/notifications';
 import { runAiCheck } from '@/lib/ai-check';
 import { cn } from '@/lib/utils';
-import { loadSubmissions, saveSubmissions } from '@/lib/storage';
-import type { ProjectSubmissionBatch, SubmittedProject } from '@/lib/types';
+import { loadRequests, loadSubmissions, saveSubmissions } from '@/lib/storage';
+import { groupRequests, requestRawCategory } from '@/lib/request-groups';
+import type { ProjectRequest, ProjectSubmissionBatch, SubmittedProject } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -48,56 +53,63 @@ const EDIT_FIELDS: {
   field: keyof EditState;
   required: boolean;
 }[] = [
-  { label: 'Project Title',               field: 'title',                required: true },
-  { label: 'Project Scope',               field: 'description',          required: true },
-  { label: 'Programme centre',            field: 'pc',                   required: true },
-  { label: 'Tech competency',             field: 'skillsRaw',            required: true },
-  { label: 'Primary Mentor Name',         field: 'mentor',               required: true },
-  { label: 'Primary Mentor Appointment',  field: 'mentorAppointment',    required: true },
-  { label: 'Primary Mentor Email',        field: 'mentorUserId',         required: true },
-  { label: 'Number of placements',        field: 'slots',                required: true },
+  { label: 'Project Title', field: 'title', required: true },
+  { label: 'Project Scope', field: 'description', required: true },
+  { label: 'Programme centre', field: 'pc', required: true },
+  { label: 'Intern category', field: 'educationLevel', required: true },
+  { label: 'Tech competency', field: 'skillsRaw', required: true },
+  { label: 'Discipline of study', field: 'discipline', required: true },
+  { label: 'Primary Mentor Name', field: 'mentor', required: true },
+  { label: 'Primary Mentor Appointment', field: 'mentorAppointment', required: true },
+  { label: 'Primary Mentor Email', field: 'mentorUserId', required: true },
+  { label: 'Number of placements', field: 'slots', required: true },
 ];
 
 interface EditState {
-  title:             string;
-  description:       string;
-  mentor:            string;
+  title: string;
+  description: string;
+  educationLevel: string;
+  mentor: string;
   mentorAppointment: string;
-  mentorUserId:      string;
-  secondaryMentor:   string;
+  mentorUserId: string;
+  secondaryMentor: string;
   secondaryMentorAppointment: string;
   secondaryMentorEmail: string;
-  mentorBio:         string;
-  skillsRaw:         string;
-  slots:             number;
-  pc:                string;
+  mentorBio: string;
+  skillsRaw: string;
+  discipline: string;
+  slots: number;
+  pc: string;
 }
 
 function toEditState(proj: SubmittedProject): EditState {
   return {
-    title:             proj.title,
-    description:       proj.description,
-    mentor:            proj.mentor,
+    title: proj.title,
+    description: proj.description,
+    educationLevel: proj.educationLevel ?? '',
+    mentor: proj.mentor,
     mentorAppointment: proj.mentorAppointment ?? '',
-    mentorUserId:      proj.mentorUserId ?? '',
-    secondaryMentor:   proj.secondaryMentor ?? '',
+    mentorUserId: proj.mentorUserId ?? '',
+    secondaryMentor: proj.secondaryMentor ?? '',
     secondaryMentorAppointment: proj.secondaryMentorAppointment ?? '',
     secondaryMentorEmail: proj.secondaryMentorEmail ?? '',
-    mentorBio:         proj.mentorBio,
-    skillsRaw:         proj.skills.join(', '),
-    slots:             proj.slots,
-    pc:                proj.pc ?? '',
+    mentorBio: proj.mentorBio,
+    skillsRaw: deriveTechCompetencies(proj).join(', '),
+    discipline: proj.discipline ?? '',
+    slots: proj.slots,
+    pc: proj.pc ?? '',
   };
 }
 
 /* ── Form field wrapper ─────────────────────────────────────────────────────── */
-function Field({ label, required, className, children }: { label: string; required?: boolean; className?: string; children: React.ReactNode }) {
+function Field({ label, required, error, className, children }: { label: string; required?: boolean; error?: string; className?: string; children: React.ReactNode }) {
   return (
     <div className={className}>
       <label className="block text-label-sm text-fg mb-1.5">
         {label}{required && <span className="text-danger">*</span>}
       </label>
       {children}
+      {error && <FieldRequired show message={error} />}
     </div>
   );
 }
@@ -111,38 +123,11 @@ function getDropdown(colName: string): string[] {
   return PROJECT_SUBMISSION_COLUMNS.find(column => column.name === colName)?.dropdownValues ?? [];
 }
 
-/* ── AI check helpers ───────────────────────────────────────────────────────── */
-function AiCheckHint({ title, description, educationLevel, skills }: {
-  title: string;
-  description?: string;
-  educationLevel: string;
-  skills: string[];
-}) {
-  const result = runAiCheck(
-    title,
-    description ?? '',
-    educationLevel,
-    skills,
-    skills[0] ?? '',
-  );
-  const scope = description !== undefined;
-  const ok = scope
-    ? result.grammar === 'pass' && result.publicReadiness === 'pass'
-    : result.grammar === 'pass';
-  const note = result.notes[0] ?? (ok ? 'Looks clear for applicant-facing use.' : 'Check wording for clarity.');
-  const label = ok ? 'AI checked' : 'AI recommend review';
-
-  return (
-    <div className="mt-2 flex flex-wrap items-center gap-2">
-      <span className={cn(
-        'badge inline-flex items-center gap-1 text-caption font-normal',
-        'border border-[rgba(37,99,235,0.3)] bg-[rgba(37,99,235,0.05)] text-[rgba(26,101,248,1)]',
-      )}>
-        <AiSparkleIcon size={12} />{label}
-      </span>
-      <span className="text-body-sm text-fg-muted">{note}</span>
-    </div>
-  );
+function deriveTechCompetencies(proj: SubmittedProject): string[] {
+  const valid = new Set(getDropdown('Tech Domain'));
+  const values = [proj.techDomain, ...(proj.skills || [])].filter((s): s is string => !!s);
+  const matched = values.filter(s => valid.has(s));
+  return Array.from(new Set(matched)).slice(0, 3);
 }
 
 /* ── Audit log ─────────────────────────────────────────────────────────────── */
@@ -182,11 +167,11 @@ export default function AdPncEditSubmissionPage() {
   const projId  = decodeURIComponent(params?.projId  as string ?? '');
 
   const [batches,  setBatches]  = useState<ProjectSubmissionBatch[]>([]);
+  const [requests, setRequests] = useState<ProjectRequest[]>([]);
   const [progMap,  setProgMap]  = useState<Record<string, string>>({});
   const [edit,     setEdit]     = useState<EditState | null>(null);
-  const [declC,    setDeclC]    = useState(false);
-  const [declP,    setDeclP]    = useState(false);
   const [saving,   setSaving]   = useState(false);
+  const [errors,   setErrors]   = useState<Record<string, string>>({});
   const [auditOpen, setAuditOpen] = useState(false);
   const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
 
@@ -194,6 +179,7 @@ export default function AdPncEditSubmissionPage() {
     const opts = loadLiveProgrammeOptions();
     setProgMap(Object.fromEntries(opts.map(p => [p.value, p.label])));
     loadLiveColumns(); // prime column cache
+    setRequests(loadRequests());
     const all = loadSubmissions();
     setBatches(all);
     const proj = all.find(b => b.id === batchId)?.projects.find(p => p.id === projId);
@@ -203,27 +189,73 @@ export default function AdPncEditSubmissionPage() {
   const batch = batches.find(b => b.id === batchId) ?? null;
   const proj  = batch?.projects.find(p => p.id === projId) ?? null;
 
-  const canSave =
-    !!edit?.title.trim() &&
-    !!edit?.description.trim() &&
-    !!edit?.pc.trim() &&
-    !!edit?.skillsRaw.trim() &&
-    !!edit?.mentor.trim() &&
-    !!edit?.mentorAppointment.trim() &&
-    !!edit?.mentorUserId.trim() &&
-    EMAIL_RE.test(edit.mentorUserId.trim()) &&
-    (!edit.secondaryMentorEmail.trim() || EMAIL_RE.test(edit.secondaryMentorEmail.trim())) &&
-    edit.slots >= 1 &&
-    declC &&
-    declP;
+  const group = useMemo(() => {
+    if (!batch) return null;
+    return groupRequests(requests).find(g => g.key === batch.uploadToken) ?? null;
+  }, [batch, requests]);
 
-  const missingDecl = !declC || !declP;
-  const missingFields = EDIT_FIELDS.filter(f => f.required && !String(edit?.[f.field] ?? '').trim()).map(f => f.label);
+  const internCategoryOptions = useMemo(() => {
+    if (!group) return [];
+    const seen = new Set<string>();
+    const list: string[] = [];
+    for (const req of group.requests) {
+      const category = requestRawCategory(req);
+      if (category && !seen.has(category)) {
+        seen.add(category);
+        list.push(category);
+      }
+    }
+    return list;
+  }, [group]);
+
+  function validate(state: EditState | null): Record<string, string> {
+    if (!state) return {};
+    const next: Record<string, string> = {};
+
+    for (const f of EDIT_FIELDS) {
+      if (f.field === 'slots') continue;
+      if (f.required && !String(state[f.field]).trim()) {
+        next[f.field] = `${f.label} is required.`;
+      }
+    }
+
+    if (state.slots < 1) {
+      next.slots = 'At least 1 placement is required.';
+    }
+
+    if (!next.mentorUserId && !EMAIL_RE.test(state.mentorUserId.trim())) {
+      next.mentorUserId = 'Enter a valid email address.';
+    }
+
+    if (state.secondaryMentorEmail.trim() && !EMAIL_RE.test(state.secondaryMentorEmail.trim())) {
+      next.secondaryMentorEmail = 'Enter a valid email address.';
+    }
+
+    const techOptions = new Set(getDropdown('Tech Domain'));
+    const skills = state.skillsRaw.split(',').map(s => s.trim()).filter(Boolean);
+    if (skills.length === 0 && !next.skillsRaw) {
+      next.skillsRaw = 'Tech competency is required.';
+    } else if (skills.some(s => !techOptions.has(s))) {
+      next.skillsRaw = 'Select valid tech competencies.';
+    }
+
+    const disciplines = parseDisciplines(state.discipline);
+    if (disciplines.length === 0 && !next.discipline) {
+      next.discipline = 'Discipline of study is required.';
+    } else if (disciplines.some(d => !DISCIPLINE_OPTIONS.includes(d))) {
+      next.discipline = 'Select valid disciplines.';
+    }
+
+    return next;
+  }
 
   const auditLog = proj ? buildAuditLog(proj, edit?.pc ?? proj.pc ?? '') : [];
 
   function handleSave() {
-    if (!edit || !batch || !proj || !canSave) return;
+    if (!edit || !batch || !proj) return;
+    const validationErrors = validate(edit);
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) return;
     setSaving(true);
     const skills = edit.skillsRaw.split(',').map(s => s.trim()).filter(Boolean);
     const resubmittedAt = new Date().toISOString();
@@ -233,6 +265,7 @@ export default function AdPncEditSubmissionPage() {
         ...p,
         title:              edit.title.trim(),
         description:        edit.description.trim(),
+        educationLevel:     edit.educationLevel ? toEducationLevel(edit.educationLevel) : p.educationLevel,
         mentor:             edit.mentor.trim(),
         mentorAppointment:  edit.mentorAppointment.trim() || undefined,
         mentorUserId:       edit.mentorUserId.trim() || undefined,
@@ -241,6 +274,7 @@ export default function AdPncEditSubmissionPage() {
         secondaryMentorEmail: edit.secondaryMentorEmail.trim() || undefined,
         mentorBio:          edit.mentorBio.trim(),
         skills,
+        discipline:         edit.discipline.trim(),
         slots:              edit.slots,
         pc:                 edit.pc.trim() || undefined,
         techDomain:         skills[0] || undefined,
@@ -248,7 +282,7 @@ export default function AdPncEditSubmissionPage() {
         remarks:            undefined,
         resubmittedAt,
         resubmittedBy:      b.submittedBy ?? b.pcHead,
-        aiCheck:            runAiCheck(edit.title, edit.description, p.educationLevel ?? '', skills, skills[0] ?? ''),
+        aiCheck:            runAiCheck(edit.title, edit.description, edit.educationLevel, skills, skills[0] ?? ''),
       }),
     });
     setBatches(updated);
@@ -303,6 +337,10 @@ export default function AdPncEditSubmissionPage() {
           <Badge variant="warning">Returned for Update</Badge>
         </div>
 
+        {group && group.requests.length > 0 && (
+          <RequestContextTable requests={group.requests} className="mb-6" highlightedCategory={edit.educationLevel} />
+        )}
+
         <div className="space-y-6">
           {/* IO feedback */}
           {proj.remarks && (
@@ -318,35 +356,7 @@ export default function AdPncEditSubmissionPage() {
           {/* Edit form */}
           <div className="rounded-lg border border-border bg-surface p-6">
             <div className="space-y-5">
-              <Field label="Project title" required>
-                <input
-                  className={INPUT_CLS}
-                  value={edit.title}
-                  onChange={e => setEdit(prev => prev ? { ...prev, title: e.target.value } : prev)}
-                />
-                <AiCheckHint
-                  title={edit.title}
-                  educationLevel={proj.educationLevel ?? ''}
-                  skills={edit.skillsRaw.split(',').map(s => s.trim()).filter(Boolean)}
-                />
-              </Field>
-
-              <Field label="Project scope" required>
-                <textarea
-                  rows={5}
-                  className={TEXTAREA_CLS}
-                  value={edit.description}
-                  onChange={e => setEdit(prev => prev ? { ...prev, description: e.target.value } : prev)}
-                />
-                <AiCheckHint
-                  title={edit.title}
-                  description={edit.description}
-                  educationLevel={proj.educationLevel ?? ''}
-                  skills={edit.skillsRaw.split(',').map(s => s.trim()).filter(Boolean)}
-                />
-              </Field>
-
-              <Field label="Programme centre" required>
+              <Field label="Programme centre" required error={errors.pc} className="max-w-[33%]">
                 <Select value={edit.pc} onValueChange={value => setEdit(prev => prev ? { ...prev, pc: value ?? '' } : prev)}>
                   <SelectTrigger aria-label="Programme centre">
                     <SelectValue placeholder="Select programme centre" />
@@ -357,38 +367,89 @@ export default function AdPncEditSubmissionPage() {
                 </Select>
               </Field>
 
-              <div>
-                <p className="mb-2 text-label-sm text-fg">
-                  Tech Competency (up to 3)<span className="text-danger">*</span>
-                </p>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  {[0, 1, 2].map(index => {
-                    const selected = edit.skillsRaw.split(',').map(item => item.trim()).filter(Boolean);
-                    return (
-                      <Field key={index} label={`Option ${index + 1}`}>
-                        <Select value={selected[index] ?? ''} onValueChange={value => setTechCompetency(index, value ?? '')}>
-                          <SelectTrigger aria-label={`Tech competency option ${index + 1}`}>
-                            <SelectValue placeholder="Select" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getDropdown('Tech Domain').map(value => <SelectItem key={value} value={value}>{value}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </Field>
-                    );
-                  })}
-                </div>
-              </div>
+              <Field label="Intern category" required error={errors.educationLevel} className="max-w-[33%]">
+                <Select value={edit.educationLevel} onValueChange={value => setEdit(prev => prev ? { ...prev, educationLevel: value ?? '' } : prev)}>
+                  <SelectTrigger aria-label="Intern category">
+                    <SelectValue placeholder="Select intern category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {internCategoryOptions.map(value => <SelectItem key={value} value={value}>{value}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field label="Project title" required error={errors.title}>
+                <input
+                  className={cn(INPUT_CLS, errors.title && ERROR_CLS)}
+                  value={edit.title}
+                  onChange={e => setEdit(prev => prev ? { ...prev, title: e.target.value } : prev)}
+                />
+                <AiCheckBlock
+                  title={edit.title}
+                  educationLevel={edit.educationLevel}
+                  skills={edit.skillsRaw.split(',').map(s => s.trim()).filter(Boolean)}
+                />
+              </Field>
+
+              <Field label="Project scope" required error={errors.description} className="max-w-[66%]">
+                <textarea
+                  rows={5}
+                  className={cn(TEXTAREA_CLS, errors.description && ERROR_CLS)}
+                  value={edit.description}
+                  onChange={e => setEdit(prev => prev ? { ...prev, description: e.target.value } : prev)}
+                />
+                <AiCheckBlock
+                  title={edit.title}
+                  description={edit.description}
+                  educationLevel={edit.educationLevel}
+                  skills={edit.skillsRaw.split(',').map(s => s.trim()).filter(Boolean)}
+                />
+              </Field>
+
+              <Field label="Tech competency (up to 3)" required error={errors.skillsRaw}>
+                <Combobox
+                  selected={edit.skillsRaw.split(',').map(s => s.trim()).filter(Boolean)}
+                  onToggle={(opt) => {
+                    setEdit(prev => {
+                      if (!prev) return prev;
+                      const selected = prev.skillsRaw.split(',').map(s => s.trim()).filter(Boolean);
+                      const next = selected.includes(opt)
+                        ? selected.filter(s => s !== opt)
+                        : selected.length < 3
+                          ? [...selected, opt]
+                          : selected;
+                      return { ...prev, skillsRaw: next.join(', ') };
+                    });
+                  }}
+                  options={getDropdown('Tech Domain')}
+                  placeholder="Select tech competencies…"
+                  chipClassName="bg-bg-muted text-[rgba(69,85,108,1)]"
+                  chips="inline"
+                />
+              </Field>
+
+              <Field label="Discipline of study (up to 3)" required error={errors.discipline}>
+                <Combobox
+                  selected={parseDisciplines(edit.discipline)}
+                  onToggle={(opt) => {
+                    setEdit(prev => prev ? { ...prev, discipline: toggleDiscipline(prev.discipline, opt) } : prev);
+                  }}
+                  options={DISCIPLINE_OPTIONS}
+                  placeholder="Select disciplines…"
+                  chipClassName="bg-bg-muted text-[rgba(69,85,108,1)]"
+                  chips="inline"
+                />
+              </Field>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <Field label="Primary Mentor Name" required>
-                  <input className={INPUT_CLS} value={edit.mentor} onChange={e => setEdit(prev => prev ? { ...prev, mentor: e.target.value } : prev)} />
+                <Field label="Primary Mentor Name" required error={errors.mentor}>
+                  <input className={cn(INPUT_CLS, errors.mentor && ERROR_CLS)} value={edit.mentor} onChange={e => setEdit(prev => prev ? { ...prev, mentor: e.target.value } : prev)} />
                 </Field>
-                <Field label="Primary Mentor Appointment" required>
-                  <input className={INPUT_CLS} value={edit.mentorAppointment} onChange={e => setEdit(prev => prev ? { ...prev, mentorAppointment: e.target.value } : prev)} />
+                <Field label="Primary Mentor Appointment" required error={errors.mentorAppointment}>
+                  <input className={cn(INPUT_CLS, errors.mentorAppointment && ERROR_CLS)} value={edit.mentorAppointment} onChange={e => setEdit(prev => prev ? { ...prev, mentorAppointment: e.target.value } : prev)} />
                 </Field>
-                <Field label="Primary Mentor Email" required>
-                  <input className={cn(INPUT_CLS, edit.mentorUserId && !EMAIL_RE.test(edit.mentorUserId.trim()) && ERROR_CLS)} value={edit.mentorUserId} onChange={e => setEdit(prev => prev ? { ...prev, mentorUserId: e.target.value } : prev)} />
+                <Field label="Primary Mentor Email" required error={errors.mentorUserId}>
+                  <input className={cn(INPUT_CLS, (errors.mentorUserId || (edit.mentorUserId && !EMAIL_RE.test(edit.mentorUserId.trim()))) && ERROR_CLS)} value={edit.mentorUserId} onChange={e => setEdit(prev => prev ? { ...prev, mentorUserId: e.target.value } : prev)} />
                 </Field>
               </div>
 
@@ -399,14 +460,14 @@ export default function AdPncEditSubmissionPage() {
                 <Field label="Secondary Mentor Appointment">
                   <input className={INPUT_CLS} value={edit.secondaryMentorAppointment} onChange={e => setEdit(prev => prev ? { ...prev, secondaryMentorAppointment: e.target.value } : prev)} />
                 </Field>
-                <Field label="Secondary Mentor Email">
-                  <input className={cn(INPUT_CLS, edit.secondaryMentorEmail && !EMAIL_RE.test(edit.secondaryMentorEmail.trim()) && ERROR_CLS)} value={edit.secondaryMentorEmail} onChange={e => setEdit(prev => prev ? { ...prev, secondaryMentorEmail: e.target.value } : prev)} />
+                <Field label="Secondary Mentor Email" error={errors.secondaryMentorEmail}>
+                  <input className={cn(INPUT_CLS, (errors.secondaryMentorEmail || (edit.secondaryMentorEmail && !EMAIL_RE.test(edit.secondaryMentorEmail.trim()))) && ERROR_CLS)} value={edit.secondaryMentorEmail} onChange={e => setEdit(prev => prev ? { ...prev, secondaryMentorEmail: e.target.value } : prev)} />
                 </Field>
               </div>
 
-              <Field label="Number of placements" required>
+              <Field label="Number of placements" required error={errors.slots}>
                 <div className="flex items-center gap-3">
-                  <div className="inline-flex items-center rounded-lg border border-border bg-surface">
+                  <div className={cn("inline-flex items-center rounded-lg border bg-surface", errors.slots ? "border-danger" : "border-border")}>
                     <button
                       type="button"
                       onClick={() => setEdit(prev => prev ? { ...prev, slots: Math.max(1, prev.slots - 1) } : prev)}
@@ -435,46 +496,12 @@ export default function AdPncEditSubmissionPage() {
             </div>
           </div>
 
-          {/* Declarations */}
-          <div className={cn(
-            'rounded-lg border px-6 py-5 space-y-4 transition-colors',
-            missingDecl ? 'border-warning/40 bg-warning-bg/40' : 'border-border bg-surface',
-          )}>
-            <div className="flex items-center justify-between">
-              <h2 className="text-label-lg font-semibold text-fg">Declarations</h2>
-              {missingDecl && (
-                <span className="text-[12px] font-bold text-warning bg-warning/10 px-2 py-0.5 rounded-full">
-                  {[!declC, !declP].filter(Boolean).length} remaining
-                </span>
-              )}
-            </div>
-            {[
-              { state: declC, set: setDeclC, text: 'I confirm that security clearance for all projects in this submission has been obtained.' },
-              { state: declP, set: setDeclP, text: 'I confirm that all projects in this submission have received PC Head approval.' },
-            ].map(({ state, set, text }, i) => (
-              <label key={i} className="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" checked={state} onChange={e => set(e.target.checked)} className="mt-0.5 accent-accent shrink-0" />
-                <span className="text-body-sm text-fg leading-snug">{text}</span>
-              </label>
-            ))}
-            {missingFields.length > 0 && (
-              <p className="text-body-sm text-danger text-center">
-                Required fields missing: {missingFields.join(', ')}.
-              </p>
-            )}
-            {missingDecl && missingFields.length === 0 && (
-              <p className="text-body-sm text-warning text-center">
-                Check both declarations above to enable saving.
-              </p>
-            )}
-          </div>
-
           {/* Audit Log */}
           <div className="rounded-lg border border-border bg-surface p-6">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <h2 className="text-label-lg font-semibold text-fg">Audit Log</h2>
-                <div className="flex items-center gap-2 text-body-sm text-fg-muted">
+                <div className="flex items-center gap-2 text-body-sm text-fg-muted hidden">
                   <Clock size={14} />
                   <span>Current status</span>
                   <Badge variant="warning">Returned for Update</Badge>
@@ -485,7 +512,7 @@ export default function AdPncEditSubmissionPage() {
                 size="sm"
                 onClick={() => setAuditOpen(o => !o)}
               >
-                <History size={14} />
+                <FileClock size={14} />
                 {auditOpen ? 'Collapse Audit Log' : 'View All Audit Log'}
               </Button>
             </div>
@@ -512,15 +539,20 @@ export default function AdPncEditSubmissionPage() {
       </div>
 
       {/* Footer */}
-      <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-end gap-3 border-t border-border bg-bg-subtle px-[clamp(24px,2.6vw,40px)] py-2">
-        <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>
-          <ChevronLeft size={16} />Back
-        </Button>
-        <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>Cancel</Button>
-        <Button size="md" disabled={!canSave || saving} onClick={() => setConfirmSaveOpen(true)}>
-          <Check size={16} />
-          {saving ? 'Saving…' : 'Save Changes'}
-        </Button>
+      <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-gradient-to-b from-surface to-bg px-[clamp(24px,2.6vw,40px)] py-2">
+        <p className="text-body-sm text-fg-muted">Editing project details</p>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>
+            Back
+          </Button>
+          <Button size="md" disabled={saving} onClick={() => {
+            const validationErrors = validate(edit);
+            setErrors(validationErrors);
+            if (Object.keys(validationErrors).length === 0) setConfirmSaveOpen(true);
+          }}>
+            {saving ? 'Saving…' : 'Save Changes'}
+          </Button>
+        </div>
       </div>
 
       <Dialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
@@ -536,7 +568,7 @@ export default function AdPncEditSubmissionPage() {
               Cancel
             </Button>
             <Button onClick={() => { setConfirmSaveOpen(false); handleSave(); }}>
-              <Check size={14} />Save Changes
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
