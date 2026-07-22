@@ -4,6 +4,7 @@ import { Fragment, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
+import Combobox from '@/components/ui-legacy/combobox';
 import DatePicker from '@/components/ui-legacy/date-picker';
 import FieldRequired from '@/components/ui-legacy/field-required';
 import { DateRangePicker, type DateRange } from '@/components/date-range-picker';
@@ -26,6 +27,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui-legacy/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -250,28 +259,30 @@ function reqMissing(r: ReqEntry): string[] {
   return m;
 }
 
-function PlacementsTable({ rows }: { rows: Array<{ label: string; calendarPeriod?: string; duration?: string; placements: number }> }) {
+function PlacementsTable({ intakeYear, rows }: { intakeYear: number; rows: Array<{ label: string; calendarPeriod?: string; duration?: string; placements: number }> }) {
   return (
-    <table className="w-full border-collapse text-body-sm">
-      <thead className="bg-bg-subtle">
-        <tr>
-          <th className="border border-border px-3 py-1 text-left text-label-sm font-semibold text-fg">Intern category</th>
-          <th className="border border-border px-3 py-1 text-left text-label-sm font-semibold text-fg">Internship window</th>
-          <th className="border border-border px-3 py-1 text-left text-label-sm font-semibold text-fg">Project duration</th>
-          <th className="border border-border px-3 py-1 text-left text-label-sm font-semibold text-fg">Placements</th>
-        </tr>
-      </thead>
-      <tbody>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Internship year</TableHead>
+          <TableHead>Intern Category</TableHead>
+          <TableHead>Internship window</TableHead>
+          <TableHead>Project duration</TableHead>
+          <TableHead>Placements</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {rows.map((row, i) => (
-          <tr key={i} className={i % 2 === 0 ? 'bg-surface' : 'bg-bg-subtle'}>
-            <td className="border border-border px-3 py-1 text-fg">{row.label}</td>
-            <td className="border border-border px-3 py-1 text-fg">{row.calendarPeriod || '-'}</td>
-            <td className="border border-border px-3 py-1 text-fg">{row.duration || '-'}</td>
-            <td className="border border-border px-3 py-1 text-fg">{row.placements}</td>
-          </tr>
+          <TableRow key={i}>
+            <TableCell>{intakeYear}</TableCell>
+            <TableCell>{row.label}</TableCell>
+            <TableCell>{row.calendarPeriod || '-'}</TableCell>
+            <TableCell>{row.duration || '-'}</TableCell>
+            <TableCell>{row.placements}</TableCell>
+          </TableRow>
         ))}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   );
 }
 
@@ -718,15 +729,15 @@ function ReviewField({ label, value }: { label: string; value: string }) {
 function ReviewRecipientChips({ entry, ccEmails }: { entry: ReqEntry; ccEmails?: string }) {
   const ccList = ccEmails ? parseCcList(ccEmails) : HQ_CC_RECIPIENTS;
   return (
-    <div className="rounded-lg border border-border bg-bg-subtle p-4">
+    <div className="space-y-2">
       <div className="flex min-h-9 flex-wrap items-center gap-2">
-        <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">To</span>
+        <span className="shrink-0 text-body-sm text-fg-muted">To:</span>
         {entry.pcHead && <RecipientChip email={entry.pcHead} role="PC Head" badgeVariant="info" />}
         {entry.pcHead && entry.adpnc && <span className="text-fg-muted">,</span>}
         {entry.adpnc && <RecipientChip email={entry.adpnc} role="AD (P&C)" badgeVariant="info" />}
       </div>
       <div className="flex min-h-9 flex-wrap items-center gap-2">
-        <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">CC</span>
+        <span className="shrink-0 text-body-sm text-fg-muted">CC:</span>
         {ccList.map((name, i) => (
           <Fragment key={name}>
             <RecipientChip email={name} role="HQ" badgeVariant="subtle" />
@@ -744,9 +755,14 @@ function ReviewDetails({ entry, onPreview, ccEdit }: { entry: ReqEntry; onPrevie
       <div>
         <SectionDivider label="Recipients" uppercase={false} showLine={false} />
         <div className="space-y-5">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <ReviewField label="Programme Centre" value={entry.programmeCentre} />
-            <ReviewField label="Response deadline" value={entry.deadline ? formatDate(entry.deadline) : ''} />
+          <div className="flex w-1/2 items-stretch gap-4">
+            <div className="flex-1">
+              <ReviewField label="Programme Centre" value={entry.programmeCentre} />
+            </div>
+            <div className="w-px self-stretch bg-border" aria-hidden="true" />
+            <div className="flex-1">
+              <ReviewField label="Response deadline" value={entry.deadline ? formatDate(entry.deadline) : ''} />
+            </div>
           </div>
           <Field>
             <FieldLabel className="text-fg-muted">Recipients</FieldLabel>
@@ -756,14 +772,15 @@ function ReviewDetails({ entry, onPreview, ccEdit }: { entry: ReqEntry; onPrevie
       </div>
       <div>
         <SectionDivider label="Placement requirements" uppercase={false} showLine={false} />
-        <PlacementsTable rows={entry.levels.map(l => ({
-          label: l.level,
-          calendarPeriod: calendarPeriodLabel(l),
-          periodStart: l.calendarStart || undefined,
-          periodEnd: l.calendarEnd || undefined,
-          duration: l.duration,
-          placements: l.placements,
-        }))} />
+        <PlacementsTable
+          intakeYear={entry.intakeYear}
+          rows={entry.levels.map(l => ({
+            label: l.level,
+            calendarPeriod: calendarPeriodLabel(l),
+            duration: l.duration,
+            placements: l.placements,
+          }))}
+        />
       </div>
       <div>
         <Button variant="outline" size="sm" onClick={onPreview}><Eye size={15} />Preview email</Button>
@@ -883,7 +900,7 @@ function ReviewListLayout({
           <div className="flex flex-col gap-1 border-b border-[#E7E4DD] bg-[#F9F8F4] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-label-md font-semibold text-[#0F172B]">
-                {activeReq ? `Review - Request ${numberById.get(activeReq.id) ?? 0}` : 'Select a request to review'}
+                {activeReq ? `Current review - Request ${numberById.get(activeReq.id) ?? 0}` : 'Select a request to review'}
               </h3>
               <p className="mt-0.5 text-caption text-fg-muted">Check the request before sending.</p>
             </div>
@@ -1125,7 +1142,8 @@ export default function ProjectRequestFormPage() {
         });
       });
     });
-    sessionStorage.setItem('dsta_pending_toast', `${reqs.length} request${reqs.length !== 1 ? 's' : ''} sent.`);
+    sessionStorage.setItem('dsta_pending_toast', 'The project request has been successfully sent to AD (P&C).');
+    sessionStorage.setItem('dsta_pending_toast_title', 'Project request sent');
     setDirty(false);
     router.push('/requests');
   }
@@ -1474,22 +1492,40 @@ export default function ProjectRequestFormPage() {
           <p className="text-body-sm text-fg-muted">The recipients, subject and message below are editable. Click into a field to customise the email before sending. The placement requirements table is generated automatically.</p>
           <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
             <div className="space-y-3">
-              <label className="flex items-center gap-3 border-b border-border pb-3">
-                <span className="w-16 shrink-0 text-body-sm font-medium text-fg-muted">To</span>
-                <input
-                  value={previewEdit.to}
-                  onChange={e => patchEmail({ to: e.target.value })}
-                  placeholder="Recipient"
-                  className="flex h-9 w-full rounded-md border border-border bg-surface px-3 py-1 text-body-sm font-medium text-fg shadow-sm outline-none transition-colors hover:border-border-strong hover:bg-bg-subtle focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-accent"
+              <label className="flex items-start gap-3 border-b border-border pb-3">
+                <span className="w-16 shrink-0 pt-2 text-body-sm font-medium text-fg-muted">To</span>
+                <Combobox
+                  selected={parseCcList(previewEdit.to)}
+                  onToggle={(val: string) => {
+                    const current = new Set(parseCcList(previewEdit.to));
+                    if (current.has(val)) current.delete(val); else current.add(val);
+                    patchEmail({ to: Array.from(current).join(', ') });
+                  }}
+                  options={[
+                    recipientLabel(previewReq.adpnc),
+                    recipientLabel(previewReq.pcHead),
+                  ].filter(Boolean)}
+                  placeholder="Select recipients"
+                  chips="inline"
+                  className="flex-1"
                 />
               </label>
-              <label className="flex items-center gap-3 border-b border-border pb-3">
-                <span className="w-16 shrink-0 text-body-sm font-medium text-fg-muted">Cc</span>
-                <input
-                  value={previewEdit.cc}
-                  onChange={e => patchEmail({ cc: e.target.value })}
-                  placeholder="Comma-separated recipients"
-                  className="flex h-9 w-full rounded-md border border-border bg-surface px-3 py-1 text-body-sm font-medium text-fg shadow-sm outline-none transition-colors hover:border-border-strong hover:bg-bg-subtle focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-accent"
+              <label className="flex items-start gap-3 border-b border-border pb-3">
+                <span className="w-16 shrink-0 pt-2 text-body-sm font-medium text-fg-muted">Cc</span>
+                <Combobox
+                  selected={parseCcList(previewEdit.cc)}
+                  onToggle={(val: string) => {
+                    const current = new Set(parseCcList(previewEdit.cc));
+                    if (current.has(val)) current.delete(val); else current.add(val);
+                    patchEmail({ cc: Array.from(current).join(', ') });
+                  }}
+                  options={[
+                    recipientLabel(previewReq.pcHead),
+                    ...HQ_CC_RECIPIENTS,
+                  ].filter(Boolean)}
+                  placeholder="Select recipients"
+                  chips="inline"
+                  className="flex-1"
                 />
               </label>
               <label className="block">
@@ -1526,14 +1562,15 @@ export default function ProjectRequestFormPage() {
               />
               </label>
               <div className="rounded-lg border border-border bg-bg-subtle p-4">
-                <PlacementsTable rows={previewReq.levels.map(l => ({
-                  label: l.level,
-                  calendarPeriod: calendarPeriodLabel(l),
-                  periodStart: l.calendarStart || undefined,
-                  periodEnd: l.calendarEnd || undefined,
-                  duration: l.duration,
-                  placements: l.placements,
-                }))} />
+                <PlacementsTable
+                  intakeYear={previewReq.intakeYear}
+                  rows={previewReq.levels.map(l => ({
+                    label: l.level,
+                    calendarPeriod: calendarPeriodLabel(l),
+                    duration: l.duration,
+                    placements: l.placements,
+                  }))}
+                />
               </div>
               <label className="block">
                 <span className="mb-1.5 block text-body-sm font-medium text-fg-muted">Closing message</span>
@@ -1549,7 +1586,7 @@ export default function ProjectRequestFormPage() {
         )}
           </SheetBody>
           <SheetFooter>
-            <Button variant="primary" size="md" onClick={() => setPreviewId(null)}>Save email changes</Button>
+            <Button variant="primary" size="md" onClick={() => setPreviewId(null)}>Save Email Changes</Button>
           </SheetFooter>
         </SheetContent>
       </Sheet>

@@ -741,10 +741,10 @@ export default function ProjectNewPage() {
             <ChevronRight size={14} className="text-fg-subtle" />
             <span>{respondLabel}</span>
             <ChevronRight size={14} className="text-fg-subtle" />
-            <span className="font-medium text-fg">Create a new Project</span>
+            <span className="font-medium text-fg">Create a New Project</span>
           </nav>
 
-          <h1 className="text-headline-lg text-fg mb-6">Create a new Project</h1>
+          <h1 className="text-headline-lg text-fg mb-6">Create a New Project</h1>
 
           {tokenRequests.length > 0 && (
             <RequestContextTable requests={tokenRequests} className="mb-6 p-5 border border-border" highlightedCategory={effectiveEducationLevel} />
@@ -788,7 +788,7 @@ export default function ProjectNewPage() {
                 <textarea
                   rows={5}
                   className={cn(INPUT_CLS, 'resize-none max-w-[66%]', errors.description && ERROR_CLS)}
-                  placeholder="Interns will work on..."
+                  placeholder="Describe the incident..."
                   value={description}
                   onChange={(event) => { setDescription(event.target.value); clearError("description"); }}
                 />

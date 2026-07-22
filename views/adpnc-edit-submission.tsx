@@ -338,7 +338,7 @@ export default function AdPncEditSubmissionPage() {
         </div>
 
         {group && group.requests.length > 0 && (
-          <RequestContextTable requests={group.requests} className="mb-6" highlightedCategory={edit.educationLevel} />
+          <RequestContextTable requests={group.requests} className="mb-6 p-5 border border-border" highlightedCategory={edit.educationLevel} />
         )}
 
         <div className="space-y-6">

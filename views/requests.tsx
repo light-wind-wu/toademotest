@@ -1804,7 +1804,7 @@ export default function RequestsPage() {
         </div>
         {showHeaderCreateRequest && (
           <Button onClick={() => router.push('/requests/new')} className="self-start">
-            <Send size={15} />Create project request
+            <Send size={15} />Create Project Request
           </Button>
         )}
       </div>
@@ -1862,7 +1862,7 @@ export default function RequestsPage() {
         />
 
         {topTab === 'requests' ? (
-          <div className="border-b border-border bg-surface px-4 py-3">
+          <div className="bg-surface px-4 py-3">
             <Tabs value={requestTab} onValueChange={handleRequestTabChange}>
               <TabsList aria-label="Request status">
                 <TabsTrigger value="draft">
@@ -1878,7 +1878,7 @@ export default function RequestsPage() {
             </Tabs>
           </div>
         ) : (
-          <div className="border-b border-border bg-surface px-4 py-3">
+          <div className="bg-surface px-4 py-3">
             <Tabs value={tab} onValueChange={v => { setTab(v as TabKey); setSelectedKeys(new Set()); setSubPage(1); }}>
               <TabsList aria-label="Submission status">
                 <TabsTrigger value="pending">
@@ -1903,7 +1903,7 @@ export default function RequestsPage() {
               description={requestTab === 'draft' ? 'Draft requests will appear here before they are sent.' : requestTab === 'closed' ? 'Requests move here automatically once their response deadline has passed.' : 'Send a project request to an AD (P&C) to get started.'}
               action={showEmptyCreateRequest ? (
                 <Button onClick={() => router.push('/requests/new')}>
-                  <Send size={15} />Create project request
+                  <Send size={15} />Create Project Request
                 </Button>
               ) : undefined}
             />
@@ -2054,7 +2054,7 @@ export default function RequestsPage() {
           /* ── Submissions tabs ──────────────────────────────────────────── */
           <>
             {tab === 'pending' && selectedKeys.size > 0 && (
-              <div className="flex items-center gap-3 mx-4 mb-3 px-4 py-2.5 bg-accent/5 border border-accent/20 rounded-lg">
+              <div className="flex items-center gap-3 mb-3 px-4 py-2.5 bg-bg-muted rounded-lg">
                 <span className="text-body-sm font-semibold text-accent flex-1">
                   {selectedKeys.size} project{selectedKeys.size !== 1 ? 's' : ''} selected
                 </span>
@@ -2062,10 +2062,10 @@ export default function RequestsPage() {
                   Clear
                 </button>
                 <Button size="sm" onClick={() => setBulkApproveOpen(true)}>
-                  <Check size={13} />Approve {selectedKeys.size}
+                  Approve
                 </Button>
                 <Button size="sm" variant="danger" onClick={() => { setBulkRejectRemarks(''); setBulkRejectOpen(true); }}>
-                  <X size={13} />Reject {selectedKeys.size}
+                  Reject
                 </Button>
               </div>
             )}

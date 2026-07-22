@@ -54,6 +54,7 @@ import {
   projectMatchesRequest,
   requestRawCategory,
   submittedForGroup,
+  groupTotals,
   type RequestGroup,
 } from '@/lib/request-groups';
 import type { ProjectRequest, ProjectResponseDraft, ProjectSubmissionBatch, RequestStatus, SubmittedProject } from '@/lib/types';
@@ -148,10 +149,12 @@ function requestStatusForGroup(
 function requestContextSubtitle(group: RequestGroup): string {
   const categories = group.requests.map(r => requestCategoryLabel(r));
   const uniqueCategories = [...new Set(categories)];
+  const { uploaded, placements } = groupTotals(group);
   const parts = [
     fmtDate(group.sentDate),
     group.requests[0]?.programmeCenter || '—',
     ...uniqueCategories,
+    `${uploaded} of ${placements} submitted`,
   ].filter(Boolean);
   return parts.join(' · ');
 }
@@ -1512,6 +1515,11 @@ export default function AdPncRespondPage() {
                   : 'No projects submitted'}
             </p>
             <div className="flex items-center gap-3">
+              {!isUploadMode && (
+                <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>
+                  Back
+                </Button>
+              )}
               {isUploadMode && visibleProjects.length === 0 && (
                 <>
                   <Button variant="outline" size="md" onClick={triggerUpload}>
@@ -1526,6 +1534,9 @@ export default function AdPncRespondPage() {
               )}
               {isUploadMode && visibleProjects.length > 0 && (
                 <>
+                  <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>
+                    Back
+                  </Button>
                   <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>Save and Exit</Button>
                   <Button size="md" disabled={!canSubmit} onClick={() => setConfirmSubmitOpen(true)}>
                     Submit

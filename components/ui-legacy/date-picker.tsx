@@ -2,9 +2,10 @@
 
 import { format, isValid, parse } from 'date-fns';
 import { CalendarDays, Lock } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Calendar } from '@/components/calendar';
 import { cn } from '@/lib/utils';
+import { Popover as BasePopover } from '@base-ui-components/react/popover';
 
 interface DatePickerProps {
   value: string;
@@ -40,29 +41,8 @@ export default function DatePicker({
   error = false,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
   const selected = parseDate(value);
   const min = parseDate(minDate);
-
-  useEffect(() => {
-    if (!open) return;
-    function handlePointerDown(event: MouseEvent) {
-      const target = event.target as Node;
-      if (rootRef.current?.contains(target)) return;
-      const dropdown = document.querySelector('[data-calendar-dropdown]');
-      if (dropdown?.contains(target)) return;
-      setOpen(false);
-    }
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setOpen(false);
-    }
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [open]);
 
   if (disabled) {
     return (
@@ -74,12 +54,11 @@ export default function DatePicker({
   }
 
   return (
-    <div ref={rootRef} className="relative">
-      <button
+    <BasePopover.Root open={open} onOpenChange={setOpen}>
+      <BasePopover.Trigger
         type="button"
         aria-label={placeholder}
         aria-expanded={open}
-        onClick={() => setOpen(current => !current)}
         className={cn(
           'flex h-9 w-full items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-1 text-sm shadow-sm',
           'outline-none transition-colors hover:border-border-strong',
@@ -88,14 +67,23 @@ export default function DatePicker({
           error && 'border-danger',
         )}
       >
-        <span className="min-w-0 flex-1 truncate">{displayDate(value) || placeholder}</span>
+        <span className="min-w-0 flex-1 truncate text-left">{displayDate(value) || placeholder}</span>
         <CalendarDays size={16} className="shrink-0 text-fg-muted" />
-      </button>
-        {open && (
-          <div className={cn(
-            'absolute top-full z-50 mt-1 min-w-[280px] rounded-lg border border-border bg-surface-elevated p-1 shadow-md',
-            align === 'right' ? 'right-0' : 'left-0',
-          )}>
+      </BasePopover.Trigger>
+      <BasePopover.Portal>
+        <BasePopover.Positioner
+          side="bottom"
+          align={align === 'right' ? 'end' : 'start'}
+          sideOffset={4}
+        >
+          <BasePopover.Popup
+            className={cn(
+              'z-50 w-auto rounded-lg border border-border bg-surface-elevated p-1 shadow-md',
+              'data-[starting-style]:opacity-0 data-[starting-style]:scale-95',
+              'data-[ending-style]:opacity-0 data-[ending-style]:scale-95',
+              'transition-all duration-150',
+            )}
+          >
             <Calendar
               selected={selected}
               defaultMonth={selected ?? min}
@@ -107,8 +95,9 @@ export default function DatePicker({
                 setOpen(false);
               }}
             />
-          </div>
-        )}
-    </div>
+          </BasePopover.Popup>
+        </BasePopover.Positioner>
+      </BasePopover.Portal>
+    </BasePopover.Root>
   );
 }

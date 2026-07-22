@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { CheckCircle2, AlertTriangle, XCircle, Info } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { CheckCircle2, AlertTriangle, XCircle, Info, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export type ToastTone = 'success' | 'warning' | 'danger' | 'info';
@@ -33,31 +33,49 @@ export function useToast() {
   function showToast(message: string, tone: ToastTone = 'success', title?: string) {
     setToast({ message, tone, title });
     clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setToast(null), 3000);
+    // timerRef.current = setTimeout(() => setToast(null), 3000);
   }
 
   return { toast, showToast };
 }
 
 export function Toast({ message, tone = 'success' }: { message: ToastState | string | null; tone?: ToastTone }) {
+  const [dismissed, setDismissed] = useState(false);
+
   // Accept either the {message,tone} state object or a bare string (legacy callers).
   const resolved: ToastState | null =
     message == null ? null : typeof message === 'string' ? { message, tone } : message;
-  if (!resolved) return null;
+
+  useEffect(() => {
+    if (resolved) setDismissed(false);
+  }, [resolved?.message, resolved?.title, resolved?.tone]);
+
+  if (!resolved || dismissed) return null;
   const Icon = TONE_ICON[resolved.tone];
+
   return (
     <div
       role="status"
       aria-live="polite"
-      className="pointer-events-none fixed bottom-6 right-6 z-[300] flex max-w-sm items-start gap-3 rounded-xl border border-border bg-surface px-4 py-3 shadow-xl"
+      className="pointer-events-auto fixed bottom-6 right-6 z-[300] flex w-full max-w-[360px] items-start gap-3 rounded-xl border border-border bg-surface px-4 py-3 shadow-xl"
     >
-      <Icon size={18} className={cn('mt-0.5 shrink-0', TONE_COLOR[resolved.tone])} />
-      <span className="min-w-0">
+      <Icon size={20} className={cn('mt-0.5 shrink-0', TONE_COLOR[resolved.tone])} />
+      <div className="min-w-0 flex-1">
         {resolved.title && (
-          <span className="block text-body-sm font-semibold text-fg">{resolved.title}</span>
+          <p className="text-body-sm font-semibold text-[#0F172B]">{resolved.title}</p>
         )}
-        <span className="block text-body-sm font-normal text-fg-muted">{resolved.message}</span>
-      </span>
+        <p className={`text-body-sm ${resolved.title ? 'text-[#45556C]' : 'text-[#0F172B]'}`}>
+          {resolved.message}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={() => setDismissed(true)}
+        className="shrink-0 rounded-sm text-fg-muted opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        aria-label="Close"
+      >
+        <X size={16} />
+      </button>
     </div>
   );
 }
