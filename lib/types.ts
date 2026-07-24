@@ -585,7 +585,7 @@ export interface ProjectAttachment {
 }
 
 /* ── Project Submissions ───────────────────────────────────────────────── */
-export type SubmissionReviewStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'withdrawn';
+export type SubmissionReviewStatus = 'draft' | 'pending' | 'frozen' | 'approved' | 'rejected' | 'withdrawn';
 
 export interface AiCheckResult {
   grammar:          'pass' | 'warn' | 'fail';
@@ -625,6 +625,8 @@ export interface SubmittedProject {
   submittedBy?:        string;
   reviewedAt?:         string;
   reviewedBy?:         string;
+  frozenAt?:           string;
+  frozenBy?:           string;
   withdrawnAt?:        string;
   withdrawnBy?:        string;
   resubmittedAt?:      string;

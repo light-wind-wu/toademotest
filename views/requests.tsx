@@ -82,7 +82,7 @@ import { useRole } from '@/lib/role';
 type FlatProj = {
   key: string; batchId: string; projId: string;
   title: string; mentor: string; discipline: string; slots: number;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'frozen' | 'approved' | 'rejected';
   aiCheck: { grammar: 'pass'|'warn'|'fail'; level: 'pass'|'warn'|'fail'; notes: string[] };
   remarks?: string;
   educationLevel: string; requestedEducationLevels: string[];
@@ -90,11 +90,12 @@ type FlatProj = {
   // placements submitted / placements requested.
   requestId: string; requestedPlacements: number;
   progId: string; progLabel: string; pc: string; headName: string; submittedBy: string;
+  frozenAt?: string; frozenBy?: string;
 };
 
 type PendingPCGroup = { pc: string; rows: FlatProj[] };
 
-type TabKey = 'sent' | 'pending' | 'rejected' | 'approved' | 'all';
+type TabKey = 'sent' | 'pending' | 'pendingDce' | 'rejected' | 'approved' | 'all';
 type PCGroup = { key?: string; pc: string; headName: string; requests: ProjectRequest[] };
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
@@ -461,8 +462,8 @@ function appendRequestAudit(entry: Omit<ProjectRequestAuditEntry, 'id' | 'at'>) 
 
 /* ── Column definitions ───────────────────────────────────────────────────── */
 const COL_DEFS = [
-  { key: 'pc',       label: 'Programme Centre' },
-  { key: 'title',    label: 'Project'          },
+  { key: 'pc',         label: 'Programme Centre',  locked: true },
+  { key: 'title',      label: 'Project',           locked: true },
   { key: 'category',   label: 'Intern Category'     },
   { key: 'discipline', label: 'Discipline of Study'  },
   { key: 'slots',      label: 'Placements'          },
@@ -475,14 +476,14 @@ const COLS_KEY = 'dsta_req_visible_cols';
 
 /* Column defs for the grouped "Requests Sent" tab. */
 const SENT_COL_DEFS = [
-  { key: 'programmeCenter', label: 'Programme Centre' },
-  { key: 'programmes', label: 'Intern Category'      },
-  { key: 'placements', label: 'Placements Requested' },
+  { key: 'programmeCenter', label: 'Programme Centre',  locked: true },
+  { key: 'programmes',      label: 'Intern Category',   locked: true },
+  { key: 'placements',      label: 'Placements Requested' },
   { key: 'internshipWindow', label: 'Internship Window' },
   { key: 'projectDuration', label: 'Project Duration' },
-  { key: 'requestDate', label: 'Request Date'        },
-  { key: 'deadline',   label: 'Response Deadline'    },
-  { key: 'status',     label: 'Status'               },
+  { key: 'requestDate',     label: 'Request Date'        },
+  { key: 'deadline',        label: 'Response Deadline'    },
+  { key: 'status',          label: 'Status'               },
 ] as const;
 type SentColKey = typeof SENT_COL_DEFS[number]['key'];
 const SENT_DEFAULT_COLS: Record<SentColKey, boolean> = {
@@ -611,6 +612,11 @@ export default function RequestsPage() {
   const [bulkRejectRemarks, setBulkRejectRemarks] = useState('');
   const [bulkReturnOpen,    setBulkReturnOpen]    = useState(false);
   const [bulkReturnRemarks, setBulkReturnRemarks] = useState('');
+  const [freezeOpen,        setFreezeOpen]        = useState(false);
+  const [dceReturnOpen,     setDceReturnOpen]     = useState(false);
+  const [dceReturnRemarks,  setDceReturnRemarks]  = useState('');
+  const [dceRejectOpen,     setDceRejectOpen]     = useState(false);
+  const [dceRejectRemarks,  setDceRejectRemarks]  = useState('');
   const [extendGroup, setExtendGroup] = useState<{ pc: string; headName: string; requests: ProjectRequest[] } | null>(null);
   const [extendDeadline, setExtendDeadline] = useState('');
   const [withdrawGroup, setWithdrawGroup] = useState<PCGroup | null>(null);
@@ -634,6 +640,7 @@ export default function RequestsPage() {
     else { setSortCol(col); setSortDir(1); }
   }
   function toggleCol(key: ColKey) {
+    if ((COL_DEFS.find(c => c.key === key) as { locked?: boolean } | undefined)?.locked) return;
     setVisibleCols(prev => {
       const next = { ...prev, [key]: !prev[key] };
       try { localStorage.setItem(COLS_KEY, JSON.stringify(next)); } catch {}
@@ -641,6 +648,7 @@ export default function RequestsPage() {
     });
   }
   function toggleSentCol(key: SentColKey) {
+    if ((SENT_COL_DEFS.find(c => c.key === key) as { locked?: boolean } | undefined)?.locked) return;
     setSentVisibleCols(prev => {
       const next = { ...prev, [key]: !prev[key] };
       try { localStorage.setItem(SENT_COLS_KEY, JSON.stringify(next)); } catch {}
@@ -1614,6 +1622,128 @@ export default function RequestsPage() {
     showToast(`${selectedKeys.size} project${selectedKeys.size !== 1 ? 's' : ''} returned for update.`);
   }
 
+  function doFreezeSelected() {
+    const now = new Date().toISOString();
+    let updated = [...batches];
+    Array.from(selectedKeys).forEach(key => {
+      const [batchId, projId] = key.split('::');
+      updated = updated.map(b => b.id !== batchId ? b : {
+        ...b,
+        projects: b.projects.map(p =>
+          p.id !== projId || p.status !== 'pending' ? p : { ...p, status: 'frozen' as const, frozenAt: now, frozenBy: profile.name }
+        ),
+      });
+    });
+    setBatches(updated);
+    saveSubmissions(updated);
+    syncProjectsToRequests(updated);
+    setSelectedKeys(new Set());
+    setFreezeOpen(false);
+    showToast(`${selectedKeys.size} project${selectedKeys.size !== 1 ? 's' : ''} frozen for DCE review.`);
+  }
+
+  function doDceApprove() {
+    let updated = [...batches];
+    const existingProjs = loadProjects();
+    const nums = existingProjs.map(p => parseInt(p.id.replace(/^PROJ-/, ''), 10)).filter(n => !isNaN(n));
+    let nextNum = (nums.length > 0 ? Math.max(...nums) : 0) + 1;
+    const newProjects: ProjectEntry[] = [];
+    Array.from(selectedKeys).forEach(key => {
+      const [batchId, projId] = key.split('::');
+      updated = updated.map(b => b.id !== batchId ? b : {
+        ...b,
+        projects: b.projects.map(p => {
+          if (p.id !== projId || p.status !== 'frozen') return p;
+          const newId = `PROJ-${String(nextNum++).padStart(4, '0')}`;
+          newProjects.push({
+            id: newId, title: p.title, description: p.description,
+            mentor: p.mentor, mentorAppointment: p.mentorAppointment, mentorUserId: p.mentorUserId, mentorBio: p.mentorBio,
+            skills: p.skills, discipline: p.discipline, slots: p.slots, matched: 0, status: 'open',
+            programme: '', techDomain: p.techDomain, emergingArea: p.emergingArea,
+            educationLevel: p.educationLevel, internshipDuration: p.internshipDuration,
+            internshipPeriodStart: p.internshipPeriodStart, internshipPeriodEnd: p.internshipPeriodEnd,
+            workingLocation: p.workingLocation,
+          });
+          return { ...p, status: 'approved' as const };
+        }),
+      });
+    });
+    setBatches(updated);
+    saveSubmissions(updated);
+    saveProjects([...existingProjs, ...newProjects]);
+    syncProjectsToRequests(updated);
+    const notifiedApprove = new Set<string>();
+    Array.from(selectedKeys).forEach(key => {
+      const [batchId] = key.split('::');
+      if (!notifiedApprove.has(batchId)) {
+        notifiedApprove.add(batchId);
+        const batch = batches.find(b => b.id === batchId);
+        if (batch) addNotification({ forRole: 'ad-pnc', title: `Project approved by DCE — ${progMap[batch.programme] ?? batch.programme}`, body: `Your project submission for ${progMap[batch.programme] ?? batch.programme} has been approved by the DCE.`, href: '/submissions', tier: 'info' });
+      }
+    });
+    newProjects.forEach(p => {
+      addNotification({ forRole: 'mentor', ...(p.mentorUserId ? { forMentorId: p.mentorUserId } : {}), title: `Your project has been approved — ${p.title}`, body: `"${p.title}" has been approved by the DCE and is now open for applicants.`, href: '/mentor/projects', tier: 'info' });
+    });
+    setSelectedKeys(new Set());
+    showToast(`${selectedKeys.size} project${selectedKeys.size !== 1 ? 's' : ''} approved by DCE.`);
+  }
+
+  function doDceReject() {
+    let updated = [...batches];
+    Array.from(selectedKeys).forEach(key => {
+      const [batchId, projId] = key.split('::');
+      updated = updated.map(b => b.id !== batchId ? b : {
+        ...b,
+        projects: b.projects.map(p =>
+          p.id !== projId || p.status !== 'frozen' ? p : { ...p, status: 'rejected' as const, remarks: dceRejectRemarks }
+        ),
+      });
+    });
+    setBatches(updated);
+    saveSubmissions(updated);
+    syncProjectsToRequests(updated);
+    setSelectedKeys(new Set());
+    setDceRejectOpen(false);
+    showToast(`${selectedKeys.size} project${selectedKeys.size !== 1 ? 's' : ''} rejected by DCE.`);
+  }
+
+  function doDceReturnForUpdate() {
+    let updated = [...batches];
+    Array.from(selectedKeys).forEach(key => {
+      const [batchId, projId] = key.split('::');
+      updated = updated.map(b => b.id !== batchId ? b : {
+        ...b,
+        projects: b.projects.map(p =>
+          p.id !== projId || p.status !== 'frozen' ? p : { ...p, status: 'pending' as const, remarks: dceReturnRemarks }
+        ),
+      });
+    });
+    setBatches(updated);
+    saveSubmissions(updated);
+    syncProjectsToRequests(updated);
+    const notifiedReturn = new Set<string>();
+    Array.from(selectedKeys).forEach(key => {
+      const [batchId, projId] = key.split('::');
+      if (!notifiedReturn.has(`${batchId}::${projId}`)) {
+        notifiedReturn.add(`${batchId}::${projId}`);
+        const batch = batches.find(b => b.id === batchId);
+        const proj = batch?.projects.find(p => p.id === projId);
+        if (batch && proj) {
+          addNotification({
+            forRole: 'ad-pnc',
+            title: `Project returned for update by DCE — ${proj.title}`,
+            body: `Your project "${proj.title}" has been returned for update by the DCE. Reason: ${dceReturnRemarks}`,
+            href: '/submissions',
+            tier: 'action',
+          });
+        }
+      }
+    });
+    setSelectedKeys(new Set());
+    setDceReturnOpen(false);
+    showToast(`${selectedKeys.size} project${selectedKeys.size !== 1 ? 's' : ''} returned for update by DCE.`);
+  }
+
 
   if (roleReady && role !== 'io-admin') return null;
 
@@ -1647,6 +1777,8 @@ export default function RequestsPage() {
         pc,
         headName:    batch.pcHead,
         submittedBy: batch.submittedBy ?? batch.pcHead,
+        frozenAt:    proj.frozenAt,
+        frozenBy:    proj.frozenBy,
       };
     })
   );
@@ -1722,9 +1854,10 @@ export default function RequestsPage() {
 
   /* ── Tab + search + filter + sort (submissions tabs) ─────────────────── */
   const tabRows = flatRows.filter(r => {
-    if (tab === 'pending')  return r.status === 'pending';
-    if (tab === 'rejected') return r.status === 'rejected';
-    if (tab === 'approved') return r.status === 'approved';
+    if (tab === 'pending')    return r.status === 'pending';
+    if (tab === 'pendingDce') return r.status === 'frozen';
+    if (tab === 'rejected')   return r.status === 'rejected';
+    if (tab === 'approved')   return r.status === 'approved';
     return true;
   });
 
@@ -1771,8 +1904,8 @@ export default function RequestsPage() {
   const togglePcGroup = (pc: string) =>
     setExpandedSubPcs(prev => { const n = new Set(prev); n.has(pc) ? n.delete(pc) : n.add(pc); return n; });
 
-  // Paginate the submissions view: PC groups on the Pending tab, flat rows otherwise.
-  const subItemsCount = tab === 'pending' ? pendingPcGroups.length : tableRows.length;
+  // Paginate the submissions view: PC groups on the Pending/PendingDCE tab, flat rows otherwise.
+  const subItemsCount = (tab === 'pending' || tab === 'pendingDce') ? pendingPcGroups.length : tableRows.length;
   const subTotalPages = Math.max(1, Math.ceil(subItemsCount / subPageSize));
   const subCurrentPage = Math.min(subPage, subTotalPages);
   const subPageStart = (subCurrentPage - 1) * subPageSize;
@@ -1784,11 +1917,12 @@ export default function RequestsPage() {
   ).sort((a, b) => a - b);
 
   const tabCounts = {
-    sent:     pcGroups.length,
-    pending:  flatRows.filter(r => r.status === 'pending').length,
-    rejected: flatRows.filter(r => r.status === 'rejected').length,
-    approved: flatRows.filter(r => r.status === 'approved').length,
-    all:      flatRows.length,
+    sent:       pcGroups.length,
+    pending:    flatRows.filter(r => r.status === 'pending').length,
+    pendingDce: flatRows.filter(r => r.status === 'frozen').length,
+    rejected:   flatRows.filter(r => r.status === 'rejected').length,
+    approved:   flatRows.filter(r => r.status === 'approved').length,
+    all:        flatRows.length,
   };
 
   const draftAndOpenEmpty = draftReqs.length === 0 && openReqs.length === 0;
@@ -1882,7 +2016,7 @@ export default function RequestsPage() {
           placeholder="Search by…"
           columnsLabel="Edit Columns"
           {...(topTab === 'submissions' ? {
-            colDefs: COL_DEFS.map(c => ({ key: c.key, label: c.label })),
+            colDefs: COL_DEFS.map(c => ({ key: c.key, label: c.label, locked: (c as any).locked })),
             visibleCols, onToggleCol: (k: string) => toggleCol(k as ColKey),
             onExport: () => exportToCSV(
               'project-submissions',
@@ -1890,7 +2024,7 @@ export default function RequestsPage() {
               tableRows.map(r => [r.pc, r.title, r.educationLevel || r.requestedEducationLevels.join(', '), parseDisciplines(r.discipline).join(' / '), r.slots]),
             ),
           } : {
-            colDefs: SENT_COL_DEFS.map(c => ({ key: c.key, label: c.label })),
+            colDefs: SENT_COL_DEFS.map(c => ({ key: c.key, label: c.label, locked: (c as any).locked })),
             visibleCols: sentVisibleCols, onToggleCol: (k: string) => toggleSentCol(k as SentColKey),
             onExport: () => exportToCSV(
               'requests-sent',
@@ -1933,6 +2067,9 @@ export default function RequestsPage() {
               <TabsList aria-label="Submission status">
                 <TabsTrigger value="pending">
                   Pending Review ({tabCounts.pending})
+                </TabsTrigger>
+                <TabsTrigger value="pendingDce">
+                  Pending DCE Approval ({tabCounts.pendingDce})
                 </TabsTrigger>
                 <TabsTrigger value="approved">
                   Approved ({tabCounts.approved})
@@ -2107,24 +2244,35 @@ export default function RequestsPage() {
           <>
             {tab === 'pending' && selectedKeys.size > 0 && (
               <div className="flex items-center gap-3 mb-3 px-4 py-2.5 bg-bg-muted rounded-lg">
-                <span className="text-body-sm font-semibold text-accent flex-1">
+                <span className="text-body-sm font-semibold flex-1">
                   {selectedKeys.size} project{selectedKeys.size !== 1 ? 's' : ''} selected
                 </span>
-                <Button size="sm" onClick={() => { setBulkReturnRemarks(''); setBulkReturnOpen(true); }} className="text-body-sm text-fg-muted hover:text-fg transition-colors">
+                <Button size="sm" onClick={() => setFreezeOpen(true)}>
+                  Freeze Selected
+                </Button>
+              </div>
+            )}
+
+            {tab === 'pendingDce' && selectedKeys.size > 0 && (
+              <div className="flex items-center gap-3 mb-3 px-4 py-2.5 bg-bg-muted rounded-lg">
+                <span className="text-body-sm font-semibold flex-1">
+                  {selectedKeys.size} project{selectedKeys.size !== 1 ? 's' : ''} selected
+                </span>
+                <Button size="sm" variant="outline" onClick={() => { setDceReturnRemarks(''); setDceReturnOpen(true); }}>
                   Returned for Update
                 </Button>
-                <Button size="sm" onClick={() => setBulkApproveOpen(true)}>
+                <Button size="sm" onClick={() => doDceApprove()}>
                   Approve
                 </Button>
-                <Button size="sm" variant="danger" onClick={() => { setBulkRejectRemarks(''); setBulkRejectOpen(true); }}>
+                <Button size="sm" variant="danger" onClick={() => { setDceRejectRemarks(''); setDceRejectOpen(true); }}>
                   Reject
                 </Button>
               </div>
             )}
 
-            {tab === 'pending' ? (
+            {tab === 'pending' || tab === 'pendingDce' ? (
               <DataTable
-                tableKey="requests_submissions_pending"
+                tableKey={tab === 'pending' ? 'requests_submissions_pending' : 'requests_submissions_dce'}
                 columns={pendingColumns}
                 data={pagedPendingGroups}
                 enableSorting={false}
@@ -2170,7 +2318,7 @@ export default function RequestsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                {tab === 'pending' && selectedKeys.size > 0 && (
+                {(tab === 'pending' || tab === 'pendingDce') && selectedKeys.size > 0 && (
                   <span className="font-semibold text-accent">{selectedKeys.size} selected</span>
                 )}
               </div>
@@ -2283,6 +2431,79 @@ export default function RequestsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Freeze confirmation dialog */}
+      <Dialog open={freezeOpen} onOpenChange={setFreezeOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Freeze selected projects?</DialogTitle>
+            <DialogDescription>
+              You have selected {selectedKeys.size} project{selectedKeys.size !== 1 ? 's' : ''}. Once frozen, these projects can be exported for DCE review and will no longer be editable.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setFreezeOpen(false)}>Cancel</Button>
+            <Button onClick={doFreezeSelected}>
+              Freeze {selectedKeys.size} Project{selectedKeys.size !== 1 ? 's' : ''}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* DCE Return for Update dialog */}
+      <Dialog open={dceReturnOpen} onOpenChange={setDceReturnOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Return Projects for Update?</DialogTitle>
+            <DialogDescription>
+              AD (P&amp;C) will need to revise and resubmit these projects before they can be reviewed again.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-label-sm text-fg">
+              Reason for return <span className="text-danger">*</span>
+            </p>
+            <textarea
+              rows={4}
+              autoFocus
+              className="w-full resize-none rounded-lg border border-border bg-surface px-3 py-2 text-body-sm text-fg outline-none focus:ring-2 focus:ring-warning/30"
+              placeholder="Explain what needs to change..."
+              value={dceReturnRemarks}
+              onChange={e => setDceReturnRemarks(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDceReturnOpen(false)}>Cancel</Button>
+            <Button
+              disabled={!dceReturnRemarks.trim()}
+              onClick={doDceReturnForUpdate}
+              className="bg-[rgba(251,44,54,0.1)] text-[#C10007] hover:bg-[rgba(251,44,54,0.15)] border border-[#F8A4A8]"
+            >
+              Return for Update
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* DCE Reject modal */}
+      <Modal open={dceRejectOpen} onClose={() => setDceRejectOpen(false)} maxWidth="sm" labelledBy="dce-reject-title">
+        <h2 id="dce-reject-title" className="text-headline-md text-fg mb-2">Reject {selectedKeys.size} Project{selectedKeys.size !== 1 ? 's' : ''}?</h2>
+        <p className="text-body-md text-fg-muted mb-4">The same rejection remarks will be sent to AD (P&amp;C) for all selected projects.</p>
+        <label className="block text-label-sm text-fg mb-1">Rejection Remarks <span className="text-danger">*</span></label>
+        <textarea
+          rows={3}
+          className="w-full rounded-lg border border-border bg-bg-subtle px-3 py-2 text-body-md text-fg resize-none focus:outline-none focus:ring-2 focus:ring-accent/30 mb-4"
+          placeholder="Explain what needs to be changed across all selected projects…"
+          value={dceRejectRemarks}
+          onChange={e => setDceRejectRemarks(e.target.value)}
+        />
+        <div className="flex justify-end gap-2">
+          <Button variant="danger" disabled={!dceRejectRemarks.trim()} onClick={doDceReject}>
+            <X size={14} />Reject Projects
+          </Button>
+          <Button variant="ghost" onClick={() => setDceRejectOpen(false)}>Cancel</Button>
+        </div>
+      </Modal>
 
       {extendGroup && (
         <Modal open onClose={() => setExtendGroup(null)} maxWidth="sm" labelledBy="extend-deadline-title">

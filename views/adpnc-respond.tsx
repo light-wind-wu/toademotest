@@ -117,6 +117,7 @@ const REQUEST_CATEGORY_LABELS: Record<string, string> = {
 const STATUS_LABELS: Record<SubmittedProject['status'], string> = {
   draft: 'Not submitted',
   pending: 'Pending',
+  frozen: 'Frozen',
   approved: 'Approved',
   rejected: 'Returned for Update',
   withdrawn: 'Withdrawn',

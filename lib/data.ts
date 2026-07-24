@@ -53,6 +53,7 @@ export const STATUS_COLOURS = {
   // Project-only statuses that map to the same semantic colours
   approved:   'bg-[rgba(0,201,80,0.15)] text-[rgba(0,130,54,1)]',
   rejected:   'bg-[rgba(251,44,54,0.15)] text-[rgba(193,0,7,1)]',
+  frozen:     'bg-[rgba(168,85,247,0.15)] text-[rgba(126,34,206,1)]',
 } as const;
 
 /* Competency Domains (from SDP) — the approved Tech Competency list used by the

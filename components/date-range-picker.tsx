@@ -154,7 +154,7 @@ export function DateRangePicker({
         )}
       >
         <CalendarDays className="h-4 w-4 shrink-0 text-fg-muted" />
-        <span className="min-w-0 flex-1 truncate">{formatRange(range, placeholder)}</span>
+        <span className="min-w-0 flex-1 truncate text-left">{formatRange(range, placeholder)}</span>
       </PopoverTrigger>
 
       <PopoverContent className="w-auto p-0">

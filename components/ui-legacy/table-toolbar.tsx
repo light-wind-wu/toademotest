@@ -12,6 +12,7 @@ import Button from '@/components/ui-legacy/button';
 export interface ColDef {
   key:   string;
   label: string;
+  locked?: boolean;
 }
 
 interface Props {
@@ -123,14 +124,21 @@ export default function TableToolbar({
           {colDefs!.map(col => (
             <button
               key={col.key}
-              onClick={() => onToggleCol?.(col.key)}
-              className="w-full text-left px-4 py-2 text-body-sm text-fg hover:bg-bg-subtle flex items-center gap-2.5"
+              onClick={() => !col.locked && onToggleCol?.(col.key)}
+              className={cn(
+                'w-full text-left px-4 py-2 text-body-sm text-fg flex items-center gap-2.5 hover:bg-bg-muted',
+                col.locked && 'cursor-not-allowed text-fg-muted select-none',
+              )}
             >
               <Checkbox
-                checked={Boolean(visibleCols?.[col.key])}
+                checked={col.locked || Boolean(visibleCols?.[col.key])}
+                aria-disabled={col.locked}
                 aria-label={`Toggle ${col.label} column`}
                 tabIndex={-1}
-                className="pointer-events-none"
+                className={cn(
+                  'pointer-events-none',
+                  col.locked && 'cursor-not-allowed select-none opacity-50'
+                )}
               />
               <span>{col.label}</span>
             </button>

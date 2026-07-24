@@ -14,7 +14,6 @@ import {
 } from '@tanstack/react-table';
 import { cn } from '@/lib/utils';
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -86,6 +85,16 @@ export function DataTable<T>({
   renderSubRows,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const [isScrolled, setIsScrolled] = React.useState(false);
+
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => setIsScrolled(el.scrollLeft > 0);
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
 
   const tableColumns = React.useMemo<ColumnDef<T, any>[]>(() => {
     return columns.map((col) => {
@@ -138,7 +147,8 @@ export function DataTable<T>({
   return (
     <div className={wrapperClassName}>
       <TooltipProvider>
-        <Table style={{ minWidth: totalWidth }} className={cn('w-full table-fixed text-left', className)}>
+        <div ref={scrollRef} className="w-full overflow-x-hidden hover:overflow-x-auto">
+        <table style={{ minWidth: totalWidth }} className={cn('w-full table-fixed text-left', className)}>
       <TableHeader className="bg-bg-subtle">
         {table.getHeaderGroups().map((headerGroup) => (
           <TableRow key={headerGroup.id}>
@@ -167,6 +177,7 @@ export function DataTable<T>({
                   key={header.id}
                   className={cn(
                     'relative select-none',
+                    isStickyRight && isScrolled && 'sticky-shadow',
                     canSort && 'cursor-pointer',
                     header.column.columnDef.meta?.thClassName,
                   )}
@@ -257,13 +268,13 @@ export function DataTable<T>({
                 return (
                   <TableCell
                     key={cell.id}
+                    className={cn(isStickyRight && 'bg-bg-subtle', isStickyRight && isScrolled && 'sticky-shadow')}
                     style={{
                       minWidth,
                       width,
                       boxSizing: 'border-box',
                       position: isStickyRight ? 'sticky' : undefined,
                       right: rightOffset,
-                      zIndex: isStickyRight ? 10 : undefined,
                     }}
                   >
                     {truncate ? (
@@ -281,7 +292,8 @@ export function DataTable<T>({
           </React.Fragment>
         ))}
       </TableBody>
-    </Table>
+    </table>
+        </div>
       </TooltipProvider>
     </div>
   );

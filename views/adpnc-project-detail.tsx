@@ -16,6 +16,7 @@ import type { ProjectRequest, ProjectSubmissionBatch, SubmittedProject } from '@
 const STATUS_LABELS: Record<SubmittedProject['status'], string> = {
   draft: 'Draft',
   pending: 'Pending Review',
+  frozen: 'Frozen',
   approved: 'Approved',
   rejected: 'Rejected',
   withdrawn: 'Withdrawn',

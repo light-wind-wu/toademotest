@@ -480,6 +480,18 @@
   overflow-y: hidden;
 }
 
+/* ── Sticky right column shadow (appears when table is scrolled) ───────── */
+.sticky-shadow::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  background: linear-gradient(to right, transparent, rgb(0 0 0 / 0.08));
+  pointer-events: none;
+}
+
 @property --ab-angle {
   syntax: "<angle>";
   initial-value: 0deg;
