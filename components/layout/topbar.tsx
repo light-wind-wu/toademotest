@@ -142,7 +142,7 @@ export default function Topbar({ navigationHidden = false }: { navigationHidden?
       <div className="flex items-center gap-2 md:gap-4 shrink-0">
         {/* Cross-IA search — desktop only. Spans every section the role can reach. */}
         <div className="relative hidden md:flex items-center group" ref={searchRef}>
-          <Search size={18} className="absolute left-3 text-topbar-fg-muted group-focus-within:text-topbar-fg transition-colors pointer-events-none" />
+          <Search size={18} className="absolute left-3 text-[rgba(244,242,236,0.72)] group-focus-within:text-topbar-fg transition-colors pointer-events-none" />
           <input
             ref={searchInputRef}
             type="text"
@@ -159,10 +159,10 @@ export default function Topbar({ navigationHidden = false }: { navigationHidden?
               else if (e.key === 'Enter') { e.preventDefault(); pickSearch(searchHi); }
               else if (e.key === 'Escape') { setSearchOpen(false); }
             }}
-            className="w-64 pl-9 pr-10 py-2 bg-topbar-fg/10 border border-topbar-fg/10 rounded-lg text-body-sm text-topbar-fg placeholder:text-topbar-fg-muted focus:outline-none focus:ring-2 focus:ring-topbar-fg/20 focus:border-topbar-fg/20 transition-all"
+            className="w-64 pl-9 pr-10 py-2 bg-topbar-fg/10 border border-topbar-fg/10 rounded-lg text-body-sm text-topbar-fg placeholder:text-[rgba(244,242,236,0.72)] focus:outline-none focus:ring-2 focus:ring-topbar-fg/20 focus:border-topbar-fg/20 transition-all"
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-            <span className="text-[12px] font-semibold text-topbar-fg-muted border border-topbar-fg/20 rounded px-1.5 py-0.5">/</span>
+            <span className="text-[12px] font-semibold text-[rgba(244,242,236,0.72)] group-focus-within:text-topbar-fg border border-topbar-fg/20 rounded px-1.5 py-0.5">/</span>
           </div>
           {searchOpen && searchQ.trim() && (
             <div id="toa-search-results" role="listbox" className="absolute right-0 top-full mt-2 w-[26rem] bg-surface rounded-2xl shadow-xl border border-border z-50 overflow-hidden">
@@ -210,9 +210,10 @@ export default function Topbar({ navigationHidden = false }: { navigationHidden?
           >
             <Bell size={20} />
             {unread > 0 && (
-              <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-0.5 bg-topbar-accent rounded-full flex items-center justify-center text-[12px] font-black text-topbar-bg leading-none">
-                {unread > 99 ? '99+' : unread}
-              </span>
+              // <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-0.5 bg-topbar-accent rounded-full flex items-center justify-center text-[12px] font-black text-topbar-bg leading-none">
+              //   {unread > 99 ? '99+' : unread}
+              // </span>
+              <span className="absolute top-1.5 right-2 w-[6px] h-[6px] bg-topbar-accent rounded-full flex items-center justify-center font-black text-topbar-bg leading-none" />
             )}
           </button>
 
@@ -294,7 +295,7 @@ export default function Topbar({ navigationHidden = false }: { navigationHidden?
               <p className="text-label-md text-topbar-fg font-semibold">{profile.name}</p>
               <p className="text-caption text-topbar-fg-muted">{ROLE_LABELS[role]}</p>
             </div>
-            <div className="w-9 h-9 rounded-full bg-topbar-accent flex items-center justify-center text-topbar-bg font-bold text-body-sm shrink-0">
+            <div className="w-9 h-9 rounded-full bg-[rgba(27,101,248,1)] flex items-center justify-center text-surface font-bold text-body-sm shrink-0">
               {profile.initials}
             </div>
             <ChevronDown size={16} className="text-topbar-fg-muted" />
@@ -304,7 +305,7 @@ export default function Topbar({ navigationHidden = false }: { navigationHidden?
             <div className="absolute right-0 top-full mt-2 w-72 bg-surface rounded-2xl shadow-xl border border-border z-50 overflow-hidden">
               {/* Profile header */}
               <div className="flex items-center gap-3 p-4 bg-bg-subtle border-b border-border">
-                <div className="w-10 h-10 rounded-full bg-topbar-accent flex items-center justify-center text-topbar-bg font-bold shrink-0">
+                <div className="w-10 h-10 rounded-full bg-[rgba(27,101,248,1)] flex items-center justify-center text-surface font-bold text-body-sm shrink-0">
                   {profile.initials}
                 </div>
                 <div className="min-w-0">

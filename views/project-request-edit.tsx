@@ -7,18 +7,27 @@ import {
   Check,
   ChevronRight,
   Clock,
+  Download,
   Eye,
+  Info,
+  Minus,
+  Paperclip,
   Plus,
   Save,
   Send,
   Trash2,
   X,
+  ArrowLeftToLine,
+  Users,
+  ArrowUp,
 } from 'lucide-react';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
 import DatePicker from '@/components/ui-legacy/date-picker';
-import DateRangePicker from '@/components/ui-legacy/date-range-picker';
+import { DateRangePicker, type DateRange } from '@/components/date-range-picker';
 import { parseMMMYY, MONTHS, periodLabelToMMMYY, mmmyyToISO, mmmyyToISOEnd } from '@/lib/internship-period';
+import { parseISO, formatISO } from 'date-fns';
+import Combobox from '@/components/ui-legacy/combobox';
 import Drawer from '@/components/ui-legacy/drawer';
 import EmptyState from '@/components/ui-legacy/empty-state';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -31,6 +40,20 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -38,7 +61,24 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui-legacy/badge';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
+import { downloadRequestTemplateXLSX } from '@/lib/request-template';
 import { Toast, useToast } from '@/components/ui-legacy/toast';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { CONTACTS, toEducationLevel } from '@/lib/data';
 import { addNotification } from '@/lib/notifications';
 import { useRole } from '@/lib/role';
@@ -50,7 +90,8 @@ import {
 } from '@/lib/storage';
 import { useUnsavedChanges } from '@/lib/unsaved-changes';
 import { cn, formatDate } from '@/lib/utils';
-import { Field, FieldLabel } from '@/components/ui-legacy/field';
+import { Field, FieldLabel, FieldLabelText } from '@/components/ui-legacy/field';
+import FieldRequired from '@/components/ui-legacy/field-required';
 import type {
   ProjectRequest,
   ProjectRequestAuditEntry,
@@ -182,6 +223,34 @@ function recipientLabel(email: string) {
 
 /* HQ recipients cc'd on every project-request email (sent from a system address). */
 const HQ_CC_RECIPIENTS = ['Jasline', 'Jenyn'];
+
+const TEMPLATE_FILENAME = 'DSTA_Project_Request_Template.xlsx';
+
+function parseCcList(cc: string | undefined): string[] {
+  if (!cc) return [];
+  return cc.split(',').map(s => s.trim()).filter(Boolean);
+}
+
+function FieldHelpTooltip({ label, children }: { label: string; children: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <button
+            type="button"
+            aria-label={`${label} help`}
+            className="inline-flex h-4 w-4 items-center justify-center rounded-full text-fg-subtle transition-colors hover:bg-bg-muted hover:text-fg focus:outline-none focus:ring-2 focus:ring-accent/40"
+          >
+            <Info size={12} />
+          </button>
+        }
+      />
+      <TooltipContent side="top" align="start" className="max-w-56">
+        {children}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 function programmeCentreOptions() {
   return CONTACTS
@@ -316,33 +385,118 @@ function StepIndicator({ step, mode, onStepClick }: { step: 1 | 2; mode: Request
   );
 }
 
-function NumberInput({ value, onChange, disabled }: { value: number; onChange: (value: number) => void; disabled?: boolean }) {
+function Stepper({ value, onChange, disabled }: { value: number; onChange: (n: number) => void; disabled?: boolean }) {
   return (
-    <input
-      type="number"
-      min={1}
-      disabled={disabled}
-      value={value}
-      onChange={event => onChange(Math.max(1, Number(event.target.value) || 1))}
-      className="h-9 w-24 rounded-md border border-border bg-surface px-3 text-body-sm text-fg outline-none focus-visible:outline-1 focus-visible:outline-accent disabled:bg-bg-subtle disabled:text-fg-muted"
-    />
-  );
-}
-
-function SectionDivider({ label }: { label: string }) {
-  return (
-    <div className="mb-4 flex items-center gap-3">
-      <span className="whitespace-nowrap text-label-sm font-semibold uppercase tracking-wider text-fg-muted">{label}</span>
-      <div className="flex-1 border-t border-border" />
+    <div className={cn('flex h-9 w-32 items-center overflow-hidden rounded-md border border-border bg-surface', disabled && 'bg-bg-subtle opacity-60')}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onChange(Math.max(1, value - 1))}
+        className="flex h-full w-9 shrink-0 items-center justify-center text-fg-muted transition-colors hover:bg-bg-subtle hover:text-fg disabled:cursor-not-allowed disabled:opacity-50"
+        aria-label="Decrease placements"
+      >
+        <Minus size={14} />
+      </button>
+      <input
+        type="number"
+        min={1}
+        disabled={disabled}
+        value={value === 0 ? '' : value}
+        onChange={e => { const n = parseInt(e.target.value, 10); onChange(isNaN(n) ? 0 : n); }}
+        onBlur={e => { const n = parseInt(e.target.value, 10); if (isNaN(n) || n < 1) onChange(1); }}
+        className="h-full w-full min-w-0 border-x border-border bg-transparent text-center text-body-md text-fg outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none disabled:bg-bg-subtle disabled:text-fg-muted"
+      />
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onChange(value + 1)}
+        className="flex h-full w-9 shrink-0 items-center justify-center text-fg-muted transition-colors hover:bg-bg-subtle hover:text-fg disabled:cursor-not-allowed disabled:opacity-50"
+        aria-label="Increase placements"
+      >
+        <Plus size={14} />
+      </button>
     </div>
   );
 }
 
-function RecipientChip({ name, role }: { name: string; role: string }) {
+function SectionDivider({ label, uppercase = true, showLine = true }: { label: string; uppercase?: boolean; showLine?: boolean }) {
   return (
-    <span className="inline-flex h-9 max-w-full items-center gap-2 rounded-md border border-border bg-surface px-3 py-1 text-body-sm shadow-sm">
-      <span className="min-w-0 truncate font-medium text-fg">{name}</span>
-      <Badge variant="neutral" className="shrink-0 text-caption font-medium">{role}</Badge>
+    <div className="mb-4 flex items-center gap-3">
+      <span className={cn('whitespace-nowrap tracking-wider text-fg-muted', uppercase && 'uppercase')}>
+        <span className="text-label-sm font-semibold">{label}</span>
+      </span>
+      {showLine && <div className="flex-1 border-t border-border" />}
+    </div>
+  );
+}
+
+function PlacementsTable({
+  rows,
+  placementsHeader = 'Placements',
+}: {
+  rows: Array<{ label: string; calendarPeriod?: string; duration?: string; placements: number }>;
+  placementsHeader?: string;
+}) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Intern category</TableHead>
+            <TableHead>Internship window</TableHead>
+            <TableHead>Project duration</TableHead>
+            <TableHead>{placementsHeader}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((row, i) => (
+            <TableRow key={i}>
+              <TableCell className="font-medium text-fg">{row.label || '-'}</TableCell>
+              <TableCell className="text-fg-muted">{row.calendarPeriod || '-'}</TableCell>
+              <TableCell className="text-fg-muted">{row.duration || '-'}</TableCell>
+              <TableCell className="text-fg">{row.placements}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+function PlacementChangesTable({
+  changes,
+}: {
+  changes: Array<{ field: string; from?: string; to?: string }>;
+}) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Intern category</TableHead>
+            <TableHead>Before</TableHead>
+            <TableHead>After</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {changes.map(change => (
+            <TableRow key={change.field}>
+              <TableCell className="font-medium text-fg">{change.field.replace(/ placements$/, '')}</TableCell>
+              <TableCell className="text-fg-muted">{change.from ?? '-'}</TableCell>
+              <TableCell className="text-fg">{change.to ?? '-'}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+function RecipientChip({ name, role, badgeVariant }: { name: string; role: string; badgeVariant?: 'info' | 'neutral' | 'subtle' }) {
+  return (
+    <span className="inline-flex h-9 max-w-full items-center gap-2 text-sm">
+      <span className="min-w-0 truncate text-sm font-medium text-fg">{name}</span>
+      <Badge variant={badgeVariant || 'neutral'} className="shrink-0 text-caption font-medium">{role}</Badge>
     </span>
   );
 }
@@ -352,27 +506,40 @@ function DerivedRecipients({ pcHead, adpnc, showAll = false }: { pcHead: string;
 
   if (!pcHead && !adpnc) {
     return (
-      <div className="flex h-9 w-full items-center overflow-hidden rounded-md border border-border bg-surface px-3 py-1 text-body-sm text-fg-subtle shadow-sm">
+      <div className="flex h-9 w-full items-center overflow-hidden rounded-md border border-border bg-surface px-3 py-1 text-sm text-fg-subtle shadow-sm">
         <span className="truncate">Fills in once programme centre is chosen</span>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-9 flex-wrap items-center gap-2">
-      {pcHead && <RecipientChip name={recipientLabel(pcHead)} role="PC Head" />}
-      {adpnc && <RecipientChip name={recipientLabel(adpnc)} role="AD (P&C)" />}
+    <div className="rounded-lg border border-border bg-bg-subtle p-4">
+      <div className="flex min-h-9 flex-wrap items-center gap-2">
+        <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">To:</span>
+        {pcHead && <RecipientChip name={recipientLabel(pcHead)} role="PC Head" badgeVariant="info" />}
+        {pcHead && adpnc && <span className="text-fg-muted">,</span>}
+        {adpnc && <RecipientChip name={recipientLabel(adpnc)} role="AD (P&C)" badgeVariant="info" />}
+      </div>
       {showAllRecipients ? (
-        <div className="ml-1 flex min-h-9 flex-wrap items-center gap-2 border-l border-border pl-3">
-          <span className="text-caption font-semibold uppercase tracking-wider text-fg-muted">CC</span>
-          {HQ_CC_RECIPIENTS.map(name => (
-            <RecipientChip key={name} name={name} role="HQ" />
+        <div className="flex min-h-9 flex-wrap items-center gap-2">
+          <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">Cc:</span>
+          {HQ_CC_RECIPIENTS.map((name, i) => (
+            <Fragment key={name}>
+              <RecipientChip name={name} role="HQ" badgeVariant="subtle" />
+              {i < HQ_CC_RECIPIENTS.length - 1 && <span className="text-fg-muted">,</span>}
+            </Fragment>
           ))}
+          <Button variant="outline" size="sm" onClick={() => setShowAllRecipients(false)}>
+            <ArrowLeftToLine size={14} />Collapse
+          </Button>
         </div>
       ) : (
-        <Button variant="outline" size="sm" onClick={() => setShowAllRecipients(true)}>
-          View {HQ_CC_RECIPIENTS.length} CC recipients
-        </Button>
+        <div className="flex min-h-9 flex-wrap items-center gap-2">
+          <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">Cc:</span>
+          <Button variant="outline" size="sm" onClick={() => setShowAllRecipients(true)}>
+            <Users size={14} />View {HQ_CC_RECIPIENTS.length} CC recipients
+          </Button>
+        </div>
       )}
     </div>
   );
@@ -386,6 +553,7 @@ function RequestEditor({
   canEditDeadline = true,
   canEditPlacements,
   additionalLines,
+  showErrors = false,
   onRemove,
   onChange,
   onAdditionalLinesChange,
@@ -397,6 +565,7 @@ function RequestEditor({
   canEditDeadline?: boolean;
   canEditPlacements?: boolean;
   additionalLines?: EditLine[];
+  showErrors?: boolean;
   onRemove?: () => void;
   onChange: (model: EditModel) => void;
   onAdditionalLinesChange?: (lines: EditLine[]) => void;
@@ -429,7 +598,7 @@ function RequestEditor({
   }
 
   return (
-    <section className="rounded-lg border border-border bg-surface shadow-sm">
+    <section className="rounded-xl border border-border bg-surface shadow-sm">
       <div className="border-b border-border px-5 py-4">
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
@@ -457,11 +626,8 @@ function RequestEditor({
 
       <div className="space-y-6 p-5">
         <div>
-          <div className="mb-4 flex items-center gap-3">
-            <span className="text-table-header tracking-wider text-fg-muted">RECIPIENTS</span>
-            <div className="flex-1 border-t border-border" />
-          </div>
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-4 lg:items-start">
+          <SectionDivider label="Recipients" uppercase={false} showLine={false} />
+          <div className="grid grid-cols-4 gap-3 lg:grid-cols-4 lg:items-start">
             <Field>
               <FieldLabel>
                 Programme Centre {!disabled && <span className="text-danger">*</span>}
@@ -481,18 +647,12 @@ function RequestEditor({
                 }}
                 disabled={disabled}
               >
-                <SelectTrigger><SelectValue placeholder="Select programme centre" /></SelectTrigger>
+                <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !model.programmeCentre && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select programme centre" /></SelectTrigger>
                 <SelectContent>
                   {programmeCentreOptions().map(pc => <SelectItem key={pc} value={pc}>{pc}</SelectItem>)}
                 </SelectContent>
+                <FieldRequired show={showErrors && !model.programmeCentre} />
               </Select>
-            </Field>
-            <Field className="lg:col-span-2">
-              <FieldLabel className="flex items-center gap-1.5">
-                {!model.programmeCentre && <ArrowLeft size={13} className="text-fg-subtle" aria-hidden="true" />}
-                Recipients
-              </FieldLabel>
-              <DerivedRecipients pcHead={model.pcHead} adpnc={model.adpnc} />
             </Field>
             <Field>
               <FieldLabel>
@@ -504,65 +664,112 @@ function RequestEditor({
                 placeholder="Pick a date"
                 align="right"
                 disabled={!canEditDeadline}
+                error={showErrors && !model.deadline}
               />
+              <FieldRequired show={showErrors && !model.deadline} />
+            </Field>
+          </div>
+          <div className={cn('mt-3 grid grid-cols-1 gap-3', (model.pcHead || model.adpnc) ? '' : 'lg:grid-cols-2')}>
+            <Field>
+              <FieldLabel className="flex items-center gap-1.5">
+                {!model.programmeCentre && <ArrowUp size={13} className="text-fg-subtle" aria-hidden="true" />}
+                Recipients
+              </FieldLabel>
+              <DerivedRecipients pcHead={model.pcHead} adpnc={model.adpnc} />
             </Field>
           </div>
         </div>
 
         <div>
-          <div className="mb-4 flex items-center gap-3">
-            <span className="text-table-header tracking-wider text-fg-muted">PLACEMENT REQUIREMENTS</span>
-            <div className="flex-1 border-t border-border" />
-          </div>
+          <SectionDivider label="Placement requirements" uppercase={false} showLine={false} />
           <div className="min-w-0 space-y-3 overflow-x-auto pb-1">
-            <div className="hidden gap-3 sm:grid sm:grid-cols-[minmax(16rem,1fr)_minmax(11rem,13rem)_minmax(8.5rem,10rem)_7rem_36px]">
-              <span className="text-table-header tracking-wider text-fg-muted">Intern category</span>
-              <span className="text-table-header tracking-wider text-fg-muted">Internship window</span>
-              <span className="text-table-header tracking-wider text-fg-muted">Project duration</span>
-              <span className="text-table-header tracking-wider text-fg-muted">Placements</span>
-              <span />
+            <div className="hidden gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+              <FieldLabelText className="flex items-center gap-1.5">
+                Intern category {!disabled && <span className="text-danger">*</span>}
+                <FieldHelpTooltip label="Intern category">The type of intern the project is for</FieldHelpTooltip>
+              </FieldLabelText>
+              <FieldLabelText className="flex items-center gap-1.5">
+                Internship window {!disabled && <span className="text-danger">*</span>}
+                <FieldHelpTooltip label="Internship window">Proposed projects should be able to run within this period</FieldHelpTooltip>
+              </FieldLabelText>
+              <FieldLabelText className="flex items-center gap-1.5">
+                Project duration {!disabled && <span className="text-danger">*</span>}
+                <FieldHelpTooltip label="Project duration">Proposed projects should last around this length of time</FieldHelpTooltip>
+              </FieldLabelText>
+              <FieldLabelText>Placements {!disabled && <span className="text-danger">*</span>}</FieldLabelText>
             </div>
             {model.lines.map(line => (
-              <div key={line.id} className="grid gap-3 sm:grid-cols-[minmax(16rem,1fr)_minmax(11rem,13rem)_minmax(8.5rem,10rem)_7rem_36px] sm:items-center">
-                <Select value={line.internCategory} onValueChange={value => updateLine(line.id, { internCategory: value ?? '' })} disabled={disabled}>
-                  <SelectTrigger><SelectValue placeholder="Select intern category" /></SelectTrigger>
-                  <SelectContent>
-                    {INTERN_CATEGORIES.map(category => <SelectItem key={category} value={category}>{category}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <DateRangePicker
-                  start={line.calendarStart}
-                  end={line.calendarEnd}
-                  disabled={disabled}
-                  placeholder="Select start and end date"
-                  onChange={(calendarStart, calendarEnd) => updateLine(line.id, {
-                    calendarStart, calendarEnd, calendarPeriod: monthRangeLabel(calendarStart, calendarEnd),
-                  })}
-                />
-                <Select value={line.duration} onValueChange={value => updateLine(line.id, { duration: value ?? '' })} disabled={disabled}>
-                  <SelectTrigger><SelectValue placeholder="Select duration" /></SelectTrigger>
-                  <SelectContent>
-                    {DURATIONS.map(duration => <SelectItem key={duration} value={duration}>{duration}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <NumberInput value={line.placements} disabled={!placementsEditable} onChange={value => updateLine(line.id, { placements: value })} />
-                {mode === 'draft' ? (
-                  <button
-                    type="button"
-                    disabled={model.lines.length === 1}
-                    onClick={() => onChange({ ...model, lines: model.lines.filter(item => item.id !== line.id) })}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted transition-colors hover:bg-danger-bg hover:text-danger disabled:cursor-not-allowed disabled:opacity-30"
-                    aria-label="Remove intern category"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                ) : (
-                  <span aria-hidden="true" />
-                )}
+              <div key={line.id} className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
+                <Field>
+                  <FieldLabel className="flex items-center gap-1.5 lg:hidden">
+                    Intern category {!disabled && <span className="text-danger">*</span>}
+                  </FieldLabel>
+                  <Select value={line.internCategory} onValueChange={value => updateLine(line.id, { internCategory: value ?? '' })} disabled={disabled}>
+                    <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !line.internCategory && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select intern category" /></SelectTrigger>
+                    <SelectContent>
+                      {INTERN_CATEGORIES.map(category => <SelectItem key={category} value={category}>{category}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FieldRequired show={showErrors && !line.internCategory} />
+                </Field>
+                <Field>
+                  <FieldLabel className="flex items-center gap-1.5 lg:hidden">
+                    Internship window {!disabled && <span className="text-danger">*</span>}
+                  </FieldLabel>
+                  <DateRangePicker
+                    value={{
+                      from: line.calendarStart ? parseISO(line.calendarStart) : undefined,
+                      to: line.calendarEnd ? parseISO(line.calendarEnd) : undefined,
+                    }}
+                    onChange={(range: DateRange) => {
+                      const calendarStart = range.from ? formatISO(range.from, { representation: 'date' }) : '';
+                      const calendarEnd = range.to ? formatISO(range.to, { representation: 'date' }) : '';
+                      updateLine(line.id, { calendarStart, calendarEnd, calendarPeriod: monthRangeLabel(calendarStart, calendarEnd) });
+                    }}
+                    disabled={disabled}
+                    placeholder="Select start and end date"
+                    hideLabels
+                    hideFooter
+                    className={cn('w-full min-w-0', showErrors && !!disabled && (!line.calendarStart || !line.calendarEnd) && 'border-danger')}
+                  />
+                  <FieldRequired show={showErrors && (!line.calendarStart || !line.calendarEnd)} />
+                </Field>
+                <Field>
+                  <FieldLabel className="flex items-center gap-1.5 lg:hidden">
+                    Project duration {!disabled && <span className="text-danger">*</span>}
+                  </FieldLabel>
+                  <Select value={line.duration} onValueChange={value => updateLine(line.id, { duration: value ?? '' })} disabled={disabled}>
+                    <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !line.duration && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select duration" /></SelectTrigger>
+                    <SelectContent>
+                      {DURATIONS.map(duration => <SelectItem key={duration} value={duration}>{duration}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FieldRequired show={showErrors && !line.duration} />
+                </Field>
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2">
+                    <Field>
+                      <FieldLabel className="lg:hidden">Placements {!disabled && <span className="text-danger">*</span>}</FieldLabel>
+                      <Stepper value={line.placements} disabled={!placementsEditable} onChange={value => updateLine(line.id, { placements: value })} />
+                    </Field>
+                    {mode === 'draft' && (
+                      <button
+                        type="button"
+                        disabled={model.lines.length === 1}
+                        onClick={() => onChange({ ...model, lines: model.lines.filter(item => item.id !== line.id) })}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-fg-muted transition-colors hover:bg-danger-bg hover:text-danger disabled:cursor-not-allowed disabled:opacity-90"
+                        aria-label="Remove intern category"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
+                  </div>
+                  <FieldRequired show={showErrors && line.placements < 1} />
+                </div>
               </div>
             ))}
             {additionalLines?.map(line => (
-              <div key={line.id} className="grid gap-3 sm:grid-cols-[minmax(16rem,1fr)_minmax(11rem,13rem)_minmax(8.5rem,10rem)_7rem_36px] sm:items-center">
+              <div key={line.id} className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
                 <Select value={line.internCategory} onValueChange={value => updateAdditionalLine(line.id, { internCategory: value ?? '' })}>
                   <SelectTrigger><SelectValue placeholder="Select intern category" /></SelectTrigger>
                   <SelectContent>
@@ -570,12 +777,18 @@ function RequestEditor({
                   </SelectContent>
                 </Select>
                 <DateRangePicker
-                  start={line.calendarStart}
-                  end={line.calendarEnd}
+                  value={{
+                    from: line.calendarStart ? parseISO(line.calendarStart) : undefined,
+                    to: line.calendarEnd ? parseISO(line.calendarEnd) : undefined,
+                  }}
+                  onChange={(range: DateRange) => {
+                    const calendarStart = range.from ? formatISO(range.from, { representation: 'date' }) : '';
+                    const calendarEnd = range.to ? formatISO(range.to, { representation: 'date' }) : '';
+                    updateAdditionalLine(line.id, { calendarStart, calendarEnd, calendarPeriod: monthRangeLabel(calendarStart, calendarEnd) });
+                  }}
                   placeholder="Select start and end date"
-                  onChange={(calendarStart, calendarEnd) => updateAdditionalLine(line.id, {
-                    calendarStart, calendarEnd, calendarPeriod: monthRangeLabel(calendarStart, calendarEnd),
-                  })}
+                  hideLabels
+                  hideFooter
                 />
                 <Select value={line.duration} onValueChange={value => updateAdditionalLine(line.id, { duration: value ?? '' })}>
                   <SelectTrigger><SelectValue placeholder="Select duration" /></SelectTrigger>
@@ -583,26 +796,29 @@ function RequestEditor({
                     {DURATIONS.map(duration => <SelectItem key={duration} value={duration}>{duration}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                <NumberInput value={line.placements} onChange={value => updateAdditionalLine(line.id, { placements: value })} />
-                <button
-                  type="button"
-                  disabled={additionalLines.length === 1}
-                  onClick={() => removeAdditionalLine(line.id)}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted transition-colors hover:bg-danger-bg hover:text-danger disabled:cursor-not-allowed disabled:opacity-30"
-                  aria-label="Remove intern category"
-                >
-                  <Trash2 size={15} />
-                </button>
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2">
+                    <Field>
+                      <FieldLabel className="lg:hidden">Placements</FieldLabel>
+                      <Stepper value={line.placements} onChange={value => updateAdditionalLine(line.id, { placements: value })} />
+                    </Field>
+                    <button
+                      type="button"
+                      disabled={additionalLines.length === 1}
+                      onClick={() => removeAdditionalLine(line.id)}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-fg-muted transition-colors hover:bg-danger-bg hover:text-danger disabled:cursor-not-allowed disabled:opacity-90"
+                      aria-label="Remove intern category"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
             {canAddLines && (
-              <button
-                type="button"
-                onClick={addLine}
-                className="inline-flex items-center gap-1 rounded-lg border border-dashed border-border px-3 py-1.5 text-label-sm font-semibold text-fg-muted transition-colors hover:border-accent/50 hover:text-accent"
-              >
-                <Plus size={13} />Add intern category
-              </button>
+              <Button variant="outline" size="sm" onClick={addLine}>
+                <Plus size={14} />Add intern category
+              </Button>
             )}
           </div>
         </div>
@@ -623,7 +839,7 @@ function AdditionalInternCategoryPanel({
   }
 
   return (
-    <section className="rounded-lg border border-border bg-surface shadow-sm">
+    <section className="rounded-xl border border-border bg-surface shadow-sm">
       <div className="border-b border-border px-5 py-4">
         <h2 className="text-label-lg font-medium text-fg">Add Intern Category</h2>
         <p className="mt-0.5 text-body-sm text-fg-muted">
@@ -647,12 +863,18 @@ function AdditionalInternCategoryPanel({
               </SelectContent>
             </Select>
             <DateRangePicker
-              start={line.calendarStart}
-              end={line.calendarEnd}
+              value={{
+                from: line.calendarStart ? parseISO(line.calendarStart) : undefined,
+                to: line.calendarEnd ? parseISO(line.calendarEnd) : undefined,
+              }}
+              onChange={(range: DateRange) => {
+                const calendarStart = range.from ? formatISO(range.from, { representation: 'date' }) : '';
+                const calendarEnd = range.to ? formatISO(range.to, { representation: 'date' }) : '';
+                updateLine(line.id, { calendarStart, calendarEnd, calendarPeriod: monthRangeLabel(calendarStart, calendarEnd) });
+              }}
               placeholder="Select start and end date"
-              onChange={(calendarStart, calendarEnd) => updateLine(line.id, {
-                calendarStart, calendarEnd, calendarPeriod: monthRangeLabel(calendarStart, calendarEnd),
-              })}
+              hideLabels
+              hideFooter
             />
             <Select value={line.duration} onValueChange={value => updateLine(line.id, { duration: value ?? '' })}>
               <SelectTrigger><SelectValue placeholder="Select duration" /></SelectTrigger>
@@ -660,7 +882,7 @@ function AdditionalInternCategoryPanel({
                 {DURATIONS.map(duration => <SelectItem key={duration} value={duration}>{duration}</SelectItem>)}
               </SelectContent>
             </Select>
-            <NumberInput value={line.placements} onChange={value => updateLine(line.id, { placements: value })} />
+            <Stepper value={line.placements} onChange={value => updateLine(line.id, { placements: value })} />
             <button
               type="button"
               disabled={lines.length === 1}
@@ -672,13 +894,13 @@ function AdditionalInternCategoryPanel({
             </button>
           </div>
         ))}
-        <button
-          type="button"
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => onChange([...lines, { id: `additional-${Date.now()}`, internCategory: '', calendarPeriod: '', calendarStart: '', calendarEnd: '', duration: '', placements: 1 }])}
-          className="inline-flex items-center gap-1 rounded-lg border border-dashed border-border px-3 py-1.5 text-label-sm font-semibold text-fg-muted transition-colors hover:border-accent/50 hover:text-accent"
         >
-          <Plus size={13} />Add intern category
-        </button>
+          <Plus size={14} />Add intern category
+        </Button>
       </div>
     </section>
   );
@@ -692,66 +914,101 @@ function DraftEmailPreview({ model }: { model: EditModel }) {
     placements: line.placements,
   }));
 
+  const [toDraft, setToDraft] = useState(() => recipientLabel(model.adpnc));
+  const [ccDraft, setCcDraft] = useState(() => [
+    model.pcHead ? recipientLabel(model.pcHead) : '',
+    ...HQ_CC_RECIPIENTS,
+  ].filter(Boolean).join(', '));
+  const [subjectDraft, setSubjectDraft] = useState(() => `[DSTA] Project Request - ${model.programmeCentre || 'Programme Centre'}`);
+  const [beforeDraft, setBeforeDraft] = useState(() =>
+    `Dear ${recipientLabel(model.adpnc) || 'recipient'},\n\n`
+    + `We are requesting project submissions for the intern categories, calendar periods and durations listed below.`
+  );
+  const [afterDraft, setAfterDraft] = useState(() =>
+    `Please submit your project proposals by ${fmtDate(model.deadline)}.\n\nThank you.`
+  );
+
   return (
-    <div className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-sm">
+    <>
+    <p className="text-body-sm text-fg-muted">The recipients, subject and message below are editable. Click into a field to customise the email before sending.</p>
+    <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
       <div className="space-y-3">
-        <div className="flex items-start gap-3 border-b border-border pb-3">
-          <span className="w-16 shrink-0 pt-1 text-body-sm font-medium text-fg-muted">To</span>
-          <span className="text-body-sm font-medium leading-relaxed text-fg">{recipientLabel(model.adpnc) || '-'}</span>
-        </div>
-        <div className="flex items-start gap-3 border-b border-border pb-3">
-          <span className="w-16 shrink-0 pt-1 text-body-sm font-medium text-fg-muted">Cc</span>
-          <div className="flex flex-wrap items-center gap-1.5">
-            {model.pcHead && (
-              <span className="rounded-full bg-bg-muted px-2 py-0.5 text-body-sm text-fg">{recipientLabel(model.pcHead)}</span>
-            )}
-            {HQ_CC_RECIPIENTS.map(name => (
-              <span key={name} className="inline-flex items-center gap-1 rounded-full bg-bg-muted px-2 py-0.5 text-body-sm text-fg">
-                {name}<span className="text-caption text-fg-muted">HQ</span>
-              </span>
-            ))}
+        <label className="flex items-start gap-3 border-b border-border pb-3">
+          <span className="w-16 shrink-0 pt-2 text-body-sm font-medium text-fg-muted">To</span>
+          <Combobox
+            selected={parseCcList(toDraft)}
+            onToggle={(val: string) => {
+              const current = new Set(parseCcList(toDraft));
+              if (current.has(val)) current.delete(val); else current.add(val);
+              setToDraft(Array.from(current).join(', '));
+            }}
+            options={[recipientLabel(model.adpnc)].filter(Boolean)}
+            placeholder="Select recipients"
+            chips="inline"
+            className="flex-1"
+          />
+        </label>
+        <label className="flex items-start gap-3 border-b border-border pb-3">
+          <span className="w-16 shrink-0 pt-2 text-body-sm font-medium text-fg-muted">Cc</span>
+          <Combobox
+            selected={parseCcList(ccDraft)}
+            onToggle={(val: string) => {
+              const current = new Set(parseCcList(ccDraft));
+              if (current.has(val)) current.delete(val); else current.add(val);
+              setCcDraft(Array.from(current).join(', '));
+            }}
+            options={[recipientLabel(model.pcHead), ...HQ_CC_RECIPIENTS].filter(Boolean)}
+            placeholder="Select recipients"
+            chips="inline"
+            className="flex-1"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-body-sm font-medium text-fg-muted">Subject</span>
+          <input
+            value={subjectDraft}
+            onChange={e => setSubjectDraft(e.target.value)}
+            className="flex h-10 w-full rounded-md border border-border bg-surface px-3 py-1 text-body-sm font-medium text-fg shadow-sm outline-none transition-colors hover:border-border-strong hover:bg-bg-subtle focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-accent"
+          />
+        </label>
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-bg-subtle px-4 py-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-success/10 text-success">
+            <Paperclip size={16} />
           </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-body-sm font-medium text-fg">{TEMPLATE_FILENAME}</p>
+            <p className="text-caption text-fg-muted">Project-submission template — pre-structured with the requested intern categories &amp; calendar periods.</p>
+          </div>
+          <Button variant="outline" size="sm" disabled>
+            <Download size={14} />Download
+          </Button>
         </div>
-        <div>
-          <p className="mb-1.5 text-body-sm font-medium text-fg-muted">Subject</p>
-          <p className="rounded-md border border-border bg-surface px-3 py-2 text-body-sm font-medium text-fg shadow-sm">
-            [DSTA] Project Request - {model.programmeCentre || 'Programme Centre'}
-          </p>
-        </div>
-      </div>
-      <div className="space-y-4 rounded-lg border border-border bg-bg-subtle p-4">
-        <p className="whitespace-pre-line text-body-sm leading-6 text-fg">
-          Dear {recipientLabel(model.adpnc) || 'recipient'},
-          {'\n\n'}We are requesting project submissions for the intern categories, calendar periods and durations listed below.
-        </p>
-        <div className="overflow-hidden rounded-lg border border-border bg-surface">
-          <table className="w-full border-collapse text-body-sm">
-            <thead className="bg-bg-subtle">
-              <tr>
-                <th className="px-3 py-2 text-left text-table-header text-fg-muted">Intern category</th>
-                <th className="px-3 py-2 text-left text-table-header text-fg-muted">Internship window</th>
-                <th className="px-3 py-2 text-left text-table-header text-fg-muted">Project duration</th>
-                <th className="px-3 py-2 text-left text-table-header text-fg-muted">Placements</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border bg-surface">
-              {rows.map(row => (
-                <tr key={`${row.label}-${row.calendarPeriod}-${row.duration}`}>
-                  <td className="px-3 py-2 font-medium text-fg">{row.label || '-'}</td>
-                  <td className="px-3 py-2 text-fg-muted">{row.calendarPeriod || '-'}</td>
-                  <td className="px-3 py-2 text-fg-muted">{row.duration || '-'}</td>
-                  <td className="px-3 py-2 text-fg">{row.placements}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="whitespace-pre-line text-body-sm leading-6 text-fg">
-          Please submit your project proposals by {fmtDate(model.deadline)}.
-          {'\n\n'}Thank you.
-        </p>
       </div>
     </div>
+    <div className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-sm">
+      <label className="block">
+        <span className="mb-1.5 block text-body-sm font-medium text-fg-muted">Opening message</span>
+        <textarea
+          value={beforeDraft}
+          onChange={e => setBeforeDraft(e.target.value)}
+          rows={Math.max(2, beforeDraft.split('\n').length)}
+          className="block w-full resize-none rounded-md border border-border bg-surface px-3 py-2 font-sans text-body-sm leading-6 text-fg shadow-sm outline-none transition-colors hover:border-border-strong hover:bg-bg-subtle focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-accent"
+        />
+      </label>
+      <div className="overflow-hidden rounded-lg border border-border bg-bg-subtle p-4">
+        <PlacementsTable rows={rows} />
+      </div>
+      <label className="block">
+        <span className="mb-1.5 block text-body-sm font-medium text-fg-muted">Closing message</span>
+        <textarea
+          value={afterDraft}
+          onChange={e => setAfterDraft(e.target.value)}
+          rows={Math.max(2, afterDraft.split('\n').length)}
+          className="block w-full resize-none rounded-md border border-border bg-surface px-3 py-2 font-sans text-body-sm leading-6 text-fg shadow-sm outline-none transition-colors hover:border-border-strong hover:bg-bg-subtle focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-accent"
+        />
+      </label>
+    </div>
+    </>
   );
 }
 
@@ -759,7 +1016,7 @@ function DraftReviewDetails({ model, onPreview }: { model: EditModel; onPreview:
   return (
     <div className="space-y-5 px-5 pb-5 pt-4">
       <div>
-        <SectionDivider label="Recipients" />
+        <SectionDivider label="Recipients" uppercase={false} showLine={false} />
         <div className="space-y-5">
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <SummaryItem label="Programme Centre" value={model.programmeCentre} />
@@ -772,29 +1029,13 @@ function DraftReviewDetails({ model, onPreview }: { model: EditModel; onPreview:
         </div>
       </div>
       <div>
-        <SectionDivider label="Placement requirements" />
-        <div className="overflow-hidden rounded-lg border border-border">
-          <table className="w-full border-collapse text-body-sm">
-            <thead className="bg-bg-subtle">
-              <tr>
-                <th className="px-3 py-2 text-left text-table-header text-fg-muted">Intern category</th>
-                <th className="px-3 py-2 text-left text-table-header text-fg-muted">Internship window</th>
-                <th className="px-3 py-2 text-left text-table-header text-fg-muted">Project duration</th>
-                <th className="px-3 py-2 text-left text-table-header text-fg-muted">Placements</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {model.lines.map(line => (
-                <tr key={line.id}>
-                  <td className="px-3 py-2 font-medium text-fg">{line.internCategory || '-'}</td>
-                  <td className="px-3 py-2 text-fg-muted">{line.calendarPeriod || '-'}</td>
-                  <td className="px-3 py-2 text-fg-muted">{line.duration || '-'}</td>
-                  <td className="px-3 py-2 text-fg">{line.placements}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <SectionDivider label="Placement requirements" uppercase={false} showLine={false} />
+        <PlacementsTable rows={model.lines.map(line => ({
+          label: line.internCategory,
+          calendarPeriod: line.calendarPeriod,
+          duration: line.duration,
+          placements: line.placements,
+        }))} />
       </div>
       <div>
         <Button variant="outline" size="sm" onClick={onPreview}><Eye size={15} />Preview email</Button>
@@ -810,7 +1051,7 @@ function ReviewRecipientChips({ model }: { model: EditModel }) {
 function ReviewPanel({ model, mode, onPreview }: { model: EditModel; mode: RequestMode; onPreview?: () => void }) {
   const total = model.lines.reduce((sum, line) => sum + line.placements, 0);
   return (
-    <section className="rounded-lg border border-border bg-surface shadow-sm">
+    <section className="rounded-xl border border-border bg-surface shadow-sm">
       <div className="border-b border-border px-5 py-4">
         <h2 className="text-label-lg font-bold text-fg">{mode === 'draft' ? 'Review Draft' : 'Request Summary'}</h2>
         <p className="mt-0.5 text-body-sm text-fg-muted">
@@ -819,7 +1060,7 @@ function ReviewPanel({ model, mode, onPreview }: { model: EditModel; mode: Reque
       </div>
       <div className="space-y-5 p-5">
         <div>
-          <SectionDivider label="Recipients" />
+          <SectionDivider label="Recipients" uppercase={false} showLine={false} />
           <div className="space-y-5">
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <SummaryItem label="Programme Centre" value={model.programmeCentre} />
@@ -831,28 +1072,12 @@ function ReviewPanel({ model, mode, onPreview }: { model: EditModel; mode: Reque
             </div>
           </div>
         </div>
-        <div className="overflow-hidden rounded-lg border border-border">
-          <table className="w-full border-collapse text-body-sm">
-            <thead className="bg-bg-subtle">
-              <tr>
-                <th className="px-3 py-2 text-left text-table-header text-fg-muted">Intern category</th>
-                <th className="px-3 py-2 text-left text-table-header text-fg-muted">Internship window</th>
-                <th className="px-3 py-2 text-left text-table-header text-fg-muted">Project duration</th>
-                <th className="px-3 py-2 text-left text-table-header text-fg-muted">Placements</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {model.lines.map(line => (
-                <tr key={line.id}>
-                  <td className="px-3 py-2 font-medium text-fg">{line.internCategory || '-'}</td>
-                  <td className="px-3 py-2 text-fg-muted">{line.calendarPeriod || '-'}</td>
-                  <td className="px-3 py-2 text-fg-muted">{line.duration || '-'}</td>
-                  <td className="px-3 py-2 text-fg">{line.placements}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <PlacementsTable rows={model.lines.map(line => ({
+          label: line.internCategory,
+          calendarPeriod: line.calendarPeriod,
+          duration: line.duration,
+          placements: line.placements,
+        }))} />
         {onPreview && (
           <div>
             <Button variant="outline" size="sm" onClick={onPreview}><Eye size={15} />Preview email</Button>
@@ -901,10 +1126,7 @@ function ManageReviewPanel({
           </div>
 
           <div>
-            <div className="mb-4 flex items-center gap-3">
-              <span className="text-table-header tracking-wider text-fg-muted">RECIPIENTS</span>
-              <div className="flex-1 border-t border-border" />
-            </div>
+            <SectionDivider label="Recipients" uppercase={false} showLine={false} />
             <div className="space-y-5">
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <SummaryItem label="Programme Centre" value={model.programmeCentre} />
@@ -998,7 +1220,7 @@ function SummaryItem({ label, value }: { label: string; value: string }) {
 
 function AuditLogPanel({ logs }: { logs: ProjectRequestAuditEntry[] }) {
   return (
-    <div className="rounded-lg border border-border bg-surface">
+    <div className="rounded-xl border border-border bg-surface shadow-sm">
       <div className="border-b border-border px-5 py-4">
         <h2 className="text-label-lg font-bold text-fg">Audit Log</h2>
         <p className="mt-0.5 text-body-sm text-fg-muted">Timeline of changes for this request.</p>
@@ -1102,105 +1324,110 @@ function ManageEmailPreview({
     'Davina Tan',
     'Internship Officer, DSTA',
   ].join('\n');
+  const [toDraft, setToDraft] = useState(() => recipientLabel(model.pcHead));
+  const [ccDraft, setCcDraft] = useState(() => [
+    model.adpnc ? recipientLabel(model.adpnc) : '',
+    ...HQ_CC_RECIPIENTS,
+  ].filter(Boolean).join(', '));
   const [subjectDraft, setSubjectDraft] = useState(subject);
   const [beforeDraft, setBeforeDraft] = useState(before);
   const [afterDraft, setAfterDraft] = useState(after);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface">
-      <div className="divide-y divide-border border-b border-border bg-bg-subtle">
-        <div className="flex items-start gap-3 px-5 py-2.5">
-          <span className="w-14 shrink-0 pt-0.5 text-body-sm font-medium text-fg-muted">To</span>
-          <span className="text-body-sm font-medium leading-relaxed text-fg">{recipientLabel(model.pcHead)}</span>
-        </div>
-        <div className="flex items-start gap-3 px-5 py-2">
-          <span className="w-14 shrink-0 pt-1 text-body-sm font-medium text-fg-muted">Cc</span>
-          <div className="flex flex-wrap items-center gap-1.5">
-            {model.adpnc && (
-              <span className="rounded-full bg-bg-muted px-2 py-0.5 text-body-sm text-fg">{recipientLabel(model.adpnc)}</span>
-            )}
-            {HQ_CC_RECIPIENTS.map(name => (
-              <span key={name} className="inline-flex items-center gap-1 rounded-full bg-bg-muted px-2 py-0.5 text-body-sm text-fg">
-                {name}<span className="text-caption text-fg-muted">HQ</span>
-              </span>
-            ))}
-          </div>
-        </div>
-        <div className="flex items-center gap-3 px-5 py-2">
-          <span className="w-14 shrink-0 text-body-sm font-medium text-fg-muted">Subject</span>
+    <>
+    <p className="text-body-sm text-fg-muted">The recipients, subject and message below are editable. Click into a field to customise the email before sending. The placement requirements table is generated automatically.</p>
+    <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+      <div className="space-y-3">
+        <label className="flex items-start gap-3 border-b border-border pb-3">
+          <span className="w-16 shrink-0 pt-2 text-body-sm font-medium text-fg-muted">To</span>
+          <Combobox
+            selected={parseCcList(toDraft)}
+            onToggle={(val: string) => {
+              const current = new Set(parseCcList(toDraft));
+              if (current.has(val)) current.delete(val); else current.add(val);
+              setToDraft(Array.from(current).join(', '));
+            }}
+            options={[recipientLabel(model.pcHead)].filter(Boolean)}
+            placeholder="Select recipients"
+            chips="inline"
+            className="flex-1"
+          />
+        </label>
+        <label className="flex items-start gap-3 border-b border-border pb-3">
+          <span className="w-16 shrink-0 pt-2 text-body-sm font-medium text-fg-muted">Cc</span>
+          <Combobox
+            selected={parseCcList(ccDraft)}
+            onToggle={(val: string) => {
+              const current = new Set(parseCcList(ccDraft));
+              if (current.has(val)) current.delete(val); else current.add(val);
+              setCcDraft(Array.from(current).join(', '));
+            }}
+            options={[recipientLabel(model.adpnc), ...HQ_CC_RECIPIENTS].filter(Boolean)}
+            placeholder="Select recipients"
+            chips="inline"
+            className="flex-1"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-body-sm font-medium text-fg-muted">Subject</span>
           <input
             value={subjectDraft}
             onChange={event => setSubjectDraft(event.target.value)}
-            className="-mx-2 flex-1 rounded bg-transparent px-2 py-1 text-body-sm font-medium text-fg outline-none transition-all hover:bg-bg-muted focus:bg-bg-muted"
+            className="flex h-10 w-full rounded-md border border-border bg-surface px-3 py-1 text-body-sm font-medium text-fg shadow-sm outline-none transition-colors hover:border-border-strong hover:bg-bg-subtle focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-accent"
           />
+        </label>
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-bg-subtle px-4 py-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-success/10 text-success">
+            <Paperclip size={16} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-body-sm font-medium text-fg">{TEMPLATE_FILENAME}</p>
+            <p className="text-caption text-fg-muted">Project-submission template — pre-structured with the requested intern categories &amp; calendar periods.</p>
+          </div>
+          <Button variant="outline" size="sm" disabled>
+            <Download size={14} />Download
+          </Button>
         </div>
       </div>
-      <div className="divide-y divide-border/40">
+    </div>
+    <div className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-sm">
+      <label className="block">
+        <span className="mb-1.5 block text-body-sm font-medium text-fg-muted">Opening message</span>
         <textarea
           value={beforeDraft}
           onChange={event => setBeforeDraft(event.target.value)}
-          rows={Math.max(3, beforeDraft.split('\n').length)}
-          className="block w-full resize-none bg-surface px-5 py-4 font-sans text-body-sm leading-6 text-fg outline-none"
+          rows={Math.max(2, beforeDraft.split('\n').length)}
+          className="block w-full resize-none rounded-md border border-border bg-surface px-3 py-2 font-sans text-body-sm leading-6 text-fg shadow-sm outline-none transition-colors hover:border-border-strong hover:bg-bg-subtle focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-accent"
         />
-        <div className="space-y-4 bg-bg-subtle/60 px-5 py-4">
-          <div className="overflow-hidden rounded-lg border border-border">
-            <table className="w-full border-collapse text-body-sm">
-              <thead className="bg-bg-subtle">
-                <tr>
-                  <th className="px-3 py-2 text-left text-table-header text-fg-muted">Intern category</th>
-                  <th className="px-3 py-2 text-left text-table-header text-fg-muted">Internship window</th>
-                  <th className="px-3 py-2 text-left text-table-header text-fg-muted">Project duration</th>
-                  <th className="px-3 py-2 text-left text-table-header text-fg-muted">Placements</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border bg-surface">
-                {rows.map(row => (
-                  <tr key={`${row.label}-${row.calendarPeriod}-${row.duration}`}>
-                    <td className="px-3 py-2 font-medium text-fg">{row.label || '-'}</td>
-                    <td className="px-3 py-2 text-fg-muted">{row.calendarPeriod || '-'}</td>
-                    <td className="px-3 py-2 text-fg-muted">{row.duration || '-'}</td>
-                    <td className="px-3 py-2 text-fg">{row.placements}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {hasAdditional && (
-            <div className="overflow-hidden rounded-lg border border-border">
-              <div className="border-b border-border bg-bg-subtle px-3 py-2 text-table-header text-fg-muted">
-                Additional placement requirements
-              </div>
-              <table className="w-full border-collapse text-body-sm">
-                <thead className="bg-bg-subtle">
-                  <tr>
-                    <th className="px-3 py-2 text-left text-table-header text-fg-muted">Intern category</th>
-                    <th className="px-3 py-2 text-left text-table-header text-fg-muted">Internship window</th>
-                    <th className="px-3 py-2 text-left text-table-header text-fg-muted">Project duration</th>
-                    <th className="px-3 py-2 text-left text-table-header text-fg-muted">Number</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border bg-surface">
-                  {additionalLines.map(line => (
-                    <tr key={line.id}>
-                      <td className="px-3 py-2 font-medium text-fg">{line.internCategory || '-'}</td>
-                      <td className="px-3 py-2 text-fg-muted">{line.calendarPeriod || '-'}</td>
-                      <td className="px-3 py-2 text-fg-muted">{line.duration || '-'}</td>
-                      <td className="px-3 py-2 text-fg">{line.placements}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+      </label>
+      <div className="rounded-lg border border-border bg-bg-subtle p-4">
+        <PlacementsTable rows={rows} />
+      </div>
+      {hasAdditional && (
+        <div className="rounded-lg border border-border bg-bg-subtle p-4">
+          <div className="mb-2 text-table-header text-fg-muted">Additional placement requirements</div>
+          <PlacementsTable
+            placementsHeader="Number"
+            rows={additionalLines.map(line => ({
+              label: line.internCategory,
+              calendarPeriod: line.calendarPeriod,
+              duration: line.duration,
+              placements: line.placements,
+            }))}
+          />
         </div>
+      )}
+      <label className="block">
+        <span className="mb-1.5 block text-body-sm font-medium text-fg-muted">Closing message</span>
         <textarea
           value={afterDraft}
           onChange={event => setAfterDraft(event.target.value)}
-          rows={Math.max(3, afterDraft.split('\n').length)}
-          className="block w-full resize-none bg-surface px-5 py-4 font-sans text-body-sm leading-6 text-fg outline-none"
+          rows={Math.max(2, afterDraft.split('\n').length)}
+          className="block w-full resize-none rounded-md border border-border bg-surface px-3 py-2 font-sans text-body-sm leading-6 text-fg shadow-sm outline-none transition-colors hover:border-border-strong hover:bg-bg-subtle focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-accent"
         />
-      </div>
+      </label>
     </div>
+    </>
   );
 }
 
@@ -1225,6 +1452,7 @@ export default function ProjectRequestEditPage() {
   const [previewMode, setPreviewMode] = useState<'update' | 'additional' | 'combined' | null>(null);
   const [draftPreviewModel, setDraftPreviewModel] = useState<EditModel | null>(null);
   const [draftConfirmSendOpen, setDraftConfirmSendOpen] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
 
   const group = useMemo(() => {
     if (!routeKey) return [];
@@ -1726,11 +1954,25 @@ export default function ProjectRequestEditPage() {
   return (
     <Shell activeRoute="/requests">
       <div className="space-y-5 pb-16">
-        <nav className="flex items-center gap-2 text-body-sm">
-          <button type="button" onClick={navigateToRequests} className="text-fg-muted transition-colors hover:text-accent">Project Requests</button>
-          <ChevronRight size={14} className="text-fg-subtle" />
-          <span className="font-semibold text-fg">{mode === 'draft' ? 'Edit Draft' : canManageOpen ? 'Edit Request' : 'View Request'}</span>
-        </nav>
+        <Breadcrumb className="text-label-md">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink
+                href="/requests"
+                onClick={event => {
+                  event.preventDefault();
+                  navigateToRequests();
+                }}
+              >
+                Project Requests
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{mode === 'draft' ? 'Edit Draft' : canManageOpen ? 'Edit Request' : 'View Request'}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -1762,7 +2004,7 @@ export default function ProjectRequestEditPage() {
               <>
               {step === 1 ? (
                 <section className="grid min-h-[560px] min-w-0 overflow-hidden rounded-xl border border-border bg-surface shadow-sm lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]">
-                  <aside className="relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-border bg-surface shadow-sm lg:overflow-visible lg:border-b-0 lg:border-r">
+                  <aside className="relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-border bg-surface shadow-lg lg:overflow-visible lg:border-b-0 lg:border-r">
                     <div className="space-y-3 border-b border-border bg-surface px-4 py-3.5">
                       <div className="flex items-center justify-between gap-3">
                         <div>
@@ -1770,7 +2012,7 @@ export default function ProjectRequestEditPage() {
                           <p className="mt-0.5 text-caption text-fg-muted">
                             {draftModels.length} request{draftModels.length !== 1 ? 's' : ''} ·{' '}
                             <span className={missing.length > 0 ? 'font-semibold text-danger' : 'text-success'}>
-                              {missing.length} missing
+                              {missing.length} filed missing
                             </span>
                           </p>
                         </div>
@@ -1778,7 +2020,7 @@ export default function ProjectRequestEditPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-[minmax(0,1fr)_64px] border-b border-border px-4 py-3 text-caption text-fg-muted">
+                    <div className="grid grid-cols-[minmax(0,1fr)_64px] border-b border-border bg-[#FDFCFA] px-4 py-3 text-caption text-fg-muted">
                       <span>Request</span>
                       <span className="text-right">Missing</span>
                     </div>
@@ -1795,7 +2037,7 @@ export default function ProjectRequestEditPage() {
                             className={cn(
                               'group relative box-border w-full min-w-0 border-b border-border px-4 py-3 transition-colors',
                               active
-                                ? 'z-10 border-y border-accent/25 bg-accent/5 before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-accent after:absolute after:right-[-14px] after:top-1/2 after:h-7 after:w-4 after:-translate-y-1/2 after:bg-accent/5 after:[clip-path:polygon(0_0,100%_50%,0_100%)]'
+                                ? 'z-10 border-y border-[#E7E4DD] bg-[#F4F2EC] before:absolute before:inset-y-0 before:left-0 before:w-0 before:bg-[#E7E4DD] after:absolute after:right-[-14px] after:top-1/2 after:h-7 after:w-4 after:-translate-y-1/2 after:bg-[#F4F2EC] after:[clip-path:polygon(0_0,100%_50%,0_100%)]'
                                 : 'bg-surface hover:bg-bg-muted',
                             )}
                           >
@@ -1841,8 +2083,8 @@ export default function ProjectRequestEditPage() {
                   </aside>
 
                   <section className="flex min-h-0 min-w-0 flex-col bg-surface">
-                    <div className="flex flex-col gap-3 border-b border-accent/25 bg-accent/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                      <h3 className="text-label-md font-semibold text-accent">
+                    <div className="flex flex-col gap-3 border-b border-[#E7E4DD] bg-[#F9F8F4] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                      <h3 className="text-label-md font-semibold text-[#0F172B]">
                         Current Editing - Request {activeDraftIndex + 1}
                       </h3>
                     </div>
@@ -1855,6 +2097,7 @@ export default function ProjectRequestEditPage() {
                           description="Complete the request, then review it before sending."
                           canEditDeadline
                           canEditPlacements
+                          showErrors={showErrors}
                           onChange={next => updateDraftModel(activeDraftIndex, next)}
                           onRemove={activeDraftIndex > 0 ? () => removeDraftModel(activeDraftIndex) : undefined}
                         />
@@ -1864,14 +2107,14 @@ export default function ProjectRequestEditPage() {
                 </section>
               ) : (
                 <div>
-                  <Alert variant="info" className="mb-4">
-                    <Clock />
+                  <Alert variant="default" className="mb-4 bg-[#F3EFE5] border-[#E7E4DD]">
+                    <Clock className="text-fg-muted" />
                     <AlertDescription>
                       Automatic reminders will be sent {AUTO_REMINDER_DAYS.join(' and ')} days before the deadline.
                     </AlertDescription>
                   </Alert>
                   <section className="grid min-h-[560px] min-w-0 overflow-hidden rounded-xl border border-border bg-surface shadow-sm lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]">
-                    <aside className="relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-border bg-surface shadow-sm lg:overflow-visible lg:border-b-0 lg:border-r">
+                    <aside className="relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-border bg-surface shadow-lg lg:overflow-visible lg:border-b-0 lg:border-r">
                       <div className="space-y-3 border-b border-border bg-surface px-4 py-3.5">
                         <div>
                           <h2 className="text-label-lg font-semibold text-fg">Requests</h2>
@@ -1880,7 +2123,7 @@ export default function ProjectRequestEditPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="grid grid-cols-[minmax(0,1fr)_64px] border-b border-border px-4 py-3 text-caption text-fg-muted">
+                      <div className="grid grid-cols-[minmax(0,1fr)_64px] border-b border-border bg-[#FDFCFA] px-4 py-3 text-caption text-fg-muted">
                         <span>Request</span>
                         <span className="text-right">Status</span>
                       </div>
@@ -1897,7 +2140,7 @@ export default function ProjectRequestEditPage() {
                               className={cn(
                                 'relative grid min-w-0 grid-cols-[minmax(0,1fr)_64px] items-center gap-3 border-b border-border px-4 py-3 text-left transition-colors',
                                 active
-                                  ? 'z-10 border-y border-accent/25 bg-accent/5 before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-accent after:absolute after:right-[-14px] after:top-1/2 after:h-7 after:w-4 after:-translate-y-1/2 after:bg-accent/5 after:[clip-path:polygon(0_0,100%_50%,0_100%)]'
+                                  ? 'z-10 border-y border-[#E7E4DD] bg-[#F4F2EC] before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-[#E7E4DD] after:absolute after:right-[-14px] after:top-1/2 after:h-7 after:w-4 after:-translate-y-1/2 after:bg-[#F4F2EC] after:[clip-path:polygon(0_0,100%_50%,0_100%)]'
                                   : 'bg-surface hover:bg-bg-muted',
                               )}
                             >
@@ -1918,9 +2161,9 @@ export default function ProjectRequestEditPage() {
                       </div>
                     </aside>
                     <section className="flex min-h-0 min-w-0 flex-col bg-surface">
-                      <div className="flex flex-col gap-1 border-b border-accent/25 bg-accent/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex flex-col gap-1 border-b border-[#E7E4DD] bg-[#F9F8F4] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                          <h3 className="text-label-md font-semibold text-accent">
+                          <h3 className="text-label-md font-semibold text-[#0F172B]">
                             Review - Request {activeDraftIndex + 1}
                           </h3>
                           <p className="mt-0.5 text-caption text-fg-muted">Check the request before sending.</p>
@@ -1950,6 +2193,7 @@ export default function ProjectRequestEditPage() {
                       canEditDeadline={canManageOpen}
                       canEditPlacements={canManageOpen}
                       additionalLines={canManageOpen ? additionalLines : undefined}
+                      showErrors={showErrors}
                       onChange={setModel}
                       onAdditionalLinesChange={canManageOpen ? setAdditionalLines : undefined}
                     />
@@ -1973,12 +2217,12 @@ export default function ProjectRequestEditPage() {
           <div className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-end gap-3 border-t border-border bg-bg-subtle px-[clamp(24px,2.6vw,40px)] py-2 md:left-[112px]">
             {mode === 'draft' ? (
               <div className="flex items-center gap-3">
-                <Button variant="outline" onClick={navigateToRequests}>Cancel</Button>
-                <Button variant="outline" onClick={saveDraft}>Save as Draft</Button>
+                <Button variant="outline" size="md" onClick={navigateToRequests}>Cancel</Button>
+                <Button variant="outline" size="md" onClick={saveDraft}>Save as Draft</Button>
                 {step === 1 ? (
-                  <Button onClick={() => setStep(2)}>Preview</Button>
+                  <Button size="md" onClick={() => { if (missing.length > 0) { setShowErrors(true); } else { setShowErrors(false); setStep(2); } }}>Preview</Button>
                 ) : (
-                  <Button onClick={() => setDraftConfirmSendOpen(true)}><Send size={15} />Confirm Send</Button>
+                  <Button size="md" onClick={() => setDraftConfirmSendOpen(true)}><Send size={16} />Confirm Send</Button>
                 )}
               </div>
             ) : (
@@ -1986,14 +2230,14 @@ export default function ProjectRequestEditPage() {
                 {canManageOpen && (
                   step === 1 ? (
                     <>
-                      <Button variant="outline" onClick={navigateToRequests}>Back</Button>
-                      <Button variant="outline" onClick={sendReminder}>Send Reminder</Button>
-                      <Button onClick={() => setStep(2)}><Eye size={15} />Review</Button>
+                      <Button variant="outline" size="md" onClick={navigateToRequests}>Back</Button>
+                      <Button variant="outline" size="md" onClick={sendReminder}>Send Reminder</Button>
+                      <Button size="md" onClick={() => { if (missingFields(model).length > 0 || additionalMissing) { setShowErrors(true); } else { setShowErrors(false); setStep(2); } }}><Eye size={16} />Review</Button>
                     </>
                   ) : (
                     <>
-                      <Button variant="ghost" onClick={() => setStep(1)}><ArrowLeft size={15} />Back</Button>
-                      <Button onClick={() => openPreview('combined')}><Send size={15} />Confirm Send</Button>
+                      <Button variant="ghost" size="md" onClick={() => setStep(1)}><ArrowLeft size={16} />Back</Button>
+                      <Button size="md" onClick={() => openPreview('combined')}><Send size={16} />Confirm Send</Button>
                     </>
                   )
                 )}
@@ -2016,49 +2260,49 @@ export default function ProjectRequestEditPage() {
         </Drawer>
       )}
       {model && previewMode && (
-        <Drawer
-          open
-          onClose={() => setPreviewMode(null)}
-          title="Email preview"
-          subtitle={previewMode === 'additional' ? 'Additional request' : 'Request update'}
-          width="680px"
-          footer={
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setPreviewMode(null)}>Cancel</Button>
-              <Button onClick={handlePreviewSend}>
-                <Send size={15} />{previewMode === 'additional' ? 'Send Additional Request' : 'Send Update'}
-              </Button>
-            </div>
-          }
-        >
-          <div className="p-5">
-            <ManageEmailPreview
-              mode={previewMode}
-              model={model}
-              group={group}
-              placementChanges={placementChanges}
-              additionalLines={previewMode === 'additional' || previewMode === 'combined' ? completedAdditionalLines : []}
-            />
-          </div>
-        </Drawer>
+        <Sheet open onOpenChange={open => { if (!open) setPreviewMode(null); }}>
+          <SheetContent side="right" className="w-[min(100vw,680px)] sm:max-w-none">
+            <SheetHeader>
+              <SheetTitle>Email preview</SheetTitle>
+              <SheetDescription>
+                {previewMode === 'additional' ? 'Additional request' : 'Request update'} — to {recipientLabel(model.pcHead)}
+              </SheetDescription>
+            </SheetHeader>
+            <SheetBody className="space-y-4">
+              <ManageEmailPreview
+                mode={previewMode}
+                model={model}
+                group={group}
+                placementChanges={placementChanges}
+                additionalLines={previewMode === 'additional' || previewMode === 'combined' ? completedAdditionalLines : []}
+              />
+            </SheetBody>
+            <SheetFooter>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setPreviewMode(null)}>Cancel</Button>
+                <Button onClick={handlePreviewSend}>
+                  <Send size={15} />{previewMode === 'additional' ? 'Send Additional Request' : 'Send Update'}
+                </Button>
+              </div>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
       )}
       {draftPreviewModel && (
-        <Drawer
-          open
-          onClose={() => setDraftPreviewModel(null)}
-          title="Email preview"
-          subtitle={`To ${recipientLabel(draftPreviewModel.adpnc) || '-'}`}
-          width="680px"
-          footer={
-            <div className="flex justify-end">
-              <Button onClick={() => setDraftPreviewModel(null)}>Done</Button>
-            </div>
-          }
-        >
-          <div className="p-5">
-            <DraftEmailPreview model={draftPreviewModel} />
-          </div>
-        </Drawer>
+        <Sheet open onOpenChange={open => { if (!open) setDraftPreviewModel(null); }}>
+          <SheetContent side="right" className="w-[min(100vw,680px)] sm:max-w-none">
+            <SheetHeader>
+              <SheetTitle>Email preview</SheetTitle>
+              <SheetDescription>To {recipientLabel(draftPreviewModel.adpnc) || '-'}</SheetDescription>
+            </SheetHeader>
+            <SheetBody className="space-y-4">
+              <DraftEmailPreview model={draftPreviewModel} />
+            </SheetBody>
+            <SheetFooter>
+              <Button variant="primary" size="md" onClick={() => setDraftPreviewModel(null)}>Done</Button>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
       )}
       <Dialog open={draftConfirmSendOpen} onOpenChange={setDraftConfirmSendOpen}>
         <DialogContent className="max-w-md">

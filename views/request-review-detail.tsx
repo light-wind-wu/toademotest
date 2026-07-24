@@ -237,23 +237,36 @@ function SubmissionInformationCard({
   projectId: string; request: string; submittedBy: string;
   submittedOn: string; lastUpdated: string;
 }) {
-  const rows = [
-    { label: 'Project ID', value: projectId, fullWidth: true },
-    { label: 'Request', value: request },
-    { label: 'Submitted by', value: submittedBy },
-    { label: 'Submitted on', value: submittedOn },
-    { label: 'Last updated', value: lastUpdated },
-  ];
   return (
     <div className="rounded-lg border border-border bg-surface p-5 shadow-sm">
       <h2 className="text-body-md font-bold text-fg">Submission Information</h2>
-      <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4">
-        {rows.map(({ label, value, fullWidth }) => (
-          <div key={label} className={fullWidth ? 'col-span-2' : ''}>
-            <p className="text-caption text-fg-muted">{label}</p>
-            <p className="mt-0.5 text-body-sm font-medium text-fg">{value}</p>
+      <div className="mt-4 space-y-4">
+        <div>
+          <p className="text-caption text-fg-muted">Project ID</p>
+          <p className="mt-0.5 text-body-sm font-medium text-fg">{projectId}</p>
+        </div>
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-x-0 divide-x divide-border">
+            <div className="pr-4">
+              <p className="text-caption text-fg-muted">Request</p>
+              <p className="mt-0.5 text-body-sm font-medium text-fg">{request}</p>
+            </div>
+            <div className="pl-4">
+              <p className="text-caption text-fg-muted">Submitted by</p>
+              <p className="mt-0.5 text-body-sm font-medium text-fg">{submittedBy}</p>
+            </div>
           </div>
-        ))}
+          <div className="grid grid-cols-2 gap-x-0 divide-x divide-border">
+            <div className="pr-4">
+              <p className="text-caption text-fg-muted">Submitted on</p>
+              <p className="mt-0.5 text-body-sm font-medium text-fg">{submittedOn}</p>
+            </div>
+            <div className="pl-4">
+              <p className="text-caption text-fg-muted">Last updated</p>
+              <p className="mt-0.5 text-body-sm font-medium text-fg">{lastUpdated}</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

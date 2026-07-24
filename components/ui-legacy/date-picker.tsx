@@ -75,6 +75,7 @@ export default function DatePicker({
           side="bottom"
           align={align === 'right' ? 'end' : 'start'}
           sideOffset={4}
+          collisionAvoidance={{ side: 'flip' }}
         >
           <BasePopover.Popup
             className={cn(

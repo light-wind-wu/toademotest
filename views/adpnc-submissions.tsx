@@ -274,7 +274,7 @@ function RequestCard({
   const pc = group.requests[0]?.programmeCenter ?? '—';
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
+    <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
       {/* Header */}
       <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
@@ -289,7 +289,7 @@ function RequestCard({
       </div>
 
       {/* Body */}
-      <div className="space-y-6 px-5 py-5">
+      <div className="flex flex-1 flex-col space-y-6 px-5 py-5">
         {/* Placement Fulfilment */}
         <div>
           <h4 className="text-label-md mb-3 font-semibold text-fg">Placement Fulfilment</h4>
@@ -371,7 +371,7 @@ function RequestCard({
         )}
 
         {/* Footer action */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="mt-auto flex flex-col gap-3 sm:flex-row sm:items-center">
           <Button
             size="sm"
             onClick={action.mode === 'upload' ? onUpload : onViewProject}

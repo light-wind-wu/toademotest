@@ -342,20 +342,20 @@ export default function AdPncEditSubmissionPage() {
         )}
 
         <div className="space-y-6">
-          {/* IO feedback */}
-          {proj.remarks && (
-            <div className="rounded-lg border border-warning/30 bg-warning-bg px-5 py-4">
-              <div className="flex items-center gap-2 mb-1.5">
-                <AlertTriangle size={14} className="text-warning shrink-0" />
-                <p className="text-caption font-semibold uppercase tracking-wide text-warning">IO feedback</p>
-              </div>
-              <p className="text-body-sm text-fg">{proj.remarks}</p>
-            </div>
-          )}
 
           {/* Edit form */}
           <div className="rounded-lg border border-border bg-surface p-6">
             <div className="space-y-5">
+              <h2 className="text-body-lg font-semibold text-fg leading-tight ">Edit Project</h2>
+              {/* IO feedback */}
+              {proj.remarks && (
+                <div className="rounded-lg border border-[#E6E1D8] bg-[#F3EFE5] px-5 py-4">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <p className="text-caption font-semibold tracking-wide text-[#162133]">IO feedback</p>
+                  </div>
+                  <p className="text-body-sm text-[#4A5568]">{proj.remarks}</p>
+                </div>
+              )}
               <Field label="Programme centre" required error={errors.pc} className="max-w-[33%]">
                 <Select value={edit.pc} onValueChange={value => setEdit(prev => prev ? { ...prev, pc: value ?? '' } : prev)}>
                   <SelectTrigger aria-label="Programme centre">

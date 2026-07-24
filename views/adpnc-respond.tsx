@@ -12,11 +12,28 @@ import RequestContextTable from '@/components/ui-legacy/request-context-table';
 import AiCheckBlock from '@/components/ui-legacy/ai-check-block';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuTrigger,
+} from '@/components/ui/menu';
 import Modal from '@/components/ui-legacy/modal';
 import { Toast, useToast } from '@/components/ui-legacy/toast';
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import {
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   Calendar,
   Check,
   ChevronRight,
@@ -25,6 +42,8 @@ import {
   Inbox,
   LayoutGrid,
   List,
+  MoreVertical,
+  Pencil,
   Plus,
   Trash2,
   Upload,
@@ -913,6 +932,8 @@ export default function AdPncRespondPage() {
   const [activeCategory, setActiveCategory] = useState<string>('');
   const [selectedProjectIds, setSelectedProjectIds] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sortCol, setSortCol] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<1 | -1>(1);
   const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
   const [showRequestDetails, setShowRequestDetails] = useState(false);
 
@@ -985,6 +1006,37 @@ export default function AdPncRespondPage() {
     !showCategoryTabs || projectCategoryKey(project) === activeCategory;
   const shownProjects = visibleProjects.filter(inActiveCategory);
 
+  const sortedProjects = useMemo(() => {
+    if (!sortCol || shownProjects.length === 0) return shownProjects;
+    const getValue = (p: SubmittedProject, col: string) => {
+      const matched = group?.requests.find(request => projectMatchesRequest(p, request));
+      switch (col) {
+        case 'title': return p.title.toLowerCase();
+        case 'dates': return p.internshipPeriodStart || projectPeriod(p, matched).toLowerCase();
+        case 'duration': {
+          const durationStr = projectDuration(p);
+          const match = durationStr.match(/(\d+)/);
+          return match ? parseInt(match[1], 10) : 0;
+        }
+        case 'slots': return p.slots;
+        case 'mentor': return (p.mentor || '').toLowerCase();
+        case 'aiStatus': {
+          const meta = aiCheckMeta(p);
+          return meta.result === 'pass' ? 0 : meta.result === 'warn' ? 1 : 2;
+        }
+        case 'status': return p.status;
+        default: return p.title.toLowerCase();
+      }
+    };
+    return [...shownProjects].sort((a, b) => {
+      const av = getValue(a, sortCol);
+      const bv = getValue(b, sortCol);
+      if (av < bv) return -sortDir;
+      if (av > bv) return sortDir;
+      return a.title.localeCompare(b.title);
+    });
+  }, [shownProjects, sortCol, sortDir, group]);
+
   const activeVisibleProjects = activeSubmittedProjects(visibleProjects);
   const canSubmit = activeVisibleProjects.length > 0 && pcCleared && securityCleared;
 
@@ -1023,6 +1075,17 @@ export default function AdPncRespondPage() {
       if (next.has(projectId)) next.delete(projectId);
       else next.add(projectId);
       return next;
+    });
+  }
+
+  function doSort(col: string) {
+    setSortCol(prev => {
+      if (prev === col) {
+        setSortDir(d => d === 1 ? -1 : 1);
+        return prev;
+      }
+      setSortDir(1);
+      return col;
     });
   }
 
@@ -1213,7 +1276,21 @@ export default function AdPncRespondPage() {
   function confirmUploadImport() {
     if (!uploadReview || uploadReview.issues.length > 0 || uploadReview.readyProjects.length === 0) return;
     saveResponseDraftProjects([...draftProjects, ...uploadReview.readyProjects]);
-    showToast(`${uploadReview.readyProjects.length} project${uploadReview.readyProjects.length !== 1 ? 's' : ''} added as draft.`);
+    const importedCategories = new Set(
+      uploadReview.readyProjects.map(project => {
+        const matched = group?.requests.find(
+          request => request.id === project.requestLineId || projectMatchesRequest(project, request)
+        );
+        return (matched ? requestRawCategory(matched) : undefined) || project.educationLevel || 'Unknown';
+      })
+    );
+    const categoriesCount = importedCategories.size;
+    const projectCount = uploadReview.readyProjects.length;
+    showToast(
+      `The projects have been added across ${categoriesCount} Intern Categor${categoriesCount !== 1 ? 'ies' : 'y'}.`,
+      'success',
+      `${projectCount} project${projectCount !== 1 ? 's' : ''} uploaded successfully`
+    );
     setUploadReview(null);
   }
 
@@ -1438,12 +1515,77 @@ export default function AdPncRespondPage() {
                   <div className="rounded-lg border border-dashed border-border bg-surface px-4 py-8 text-center text-body-sm text-fg-muted">
                     No projects for {categoryLabel(activeCategory)} yet.
                   </div>
+                ) : viewMode === 'list' ? (
+                  <div className="overflow-hidden rounded-lg border border-border bg-surface">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-10 px-3 py-2">
+                            <Checkbox
+                              id="select-all-list"
+                              checked={allActiveSelected}
+                              onCheckedChange={toggleSelectAllInTab}
+                              aria-label="Select all in tab"
+                            />
+                          </TableHead>
+                          <TableHead className="px-3 py-2">
+                            <SortHeader label="Project" colId="title" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />
+                          </TableHead>
+                          <TableHead className="px-3 py-2">
+                            <SortHeader label="Dates" colId="dates" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />
+                          </TableHead>
+                          <TableHead className="px-3 py-2">
+                            <SortHeader label="Duration" colId="duration" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />
+                          </TableHead>
+                          <TableHead className="px-3 py-2">
+                            <SortHeader label="Placement" colId="slots" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />
+                          </TableHead>
+                          <TableHead className="px-3 py-2">
+                            <SortHeader label="Mentor" colId="mentor" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />
+                          </TableHead>
+                          <TableHead className="px-3 py-2">AI Status</TableHead>
+                          <TableHead className="px-3 py-2">
+                            <SortHeader label="Submission Status" colId="status" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />
+                          </TableHead>
+                          <TableHead className="px-3 py-2 text-right"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {sortedProjects.map(project => {
+                          const batch = batches.find(item => item.uploadToken === token && item.projects.some(row => row.id === project.id));
+                          const matchedRequest = group.requests.find(request => projectMatchesRequest(project, request));
+                          const isSelected = selectedProjectIds.has(project.id);
+                          return (
+                            <ProjectListRow
+                              key={project.id}
+                              project={project}
+                              request={matchedRequest}
+                              batchId={isUploadMode ? undefined : batch?.id}
+                              selected={isSelected}
+                              onToggleSelect={() => toggleProjectSelection(project.id)}
+                              canManage={true}
+                              onViewDetails={batch?.id ? () => router.push(`/submissions/project/${encodeURIComponent(batch.id)}/${encodeURIComponent(project.id)}`) : undefined}
+                              onEdit={() => {
+                                if (isUploadMode) {
+                                  setEditingDraftProjectId(project.id);
+                                  return;
+                                }
+                                if (batch?.id) {
+                                  router.push(`/submissions/edit/${encodeURIComponent(batch.id)}/${encodeURIComponent(project.id)}`);
+                                }
+                              }}
+                              onDelete={() => deleteDraftProject(project.id)}
+                              onWithdraw={() => withdrawProject(project.id)}
+                            />
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                 ) : (
                   <div className={cn(
                     'grid gap-4',
-                    viewMode === 'grid'
-                      ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-                      : 'grid-cols-1'
+                    'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
                   )}>
                     {shownProjects.map(project => {
                       const batch = batches.find(item => item.uploadToken === token && item.projects.some(row => row.id === project.id));
@@ -1765,6 +1907,176 @@ function EmptyProjectsCard({ isUploadMode, onUpload }: { isUploadMode: boolean; 
   );
 }
 
+function SortHeader({
+  label,
+  colId,
+  sortCol,
+  sortDir,
+  onSort,
+}: {
+  label: string;
+  colId: string;
+  sortCol: string | null;
+  sortDir: 1 | -1;
+  onSort: (col: string) => void;
+}) {
+  const isSorted = sortCol === colId;
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(colId)}
+      className="flex items-center gap-1 text-left text-xs font-semibold text-fg-muted hover:text-fg"
+    >
+      {label}
+      {isSorted ? (
+        sortDir === 1 ? (
+          <ArrowUp size={13} className="text-accent" />
+        ) : (
+          <ArrowDown size={13} className="text-accent" />
+        )
+      ) : (
+        <ArrowUpDown size={13} className="text-fg-subtle" />
+      )}
+    </button>
+  );
+}
+
+function ProjectListRow({
+  project,
+  request,
+  batchId,
+  selected,
+  onToggleSelect,
+  canManage,
+  onViewDetails,
+  onEdit,
+  onDelete,
+  onWithdraw,
+}: {
+  project: SubmittedProject;
+  request?: ProjectRequest;
+  batchId?: string;
+  selected: boolean;
+  onToggleSelect: () => void;
+  canManage: boolean;
+  onViewDetails?: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onWithdraw: () => void;
+}) {
+  const statusLabel = STATUS_LABELS[project.status] ?? STATUS_LABELS.pending;
+  const statusCls = STATUS_COLOURS[project.status] ?? STATUS_COLOURS.pending;
+  const aiMeta = aiCheckMeta(project);
+  const showAiMeta = project.status !== 'approved' && project.status !== 'withdrawn';
+  const canEdit = canManage && (project.status === 'draft' || (Boolean(batchId) && (project.status === 'rejected' || project.status === 'withdrawn')));
+  const canDelete = canManage && project.status === 'draft';
+  const canWithdraw = canManage && project.status === 'pending';
+  const [confirmWithdrawOpen, setConfirmWithdrawOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+
+  return (
+    <>
+      <TableRow>
+        <TableCell className="w-10 px-3 py-2.5">
+          <Checkbox
+            checked={selected}
+            onCheckedChange={onToggleSelect}
+            aria-label={`Select ${project.title || 'Untitled project'}`}
+          />
+        </TableCell>
+        <TableCell className="px-3 py-2.5">
+          <span className="text-body-sm font-medium text-fg">{project.title || 'Untitled project'}</span>
+        </TableCell>
+        <TableCell className="px-3 py-2.5 text-body-sm text-fg">{projectPeriod(project, request)}</TableCell>
+        <TableCell className="px-3 py-2.5 text-body-sm text-fg">{projectDuration(project)}</TableCell>
+        <TableCell className="px-3 py-2.5 text-body-sm text-fg">
+          {project.slots} placement{project.slots !== 1 ? 's' : ''}
+        </TableCell>
+        <TableCell className="px-3 py-2.5 text-body-sm text-fg">{project.mentor || '—'}</TableCell>
+        <TableCell className="px-3 py-2.5">
+          {showAiMeta ? (
+            <span className="badge inline-flex items-center gap-1 text-caption font-normal border border-[rgba(37,99,235,0.3)] bg-[rgba(37,99,235,0.05)] text-[rgba(26,101,248,1)]">
+              <AiSparkleIcon size={12} />{aiMeta.label}
+            </span>
+          ) : (
+            <span className="text-body-sm text-fg-muted">—</span>
+          )}
+        </TableCell>
+        <TableCell className="px-3 py-2.5">
+          <span className={cn('badge text-caption font-normal', statusCls)}>{statusLabel}</span>
+        </TableCell>
+        <TableCell className="px-3 py-2.5 text-right">
+          {(canEdit || onViewDetails || canWithdraw || canDelete) && (
+            <Menu>
+              <MenuTrigger
+                aria-label={`Actions for ${project.title || 'Untitled project'}`}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-bg-muted hover:text-fg focus-visible:outline-1 focus-visible:outline-accent"
+                onClick={e => e.stopPropagation()}
+              >
+                <MoreVertical size={16} />
+              </MenuTrigger>
+              <MenuContent className="w-48">
+                {canEdit && (
+                  <MenuItem onClick={onEdit}>
+                    {project.status === 'rejected' ? 'Continue Editing' : 'Edit'}
+                  </MenuItem>
+                )}
+                {onViewDetails && (
+                  <MenuItem onClick={onViewDetails}>
+                    View
+                  </MenuItem>
+                )}
+                {canWithdraw && (
+                  <MenuItem onClick={() => setConfirmWithdrawOpen(true)}>
+                    Withdraw
+                  </MenuItem>
+                )}
+                {canDelete && (
+                  <MenuItem onClick={() => setConfirmDeleteOpen(true)} className="text-danger">
+                    Delete
+                  </MenuItem>
+                )}
+              </MenuContent>
+            </Menu>
+          )}
+        </TableCell>
+      </TableRow>
+
+      <Dialog open={confirmWithdrawOpen} onOpenChange={setConfirmWithdrawOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Withdraw project?</DialogTitle>
+            <DialogDescription>
+              This project will be withdrawn and no longer under IO review.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmWithdrawOpen(false)}>Cancel</Button>
+            <Button variant="danger" onClick={() => { setConfirmWithdrawOpen(false); onWithdraw(); }}>Withdraw</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete project?</DialogTitle>
+            <DialogDescription>
+              This draft project will be removed. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>Cancel</Button>
+            <Button variant="danger" onClick={() => { setConfirmDeleteOpen(false); onDelete(); }}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 function ProjectCard({
   project,
   request,
@@ -1846,7 +2158,6 @@ function ProjectCard({
         )}
         {onViewDetails && (
           <Button variant="outline" size="sm" onClick={onViewDetails}>
-            <Eye size={14} />
             View
           </Button>
         )}
@@ -1857,7 +2168,7 @@ function ProjectCard({
         )}
         {canDelete && (
           <Button variant="outline" size="sm" onClick={() => setConfirmDeleteOpen(true)} aria-label="Delete draft project">
-            <Trash2 size={14} />
+            
             Delete
           </Button>
         )}
@@ -1902,7 +2213,7 @@ function ProjectCard({
               Cancel
             </Button>
             <Button variant="danger" onClick={() => { setConfirmDeleteOpen(false); onDelete(); }}>
-              <Trash2 size={14} />Delete
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1927,7 +2238,6 @@ function CheckRow({
   return (
     <label className={cn(
       'flex cursor-pointer items-start gap-3 rounded-lg px-4 py-3 pl-0 transition-colors',
-      checked && 'border-accent bg-accent/5',
       disabled && 'cursor-not-allowed bg-bg-subtle',
     )}>
       <Checkbox

@@ -752,6 +752,7 @@ export default function ProjectNewPage() {
 
           <div className="rounded-lg border border-border bg-surface p-6">
             <div className="space-y-5">
+              <h2 className="text-body-lg font-semibold text-fg leading-tight ">Add New Project</h2>
               <FormField label="Programme centre" required error={errors.pc}>
                 <div className={cn(INPUT_CLS, 'flex min-h-9 items-center bg-bg-muted text-fg max-w-[33%]')}>
                   {pc || requestProgrammeCentre || 'Programme centre from request'}
@@ -772,7 +773,7 @@ export default function ProjectNewPage() {
 
               <FormField label="Project title" required error={errors.title}>
                 <input
-                  className={cn(INPUT_CLS, errors.title && ERROR_CLS)}
+                  className={cn(INPUT_CLS, 'max-w-[33%]', errors.title && ERROR_CLS)}
                   placeholder="Type a project name, e.g. AI-Driven Threat Detection System"
                   value={title}
                   onChange={(event) => { setTitle(event.target.value); clearError("title"); }}

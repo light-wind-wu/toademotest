@@ -1,13 +1,26 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import { Popover as BasePopover } from "@base-ui-components/react/popover";
+import { cn } from "@/lib/utils";
+import {
+  Popover,
+  PopoverClose,
+  PopoverTrigger,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverDescription,
+} from "@/components/ui/popover";
 import { X } from "lucide-react";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
-export const Popover = BasePopover.Root;
-export const PopoverTrigger = BasePopover.Trigger;
-export const PopoverClose = BasePopover.Close;
+export {
+  Popover,
+  PopoverClose,
+  PopoverTrigger,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverDescription,
+};
 
 export function PopoverContent({
   className,
@@ -24,7 +37,7 @@ export function PopoverContent({
 }) {
   return (
     <BasePopover.Portal>
-      <BasePopover.Positioner sideOffset={sideOffset}>
+      <BasePopover.Positioner sideOffset={sideOffset} collisionAvoidance={{ side: 'flip' }}>
         <BasePopover.Popup
           className={cn(
             "z-50 w-72 rounded-lg border border-border p-4 shadow-md",
@@ -41,7 +54,7 @@ export function PopoverContent({
             <BasePopover.Close
               className={cn(
                 "absolute right-3 top-3 rounded-sm text-fg-muted opacity-70 transition-opacity",
-                "hover:opacity-100 focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-accent",
+                "hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
               )}
               aria-label="Close"
             >
@@ -52,24 +65,4 @@ export function PopoverContent({
       </BasePopover.Positioner>
     </BasePopover.Portal>
   );
-}
-
-export function PopoverHeader({ className, ...props }: ComponentPropsWithoutRef<"div">) {
-  return <div className={cn("mb-2 flex flex-col gap-1", className)} {...props} />;
-}
-
-export function PopoverTitle({
-  className,
-  ...props
-}: ComponentPropsWithoutRef<typeof BasePopover.Title>) {
-  return (
-    <BasePopover.Title className={cn("text-sm font-semibold text-fg", className)} {...props} />
-  );
-}
-
-export function PopoverDescription({
-  className,
-  ...props
-}: ComponentPropsWithoutRef<typeof BasePopover.Description>) {
-  return <BasePopover.Description className={cn("text-sm text-fg-muted", className)} {...props} />;
 }

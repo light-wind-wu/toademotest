@@ -48,6 +48,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import {
   Send, Check, X, FileText, ChevronRight, Filter, MoreVertical, Eye, Bell, CalendarClock, Pencil, Trash2, Ban,
@@ -63,6 +71,7 @@ import { useProgramme } from '@/lib/programme-context';
 import { addNotification } from '@/lib/notifications';
 import { cn, exportToCSV } from '@/lib/utils';
 import { Toast, useToast } from '@/components/ui-legacy/toast';
+import { TruncatedTooltip } from '@/components/ui-legacy/truncated-tooltip';
 import type {
   ProjectRequest, RequestStatus,
   ProjectRequestAuditEntry, ProjectSubmissionBatch, ProjectEntry,
@@ -600,6 +609,8 @@ export default function RequestsPage() {
   const [bulkApproveOpen,   setBulkApproveOpen]   = useState(false);
   const [bulkRejectOpen,    setBulkRejectOpen]     = useState(false);
   const [bulkRejectRemarks, setBulkRejectRemarks] = useState('');
+  const [bulkReturnOpen,    setBulkReturnOpen]    = useState(false);
+  const [bulkReturnRemarks, setBulkReturnRemarks] = useState('');
   const [extendGroup, setExtendGroup] = useState<{ pc: string; headName: string; requests: ProjectRequest[] } | null>(null);
   const [extendDeadline, setExtendDeadline] = useState('');
   const [withdrawGroup, setWithdrawGroup] = useState<PCGroup | null>(null);
@@ -803,7 +814,7 @@ export default function RequestsPage() {
     }, {
       id: 'summary',
       header: 'Summary',
-      meta: { size: 'long', truncate: true },
+      meta: { size: 'fill', truncate: true },
     }),
     draftColumnHelper.accessor(() => 'No', {
       id: 'notification',
@@ -824,7 +835,7 @@ export default function RequestsPage() {
     draftColumnHelper.display({
       id: 'actions',
       header: '',
-      meta: { size: 'icon' },
+      meta: { size: 'icon', sticky: 'right' },
       cell: ({ row }) => (
         <div className="text-right" onClick={e => e.stopPropagation()}>
           {sentActionMenu(row.original)}
@@ -850,7 +861,7 @@ export default function RequestsPage() {
             labelClassName="whitespace-normal"
           />
         ),
-        meta: { size: 120, truncate: true, labelClassName: 'whitespace-normal' },
+        meta: { size: 'medium', truncate: true, labelClassName: 'whitespace-normal' },
         cell: ({ row }) => {
           const group = row.original;
           const gkey = group.key ?? group.pc;
@@ -882,7 +893,7 @@ export default function RequestsPage() {
             onSort={doSort}
           />
         ),
-        meta: { size: 180, truncate: true },
+        meta: { size: 'long', truncate: true },
         cell: ({ row }) => {
           const group = row.original;
           return (
@@ -895,8 +906,8 @@ export default function RequestsPage() {
     }
 
     cols.push(sentColumnHelper.display({
-      id: 'recipient',
-      header: () => (
+        id: 'recipient',
+        header: () => (
           <SortHeader
           label="AD(P&C)"
           colId="recipient"
@@ -905,7 +916,7 @@ export default function RequestsPage() {
           onSort={doSort}
         />
       ),
-      meta: { size: 120, truncate: true },
+        meta: { size: 'medium', truncate: true },
       cell: ({ row }) => {
         const group = row.original;
         const gkey = group.key ?? group.pc;
@@ -939,7 +950,7 @@ export default function RequestsPage() {
             labelClassName="whitespace-normal"
           />
         ),
-        meta: { size: 120, labelClassName: 'whitespace-normal' },
+        meta: { size: 'short', labelClassName: 'whitespace-normal' },
         cell: ({ row }) => {
           const group = row.original;
           const { placements: totalPlacements, uploaded: totalUploaded } = sentGroupMetrics(group);
@@ -967,7 +978,7 @@ export default function RequestsPage() {
             labelClassName="whitespace-normal"
           />
         ),
-        meta: { size: 170, truncate: true, labelClassName: 'whitespace-normal' },
+        meta: { size: 'long', truncate: true, labelClassName: 'whitespace-normal' },
         cell: () => null,
       }));
     }
@@ -985,7 +996,7 @@ export default function RequestsPage() {
             labelClassName="whitespace-normal"
           />
         ),
-        meta: { size: 120, truncate: true, labelClassName: 'whitespace-normal' },
+        meta: { size: 110, truncate: true, labelClassName: 'whitespace-normal' },
         cell: () => null,
       }));
     }
@@ -1004,7 +1015,7 @@ export default function RequestsPage() {
             labelClassName="whitespace-normal"
           />
         ),
-        meta: { size: 80, truncate: true, labelClassName: 'whitespace-normal' },
+        meta: { size: 'short', truncate: true, labelClassName: 'whitespace-normal' },
         cell: ({ row }) => {
           const { latestSent } = sentGroupMetrics(row.original);
           return <span className="text-body-sm font-normal text-fg truncate">{fmtDate(latestSent)}</span>;
@@ -1025,7 +1036,7 @@ export default function RequestsPage() {
             labelClassName="whitespace-normal"
           />
         ),
-        meta: { size: 120, truncate: true, labelClassName: 'whitespace-normal' },
+        meta: { size: 'medium', truncate: true, labelClassName: 'whitespace-normal' },
         cell: ({ row }) => {
           const { earliestDeadline } = sentGroupMetrics(row.original);
           return <span className="text-body-sm font-normal text-fg truncate">{fmtDate(earliestDeadline)}</span>;
@@ -1045,7 +1056,7 @@ export default function RequestsPage() {
             onSort={doSort}
           />
         ),
-        meta: { size: 120 },
+        meta: { size: 'short' },
         cell: ({ row }) => {
           const { worstStatus } = sentGroupMetrics(row.original);
           const worstMeta = STATUS_META[worstStatus];
@@ -1061,7 +1072,7 @@ export default function RequestsPage() {
     cols.push(sentColumnHelper.display({
       id: 'actions',
       header: '',
-      meta: { size: 40, noResizable: true, thClassName: 'px-0' },
+      meta: { size: 'icon', noResizable: true, thClassName: 'px-0', sticky: 'right' },
       cell: ({ row }) => (
         <div className="text-right" onClick={e => e.stopPropagation()}>
           {sentActionMenu(row.original)}
@@ -1091,10 +1102,10 @@ export default function RequestsPage() {
               className={cn('py-2.5', sentVisibleCols.programmeCenter ? 'px-4' : 'pl-12 pr-4')}
               maxWidth={table.getColumn('programmes')?.getSize()}
             >
-              <p className="text-body-sm font-normal text-fg-muted truncate">
+              <TruncatedTooltip className="text-body-sm font-normal text-fg-muted">
                 <CornerDownRight size={16} className="inline" />
                 {requestInternCategory(req, progMap)}
-              </p>
+              </TruncatedTooltip>
             </TableCell>
           )}
           <TableCell
@@ -1107,7 +1118,9 @@ export default function RequestsPage() {
               maxWidth={table.getColumn('placements')?.getSize()}
             >
               <div className="flex items-center gap-2">
-                <span className="block truncate">{req.uploaded ?? 0} / {req.placements}</span>
+                <TruncatedTooltip className="text-body-sm font-normal text-fg-muted">
+                  {req.uploaded ?? 0} / {req.placements}
+                </TruncatedTooltip>
                 {isOverTarget(req) && <LineStatusFlag meta={LINE_STATUS_META.overTarget} />}
               </div>
             </TableCell>
@@ -1166,7 +1179,7 @@ export default function RequestsPage() {
       cols.push(flatColumnHelper.display({
         id: 'pc',
         header: () => <SortHeader label="Programme Centre" colId="pc" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
-        meta: { size: 180, truncate: true },
+        meta: { size: 'medium', truncate: true },
         cell: ({ row }) => <span className="text-body-sm text-fg-muted truncate">{row.original.pc}</span>,
       }));
     }
@@ -1174,7 +1187,7 @@ export default function RequestsPage() {
       cols.push(flatColumnHelper.display({
         id: 'title',
         header: () => <SortHeader label="Project" colId="title" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
-        meta: { size: 240, truncate: true },
+        meta: { size: 'fill', truncate: true },
         cell: ({ row }) => {
           const rowData = row.original;
           const isPending = rowData.status === 'pending';
@@ -1198,7 +1211,7 @@ export default function RequestsPage() {
       cols.push(flatColumnHelper.display({
         id: 'category',
         header: () => <SortHeader label="Intern Category" colId="category" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
-        meta: { size: 180, truncate: true },
+        meta: { size: 'long', truncate: true },
         cell: ({ row }) => {
           const category = row.original.educationLevel || row.original.requestedEducationLevels.join(', ') || '—';
           return <span className="text-body-sm text-fg-muted truncate">{category}</span>;
@@ -1209,7 +1222,7 @@ export default function RequestsPage() {
       cols.push(flatColumnHelper.display({
         id: 'discipline',
         header: () => <SortHeader label="Discipline of Study" colId="discipline" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
-        meta: { size: 200, truncate: true },
+        meta: { size: 'long', truncate: true },
         cell: ({ row }) => {
           const disciplines = parseDisciplines(row.original.discipline);
           if (disciplines.length === 0) return <span className="text-body-sm text-fg-muted truncate block">—</span>;
@@ -1227,7 +1240,7 @@ export default function RequestsPage() {
       cols.push(flatColumnHelper.display({
         id: 'slots',
         header: () => <SortHeader label="Placements" colId="slots" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
-        meta: { size: 120, truncate: true },
+        meta: { size: 'short', truncate: true },
         cell: ({ row }) => <span className="text-body-sm text-fg-muted truncate">{row.original.slots}</span>,
       }));
     }
@@ -1250,7 +1263,7 @@ export default function RequestsPage() {
           }}
         />
       ),
-      meta: { size: 48 },
+      meta: { size: 'icon' },
       cell: ({ row }) => {
         const group = row.original;
         const groupKeys = group.rows.map(r => r.key);
@@ -1277,7 +1290,7 @@ export default function RequestsPage() {
       cols.push(pendingColumnHelper.display({
         id: 'pc',
         header: () => <SortHeader label="Programme Centre" colId="pc" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
-        meta: { size: 180, truncate: true },
+        meta: { size: 'medium', truncate: true },
         cell: ({ row }) => {
           const group = row.original;
           const collapsed = !expandedSubPcs.has(group.pc);
@@ -1299,7 +1312,7 @@ export default function RequestsPage() {
       cols.push(pendingColumnHelper.display({
         id: 'title',
         header: () => <SortHeader label="Project" colId="title" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
-        meta: { size: 240, truncate: true },
+        meta: { size: 'fill', truncate: true },
         cell: ({ row }) => <span className="text-body-sm text-fg truncate">{row.original.rows.length} project{row.original.rows.length !== 1 ? 's' : ''} to review</span>,
       }));
     }
@@ -1307,7 +1320,7 @@ export default function RequestsPage() {
       cols.push(pendingColumnHelper.display({
         id: 'category',
         header: () => <SortHeader label="Intern Category" colId="category" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
-        meta: { size: 180, truncate: true },
+        meta: { size: 'long', truncate: true },
         cell: ({ row }) => {
           const categoryCount = new Set(row.original.rows.map(r => r.educationLevel || r.requestedEducationLevels.join(', ') || '—')).size;
           return <span className="text-body-sm text-fg-muted truncate">{categoryCount} intern categor{categoryCount === 1 ? 'y' : 'ies'}</span>;
@@ -1318,7 +1331,7 @@ export default function RequestsPage() {
       cols.push(pendingColumnHelper.display({
         id: 'discipline',
         header: () => <SortHeader label="Discipline of Study" colId="discipline" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
-        meta: { size: 200, truncate: true },
+        meta: { size: 'long', truncate: true },
         cell: () => <span className="text-body-sm text-fg-muted truncate">—</span>,
       }));
     }
@@ -1326,7 +1339,7 @@ export default function RequestsPage() {
       cols.push(pendingColumnHelper.display({
         id: 'slots',
         header: () => <SortHeader label="Placements" colId="slots" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
-        meta: { size: 120, truncate: true },
+        meta: { size: 'short', truncate: true },
         cell: ({ row }) => {
           const group = row.original;
           const groupSlots = group.rows.reduce((s, r) => s + r.slots, 0);
@@ -1371,15 +1384,15 @@ export default function RequestsPage() {
           )}
           {visibleCols.title && (
             <TableCell className="px-4 py-3" maxWidth={table.getColumn('title')?.getSize()}>
-              <p className={cn('text-body-sm font-medium truncate', isPending ? 'text-fg group-hover:text-accent transition-colors' : 'text-fg')}>
+              <TruncatedTooltip className={cn('text-body-sm font-normal text-fg-muted', isPending ? 'group-hover:text-accent transition-colors' : '')}>
                 <CornerDownRight size={16} className="inline" />
                 {r.title}
-              </p>
+              </TruncatedTooltip>
               {isRejected && r.remarks && (
-                <p className="text-body-sm mt-0.5 leading-snug italic text-danger truncate">
+                <TruncatedTooltip className="text-body-sm mt-0.5 leading-snug italic text-danger">
                   <CornerDownRight size={16} className="inline" />
                   {r.remarks}
-                </p>
+                </TruncatedTooltip>
               )}
             </TableCell>
           )}
@@ -1562,6 +1575,43 @@ export default function RequestsPage() {
     });
     setSelectedKeys(new Set()); setBulkRejectOpen(false);
     showToast(`${selectedKeys.size} project${selectedKeys.size !== 1 ? 's' : ''} rejected.`);
+  }
+
+  function doBulkReturnForUpdate() {
+    let updated = [...batches];
+    Array.from(selectedKeys).forEach(key => {
+      const [batchId, projId] = key.split('::');
+      updated = updated.map(b => b.id !== batchId ? b : {
+        ...b,
+        projects: b.projects.map(p =>
+          p.id !== projId || p.status !== 'pending' ? p : { ...p, status: 'draft' as const, remarks: bulkReturnRemarks }
+        ),
+      });
+    });
+    setBatches(updated);
+    saveSubmissions(updated);
+    syncProjectsToRequests(updated);
+    const notifiedReturn = new Set<string>();
+    Array.from(selectedKeys).forEach(key => {
+      const [batchId, projId] = key.split('::');
+      if (!notifiedReturn.has(`${batchId}::${projId}`)) {
+        notifiedReturn.add(`${batchId}::${projId}`);
+        const batch = batches.find(b => b.id === batchId);
+        const proj = batch?.projects.find(p => p.id === projId);
+        if (batch && proj) {
+          addNotification({
+            forRole: 'ad-pnc',
+            title: `Project returned for update — ${proj.title}`,
+            body: `Your project "${proj.title}" has been returned for update. Reason: ${bulkReturnRemarks}`,
+            href: '/submissions',
+            tier: 'action',
+          });
+        }
+      }
+    });
+    setSelectedKeys(new Set());
+    setBulkReturnOpen(false);
+    showToast(`${selectedKeys.size} project${selectedKeys.size !== 1 ? 's' : ''} returned for update.`);
   }
 
 
@@ -1914,6 +1964,7 @@ export default function RequestsPage() {
               data={draftGroups}
               enableSorting={false}
               getRowId={group => draftRequestGroupKey(group.requests[0])}
+              wrapperClassName="px-4"
             />
           ) : (
             <>
@@ -1932,6 +1983,7 @@ export default function RequestsPage() {
                 }}
                 renderSubRows={renderSentSubRows}
                 getRowId={group => group.key ?? group.pc}
+                wrapperClassName="px-4"
               />
               <div className="flex flex-col gap-3 border-t border-border bg-surface px-4 py-3 text-body-sm text-fg-muted md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-2">
@@ -2058,9 +2110,9 @@ export default function RequestsPage() {
                 <span className="text-body-sm font-semibold text-accent flex-1">
                   {selectedKeys.size} project{selectedKeys.size !== 1 ? 's' : ''} selected
                 </span>
-                <button onClick={() => setSelectedKeys(new Set())} className="text-body-sm text-fg-muted hover:text-fg transition-colors">
-                  Clear
-                </button>
+                <Button size="sm" onClick={() => { setBulkReturnRemarks(''); setBulkReturnOpen(true); }} className="text-body-sm text-fg-muted hover:text-fg transition-colors">
+                  Returned for Update
+                </Button>
                 <Button size="sm" onClick={() => setBulkApproveOpen(true)}>
                   Approve
                 </Button>
@@ -2079,6 +2131,7 @@ export default function RequestsPage() {
                 renderSubRows={renderPendingSubRows}
                 getRowId={group => group.pc}
                 emptyState={<div className="px-6 py-16 text-center text-body-sm text-fg-muted">No projects match your filters.</div>}
+                wrapperClassName="px-4"
               />
             ) : (
               <DataTable
@@ -2093,6 +2146,7 @@ export default function RequestsPage() {
                 }}
                 getRowId={row => row.key}
                 emptyState={<div className="px-6 py-16 text-center text-body-sm text-fg-muted">No projects match your filters.</div>}
+                wrapperClassName="px-4"
               />
             )}
 
@@ -2194,6 +2248,41 @@ export default function RequestsPage() {
           <Button variant="ghost" onClick={() => setBulkRejectOpen(false)}>Cancel</Button>
         </div>
       </Modal>
+
+      {/* Return for Update dialog */}
+      <Dialog open={bulkReturnOpen} onOpenChange={setBulkReturnOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Return Projects for Update?</DialogTitle>
+            <DialogDescription>
+              AD (P&amp;C) will need to revise and resubmit these projects before they can be reviewed again.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-label-sm text-fg">
+              Reason for return <span className="text-danger">*</span>
+            </p>
+            <textarea
+              rows={4}
+              autoFocus
+              className="w-full resize-none rounded-lg border border-border bg-surface px-3 py-2 text-body-sm text-fg outline-none focus:ring-2 focus:ring-warning/30"
+              placeholder="Explain what needs to change..."
+              value={bulkReturnRemarks}
+              onChange={e => setBulkReturnRemarks(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setBulkReturnOpen(false)}>Cancel</Button>
+            <Button
+              disabled={!bulkReturnRemarks.trim()}
+              onClick={doBulkReturnForUpdate}
+              className="bg-[rgba(251,44,54,0.1)] text-[#C10007] hover:bg-[rgba(251,44,54,0.15)] border border-[#F8A4A8]"
+            >
+              Return for Update
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {extendGroup && (
         <Modal open onClose={() => setExtendGroup(null)} maxWidth="sm" labelledBy="extend-deadline-title">

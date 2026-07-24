@@ -48,11 +48,11 @@ import {
 } from '@/components/ui/breadcrumb';
 import {
   Select,
-  SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SelectContent } from '@/components/ui-legacy/select';
 import {
   Send, Eye, AlertCircle, ArrowLeft, ArrowLeftToLine, Clock, Info,
   ChevronDown, ChevronRight, ChevronsDownUp, Plus, Minus, Trash2,

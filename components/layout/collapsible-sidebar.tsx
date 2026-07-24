@@ -9,6 +9,12 @@ import { useMenuVisibility, isSectionVisible } from '@/lib/portal-config';
 import { getNav, isSectionActive, type IaSection, type BadgeKey } from '@/lib/ia-nav';
 import { useSidebarBadges } from './use-sidebar-badges';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const BADGE_TOOLTIP: Record<BadgeKey, (n: number) => string> = {
   ioApplications:   (n) => `${n} application${n === 1 ? '' : 's'} pending screening or review`,
@@ -148,39 +154,52 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
 
         {/* Navigation */}
         <nav className="flex-1 flex flex-col w-full overflow-y-auto py-2">
-          {sections.map((s) => {
-            const active = isSectionActive(s, activeRoute);
-            const Icon = s.icon;
-            const n = sectionBadge(s);
-            return (
-              <button
-                key={s.id}
-                onClick={() => safeNavigate(s.route)}
-                aria-label={collapsed ? s.label : undefined}
-                aria-current={active ? 'page' : undefined}
-                title={sectionTip(s, n)}
-                className={cn(
-                  'relative flex items-center rounded-lg transition-colors duration-100 group',
-                  collapsed ? 'justify-center h-11 w-11 mx-auto p-2' : 'gap-3 px-3 py-2.5 mx-3',
-                  active ? 'bg-nav-active-bg text-nav-active-fg' : 'text-fg-muted hover:bg-bg-muted'
-                )}
-              >
-                {active && !collapsed && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-0 bg-nav-active-fg rounded-r" />}
-                {n > 0 && collapsed && (
-                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent" />
-                )}
-                <span className="relative shrink-0">
-                  <Icon size={20} className={active ? 'text-nav-active-fg' : 'text-fg-muted'} />
-                </span>
-                {!collapsed && (
-                  <span className="flex-1 text-body-sm font-semibold truncate text-left">{s.label}</span>
-                )}
-                {n > 0 && !collapsed && (
-                  <span className="w-2 h-2 rounded-full bg-accent shrink-0" />
-                )}
-              </button>
-            );
-          })}
+          <TooltipProvider>
+            {sections.map((s) => {
+              const active = isSectionActive(s, activeRoute);
+              const Icon = s.icon;
+              const n = sectionBadge(s);
+              const btn = (
+                <button
+                  key={s.id}
+                  onClick={() => safeNavigate(s.route)}
+                  aria-label={collapsed ? s.label : undefined}
+                  aria-current={active ? 'page' : undefined}
+                  title={!collapsed ? sectionTip(s, n) : undefined}
+                  className={cn(
+                    'relative flex items-center rounded-lg transition-colors duration-100 group mb-1',
+                    collapsed ? 'justify-center h-11 w-11 mx-auto p-2' : 'gap-3 px-3 py-2.5 mx-3',
+                    active ? 'bg-nav-active-bg text-nav-active-fg' : 'text-fg-muted hover:bg-bg-muted'
+                  )}
+                >
+                  {active && !collapsed && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-0 bg-nav-active-fg rounded-r" />}
+                  {n > 0 && collapsed && (
+                    <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent" />
+                  )}
+                  <span className="relative shrink-0">
+                    <Icon size={20} className={active ? 'text-nav-active-fg' : 'text-fg-muted'} />
+                  </span>
+                  {!collapsed && (
+                    <span className="flex-1 text-body-sm font-semibold truncate text-left">{s.label}</span>
+                  )}
+                  {n > 0 && !collapsed && (
+                    <span className="w-2 h-2 rounded-full bg-accent shrink-0" />
+                  )}
+                </button>
+              );
+              if (collapsed) {
+                return (
+                  <Tooltip key={s.id}>
+                    <TooltipTrigger render={btn} />
+                    <TooltipContent side="right" sideOffset={8} className="bg-fg text-bg border-fg">
+                      {s.label}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+              return btn;
+            })}
+          </TooltipProvider>
         </nav>
       </aside>
     </>

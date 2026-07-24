@@ -21,16 +21,27 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { TruncatedTooltip } from '@/components/ui-legacy/truncated-tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 
-export type ColumnSize = 'short' | 'medium' | 'long' | 'icon';
+export type ColumnSize = 'short' | 'medium' | 'long' | 'icon' | 'fill';
 
-export const DEFAULT_MIN_WIDTHS: Record<ColumnSize, number> = {
+export const DEFAULT_MIN_WIDTHS: Record<Exclude<ColumnSize, 'fill'>, number> = {
   short: 104,
   medium: 128,
   long: 176,
   icon: 48,
 };
+
+const FILL_MIN_WIDTH = 200;
+
+export function getSizeValue(size: ColumnSize | number | undefined): number {
+  if (typeof size === 'number') return size;
+  if (size === 'fill') return FILL_MIN_WIDTH;
+  if (size && size in DEFAULT_MIN_WIDTHS) return DEFAULT_MIN_WIDTHS[size as Exclude<ColumnSize, 'fill'>];
+  return DEFAULT_MIN_WIDTHS.medium;
+}
 
 export interface DataTableColumnMeta<TData = unknown, TValue = unknown> {
   size?: ColumnSize | number;
@@ -40,6 +51,7 @@ export interface DataTableColumnMeta<TData = unknown, TValue = unknown> {
   labelClassName?: string;
   thClassName?: string;
   noResizable?: boolean;
+  sticky?: 'left' | 'right';
 }
 
 declare module '@tanstack/react-table' {
@@ -55,14 +67,9 @@ export interface DataTableProps<T> {
   getRowId?: (row: T, index: number) => string;
   onRowClick?: (row: T) => void;
   className?: string;
+  wrapperClassName?: string;
   emptyState?: React.ReactNode;
   renderSubRows?: (row: Row<T>, table: TanStackTable<T>) => React.ReactNode;
-}
-
-export function getSizeValue(size: ColumnSize | number | undefined): number {
-  if (typeof size === 'number') return size;
-  if (size && size in DEFAULT_MIN_WIDTHS) return DEFAULT_MIN_WIDTHS[size as ColumnSize];
-  return DEFAULT_MIN_WIDTHS.medium;
 }
 
 export function DataTable<T>({
@@ -74,6 +81,7 @@ export function DataTable<T>({
   getRowId,
   onRowClick,
   className,
+  wrapperClassName,
   emptyState,
   renderSubRows,
 }: DataTableProps<T>) {
@@ -107,24 +115,47 @@ export function DataTable<T>({
   });
 
   const rows = table.getRowModel().rows;
+  const totalWidth = table.getTotalSize();
+  const fillCount = table.getAllColumns().filter(col => col.columnDef.meta?.size === 'fill').length;
+  const rightStickyOffsets = React.useMemo(() => {
+    const offsets = new Map<string, number>();
+    const cols = table.getAllColumns();
+    let acc = 0;
+    for (let i = cols.length - 1; i >= 0; i--) {
+      const col = cols[i];
+      if (col.columnDef.meta?.sticky === 'right') {
+        offsets.set(col.id, acc);
+        acc += col.getSize();
+      }
+    }
+    return offsets;
+  }, [table.getState().columnSizing]);
 
   if (rows.length === 0 && emptyState) {
     return <>{emptyState}</>;
   }
 
   return (
-    <Table className={cn('text-left', className)}>
+    <div className={wrapperClassName}>
+      <TooltipProvider>
+        <Table style={{ minWidth: totalWidth }} className={cn('w-full table-fixed text-left', className)}>
       <TableHeader className="bg-bg-subtle">
         {table.getHeaderGroups().map((headerGroup) => (
           <TableRow key={headerGroup.id}>
             {headerGroup.headers.map((header) => {
               const size = header.column.columnDef.meta?.size;
+              const isFill = size === 'fill';
               const minWidth = getSizeValue(size);
-              const width = header.getSize();
+              const width = isFill
+                ? (fillCount === 1 ? '100%' : `${100 / fillCount}%`)
+                : header.getSize();
               const isResizing = header.column.getIsResizing();
               const canSort = enableSorting && header.column.getCanSort();
               const labelClassName = header.column.columnDef.meta?.labelClassName;
               const headerClassName = header.column.columnDef.meta?.headerClassName;
+              const sticky = header.column.columnDef.meta?.sticky;
+              const isStickyRight = sticky === 'right';
+              const rightOffset = isStickyRight ? rightStickyOffsets.get(header.column.id) : undefined;
               const allowWrap =
                 typeof labelClassName === 'string' &&
                 (labelClassName.includes('whitespace-normal') ||
@@ -142,6 +173,10 @@ export function DataTable<T>({
                   style={{
                     minWidth,
                     width,
+                    boxSizing: 'border-box',
+                    position: isStickyRight ? 'sticky' : undefined,
+                    right: rightOffset,
+                    zIndex: isStickyRight ? 10 : undefined,
                   }}
                   onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                 >
@@ -203,14 +238,20 @@ export function DataTable<T>({
           <React.Fragment key={row.id}>
             <TableRow
               onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-              className={cn(onRowClick && 'cursor-pointer')}
+              className={cn('group', onRowClick && 'cursor-pointer')}
             >
               {row.getVisibleCells().map((cell) => {
                 const size = cell.column.columnDef.meta?.size;
+                const isFill = size === 'fill';
                 const minWidth = getSizeValue(size);
-                const width = cell.column.getSize();
+                const width = isFill
+                  ? (fillCount === 1 ? '100%' : `${100 / fillCount}%`)
+                  : cell.column.getSize();
                 const truncate = cell.column.columnDef.meta?.truncate;
                 const lineClamp = cell.column.columnDef.meta?.lineClamp;
+                const sticky = cell.column.columnDef.meta?.sticky;
+                const isStickyRight = sticky === 'right';
+                const rightOffset = isStickyRight ? rightStickyOffsets.get(cell.column.id) : undefined;
                 const content = flexRender(cell.column.columnDef.cell, cell.getContext());
 
                 return (
@@ -219,10 +260,14 @@ export function DataTable<T>({
                     style={{
                       minWidth,
                       width,
+                      boxSizing: 'border-box',
+                      position: isStickyRight ? 'sticky' : undefined,
+                      right: rightOffset,
+                      zIndex: isStickyRight ? 10 : undefined,
                     }}
                   >
                     {truncate ? (
-                      <span className="block truncate">{content}</span>
+                      <TruncatedTooltip>{content}</TruncatedTooltip>
                     ) : lineClamp ? (
                       <span className={cn(`line-clamp-${lineClamp}`)}>{content}</span>
                     ) : (
@@ -237,6 +282,8 @@ export function DataTable<T>({
         ))}
       </TableBody>
     </Table>
+      </TooltipProvider>
+    </div>
   );
 }
 

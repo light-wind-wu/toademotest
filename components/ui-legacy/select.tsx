@@ -1,62 +1,37 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import { Select as BaseSelect } from "@base-ui-components/react/select";
-import { Check, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
-import { menuItemClasses } from "@/components/ui-legacy/menu";
 
-export const Select = BaseSelect.Root;
-
-export function SelectValue({
-  placeholder,
-  className,
-  ...props
-}: Omit<ComponentPropsWithoutRef<typeof BaseSelect.Value>, "children"> & {
-  placeholder?: ReactNode;
-}) {
-  return (
-    <BaseSelect.Value className={cn("data-[placeholder]:text-fg-subtle", className)} {...props}>
-      {(value) => (value == null || value === "" ? placeholder : (value as ReactNode))}
-    </BaseSelect.Value>
-  );
-}
-
-export function SelectTrigger({
-  className,
-  children,
-  ...props
-}: ComponentPropsWithoutRef<typeof BaseSelect.Trigger>) {
-  return (
-    <BaseSelect.Trigger
-      className={cn(
-        "flex h-9 w-full items-center justify-between rounded-md border border-border bg-surface px-3 py-1 text-sm shadow-sm",
-        "focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-accent",
-        "disabled:cursor-not-allowed disabled:opacity-50",
-        "data-[placeholder]:text-fg-subtle",
-        className,
-      )}
-      {...props}
-    >
-      {children}
-      <BaseSelect.Icon className="text-fg-muted">
-        <ChevronDown className="h-4 w-4" />
-      </BaseSelect.Icon>
-    </BaseSelect.Trigger>
-  );
-}
+export { Select, SelectItem, SelectTrigger, SelectValue };
 
 export function SelectContent({
   className,
   children,
   ...props
-}: ComponentPropsWithoutRef<typeof BaseSelect.Popup> & { children?: ReactNode }) {
+}: ComponentPropsWithoutRef<typeof BaseSelect.Popup> & {
+  children?: ReactNode;
+}) {
   return (
     <BaseSelect.Portal>
-      <BaseSelect.Positioner className="z-[100]" sideOffset={4} alignItemWithTrigger={false} align="start">
+      <BaseSelect.Positioner
+        side="bottom"
+        sideOffset={4}
+        collisionPadding={8}
+        collisionAvoidance={{ side: 'flip' }}
+        alignItemWithTrigger={false}
+        className="z-[100]"
+      >
         <BaseSelect.Popup
           className={cn(
-            "z-50 max-h-[var(--available-height)] min-w-[var(--anchor-width)] overflow-y-auto",
+            "z-50 max-h-60 min-w-[var(--anchor-width)] overflow-y-auto",
             "rounded-md border border-border bg-surface-elevated p-1 shadow-md",
             "data-[starting-style]:opacity-0 data-[ending-style]:opacity-0 transition-opacity duration-150",
             className,
@@ -67,23 +42,5 @@ export function SelectContent({
         </BaseSelect.Popup>
       </BaseSelect.Positioner>
     </BaseSelect.Portal>
-  );
-}
-
-export function SelectItem({
-  className,
-  children,
-  ...props
-}: ComponentPropsWithoutRef<typeof BaseSelect.Item>) {
-  return (
-    <BaseSelect.Item
-      className={cn(menuItemClasses, "pl-8 pr-2", className)}
-      {...props}
-    >
-      <BaseSelect.ItemIndicator className="absolute left-2 inline-flex items-center text-accent">
-        <Check className="h-3.5 w-3.5" />
-      </BaseSelect.ItemIndicator>
-      <BaseSelect.ItemText>{children}</BaseSelect.ItemText>
-    </BaseSelect.Item>
   );
 }
