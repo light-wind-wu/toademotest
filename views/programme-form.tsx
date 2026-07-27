@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef, Fragment, Children, isValidElement } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, useTransition, Fragment, Children, isValidElement, memo } from 'react';
 import type { OptionHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
@@ -13,6 +13,7 @@ import {
   FieldDescription,
   FieldError,
   FieldLabel,
+  FieldLabelText,
 } from '@/components/ui-legacy/field';
 import { Input } from '@/components/ui/input';
 import {
@@ -32,23 +33,31 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import EmptyState from '@/components/ui-legacy/empty-state';
 import {
-  AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, CalendarRange, Check, CheckCircle2,
-  ChevronDown, ChevronRight, Eye, Folder, Pencil, Plus, Save, ShieldCheck, Trash2, Wand2, X,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import EmptyState from '@/components/ui-legacy/empty-state';
+import { Spinner } from '@/components/ui/spinner';
+import {
+  AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2,
+  ChevronDown, ChevronRight, Eye, Folder, Info, Pencil, Plus, Save, ShieldCheck, Trash2, Wand2, X,
 } from 'lucide-react';
 import { REQ_TYPES, REQ_TIER_LABELS, EDUCATION_LEVELS, OPS, loadSubjectTaxonomy, toEducationLevel } from '@/lib/data';
 import { loadProgrammes, saveProgrammes, loadProjects, saveProjects, loadAttachments, saveAttachments } from '@/lib/storage';
-import { poolFor, attachWarnings, availablePlacements } from '@/lib/attachments';
+import { poolFor, attachWarnings } from '@/lib/attachments';
 import { PROGRAMMES_CHANGED_EVENT } from '@/lib/programme-context';
 import { formatDate, formatTimeline, calcDaysLeft, generateProgId, cn, joinOr, ruleToNatural, groupToNatural, generateEligibilitySummary, sgToday } from '@/lib/utils';
 import { monthIndexFromISO, formatMMMYY, mmmyyToISO, mmmyyToISOEnd, isoToMMMYY, periodsOverlap, parseMMMYY, periodLabelToMMMYY, INTAKE_BASE_YEAR, DEFAULT_INTAKE_YEAR, INTAKE_YEARS, shiftMMMYY } from '@/lib/internship-period';
@@ -117,6 +126,95 @@ function intakeTitleFor(programmeTitle: string, w: IntakeWindow): string {
   if (!name) return period === 'dates not set' ? '' : period;
   return period === 'dates not set' ? name : `${name} (${period})`;
 }
+
+function hasPeriod(p: ProjectEntry) {
+  return !!(p.internshipPeriodStart && p.internshipPeriodEnd);
+}
+function fitsIntake(p: ProjectEntry, w: IntakeWindow) {
+  return hasPeriod(p) && periodsOverlap(w.start, w.end, p.internshipPeriodStart, p.internshipPeriodEnd);
+}
+
+interface ProjectTableRowProps {
+  project: ProjectEntry;
+  selectedIntake: IntakeWindow | undefined;
+  selectedIntakeId: string | undefined;
+  cpPlacement: Record<string, Record<string, number>>;
+  assignedToIntake: Set<string>;
+  onToggleAttach: (intakeId: string, projectId: string) => void;
+  onOpenSingleAssign: (projectId: string, intakeId: string | undefined) => void;
+  onOpenPeriodEdit: (project: ProjectEntry) => void;
+}
+
+const ProjectTableRow = memo(function ProjectTableRow({
+  project: p,
+  selectedIntake,
+  selectedIntakeId,
+  cpPlacement,
+  assignedToIntake,
+  onToggleAttach,
+  onOpenSingleAssign,
+  onOpenPeriodEdit,
+}: ProjectTableRowProps) {
+  const isAssigned = assignedToIntake.has(p.id);
+  const periodFits = !!selectedIntake && fitsIntake(p, selectedIntake);
+  const placements = selectedIntakeId ? (cpPlacement[selectedIntakeId]?.[p.id] ?? 1) : 1;
+
+  return (
+    <TableRow>
+      <TableCell>
+        <div className="min-w-0">
+          <p className="truncate text-body-sm font-semibold text-fg">{p.title}</p>
+          <p className="text-caption text-fg-muted">{p.id}</p>
+        </div>
+      </TableCell>
+      <TableCell>
+        <span className="text-body-sm text-fg">{p.pc || '—'}</span>
+      </TableCell>
+      <TableCell>
+        <span className="text-body-sm text-fg">{p.internshipDuration ? `${p.internshipDuration} Months` : '—'}</span>
+      </TableCell>
+      <TableCell>
+        <span className="text-body-sm text-fg">{placements}</span>
+      </TableCell>
+      <TableCell>
+        {hasPeriod(p) ? (
+          <span className={cn(
+            'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-caption font-medium',
+            periodFits ? 'border-success/30 bg-success-bg text-success' : 'border-warning/30 bg-warning-bg text-warning'
+          )}>
+            <span className={cn('h-1.5 w-1.5 rounded-full', periodFits ? 'bg-success' : 'bg-warning')} />
+            {periodFits ? 'Matches intake' : 'Date mismatch'}
+          </span>
+        ) : (
+          <Button type="button" variant="link" size="xs" onClick={() => onOpenPeriodEdit(p)} className="px-0">
+            Set period
+          </Button>
+        )}
+      </TableCell>
+      <TableCell className="text-right">
+        {isAssigned ? (
+          <Button
+            type="button"
+            variant="link"
+            size="xs"
+            onClick={() => selectedIntakeId && onToggleAttach(selectedIntakeId, p.id)}
+          >
+            Remove
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="link"
+            size="xs"
+            onClick={() => onOpenSingleAssign(p.id, selectedIntakeId)}
+          >
+            Assign
+          </Button>
+        )}
+      </TableCell>
+    </TableRow>
+  );
+});
 
 /* Internship-window presets per intern category (MOM A7) — the same seasonal
    windows the project-request flow offers. Picking a category on step 1 seeds
@@ -888,7 +986,7 @@ function OverviewSection({
   onViewDetail?: () => void;
   onViewDescription?: () => void;
 }) {
-  const [reviewLayout, setReviewLayout] = useState<'accordion' | 'index'>('accordion');
+  const [reviewLayout, setReviewLayout] = useState<'accordion' | 'index'>('index');
   const [activeReviewPanel, setActiveReviewPanel] = useState('eligibility');
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     eligibility: true,
@@ -1159,7 +1257,6 @@ function OverviewSection({
                 id={`intake-${summary.index}`}
                 title={`Intake ${summary.index + 1}`}
                 subtitle={`${summary.internshipWindow} · ${summary.assignedProjects.length} project${summary.assignedProjects.length !== 1 ? 's' : ''}`}
-                chip={`${summary.assignedProjects.length} project${summary.assignedProjects.length !== 1 ? 's' : ''}`}
               />
             ))}
             <ReviewIndexButton id="timeline" title="Programme Timeline" subtitle="Application, internship, and assigned project timing" />
@@ -1230,16 +1327,14 @@ function TemplatePreviewModal({ templateName, onClose }: { templateName: string;
   }
 
   return (
-    <Dialog open={true} onOpenChange={(isOpen: boolean) => { if (!isOpen) onClose(); }}>
-      <DialogContent className="flex h-[90vh] max-w-4xl flex-col gap-0 overflow-hidden border border-border p-0 shadow-xl">
+    <Sheet open={true} onOpenChange={(open: boolean) => { if (!open) onClose(); }}>
+      <SheetContent side="right" className="w-full sm:max-w-[720px] flex flex-col gap-0 overflow-hidden p-0">
+        <SheetHeader className="shrink-0 border-b border-border px-6 py-4">
+          <SheetTitle className="text-headline-md text-fg">Application form preview</SheetTitle>
+          <SheetDescription className="truncate text-body-sm">{templateName}</SheetDescription>
+        </SheetHeader>
 
-        <DialogHeader className="shrink-0 border-b border-border px-6 py-4 pr-14">
-          <DialogTitle className="text-headline-md text-fg">Form Preview</DialogTitle>
-          <DialogDescription className="truncate text-body-sm">{templateName}</DialogDescription>
-        </DialogHeader>
-
-        {/* Scrollable canvas */}
-        <div className="flex-1 overflow-y-auto bg-bg-muted p-6">
+        <SheetBody className="flex-1 overflow-y-auto bg-bg-muted p-6">
           {!liveSections || liveSections.length === 0 ? (
             <p className="text-body-sm text-fg-muted italic p-4">No preview available for this template.</p>
           ) : (
@@ -1272,9 +1367,9 @@ function TemplatePreviewModal({ templateName, onClose }: { templateName: string;
               </div>
             </div>
           )}
-        </div>
-      </DialogContent>
-    </Dialog>
+        </SheetBody>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -1328,9 +1423,9 @@ function SectionDivider({ label }: { label: string }) {
 /* ── Stepper indicator ───────────────────────────────────────────── */
 /* One concept per step — kept generic so the chip and the section header both read cleanly. */
 const STEP_DEFS = [
-  { n: 1, label: 'Details' },
-  { n: 2, label: 'Intakes' },
-  { n: 3, label: 'Review' },
+  { n: 1, label: 'Programme Details' },
+  { n: 2, label: 'Intakes & Projects' },
+  { n: 3, label: 'Review & Create' },
 ];
 
 function Stepper({ step, onStepClick }: { step: number; onStepClick: (n: number) => void }) {
@@ -1496,6 +1591,12 @@ export default function ProgrammeFormPage() {
   const [assignDraftPlacements, setAssignDraftPlacements] = useState<Record<string, number>>({});
   const [batchAssignMode, setBatchAssignMode] = useState<'add' | 'replace'>('add');
   const [openIntakeId, setOpenIntakeId] = useState<string | null>(null);
+  const [isPendingIntakeTransition, startIntakeTransition] = useTransition();
+  const selectIntake = (id: string | null) => {
+    startIntakeTransition(() => {
+      setOpenIntakeId(id);
+    });
+  };
   const [assignFilter, setAssignFilter] = useState<'assigned' | 'unassigned'>('assigned');
   // Edit-mode auto-allocation: a one-time initial fill, plus tracking of which intakes
   // have been auto-allocated so a NEWLY-added intake gets filled without disturbing the
@@ -1517,6 +1618,16 @@ export default function ProgrammeFormPage() {
   const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
   const { setDirty, safeNavigate } = useUnsavedChanges();
   const sysCfg = useSystemConfig();
+
+  // Step 2 derived values (kept at top level so they can use hooks without being inside the
+  // conditional step-2 IIFE, which would break hook-order rules).
+  const selectedIntake = useMemo(() => cpIntakes.find(w => w.id === openIntakeId) ?? cpIntakes[0], [cpIntakes, openIntakeId]);
+  const selectedIntakeId = selectedIntake?.id as string | undefined;
+  const selectedIndex = useMemo(() => Math.max(0, cpIntakes.findIndex(w => w.id === selectedIntake?.id)), [cpIntakes, selectedIntake]);
+  const assignedToIntake = useMemo(() => selectedIntakeId ? new Set(cpAttach[selectedIntakeId] ?? []) : new Set<string>(), [selectedIntakeId, cpAttach]);
+  const assignedProjects = useMemo(() => availableProjects.filter(p => assignedToIntake.has(p.id)), [availableProjects, assignedToIntake]);
+  const notAssignedProjects = useMemo(() => availableProjects.filter(p => !assignedToIntake.has(p.id)), [availableProjects, assignedToIntake]);
+  const visibleProjects = useMemo(() => assignFilter === 'assigned' ? assignedProjects : notAssignedProjects, [assignFilter, assignedProjects, notAssignedProjects]);
 
   /* Map each category to its applicant-facing application form (intern forms; scholar
      variants excluded for now). Mirrors the applicant-side resolution in apply-form.tsx
@@ -1696,16 +1807,6 @@ export default function ProgrammeFormPage() {
   );
   const assignOverCapacity = !!assignSheetProject && assignDraftPlacementTotal > assignSheetProject.slots;
 
-  // A project cleanly fits an intake when it has a period and that period sits within the
-  // window with no soft warnings. Used to auto-allocate; mismatches fall to "needs attention".
-  const hasPeriod = (p: ProjectEntry) => !!(p.internshipPeriodStart && p.internshipPeriodEnd);
-  // Auto-allocation is period-only: a project fits an intake when its hosting window
-  // OVERLAPS the intake's period (they share at least one month — the intern does the
-  // project during the shared months). Works both ways: a May–Jul project fits a narrow
-  // Jun intake AND a whole-year Jan–Dec intake. Duration is only a soft warning.
-  const fitsIntake = (p: ProjectEntry, w: IntakeWindow) =>
-    hasPeriod(p) && periodsOverlap(w.start, w.end, p.internshipPeriodStart, p.internshipPeriodEnd);
-
   // Load the pool (HARD gate: approved + level match + placements free) and AUTO-ALLOCATE
   // each project to every intake its period fits. Projects that fit no intake (period
   // mismatch or absent) are left unallocated → they surface in the "needs attention" bucket.
@@ -1792,7 +1893,7 @@ export default function ProgrammeFormPage() {
   const attachPairTotal = Object.values(cpAttach).reduce((n, ids) => n + ids.length, 0);
   const allPoolSelected = availableProjects.length > 0 && selectedProjectIds.length === availableProjects.length;
 
-  function toggleAttach(intakeId: string, projectId: string) {
+  const toggleAttach = useCallback((intakeId: string, projectId: string) => {
     setCpAttach(prev => {
       const cur = prev[intakeId] ?? [];
       const nextList = cur.includes(projectId) ? cur.filter(id => id !== projectId) : [...cur, projectId];
@@ -1804,7 +1905,7 @@ export default function ProgrammeFormPage() {
       else row[projectId] = 1;
       return { ...prev, [intakeId]: row };
     });
-  }
+  }, []);
 
   useEffect(() => {
     if (step !== 2) return;
@@ -1843,11 +1944,11 @@ export default function ProgrammeFormPage() {
     setOpenIntakeId(fallbackId && fallbackId !== removedId ? fallbackId : null);
   }
 
-  function intakeIdsForProject(projectId: string): string[] {
+  const intakeIdsForProject = useCallback((projectId: string): string[] => {
     return datedIntakes
       .map(w => w.id as string)
       .filter(intakeId => (cpAttach[intakeId] ?? []).includes(projectId));
-  }
+  }, [datedIntakes, cpAttach]);
 
   // Why a pool project is in the "needs attention" bucket — shown as a tooltip.
   function attentionReason(p: ProjectEntry): string {
@@ -1879,9 +1980,9 @@ export default function ProgrammeFormPage() {
     if (w?.id) toggleAttach(w.id, p.id); // not currently attached → this adds it
   }
 
-  function openPeriodEdit(p: ProjectEntry) {
+  const openPeriodEdit = useCallback((p: ProjectEntry) => {
     setPeriodEdit({ projectId: p.id, title: p.title, start: isoDay(p.internshipPeriodStart, false), end: isoDay(p.internshipPeriodEnd, true) });
-  }
+  }, []);
 
   // Persist the edited period to the project, refresh the local pool, and auto-attach
   // it to every intake it now fits — so fixing the period immediately clears the flag.
@@ -1921,7 +2022,7 @@ export default function ProgrammeFormPage() {
     setSelectedProjectIds(checked ? availableProjects.map(p => p.id) : []);
   }
 
-  function openSingleAssign(projectId: string, preferredIntakeId?: string) {
+  const openSingleAssign = useCallback((projectId: string, preferredIntakeId?: string) => {
     setAssignDialog({ projectIds: [projectId], mode: 'single' });
     const intakeIds = Array.from(new Set([
       ...intakeIdsForProject(projectId),
@@ -1932,7 +2033,7 @@ export default function ProgrammeFormPage() {
       intakeIds.map(intakeId => [intakeId, cpPlacement[intakeId]?.[projectId] ?? 1]),
     ));
     setBatchAssignMode('replace');
-  }
+  }, [cpPlacement, intakeIdsForProject]);
 
   function openBatchAssign() {
     if (selectedProjectIds.length === 0) return;
@@ -2213,203 +2314,102 @@ export default function ProgrammeFormPage() {
           {/* ── Step 1: Details — dense grid, should fit without scrolling ── */}
           {step === 1 && (
             <div className="px-6 py-5">
-              <div className="space-y-5">
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
 
-                {/* Row 1: Programme Title — full width */}
-                <Field>
-                  <FieldLabel>
+                <div className="space-y-1.5">
+                  <FieldLabelText>
+                    Internship Year <span className="text-danger">*</span>
+                  </FieldLabelText>
+                  <Sel
+                    value={String(cpIntakeYear)}
+                    onChange={e => changeIntakeYear(parseInt(e.target.value, 10))}
+                    aria-label="Internship Year"
+                  >
+                    {INTAKE_YEARS.map(y => (
+                      <option key={y} value={String(y)}>{y}</option>
+                    ))}
+                  </Sel>
+                </div>
+
+                <div className="space-y-1.5">
+                  <FieldLabelText>
+                    Intern Category <span className="text-danger">*</span>
+                  </FieldLabelText>
+                  <Sel
+                    className={cn('w-full', cpErrors.category && 'border-danger')}
+                    value={selectedCategoryOption?.label ?? ''}
+                    onChange={e => {
+                      const opt = CATEGORY_OPTIONS.find(o => o.label === e.target.value);
+                      selectCategory(opt ? opt.values : []);
+                    }}
+                  >
+                    <option value="" disabled>Select a category…</option>
+                    {CATEGORY_OPTIONS.map(({ label }) => (
+                      <option key={label} value={label}>{label}</option>
+                    ))}
+                  </Sel>
+                  {cpErrors.category && <p className="text-xs leading-relaxed text-danger">{cpErrors.category}</p>}
+                  <p className="text-xs leading-relaxed text-fg-muted">
+                    The default application form and eligibility requirements will update automatically.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <FieldLabelText>
                     Programme Title <span className="text-danger">*</span>
-                  </FieldLabel>
-                  <FieldDescription>
-                    Shown to applicants in listings.
-                  </FieldDescription>
+                  </FieldLabelText>
                   <Input
                     value={cpTitle}
                     onChange={e => { setCpTitle(e.target.value); if (cpErrors.title) setCpErrors(p => ({ ...p, title: '' })); }}
-                    placeholder="Type a programme name, e.g. UG Intern 2027"
+                    placeholder="e.g. Undergraduate Internship Programme 2027"
                     aria-invalid={Boolean(cpErrors.title)}
-                    className={cn(cpErrors.title && 'border-danger focus-visible:outline-danger')}
+                    className={cn(cpErrors.title && 'border-danger focus-visible:outline-none')}
                   />
-                  {cpErrors.title && <FieldError>{cpErrors.title}</FieldError>}
-                </Field>
+                  {cpErrors.title && <p className="text-xs leading-relaxed text-danger">{cpErrors.title}</p>}
+                </div>
 
-                {/* Row 2: Intern Category */}
-                <Field>
-                  <FieldLabel>
-                    Intern Category <span className="text-danger">*</span>
-                  </FieldLabel>
-                  <FieldDescription>
-                    Who this programme is open to.
-                  </FieldDescription>
-                  {/* Single-select. Two interchangeable presentations behind the
-                      `categoryInput` DEV flag — a PRIZM radio group (Base UI Radio) or a
-                      dropdown — so the team can settle on one. */}
-                  {sysCfg.categoryInput === 'dropdown' ? (
-                    <div className="mt-1 max-w-md">
-                      <Sel
-                        className={cn('w-full', cpErrors.category && 'border-danger')}
-                        value={selectedCategoryOption?.label ?? ''}
-                        onChange={e => {
-                          const opt = CATEGORY_OPTIONS.find(o => o.label === e.target.value);
-                          selectCategory(opt ? opt.values : []);
-                        }}
-                      >
-                        <option value="" disabled>Select a category…</option>
-                        {CATEGORY_OPTIONS.map(({ label }) => (
-                          <option key={label} value={label}>{label}</option>
-                        ))}
-                      </Sel>
-                    </div>
-                  ) : (
-                    <RadioGroup
-                      aria-label="Intern Category"
-                      value={selectedCategoryOption?.label ?? ''}
-                      onValueChange={(value) => {
-                        const opt = CATEGORY_OPTIONS.find(o => o.label === value);
-                        selectCategory(opt ? opt.values : []);
-                      }}
-                      className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3"
+                {/* Application Form preview */}
+                <div className="rounded-lg border border-border bg-bg-subtle p-4 lg:col-span-2">
+                  <label className="block text-body-sm font-semibold text-fg">Application Form</label>
+                  <p className="mb-3 mt-1 text-xs leading-relaxed text-fg-muted">
+                    A read-only preview is generated from the selected intern category.
+                  </p>
+                  <div className="flex min-h-[72px] items-center justify-between gap-3 rounded-lg border border-border bg-bg-muted px-3 py-3">
+                    <span className="flex items-center gap-3 min-w-0">
+                      <span className="min-w-0">
+                        <span className="block text-body-sm font-semibold text-fg">
+                          {cpCategory.length === 0
+                            ? 'Not configured'
+                            : `${selectedCategoryOption?.label ?? ''} Application Form Template`}
+                        </span>
+                        <span className="block text-caption text-fg-muted">
+                          {cpCategory.length === 0
+                            ? 'Select an intern category to load the default form.'
+                            : 'View or edit application form.'}
+                        </span>
+                      </span>
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={cpCategory.length === 0}
+                      onClick={() => setPreviewTemplate(derivedTemplate)}
                     >
-                      {CATEGORY_OPTIONS.map(({ label, values }) => {
-                        const checked = selectedCategoryOption?.label === label;
-                        const radioId = `education-level-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-                        return (
-                          <div
-                            key={label}
-                            onClick={() => selectCategory(values)}
-                            className={cn(
-                              'flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 transition-colors hover:border-accent/60',
-                              checked && 'border-accent bg-accent/5',
-                            )}
-                          >
-                            <div className="flex min-w-0 items-center gap-2">
-                              <RadioGroupItem id={radioId} value={label} />
-                              <span className="select-none text-body-sm text-fg">{label}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </RadioGroup>
-                  )}
-                  {cpErrors.category && <FieldError>{cpErrors.category}</FieldError>}
-
-                  {/* Preview the chosen category's application form — its own row beneath
-                      the field (not beside the intern category). Hidden when the thumbnail
-                      gallery below is already showing previews. */}
-                  {selectedCategoryOption
-                    && templateForOption(selectedCategoryOption.values)
-                    && !(sysCfg.categoryFormThumbnails && previewCards.length > 0) && (
-                    <div className="mt-3">
-                      <Button
-                        type="button"
-                        variant="link"
-                        size="xs"
-                        onClick={() => setPreviewTemplate(templateForOption(selectedCategoryOption.values))}
-                        title={`Preview form: ${templateForOption(selectedCategoryOption.values)}`}
-                        aria-label={`Preview form for ${selectedCategoryOption.label}`}
-                        className="px-0 py-0"
-                      >
-                        <Eye size={13} />Preview application form
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* Thumbnail mode: a separate gallery so each selected form is shown as a
-                      clickable thumbnail captioned with the form name + categories it covers. */}
-                  {sysCfg.categoryFormThumbnails && previewCards.length > 0 && (
-                    <div className="mt-4">
-                      <p className="text-caption font-semibold uppercase tracking-widest text-fg-subtle mb-2">
-                        Application form preview{previewCards.length > 1 ? 's' : ''}
-                      </p>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {previewCards.map(({ name, categories }) => (
-                          <button
-                            key={name}
-                            type="button"
-                            onClick={() => setPreviewTemplate(name)}
-                            className="group text-left focus:outline-none"
-                            title={`Preview form: ${name}`}
-                          >
-                            {/* mini document thumbnail — a scaled-down echo of the real form
-                                preview (DSTA letterhead, title, blue section bars, field rows) */}
-                            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg border border-border bg-bg-muted shadow-sm transition-all duration-150 group-hover:-translate-y-0.5 group-hover:border-accent group-hover:shadow-md group-focus-visible:ring-2 group-focus-visible:ring-accent/40">
-                              {/* paper */}
-                              <div className="absolute inset-x-1.5 top-1.5 bottom-0 rounded-t-[3px] bg-surface px-2 pt-2 shadow-sm">
-                                {/* letterhead */}
-                                <div className="flex items-center gap-1 border-b-2 border-accent pb-1">
-                                  <div className="grid h-3 w-3 shrink-0 place-items-center rounded-sm bg-accent">
-                                    <span className="sr-only">DSTA</span>
-                                    <span className="block h-1 w-1 rounded-full bg-accent-fg" aria-hidden="true" />
-                                  </div>
-                                  <div className="space-y-[2px]">
-                                    <div className="h-[2px] w-12 rounded bg-accent/50" />
-                                    <div className="h-[2px] w-7 rounded bg-fg/15" />
-                                  </div>
-                                </div>
-                                {/* title */}
-                                <div className="mx-auto mb-2 mt-2 h-[3px] w-2/3 rounded bg-accent/40" />
-                                {/* sections of field rows — enough to fill the page */}
-                                {[0, 1, 2].map(s => (
-                                  <div key={s} className="mb-1.5">
-                                    <div className="mb-1 h-[5px] w-full rounded-sm bg-accent/85" />
-                                    {[0, 1, 2].map(r => (
-                                      <div key={r} className="flex items-center gap-1 py-px">
-                                        <div className="h-[2px] w-1/3 rounded bg-fg/25" />
-                                        <div className="h-[2px] flex-1 rounded bg-fg/10" />
-                                      </div>
-                                    ))}
-                                  </div>
-                                ))}
-                              </div>
-                              {/* hover affordance */}
-                              <div className="absolute inset-0 flex items-center justify-center bg-accent/0 opacity-0 transition-all duration-150 group-hover:bg-accent/10 group-hover:opacity-100">
-                                <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-1 text-caption font-semibold text-accent-fg shadow">
-                                  <Eye size={11} />Preview
-                                </span>
-                              </div>
-                            </div>
-                            {/* Caption — name reserves a fixed 2-line height so the category line
-                                stays aligned across cards even when a name wraps. */}
-                            <p className="mt-1.5 line-clamp-2 min-h-[2.5em] text-caption font-semibold leading-snug text-fg group-hover:text-accent">{name}</p>
-                            <p className="text-caption text-fg-muted leading-snug">{categories.join(' · ')}</p>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </Field>
-
-                {/* Row 2b: Internship Year — anchors the seeded internship windows to a cycle. */}
-                <Field>
-                  <FieldLabel>Internship Year</FieldLabel>
-                  <div className="mt-1 max-w-[8rem]">
-                    <Sel
-                      value={String(cpIntakeYear)}
-                      onChange={e => changeIntakeYear(parseInt(e.target.value, 10))}
-                      aria-label="Internship Year"
-                    >
-                      {INTAKE_YEARS.map(y => (
-                        <option key={y} value={String(y)}>{y}</option>
-                      ))}
-                    </Sel>
+                      <Eye size={14} />Preview Application Form
+                    </Button>
                   </div>
-                </Field>
+                </div>
 
                 {/* Eligibility Criteria — derived from the Intern Category above; a compact,
                     width-constrained row that opens a drawer to view/edit. */}
-                <div className="max-w-md">
+                <div className="rounded-lg border border-border bg-bg-subtle p-4 lg:col-span-2">
                   <label className="block text-body-sm font-semibold text-fg">Eligibility Criteria</label>
-                  <p className="mb-2 mt-1 text-xs leading-relaxed text-fg-muted">
-                    Who qualifies to apply. Set from the intern category.
+                  <p className="mb-3 mt-1 text-xs leading-relaxed text-fg-muted">
+                    Who qualifies to apply. Default criteria are set from the selected intern category and can be edited.
                   </p>
-                  <button
-                    type="button"
-                    disabled={cpCategory.length === 0}
-                    onClick={() => setReqsDrawer('view')}
-                    className="group flex min-h-9 w-full items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2 text-left transition-colors hover:border-accent hover:bg-accent/5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border disabled:hover:bg-surface"
-                  >
+                  <div className="flex min-h-[56px] items-center justify-between gap-3 rounded-lg border border-border bg-bg-muted px-3 py-2">
                     <span className="flex items-center gap-3 min-w-0">
-                      <ShieldCheck size={18} className="text-accent shrink-0" />
                       <span className="min-w-0">
                         <span className="block text-body-sm font-semibold text-fg">
                           {cpCategory.length === 0
@@ -2423,20 +2423,28 @@ export default function ProgrammeFormPage() {
                         </span>
                       </span>
                     </span>
-                    <ChevronRight size={16} className="text-fg-subtle shrink-0 transition-colors group-hover:text-accent" />
-                  </button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={cpCategory.length === 0}
+                      onClick={() => setReqsDrawer('view')}
+                    >
+                      <Eye size={14} />Preview Criteria
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Row 3: Programme Description */}
-                <Field>
-                  <FieldLabel>Programme Description</FieldLabel>
+                <Field className="lg:col-span-2">
+                  <FieldLabel>Programme Description <span className="text-fg-muted font-normal">(Optional)</span></FieldLabel>
                   <FieldDescription>
                     Shown to applicants.
                   </FieldDescription>
                   <Textarea
                     value={cpDescription}
                     onChange={e => setCpDescription(e.target.value)}
-                    placeholder="In a sentence or two, describe what interns will do on this programme…"
+                    placeholder="Describe the programme objectives, learning opportunities, and expected experience…"
                     rows={4}
                     className="resize-none"
                   />
@@ -2444,7 +2452,7 @@ export default function ProgrammeFormPage() {
 
                 {/* Status — edit mode only */}
                 {isEdit && (
-                  <div className="max-w-xs">
+                  <div className="lg:col-span-2">
                     <label className="block text-body-sm font-semibold text-fg">Programme Status</label>
                     <p className="mb-1 mt-1 text-xs leading-relaxed text-fg-muted">
                       Active programmes accept applications.
@@ -2465,258 +2473,282 @@ export default function ProgrammeFormPage() {
           {step === 2 && (
             <div className="px-6 py-6">
               {(() => {
-                const selectedIntake = cpIntakes.find(w => w.id === openIntakeId) ?? cpIntakes[0];
-                const selectedIndex = Math.max(0, cpIntakes.findIndex(w => w.id === selectedIntake?.id));
-                const selectedIntakeId = selectedIntake?.id as string | undefined;
-                // Split the pool by whether each project is assigned to the SELECTED intake.
-                const assignedToIntake = selectedIntakeId ? new Set(cpAttach[selectedIntakeId] ?? []) : new Set<string>();
-                const assignedProjects = availableProjects.filter(p => assignedToIntake.has(p.id));
-                const notAssignedProjects = availableProjects.filter(p => !assignedToIntake.has(p.id));
-                const visibleProjects = assignFilter === 'assigned' ? assignedProjects : notAssignedProjects;
                 const poolSubtitle = selectedIntake
                   ? `Intake ${selectedIndex + 1} · ${selectedIntake.start && selectedIntake.end ? intakeLabel(selectedIntake) : 'Set internship window'}`
                   : 'Select an intake to see projects';
 
                 return (
                   <div className="space-y-5">
-                    <section className="grid min-h-[620px] overflow-visible rounded-lg border border-border bg-surface lg:grid-cols-[360px_minmax(0,1fr)]">
-                      <aside className="flex min-h-0 flex-col border-b border-border bg-bg-subtle/40 lg:border-b-0 lg:border-r">
-                        <div className="flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-3">
-                          <div>
-                            <h3 className="text-label-md font-semibold text-fg">Intakes</h3>
-                            <p className="mt-0.5 text-caption text-fg-muted">
-                              {cpIntakes.length} intake{cpIntakes.length !== 1 ? 's' : ''} — click one to see matching projects
-                            </p>
+                    <div className="relative">
+                      <section className="grid min-h-[620px] overflow-hidden rounded-lg border border-border bg-surface lg:grid-cols-[360px_minmax(0,1fr)]">
+                      <aside className="relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-border bg-surface shadow-lg lg:overflow-visible lg:border-b-0 lg:border-r">
+                        <div className="space-y-3 border-b border-border bg-surface px-4 py-3.5">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <h2 className="text-label-lg font-semibold text-fg">Configure Intakes</h2>
+                              <p className="mt-0.5 text-caption text-fg-muted">
+                                {cpIntakes.length} intake{cpIntakes.length !== 1 ? 's' : ''}
+                              </p>
+                            </div>
+                            <Button type="button" variant="primary" size="sm" onClick={addIntake}>
+                              <Plus size={14} />Add Intakes
+                            </Button>
                           </div>
-                          <Button type="button" variant="outline" size="xs" onClick={addIntake} className="shrink-0">
-                            <Plus size={14} />Add
-                          </Button>
                         </div>
 
-                        <div className="grid gap-3 overflow-visible p-3">
+                        <div className="grid grid-cols-[minmax(0,1fr)_80px] border-b border-border bg-[rgba(253,252,250,1)] px-4 py-3 text-caption text-fg-muted">
+                          <span>Intake</span>
+                          <span className="flex items-center justify-end gap-1">
+                            Projects assigned
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={
+                                    <button
+                                      type="button"
+                                      aria-label="Projects assigned help"
+                                      className="inline-flex h-4 w-4 items-center justify-center rounded-full text-fg-subtle transition-colors hover:bg-bg-muted hover:text-fg focus:outline-none focus:ring-2 focus:ring-accent/40"
+                                    >
+                                      <Info size={12} />
+                                    </button>
+                                  }
+                                />
+                                <TooltipContent side="top" align="end" className="max-w-56">
+                                  Number of projects assigned to this intake.
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </span>
+                        </div>
+
+                        <div className="flex min-w-0 flex-col">
                           {cpIntakes.map((intake, i) => {
                             const intakeId = intake.id as string | undefined;
                             const assignedIds = intakeId ? (cpAttach[intakeId] ?? []) : [];
-                            const assignedProjects = assignedIds
-                              .map(id => availableProjects.find(p => p.id === id))
-                              .filter(Boolean) as ProjectEntry[];
+                            const assignedCount = assignedIds.length;
                             const isActive = selectedIntakeId === intakeId;
-                            const title = `Intake ${i + 1}`;
                             const periodLabel = intake.start && intake.end ? intakeLabel(intake) : 'Set internship window';
-
                             return (
-                              <section
+                              <div
                                 key={intakeId ?? i}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => selectIntake(intakeId ?? null)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    setOpenIntakeId(intakeId ?? null);
+                                  }
+                                }}
                                 className={cn(
-                                  'relative rounded-lg border bg-surface transition-colors',
-                                  isActive ? 'z-20 border-accent shadow-sm' : 'z-0 border-border hover:border-border-strong',
+                                  'group relative box-border w-full min-w-0 cursor-pointer border-b px-4 py-3 transition-colors',
+                                  isActive ? 'z-10 border-y border-border bg-bg-muted' : 'border-border bg-surface hover:bg-bg-subtle',
                                 )}
                               >
-                                <button
-                                  type="button"
-                                  className="flex w-full items-start justify-between gap-3 px-3 py-3 text-left"
-                                  onClick={() => setOpenIntakeId(intakeId ?? null)}
-                                  aria-expanded={isActive}
-                                >
-                                  <span className="min-w-0">
-                                    <span className="block truncate text-sm font-medium leading-tight text-fg">
-                                      {title} · {periodLabel}
+                                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_80px] items-center gap-3">
+                                  <div className={cn('min-w-0 text-left', isActive && 'pr-3')}>
+                                    <span className={cn('block truncate text-body-sm', isActive ? 'font-semibold text-fg' : 'font-medium text-fg')}>
+                                      Intake {i + 1} · {periodLabel}
                                     </span>
-                                    <span className="mt-1 block text-xs leading-relaxed text-fg-muted">
+                                    <span className="mt-1 block truncate text-caption text-fg-muted">
                                       {intake.appOpen && intake.appClose
                                         ? `Applications: ${formatDate(intake.appOpen)} – ${formatDate(intake.appClose)}`
                                         : 'Set application window'}
                                     </span>
-                                  </span>
-                                  <span className="inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full bg-bg-muted px-2 text-caption font-medium text-fg-muted">
-                                    {assignedProjects.length}
-                                  </span>
-                                </button>
-
-                                {isActive && (
-                                  <div className="rounded-b-lg border-t border-border bg-surface px-3 pb-3 pt-4">
-                                    <div className="grid gap-4">
-                                      <Field>
-                                        <FieldLabel>
-                                          Application Window <span className="text-danger">*</span>
-                                        </FieldLabel>
-                                        <FieldDescription>
-                                          Pick the day applications open, then the day they close.
-                                        </FieldDescription>
-                                        <DateRangePicker
-                                          start={intake.appOpen}
-                                          end={intake.appClose}
-                                          onChange={(openDate, closeDate) => {
-                                            const next = cpIntakes.map((w, j) => j === i ? { ...w, appOpen: openDate, appClose: closeDate } : w);
-                                            setCpIntakes(next);
-                                            setCpErrors(p => {
-                                              const n = { ...p };
-                                              delete n[`intake_${i}_appOpen`];
-                                              delete n[`intake_${i}_appClose`];
-                                              return n;
-                                            });
-                                          }}
-                                          placeholder="Pick the application dates"
-                                          lockStart={isEdit && i === 0}
-                                          minDate={sgToday()}
-                                          error={Boolean(cpErrors[`intake_${i}_appOpen`] || cpErrors[`intake_${i}_appClose`])}
-                                        />
-                                        {(cpErrors[`intake_${i}_appOpen`] || cpErrors[`intake_${i}_appClose`]) && (
-                                          <FieldError>{cpErrors[`intake_${i}_appOpen`] || cpErrors[`intake_${i}_appClose`]}</FieldError>
-                                        )}
-                                      </Field>
-                                      <Field>
-                                        <FieldLabel>Internship Window</FieldLabel>
-                                        <FieldDescription>
-                                          Pick the day the internship begins, then the day it ends. A category preset defaults to the 1st of the start month and the last day of the end month — adjust the exact dates as needed.
-                                        </FieldDescription>
-                                        <DateRangePicker
-                                          placeholder="Pick the internship start and end dates"
-                                          error={!!(cpErrors[`intake_${i}_start`] || cpErrors[`intake_${i}_end`])}
-                                          start={intake.start}
-                                          end={intake.end}
-                                          onChange={(startDate, endDate) => {
-                                            const next = cpIntakes.map((w, j) => j === i ? {
-                                              ...w,
-                                              start: startDate,
-                                              end: endDate,
-                                            } : w);
-                                            setCpIntakes(next);
-                                            setCpErrors(p => {
-                                              const n = { ...p };
-                                              delete n[`intake_${i}_start`];
-                                              delete n[`intake_${i}_end`];
-                                              return n;
-                                            });
-                                          }}
-                                        />
-                                        {(cpErrors[`intake_${i}_start`] || cpErrors[`intake_${i}_end`]) && (
-                                          <FieldError>{cpErrors[`intake_${i}_start`] || cpErrors[`intake_${i}_end`]}</FieldError>
-                                        )}
-                                      </Field>
-                                    </div>
-                                    {cpIntakes.length > 1 && (
-                                      <div className="mt-4 flex justify-end border-t border-border pt-3">
-                                        <Button type="button" variant="ghost" size="xs" onClick={() => removeIntake(i)}>
-                                          <Trash2 size={13} />Remove
-                                        </Button>
-                                      </div>
-                                    )}
                                   </div>
+                                  <div className="flex items-center justify-end gap-1">
+                                    <div className="flex h-7 w-7 items-center justify-center">
+                                      {isActive ? (
+                                        <Check size={15} className="text-success" aria-label="Selected" />
+                                      ) : (
+                                        <span className="text-body-sm font-semibold text-fg">{assignedCount}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                {isActive && (
+                                  <span
+                                    className="absolute right-[-11px] top-1/2 z-10 h-full w-[11px] -translate-y-1/2 bg-[length:auto_100%] bg-right bg-no-repeat"
+                                    style={{ backgroundImage: 'url(/assets/request-arrow.svg)' }}
+                                    aria-hidden="true"
+                                  />
                                 )}
-                              </section>
+                              </div>
                             );
                           })}
                         </div>
                       </aside>
 
-                      <section className="relative z-0 flex min-h-0 flex-col">
-                        <div className="flex flex-col gap-3 border-b border-border bg-bg-subtle px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                      <section className="flex min-h-0 min-w-0 flex-col bg-surface">
+                        <div className="flex flex-col gap-3 border-b border-border bg-[rgba(249,248,244,1)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                           <div>
-                            <h3 className="text-label-md font-semibold text-fg">Projects</h3>
-                            <p className="mt-0.5 text-caption text-fg-muted">{poolSubtitle}</p>
+                            <h3 className="text-label-md font-semibold text-fg">Assign Projects</h3>
+                            <p className="mt-0.5 text-caption text-fg-muted">Assign projects to the selected intake.</p>
                           </div>
-                          <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-surface px-2 text-caption font-semibold text-fg-muted">
-                            {visibleProjects.length}
-                          </span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-caption text-accent">
+                              {assignedProjects.length} project{assignedProjects.length !== 1 ? 's' : ''} assigned
+                            </span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={cpIntakes.length <= 1}
+                              onClick={() => removeIntake(selectedIndex)}
+                            >
+                              <Trash2 size={14} />Delete
+                            </Button>
+                          </div>
                         </div>
 
-                        <div className="border-b border-border px-4 py-3">
-                          <Tabs value={assignFilter} onValueChange={value => setAssignFilter(value as 'assigned' | 'unassigned')}>
-                            <TabsList aria-label="Filter projects for this intake">
-                              <TabsTrigger value="assigned">Assigned ({assignedProjects.length})</TabsTrigger>
-                              <TabsTrigger
-                                value="unassigned"
-                                className={cn(
-                                  'gap-1.5',
-                                  notAssignedProjects.length > 0 && 'text-warning hover:text-warning data-[active]:text-warning',
-                                )}
-                              >
-                                {notAssignedProjects.length > 0 && <AlertTriangle size={13} />}
-                                Not assigned ({notAssignedProjects.length})
-                              </TabsTrigger>
-                            </TabsList>
-                          </Tabs>
-                        </div>
-
-                        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-                          {!cpLevel ? (
-                            <div className="rounded-lg border border-border bg-bg-subtle">
-                              <EmptyState
-                                icon={Folder}
-                                title="Select an intern category"
-                                description="Choose an intern category in Programme Details to load the matching project pool."
-                                size="sm"
-                              />
-                            </div>
-                          ) : visibleProjects.length === 0 ? (
-                            <div className="rounded-lg border border-dashed border-border bg-bg-subtle/40">
-                              <EmptyState
-                                icon={Folder}
-                                title={assignFilter === 'assigned' ? 'No projects assigned yet' : 'Nothing left to add'}
-                                description={assignFilter === 'assigned'
-                                  ? 'No projects have been assigned to this intake. Check the "Not assigned" tab to add some.'
-                                  : 'Every project in the pool is already assigned to this intake.'}
-                                size="sm"
-                              />
-                            </div>
-                          ) : (
-                            <div className="overflow-hidden rounded-lg border border-border bg-surface">
-                              <div className="divide-y divide-border">
-                                {visibleProjects.map(p => {
-                                  const isAssigned = assignedToIntake.has(p.id);
-                                  const periodFits = !!selectedIntake && fitsIntake(p, selectedIntake);
-                                  const period = hasPeriod(p)
-                                    ? `${p.internshipPeriodStart} – ${p.internshipPeriodEnd}`
-                                    : 'No period set';
-                                  return (
-                                    <div key={p.id} className="grid gap-3 px-4 py-3 transition-colors hover:bg-bg-subtle/50 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                                      <div className="min-w-0">
-                                        <p className="truncate text-body-sm font-semibold text-fg">{p.title}</p>
-                                        <p className="mt-0.5 text-caption text-fg-muted">
-                                          {period} · {availablePlacements(p)} of {p.slots} placements free
-                                        </p>
-                                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                                          <span className="inline-flex items-center gap-1.5 text-sm font-normal text-fg">
-                                            <span className={cn('h-1.5 w-1.5 rounded-full', periodFits ? 'bg-success' : 'bg-warning')} />
-                                            {periodFits ? 'Period fits this intake' : 'Period outside this intake'}
-                                          </span>
-                                          {!hasPeriod(p) && (
-                                            <Button type="button" variant="link" size="xs" onClick={() => openPeriodEdit(p)}>
-                                              Set period
-                                            </Button>
-                                          )}
-                                        </div>
-                                      </div>
-                                      {isAssigned ? (
-                                        <Button
-                                          type="button"
-                                          variant="outline"
-                                          size="xs"
-                                          onClick={() => selectedIntakeId && toggleAttach(selectedIntakeId, p.id)}
-                                        >
-                                          Remove
-                                        </Button>
-                                      ) : (
-                                        <Button
-                                          type="button"
-                                          variant="outline"
-                                          size="xs"
-                                          onClick={() => openSingleAssign(p.id, selectedIntakeId)}
-                                        >
-                                          Assign
-                                        </Button>
-                                      )}
-                                    </div>
-                                  );
-                                })}
+                        {selectedIntake && (
+                          <div className="border-border px-4 py-4">
+                            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_1px_1fr_2fr]">
+                              <div className="min-w-0">
+                                <Field>
+                                  <FieldLabel>
+                                    Application Window <span className="text-danger">*</span>
+                                  </FieldLabel>
+                                  <DateRangePicker
+                                    start={selectedIntake.appOpen}
+                                    end={selectedIntake.appClose}
+                                    onChange={(openDate, closeDate) => {
+                                      const next = cpIntakes.map((w, j) => j === selectedIndex ? { ...w, appOpen: openDate, appClose: closeDate } : w);
+                                      setCpIntakes(next);
+                                      setCpErrors(p => {
+                                        const n = { ...p };
+                                        delete n[`intake_${selectedIndex}_appOpen`];
+                                        delete n[`intake_${selectedIndex}_appClose`];
+                                        return n;
+                                      });
+                                    }}
+                                    placeholder="Pick the application dates"
+                                    lockStart={isEdit && selectedIndex === 0}
+                                    minDate={sgToday()}
+                                    error={Boolean(cpErrors[`intake_${selectedIndex}_appOpen`] || cpErrors[`intake_${selectedIndex}_appClose`])}
+                                  />
+                                  {(cpErrors[`intake_${selectedIndex}_appOpen`] || cpErrors[`intake_${selectedIndex}_appClose`]) && (
+                                    <FieldError>{cpErrors[`intake_${selectedIndex}_appOpen`] || cpErrors[`intake_${selectedIndex}_appClose`]}</FieldError>
+                                  )}
+                                </Field>
+                              </div>
+                              <div className="hidden lg:block border-l border-border" aria-hidden="true" />
+                              <div className="min-w-0">
+                                <Field>
+                                  <FieldLabel>
+                                    Internship Window <span className="text-danger">*</span>
+                                  </FieldLabel>
+                                  <DateRangePicker
+                                    placeholder="Pick the internship start and end dates"
+                                    error={!!(cpErrors[`intake_${selectedIndex}_start`] || cpErrors[`intake_${selectedIndex}_end`])}
+                                    start={selectedIntake.start}
+                                    end={selectedIntake.end}
+                                    onChange={(startDate, endDate) => {
+                                      const next = cpIntakes.map((w, j) => j === selectedIndex ? {
+                                        ...w,
+                                        start: startDate,
+                                        end: endDate,
+                                      } : w);
+                                      setCpIntakes(next);
+                                      setCpErrors(p => {
+                                        const n = { ...p };
+                                        delete n[`intake_${selectedIndex}_start`];
+                                        delete n[`intake_${selectedIndex}_end`];
+                                        return n;
+                                      });
+                                    }}
+                                  />
+                                  {(cpErrors[`intake_${selectedIndex}_start`] || cpErrors[`intake_${selectedIndex}_end`]) && (
+                                    <FieldError>{cpErrors[`intake_${selectedIndex}_start`] || cpErrors[`intake_${selectedIndex}_end`]}</FieldError>
+                                  )}
+                                </Field>
                               </div>
                             </div>
-                          )}
+                          </div>
+                        )}
+
+                        <div className="flex min-h-0 flex-1 flex-col">
+                          <div className="border-border px-4 py-3">
+                            <Tabs value={assignFilter} onValueChange={value => setAssignFilter(value as 'assigned' | 'unassigned')}>
+                              <TabsList aria-label="Filter projects for this intake">
+                                <TabsTrigger value="assigned">Assigned ({assignedProjects.length})</TabsTrigger>
+                                <TabsTrigger
+                                  value="unassigned"
+                                  className={cn(
+                                    'gap-1.5',
+                                    notAssignedProjects.length > 0 && 'text-warning hover:text-warning data-[active]:text-warning',
+                                  )}
+                                >
+                                  {notAssignedProjects.length > 0 && <AlertTriangle size={13} />}
+                                  Not assigned ({notAssignedProjects.length})
+                                </TabsTrigger>
+                              </TabsList>
+                            </Tabs>
+                          </div>
+
+                          <div className="min-h-0 flex-1 overflow-y-auto p-4">
+                            {!cpLevel ? (
+                              <div className="rounded-lg border border-border bg-bg-subtle">
+                                <EmptyState
+                                  icon={Folder}
+                                  title="Select an intern category"
+                                  description="Choose an intern category in Programme Details to load the matching project pool."
+                                  size="sm"
+                                />
+                              </div>
+                            ) : visibleProjects.length === 0 ? (
+                              <div className="rounded-lg border border-dashed border-border bg-bg-subtle/40">
+                                <EmptyState
+                                  icon={Folder}
+                                  title={assignFilter === 'assigned' ? 'No projects assigned yet' : 'Nothing left to add'}
+                                  description={assignFilter === 'assigned'
+                                    ? 'No projects have been assigned to this intake. Check the "Not assigned" tab to add some.'
+                                    : 'Every project in the pool is already assigned to this intake.'}
+                                  size="sm"
+                                />
+                              </div>
+                            ) : (
+                              <div className="overflow-hidden border-border bg-surface">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Project Name</TableHead>
+                                      <TableHead>Programme Centre</TableHead>
+                                      <TableHead>Project Duration</TableHead>
+                                      <TableHead>Placements</TableHead>
+                                      <TableHead>Match</TableHead>
+                                      <TableHead className="w-24 text-right"></TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {visibleProjects.map(p => (
+                                      <ProjectTableRow
+                                        key={p.id}
+                                        project={p}
+                                        selectedIntake={selectedIntake}
+                                        selectedIntakeId={selectedIntakeId}
+                                        cpPlacement={cpPlacement}
+                                        assignedToIntake={assignedToIntake}
+                                        onToggleAttach={toggleAttach}
+                                        onOpenSingleAssign={openSingleAssign}
+                                        onOpenPeriodEdit={openPeriodEdit}
+                                      />
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </section>
                     </section>
+                    {isPendingIntakeTransition && (
+                      <div className="absolute inset-0 z-50 flex items-center justify-center bg-surface/60 backdrop-blur-[1px]">
+                        <Spinner size="lg" label="Switching intake..." />
+                      </div>
+                    )}
                   </div>
+                </div>
                 );
               })()}
             </div>
@@ -2917,41 +2949,37 @@ export default function ProgrammeFormPage() {
         </div>
 
         {/* Footer — full-bleed sticky action bar (matches the project-request wizard) */}
-        <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-surface/95 px-[clamp(24px,2.6vw,40px)] py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] backdrop-blur">
+        <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-end gap-3 border-t border-border bg-surface/95 px-[clamp(24px,2.6vw,40px)] py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] backdrop-blur">
         {step === 1 ? (
-          <>
+          <div className="flex items-center gap-3">
             <Button variant="outline" onClick={() => safeNavigate('/programmes')}>Cancel</Button>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={saveAsDraft}>
-                <Save size={15} />Save as Draft
-              </Button>
-              <Button onClick={goToIntakes}>
-                {/* label derived from STEP_DEFS so it always matches the step header */}
-                Next: {STEP_DEFS[step].label} <ArrowRight size={16} />
-              </Button>
-            </div>
-          </>
+            <Button variant="outline" onClick={saveAsDraft}>
+              <Save size={15} />Save as Draft
+            </Button>
+            <Button onClick={goToIntakes}>
+              {/* label derived from STEP_DEFS so it always matches the step header */}
+              Next: {STEP_DEFS[step].label} <ArrowRight size={16} />
+            </Button>
+          </div>
         ) : step === 2 ? (
           /* Set Up Intakes & Assign Projects — validate intakes before Review */
-          <>
-            <Button variant="ghost" onClick={() => setStep(1)}>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={() => setStep(1)}>
               <ArrowLeft size={16} />Back
             </Button>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={saveAsDraft}>
-                <Save size={15} />Save as Draft
-              </Button>
-              <Button onClick={goToAttach} disabled={!canReviewIntakes} title={!canReviewIntakes ? 'Complete all intake dates before reviewing.' : undefined}>
-                Next: {STEP_DEFS[step].label} <ArrowRight size={16} />
-              </Button>
-            </div>
-          </>
+            <Button variant="outline" onClick={saveAsDraft}>
+              <Save size={15} />Save as Draft
+            </Button>
+            <Button onClick={goToAttach} disabled={!canReviewIntakes} title={!canReviewIntakes ? 'Complete all intake dates before reviewing.' : undefined}>
+              Next: {STEP_DEFS[step].label} <ArrowRight size={16} />
+            </Button>
+          </div>
         ) : (
           <>
-            <Button variant="ghost" onClick={() => setStep(2)}>
-              <ArrowLeft size={16} />Back
-            </Button>
             <div className="flex items-center gap-3">
+              <Button variant="outline" onClick={() => setStep(2)}>
+                <ArrowLeft size={16} />Back
+              </Button>
               <Button variant="outline" onClick={saveAsDraft}>
                 <Save size={15} />Save as Draft
               </Button>
