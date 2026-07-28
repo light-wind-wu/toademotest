@@ -59,7 +59,7 @@ import {
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import {
   Send, Check, X, FileText, ChevronRight, Filter, MoreVertical, Eye, Bell, CalendarClock, Pencil, Trash2, Ban,
-  ArrowUp, ArrowDown, ArrowUpDown, CornerDownRight,
+  ArrowUp, ArrowDown, ArrowUpDown, CornerDownRight, Plus,
 } from 'lucide-react';
 import { CONTACTS, STATUS_COLOURS, progEducationLevelMap, batchEducationLevel } from '@/lib/data';
 import { projectMatchesRequest } from '@/lib/request-groups';
@@ -401,7 +401,7 @@ function StatusBadge({ meta }: { meta: { label: string; cls: string } }) {
 
 function LineStatusFlag({ meta }: { meta: { label: string; cls: string; tip: string } }) {
   return (
-    <StatusTooltip tip={meta.tip}>
+    <StatusTooltip tip={meta.label}>
       <span className={cn('inline-flex items-center gap-1 text-caption font-medium', meta.cls)}>
         <span aria-hidden className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-current text-[10px] leading-none">!</span>
         {/*{meta.label}*/}
@@ -1019,7 +1019,7 @@ export default function RequestsPage() {
             sortCol={sortCol}
             sortDir={sortDir}
             onSort={doSort}
-            filter={requestTab === 'closed' ? headerFilterButton('requestDate') : undefined}
+            filter={headerFilterButton('requestDate')}
             labelClassName="whitespace-normal"
           />
         ),
@@ -1988,7 +1988,7 @@ export default function RequestsPage() {
         </div>
         {showHeaderCreateRequest && (
           <Button onClick={() => router.push('/requests/new')} className="self-start">
-            <Send size={15} />Create Project Request
+            <Plus size={15} />Create Project Request
           </Button>
         )}
       </div>

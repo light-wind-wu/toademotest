@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
-import { Badge } from '@/components/ui-legacy/badge';
 import EmptyState from '@/components/ui-legacy/empty-state';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import { Inbox, CheckCircle2, Calendar } from 'lucide-react';
-import { loadLiveProgrammeOptions, CONTACTS } from '@/lib/data';
+import { loadLiveProgrammeOptions, CONTACTS, STATUS_COLOURS } from '@/lib/data';
 import { loadRequests, loadSubmissions } from '@/lib/storage';
 import { useRole } from '@/lib/role';
+import { cn } from '@/lib/utils';
 import { useToast, Toast } from '@/components/ui-legacy/toast';
 import {
   groupRequests, isGroupClosed, groupTotals, submittedForGroup,
@@ -132,6 +132,20 @@ function getContextMessage(uploaded: number, placements: number): string {
   return 'Placement target met. Waiting for remaining IO review outcomes.';
 }
 
+/* Local colour override: "Returned for Update" uses warning orange rather than rejected red. */
+const RETURNED_FOR_UPDATE_COLOURS = 'bg-[rgba(254,154,0,0.15)] text-[rgba(187,77,0,1)]';
+
+const GROUP_STATUS_COLOURS: Record<string, string> = {
+  Pending: STATUS_COLOURS.pending,
+  Incomplete: STATUS_COLOURS.incomplete,
+  Fulfilled: STATUS_COLOURS.fulfilled,
+  'Returned for Update': RETURNED_FOR_UPDATE_COLOURS,
+};
+
+function textOnly(cls: string) {
+  return cls.split(' ').filter(c => c.startsWith('text-')).join(' ') || cls;
+}
+
 /* ── Page ─────────────────────────────────────────────────────────────────── */
 export default function AdPncSubmissionsPage() {
   const { toast: toastMsg, showToast } = useToast();
@@ -195,10 +209,14 @@ export default function AdPncSubmissionsPage() {
         </p>
       </div>
 
-      <div className="mb-6 rounded-lg border border-border px-4 py-3 border-[#E6E1D8] bg-[#F3EFE5]">
-        <p className="text-label-md font-semibold text-fg">How it works</p>
-        <p className="text-body-sm text-fg-muted">1. Review the request 2. Manage and submit projects</p>
-      </div>
+      {/*{
+        requests.length && (
+          <div className="mb-6 rounded-lg border border-border px-4 py-3 border-[#E6E1D8] bg-[#F3EFE5]">
+            <p className="text-label-md font-semibold text-fg">How it works</p>
+            <p className="text-body-sm text-fg-muted">1. Review the request 2. Manage and submit projects</p>
+          </div>
+        )
+      }*/}
 
       {requests.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface">
@@ -273,10 +291,17 @@ function RequestCard({
   const action = getCardAction(group, batches);
   const pc = group.requests[0]?.programmeCenter ?? '—';
 
+  const projectStatusItems = [
+    counts.notSubmitted > 0 && { key: 'notSubmitted', label: 'Not submitted', count: counts.notSubmitted, cls: textOnly(STATUS_COLOURS.draft) },
+    counts.pending > 0 && { key: 'pending', label: 'Pending', count: counts.pending, cls: textOnly(STATUS_COLOURS.pending) },
+    counts.returnedForUpdate > 0 && { key: 'returnedForUpdate', label: 'Returned for update', count: counts.returnedForUpdate, cls: textOnly(RETURNED_FOR_UPDATE_COLOURS) },
+    counts.approved > 0 && { key: 'approved', label: 'Approved', count: counts.approved, cls: textOnly(STATUS_COLOURS.approved) },
+  ].filter(Boolean) as { key: string; label: string; count: number; cls: string }[];
+
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
       {/* Header */}
-      <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-3 border-border px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h3 className="text-headline-sm text-fg">
             Request from {group.senderName ?? 'IO Admin'}
@@ -285,7 +310,7 @@ function RequestCard({
             Sent {fmtDate(group.sentDate)} · {pc}
           </p>
         </div>
-        <Badge variant={badge.variant} className="shrink-0">{badge.label}</Badge>
+        <span className={cn('badge text-caption font-normal shrink-0', GROUP_STATUS_COLOURS[badge.label])}>{badge.label}</span>
       </div>
 
       {/* Body */}
@@ -327,40 +352,28 @@ function RequestCard({
         {/* Project Statuses */}
         <div>
           <h4 className="text-label-md mb-3 font-semibold text-fg">Project Statuses</h4>
-          {counts.notSubmitted + counts.pending + counts.returnedForUpdate + counts.approved === 0 ? (
+          {projectStatusItems.length === 0 ? (
             <p className="text-body-sm text-fg-muted">No project yet.</p>
           ) : (
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-body-sm">
-              {counts.notSubmitted > 0 && (
-                <span className="text-fg-muted">
-                  <span className="font-semibold text-fg">{counts.notSubmitted}</span> Not submitted
-                </span>
-              )}
-              {counts.pending > 0 && (
-                <span className="text-info">
-                  <span className="font-semibold">{counts.pending}</span> Pending
-                </span>
-              )}
-              {counts.returnedForUpdate > 0 && (
-                <span className="text-warning">
-                  <span className="font-semibold">{counts.returnedForUpdate}</span> Returned for update
-                </span>
-              )}
-              {counts.approved > 0 && (
-                <span className="text-success">
-                  <span className="font-semibold">{counts.approved}</span> Approved
-                </span>
-              )}
+            <div className="flex flex-wrap items-center gap-y-2 text-body-sm">
+              {projectStatusItems.map((item, index) => (
+                <Fragment key={item.key}>
+                  {index > 0 && <span className="mx-3 h-4 w-px bg-border" aria-hidden="true" />}
+                  <span className={item.cls}>
+                    <span className="font-semibold">{item.count}</span> {item.label}
+                  </span>
+                </Fragment>
+              ))}
             </div>
           )}
-          <p className="mt-2 text-caption text-fg-muted">
+          {/*<p className="mt-2 text-caption text-fg-muted">
             These do not replace the request status shown above.
-          </p>
+          </p>*/}
         </div>
 
         {/* Returned for update alert */}
         {rejected.length > 0 && (
-          <Alert variant="warning" className="border-[rgba(187,77,0,0.3)] bg-[rgba(254,154,0,0.15)] text-[rgba(187,77,0,1)]">
+          <Alert variant="warning" className={RETURNED_FOR_UPDATE_COLOURS}>
             <AlertTitle>
               {rejected.length} project{rejected.length === 1 ? '' : 's'} require{rejected.length === 1 ? 's' : ''} an update
             </AlertTitle>

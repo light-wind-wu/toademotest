@@ -44,7 +44,7 @@ export interface ProjectSubmissionColumn {
    exact bg/text pairs are used by the product prototypes in requests.tsx. */
 export const STATUS_COLOURS = {
   draft:      'bg-[rgba(244,242,236,1)] text-[rgba(69,85,108,1)]',
-  pending:    'bg-[rgba(0,166,244,0.15)] text-[rgba(0,105,168,1)]',
+  pending:    'bg-[rgba(254,154,0,0.15)] text-[rgba(187,77,0,1)]',
   incomplete: 'bg-[rgba(254,154,0,0.15)] text-[rgba(187,77,0,1)]',
   fulfilled:  'bg-[rgba(0,201,80,0.15)] text-[rgba(0,130,54,1)]',
   closed:     'bg-[rgba(244,242,236,1)] text-[rgba(69,85,108,1)]',
@@ -53,7 +53,7 @@ export const STATUS_COLOURS = {
   // Project-only statuses that map to the same semantic colours
   approved:   'bg-[rgba(0,201,80,0.15)] text-[rgba(0,130,54,1)]',
   rejected:   'bg-[rgba(251,44,54,0.15)] text-[rgba(193,0,7,1)]',
-  frozen:     'bg-[rgba(168,85,247,0.15)] text-[rgba(126,34,206,1)]',
+  frozen:     'bg-[rgba(254,154,0,0.15)] text-[rgba(187,77,0,1)]',
 } as const;
 
 /* Competency Domains (from SDP) — the approved Tech Competency list used by the

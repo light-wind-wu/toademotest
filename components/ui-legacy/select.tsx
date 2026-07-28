@@ -2,15 +2,53 @@
 
 import { Select as BaseSelect } from "@base-ui-components/react/select";
 import { cn } from "@/lib/utils";
+import { ChevronDown } from "lucide-react";
 import {
   Select,
   SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
-export { Select, SelectItem, SelectTrigger, SelectValue };
+export { Select, SelectItem };
+
+export function SelectValue({
+  placeholder,
+  className,
+  children,
+  ...props
+}: ComponentPropsWithoutRef<typeof BaseSelect.Value> & {
+  placeholder?: ReactNode;
+}) {
+  return (
+    <BaseSelect.Value className={className} {...props}>
+      {children ?? ((value: any) => (value == null || value === "" ? placeholder : (value as ReactNode)))}
+    </BaseSelect.Value>
+  );
+}
+
+export function SelectTrigger({
+  className,
+  children,
+  ...props
+}: ComponentPropsWithoutRef<typeof BaseSelect.Trigger>) {
+  return (
+    <BaseSelect.Trigger
+      className={cn(
+        "flex h-9 w-full items-center justify-between gap-2 overflow-hidden rounded-md border border-border bg-surface px-3 py-1 text-sm shadow-sm",
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        "data-[placeholder]:text-fg-subtle",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+      <BaseSelect.Icon className="shrink-0 text-fg-muted">
+        <ChevronDown className="h-4 w-4" />
+      </BaseSelect.Icon>
+    </BaseSelect.Trigger>
+  );
+}
 
 export function SelectContent({
   className,

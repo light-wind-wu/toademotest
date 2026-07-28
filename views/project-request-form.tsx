@@ -1250,13 +1250,14 @@ export default function ProjectRequestFormPage() {
                       <div>
                         <h2 className="text-label-lg font-semibold text-fg">Requests</h2>
                         <p className="mt-0.5 text-caption text-fg-muted">
-                          {reqs.length} request{reqs.length !== 1 ? 's' : ''} ·{' '}
-                          <span className={missingReqCount > 0 ? 'font-semibold text-danger' : 'text-success'}>
+                          {reqs.length} request{reqs.length !== 1 ? 's' : ''}
+                          {/*·{' '}*/}
+                          {/*<span className={missingReqCount > 0 ? 'font-semibold text-danger' : 'text-success'}>
                             {missingReqCount} filed missing
-                          </span>
+                          </span>*/}
                         </p>
                       </div>
-                      <Button size="sm" onClick={addRequest}><Plus size={14} />Add Request</Button>
+                      <Button size="sm" onClick={addRequest}><Plus size={14} />Add Project Request</Button>
                     </div>
                   </div>
 
@@ -1343,10 +1344,21 @@ export default function ProjectRequestFormPage() {
 
                 <section className="flex min-h-0 min-w-0 flex-col bg-surface">
                   <div className="flex flex-col gap-3 border-b border-[#E7E4DD] bg-[#F9F8F4] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
+                    <div className="w-full flex items-center justify-between gap-3">
                       <h3 className="text-label-md font-semibold text-[#0F172B]">
                         {activeReq ? `Current Editing - Request ${numberById.get(activeReq.id) ?? 0}` : 'Add a request to begin'}
                       </h3>
+                      {activeReq && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={reqs.length <= 1}
+                          onClick={() => removeReq(activeReq.id)}
+                        >
+                          <Trash2 size={14} />Delete
+                        </Button>
+                      )}
                     </div>
                   </div>
                   {activeReq ? (
@@ -1453,20 +1465,21 @@ export default function ProjectRequestFormPage() {
         )}
 
         {/* Footer actions */}
-        <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-end gap-3 border-t border-border bg-gradient-to-b from-surface to-bg px-[clamp(24px,2.6vw,40px)] py-2">
+        <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-gradient-to-b from-surface to-bg px-[clamp(24px,2.6vw,40px)] py-2">
+          <Button variant="ghost" size="md" onClick={() => safeNavigate('/requests')}>
+            Back
+          </Button>
           <div className="flex items-center gap-3">
             {step === 1 ? (
               <>
-                <Button variant="outline" size="md" onClick={() => safeNavigate('/requests')}>Cancel</Button>
                 <Button variant="outline" size="md" onClick={handleSaveDraft}>Save as Draft</Button>
                 <Button size="md" onClick={goToPreview}>Preview</Button>
               </>
             ) : (
               <>
-                <Button variant="outline" size="md" onClick={() => setStep(1)}><ArrowLeft size={16} />Back</Button>
-                <Button variant="outline" size="md" onClick={() => safeNavigate('/requests')}>Cancel</Button>
+                <Button variant="outline" size="md" onClick={() => setStep(1)}>Cancel</Button>
                 <Button variant="outline" size="md" onClick={handleSaveDraft}>Save as Draft</Button>
-                <Button size="md" onClick={() => setConfirmSendOpen(true)}><Send size={16} />Confirm Send</Button>
+                <Button size="md" onClick={() => setConfirmSendOpen(true)}>Confirm Send</Button>
               </>
             )}
           </div>

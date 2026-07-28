@@ -1953,7 +1953,7 @@ export default function ProjectRequestEditPage() {
 
   return (
     <Shell activeRoute="/requests">
-      <div className="space-y-5 pb-16">
+      <div className="flex min-h-[calc(100vh-112px)] flex-col space-y-5">
         <Breadcrumb className="text-label-md">
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -1999,7 +1999,7 @@ export default function ProjectRequestEditPage() {
         )}
 
         {model && (
-          <div className="space-y-5">
+          <div className="flex-1 min-h-[560px] space-y-5">
             {mode === 'draft' ? (
               <>
               {step === 1 ? (
@@ -2214,35 +2214,44 @@ export default function ProjectRequestEditPage() {
         )}
 
         {model && (
-          <div className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-end gap-3 border-t border-border bg-bg-subtle px-[clamp(24px,2.6vw,40px)] py-2 md:left-[112px]">
-            {mode === 'draft' ? (
-              <div className="flex items-center gap-3">
-                <Button variant="outline" size="md" onClick={navigateToRequests}>Cancel</Button>
-                <Button variant="outline" size="md" onClick={saveDraft}>Save as Draft</Button>
-                {step === 1 ? (
-                  <Button size="md" onClick={() => { if (missing.length > 0) { setShowErrors(true); } else { setShowErrors(false); setStep(2); } }}>Preview</Button>
-                ) : (
-                  <Button size="md" onClick={() => setDraftConfirmSendOpen(true)}><Send size={16} />Confirm Send</Button>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                {canManageOpen && (
-                  step === 1 ? (
+          <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-gradient-to-b from-surface to-bg px-[clamp(24px,2.6vw,40px)] py-2">
+            <Button variant="ghost" size="md" onClick={navigateToRequests}>
+              Back
+            </Button>
+            <div className="flex items-center gap-3">
+              {mode === 'draft' ? (
+                <>
+                  {step === 1 ? (
                     <>
-                      <Button variant="outline" size="md" onClick={navigateToRequests}>Back</Button>
-                      <Button variant="outline" size="md" onClick={sendReminder}>Send Reminder</Button>
-                      <Button size="md" onClick={() => { if (missingFields(model).length > 0 || additionalMissing) { setShowErrors(true); } else { setShowErrors(false); setStep(2); } }}><Eye size={16} />Review</Button>
+                      <Button variant="outline" size="md" onClick={saveDraft}>Save as Draft</Button>
+                      <Button size="md" onClick={() => { if (missing.length > 0) { setShowErrors(true); } else { setShowErrors(false); setStep(2); } }}>Preview</Button>
                     </>
                   ) : (
                     <>
-                      <Button variant="ghost" size="md" onClick={() => setStep(1)}><ArrowLeft size={16} />Back</Button>
-                      <Button size="md" onClick={() => openPreview('combined')}><Send size={16} />Confirm Send</Button>
+                      <Button variant="outline" size="md" onClick={() => setStep(1)}>Cancel</Button>
+                      <Button variant="outline" size="md" onClick={saveDraft}>Save as Draft</Button>
+                      <Button size="md" onClick={() => setDraftConfirmSendOpen(true)}><Send size={16} />Confirm Send</Button>
                     </>
-                  )
-                )}
-              </div>
-            )}
+                  )}
+                </>
+              ) : (
+                <>
+                  {canManageOpen && (
+                    step === 1 ? (
+                      <>
+                        <Button variant="outline" size="md" onClick={sendReminder}>Send Reminder</Button>
+                        <Button size="md" onClick={() => { if (missingFields(model).length > 0 || additionalMissing) { setShowErrors(true); } else { setShowErrors(false); setStep(2); } }}><Eye size={16} />Review</Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button variant="outline" size="md" onClick={() => setStep(1)}>Cancel</Button>
+                        <Button size="md" onClick={() => openPreview('combined')}><Send size={16} />Confirm Send</Button>
+                      </>
+                    )
+                  )}
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>

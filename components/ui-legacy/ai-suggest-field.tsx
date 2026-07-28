@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Check } from "lucide-react";
 import AiSparkleIcon from "./ai-sparkle-icon";
 import Button from "./button";
+import { AI_COLOURS } from "@/lib/ai-colours";
 import { cn } from "@/lib/utils";
 
 /* Inline AI suggestion for a text field — mirrors the IO review layout: the field
@@ -89,13 +90,13 @@ export default function AiSuggestField({
         )}
         {field}
         {!open && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="mt-2"
-            onClick={() => setDraft(generate())}
-          >
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className={cn("mt-2", AI_COLOURS.suggestButton)}
+          onClick={() => setDraft(generate())}
+        >
             <AiSparkleIcon size={12} />
             Suggest with AI
           </Button>

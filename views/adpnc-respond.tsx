@@ -28,15 +28,15 @@ import {
 } from '@/components/ui/menu';
 import Modal from '@/components/ui-legacy/modal';
 import { Toast, useToast } from '@/components/ui-legacy/toast';
-import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import {
   AlertTriangle,
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
   Calendar,
-  Check,
+  ChevronDown,
   ChevronRight,
+  ChevronUp,
   Clock,
   Eye,
   Inbox,
@@ -49,7 +49,6 @@ import {
   Upload,
   User,
   Users,
-  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -61,6 +60,7 @@ import {
   saveSubmissions,
 } from '@/lib/storage';
 import { addNotification } from '@/lib/notifications';
+import { AI_COLOURS } from '@/lib/ai-colours';
 import { PROJECT_SUBMISSION_COLUMNS, STATUS_COLOURS, toEducationLevel } from '@/lib/data';
 import { DISCIPLINE_OPTIONS, parseDisciplines, toggleDiscipline } from '@/lib/disciplines';
 import {
@@ -214,22 +214,10 @@ function aiCheckStatusLabel(result: AiCheckResultStatus) {
   return 'AI recommend review';
 }
 
-function aiCheckStatusClass(result: AiCheckResultStatus) {
-  if (result === 'pass') return 'bg-info-bg text-info';
-  if (result === 'fail') return 'bg-danger-bg text-danger';
-  return 'bg-warning-bg text-warning';
-}
-
 function strongestAiCheckResult(results: Array<AiCheckResultStatus | undefined>, hasNotes = false): AiCheckResultStatus {
   if (results.includes('fail')) return 'fail';
   if (results.includes('warn') || hasNotes) return 'warn';
   return 'pass';
-}
-
-function AiCheckStatusIcon({ result }: { result: AiCheckResultStatus }) {
-  if (result === 'pass') return <Check size={11} />;
-  if (result === 'fail') return <X size={11} />;
-  return <AlertTriangle size={11} />;
 }
 
 function aiCheckMeta(project: SubmittedProject) {
@@ -244,7 +232,6 @@ function aiCheckMeta(project: SubmittedProject) {
     result,
     ok: result === 'pass',
     label: aiCheckStatusLabel(result),
-    cls: aiCheckStatusClass(result),
   };
 }
 
@@ -930,8 +917,8 @@ export default function AdPncRespondPage() {
   const [uploadReview, setUploadReview] = useState<UploadReview | null>(null);
   const [pcCleared, setPcCleared] = useState(false);
   const [securityCleared, setSecurityCleared] = useState(false);
-  const [activeCategory, setActiveCategory] = useState<string>('');
   const [selectedProjectIds, setSelectedProjectIds] = useState<Set<string>>(new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<1 | -1>(1);
@@ -978,8 +965,7 @@ export default function AdPncRespondPage() {
     : null;
   const visibleProjects = isUploadMode ? draftProjects : submittedProjects;
 
-  // Intern-category tabs — mirror the request template's one-tab-per-category layout.
-  // Requests are raised per category, so the group's distinct categories become tabs.
+  // Distinct intern categories from the request group, used to place projects in buckets.
   const categories = useMemo(() => {
     const seen = new Set<string>();
     const list: string[] = [];
@@ -989,9 +975,8 @@ export default function AdPncRespondPage() {
     }
     return list;
   }, [group]);
-  const showCategoryTabs = categories.length > 1;
 
-  // Which category tab a project belongs to: its matched request's category (requestLineId
+  // Which category a project belongs to: its matched request's category (requestLineId
   // is the precise link), else a fall back to matching by education level.
   function projectCategoryKey(project: SubmittedProject): string {
     if (project.requestLineId) {
@@ -1003,15 +988,37 @@ export default function AdPncRespondPage() {
     const byLevel = categories.find(category => toEducationLevel(category) === toEducationLevel(project.educationLevel ?? ''));
     return byLevel ?? categories[0] ?? '';
   }
-  const inActiveCategory = (project: SubmittedProject) =>
-    !showCategoryTabs || projectCategoryKey(project) === activeCategory;
-  const shownProjects = visibleProjects.filter(inActiveCategory);
+
+  const groupedProjects = useMemo(() => {
+    const map = new Map<string, SubmittedProject[]>();
+    for (const project of visibleProjects) {
+      const key = projectCategoryKey(project);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(project);
+    }
+    const groups = Array.from(map.entries()).map(([key, projects]) => ({
+      key,
+      label: categoryLabel(key) || 'Uncategorised',
+      count: projects.length,
+      projects,
+    }));
+    groups.sort((a, b) => {
+      const ai = categories.indexOf(a.key);
+      const bi = categories.indexOf(b.key);
+      if (ai !== -1 && bi !== -1) return ai - bi;
+      if (ai !== -1) return -1;
+      if (bi !== -1) return 1;
+      return a.label.localeCompare(b.label);
+    });
+    return groups;
+  }, [visibleProjects, group, categories]);
 
   const sortedProjects = useMemo(() => {
-    if (!sortCol || shownProjects.length === 0) return shownProjects;
+    if (!sortCol || visibleProjects.length === 0) return visibleProjects;
     const getValue = (p: SubmittedProject, col: string) => {
       const matched = group?.requests.find(request => projectMatchesRequest(p, request));
       switch (col) {
+        case 'category': return projectCategoryKey(p);
         case 'title': return p.title.toLowerCase();
         case 'dates': return p.internshipPeriodStart || projectPeriod(p, matched).toLowerCase();
         case 'duration': {
@@ -1029,22 +1036,17 @@ export default function AdPncRespondPage() {
         default: return p.title.toLowerCase();
       }
     };
-    return [...shownProjects].sort((a, b) => {
+    return [...visibleProjects].sort((a, b) => {
       const av = getValue(a, sortCol);
       const bv = getValue(b, sortCol);
       if (av < bv) return -sortDir;
       if (av > bv) return sortDir;
       return a.title.localeCompare(b.title);
     });
-  }, [shownProjects, sortCol, sortDir, group]);
+  }, [visibleProjects, sortCol, sortDir, group, categories]);
 
   const activeVisibleProjects = activeSubmittedProjects(visibleProjects);
   const canSubmit = activeVisibleProjects.length > 0 && pcCleared && securityCleared;
-
-  // Keep the selected tab valid as the group's categories load / change.
-  useEffect(() => {
-    if (categories.length && !categories.includes(activeCategory)) setActiveCategory(categories[0]);
-  }, [categories, activeCategory]);
 
   const requestStatus = group ? requestStatusForGroup(group, batches) : null;
   const requestYear = group ? requestYearLabel(group) : '';
@@ -1054,18 +1056,39 @@ export default function AdPncRespondPage() {
     return visibleProjects.some(p => p.status === 'rejected') ? 'Update returned project' : 'Request Project';
   }, [group, isUploadMode, visibleProjects]);
 
-  const activeCategoryProjects = shownProjects;
-  const activeSelectedCount = activeCategoryProjects.filter(p => selectedProjectIds.has(p.id)).length;
-  const allActiveSelected = activeCategoryProjects.length > 0 && activeSelectedCount === activeCategoryProjects.length;
+  const allSelectedCount = visibleProjects.filter(p => selectedProjectIds.has(p.id)).length;
+  const allVisibleSelected = visibleProjects.length > 0 && allSelectedCount === visibleProjects.length;
 
-  function toggleSelectAllInTab() {
+  function toggleSelectAll() {
     setSelectedProjectIds(prev => {
       const next = new Set(prev);
-      if (allActiveSelected) {
-        activeCategoryProjects.forEach(p => next.delete(p.id));
+      if (allVisibleSelected) {
+        visibleProjects.forEach(p => next.delete(p.id));
       } else {
-        activeCategoryProjects.forEach(p => next.add(p.id));
+        visibleProjects.forEach(p => next.add(p.id));
       }
+      return next;
+    });
+  }
+
+  function toggleSelectGroup(groupProjects: SubmittedProject[]) {
+    setSelectedProjectIds(prev => {
+      const next = new Set(prev);
+      const allSelected = groupProjects.every(p => next.has(p.id));
+      if (allSelected) {
+        groupProjects.forEach(p => next.delete(p.id));
+      } else {
+        groupProjects.forEach(p => next.add(p.id));
+      }
+      return next;
+    });
+  }
+
+  function toggleGroupCollapse(key: string) {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }
@@ -1459,29 +1482,15 @@ export default function AdPncRespondPage() {
           ) : (
             <div className="flex min-h-[calc(100vh-390px)] flex-col gap-4">
               <section className="flex-1 space-y-4">
-                {showCategoryTabs && (
-                  <UnderlineTabs
-                    value={activeCategory}
-                    onValueChange={(value) => value && setActiveCategory(value)}
-                    ariaLabel="Intern category"
-                    tabs={categories.map(category => ({
-                      value: category,
-                      label: categoryLabel(category),
-                      count: visibleProjects.filter(project => projectCategoryKey(project) === category).length,
-                    }))}
-                    className="mb-4"
-                  />
-                )}
-
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <Checkbox
-                      id="select-all-tab"
-                      checked={allActiveSelected}
-                      onCheckedChange={toggleSelectAllInTab}
+                      id="select-all"
+                      checked={allVisibleSelected}
+                      onCheckedChange={toggleSelectAll}
                     />
-                    <label htmlFor="select-all-tab" className="text-body-sm text-fg">
-                      Select all in tab
+                    <label htmlFor="select-all" className="text-body-sm text-fg">
+                      Select all
                     </label>
                   </div>
                   <div className="flex items-center rounded-lg border border-border p-1">
@@ -1512,9 +1521,9 @@ export default function AdPncRespondPage() {
                   </div>
                 </div>
 
-                {shownProjects.length === 0 ? (
+                {visibleProjects.length === 0 ? (
                   <div className="rounded-lg border border-dashed border-border bg-surface px-4 py-8 text-center text-body-sm text-fg-muted">
-                    No projects for {categoryLabel(activeCategory)} yet.
+                    No projects yet.
                   </div>
                 ) : viewMode === 'list' ? (
                   <div className="overflow-hidden rounded-lg border border-border bg-surface">
@@ -1524,10 +1533,13 @@ export default function AdPncRespondPage() {
                           <TableHead className="w-10 px-3 py-2">
                             <Checkbox
                               id="select-all-list"
-                              checked={allActiveSelected}
-                              onCheckedChange={toggleSelectAllInTab}
-                              aria-label="Select all in tab"
+                              checked={allVisibleSelected}
+                              onCheckedChange={toggleSelectAll}
+                              aria-label="Select all"
                             />
+                          </TableHead>
+                          <TableHead className="px-3 py-2">
+                            <SortHeader label="Intern Category" colId="category" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />
                           </TableHead>
                           <TableHead className="px-3 py-2">
                             <SortHeader label="Project" colId="title" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />
@@ -1556,11 +1568,13 @@ export default function AdPncRespondPage() {
                           const batch = batches.find(item => item.uploadToken === token && item.projects.some(row => row.id === project.id));
                           const matchedRequest = group.requests.find(request => projectMatchesRequest(project, request));
                           const isSelected = selectedProjectIds.has(project.id);
+                          const category = categoryLabel(projectCategoryKey(project));
                           return (
                             <ProjectListRow
                               key={project.id}
                               project={project}
                               request={matchedRequest}
+                              category={category}
                               batchId={isUploadMode ? undefined : batch?.id}
                               selected={isSelected}
                               onToggleSelect={() => toggleProjectSelection(project.id)}
@@ -1584,36 +1598,68 @@ export default function AdPncRespondPage() {
                     </Table>
                   </div>
                 ) : (
-                  <div className={cn(
-                    'grid gap-4',
-                    'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-                  )}>
-                    {shownProjects.map(project => {
-                      const batch = batches.find(item => item.uploadToken === token && item.projects.some(row => row.id === project.id));
-                      const matchedRequest = group.requests.find(request => projectMatchesRequest(project, request));
-                      const isSelected = selectedProjectIds.has(project.id);
+                  <div className="rounded-lg border border-border bg-surface overflow-hidden">
+                    {groupedProjects.map((groupItem, index) => {
+                      const isCollapsed = collapsedGroups.has(groupItem.key);
+                      const allGroupSelected = groupItem.projects.length > 0 && groupItem.projects.every(p => selectedProjectIds.has(p.id));
                       return (
-                        <ProjectCard
-                          key={project.id}
-                          project={project}
-                          request={matchedRequest}
-                          batchId={isUploadMode ? undefined : batch?.id}
-                          selected={isSelected}
-                          onToggleSelect={() => toggleProjectSelection(project.id)}
-                          canManage={true}
-                          onViewDetails={batch?.id ? () => router.push(`/submissions/project/${encodeURIComponent(batch.id)}/${encodeURIComponent(project.id)}`) : undefined}
-                          onEdit={() => {
-                            if (isUploadMode) {
-                              setEditingDraftProjectId(project.id);
-                              return;
-                            }
-                            if (batch?.id) {
-                              router.push(`/submissions/edit/${encodeURIComponent(batch.id)}/${encodeURIComponent(project.id)}`);
-                            }
-                          }}
-                          onDelete={() => deleteDraftProject(project.id)}
-                          onWithdraw={() => withdrawProject(project.id)}
-                        />
+                        <section key={groupItem.key}>
+                          <div className="flex items-center justify-between gap-3 px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <Checkbox
+                                checked={allGroupSelected}
+                                onCheckedChange={() => toggleSelectGroup(groupItem.projects)}
+                                aria-label={`Select all in ${groupItem.label}`}
+                              />
+                              <span className="text-body-sm font-semibold text-fg">
+                                {groupItem.label} ({groupItem.count})
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => toggleGroupCollapse(groupItem.key)}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-bg-muted hover:text-fg"
+                              aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                            >
+                              {isCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+                            </button>
+                          </div>
+                          {!isCollapsed && (
+                            <div className={cn('grid gap-4 px-4 pb-4', 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3')}>
+                              {groupItem.projects.map(project => {
+                                const batch = batches.find(item => item.uploadToken === token && item.projects.some(row => row.id === project.id));
+                                const matchedRequest = group.requests.find(request => projectMatchesRequest(project, request));
+                                const isSelected = selectedProjectIds.has(project.id);
+                                return (
+                                  <ProjectCard
+                                    key={project.id}
+                                    project={project}
+                                    request={matchedRequest}
+                                    batchId={isUploadMode ? undefined : batch?.id}
+                                    selected={isSelected}
+                                    onToggleSelect={() => toggleProjectSelection(project.id)}
+                                    canManage={true}
+                                    onViewDetails={batch?.id ? () => router.push(`/submissions/project/${encodeURIComponent(batch.id)}/${encodeURIComponent(project.id)}`) : undefined}
+                                    onEdit={() => {
+                                      if (isUploadMode) {
+                                        setEditingDraftProjectId(project.id);
+                                        return;
+                                      }
+                                      if (batch?.id) {
+                                        router.push(`/submissions/edit/${encodeURIComponent(batch.id)}/${encodeURIComponent(project.id)}`);
+                                      }
+                                    }}
+                                    onDelete={() => deleteDraftProject(project.id)}
+                                    onWithdraw={() => withdrawProject(project.id)}
+                                  />
+                                );
+                              })}
+                            </div>
+                          )}
+                          {index < groupedProjects.length - 1 && (
+                            <div className="h-px bg-border mx-4" aria-hidden="true" />
+                          )}
+                        </section>
                       );
                     })}
                   </div>
@@ -1945,6 +1991,7 @@ function SortHeader({
 function ProjectListRow({
   project,
   request,
+  category,
   batchId,
   selected,
   onToggleSelect,
@@ -1956,6 +2003,7 @@ function ProjectListRow({
 }: {
   project: SubmittedProject;
   request?: ProjectRequest;
+  category: string;
   batchId?: string;
   selected: boolean;
   onToggleSelect: () => void;
@@ -1985,6 +2033,7 @@ function ProjectListRow({
             aria-label={`Select ${project.title || 'Untitled project'}`}
           />
         </TableCell>
+        <TableCell className="px-3 py-2.5 text-body-sm text-fg">{category}</TableCell>
         <TableCell className="px-3 py-2.5">
           <span className="text-body-sm font-medium text-fg">{project.title || 'Untitled project'}</span>
         </TableCell>
@@ -1996,9 +2045,17 @@ function ProjectListRow({
         <TableCell className="px-3 py-2.5 text-body-sm text-fg">{project.mentor || '—'}</TableCell>
         <TableCell className="px-3 py-2.5">
           {showAiMeta ? (
-            <span className="badge inline-flex items-center gap-1 text-caption font-normal border border-[rgba(37,99,235,0.3)] bg-[rgba(37,99,235,0.05)] text-[rgba(26,101,248,1)]">
-              <AiSparkleIcon size={12} />{aiMeta.label}
-            </span>
+            aiMeta.result === 'pass' ? (
+              <span className={cn('badge inline-flex items-center gap-1 text-caption font-normal', AI_COLOURS.checkPass.badge)}>
+                <AiSparkleIcon size={12} />
+                <span className={AI_COLOURS.checkPass.label}>{aiMeta.label}</span>
+              </span>
+            ) : (
+              <span className={cn('badge inline-flex items-center gap-1 text-caption font-normal', AI_COLOURS.checkReview.badge)}>
+                <AiSparkleIcon size={12} />
+                {aiMeta.label}
+              </span>
+            )
           ) : (
             <span className="text-body-sm text-fg-muted">—</span>
           )}
@@ -2129,20 +2186,20 @@ function ProjectCard({
         />
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-body-sm text-fg">
-        <span className="inline-flex items-center gap-2">
+      <div className="mt-4 grid grid-cols-2 gap-x-0 gap-y-3 text-body-sm text-fg">
+        <span className="inline-flex items-center gap-2 border-r border-border pr-3">
           <Calendar size={14} className="text-fg-muted" />
           {projectPeriod(project, request)}
         </span>
-        <span className="inline-flex items-center gap-2">
+        <span className="inline-flex items-center gap-2 pl-3">
           <Clock size={14} className="text-fg-muted" />
           {projectDuration(project)}
         </span>
-        <span className="inline-flex items-center gap-2">
+        <span className="inline-flex items-center gap-2 border-r border-border pr-3">
           <Users size={14} className="text-fg-muted" />
           {project.slots} placement{project.slots !== 1 ? 's' : ''}
         </span>
-        <span className="inline-flex items-center gap-2">
+        <span className="inline-flex items-center gap-2 pl-3">
           <User size={14} className="text-fg-muted" />
           {project.mentor || 'Mentor not set'}
         </span>
@@ -2175,9 +2232,17 @@ function ProjectCard({
         )}
         </div>
         {showAiMeta && (
-          <span className="badge inline-flex items-center gap-1 text-caption font-normal border border-[rgba(37,99,235,0.3)] bg-[rgba(37,99,235,0.05)] text-[rgba(26,101,248,1)]">
-            <AiSparkleIcon size={12} />{aiMeta.label}
-          </span>
+          aiMeta.result === 'pass' ? (
+            <span className={cn('badge inline-flex items-center gap-1 text-caption font-normal', AI_COLOURS.checkPass.badge)}>
+              <AiSparkleIcon size={12} />
+              <span className={AI_COLOURS.checkPass.label}>{aiMeta.label}</span>
+            </span>
+          ) : (
+            <span className={cn('badge inline-flex items-center gap-1 text-caption font-normal', AI_COLOURS.checkReview.badge)}>
+              <AiSparkleIcon size={12} />
+              {aiMeta.label}
+            </span>
+          )
         )}
       </div>
       </article>

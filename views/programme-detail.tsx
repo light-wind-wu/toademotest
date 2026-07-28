@@ -32,7 +32,7 @@ import {
 import {
   Pencil, Trash2, ChevronRight, CheckCircle2, PlayCircle, Layers,
   FileText, Upload, CalendarDays, ChevronDown, CheckSquare, CircleDot,
-  AlertCircle, CheckCircle, Users, ArrowRight,
+  AlertCircle, CheckCircle, Users, ArrowRight, ArrowLeft,
 } from 'lucide-react';
 import Modal from '@/components/ui-legacy/modal';
 import SortTh from '@/components/ui-legacy/sort-th';
@@ -472,9 +472,7 @@ function ApplicationFormPreviewModal({
           ) : (
             <div className="bg-surface shadow-md mx-auto max-w-[720px] px-14 py-12">
               <div className="flex items-center gap-4 pb-5 mb-6 border-b-2 border-accent">
-                <div className="w-12 h-12 bg-accent rounded-md flex-shrink-0 flex items-center justify-center">
-                  <span className="text-accent-fg text-caption font-black tracking-tight leading-none text-center">DSTA</span>
-                </div>
+                <img src="/images/dsta-logo.svg" alt="DSTA" className="h-12 w-auto object-contain shrink-0" />
                 <div>
                   <p className="text-caption uppercase tracking-widest text-accent font-semibold leading-tight">Defence Science and Technology Agency</p>
                   <p className="text-caption text-fg-muted">Singapore</p>
@@ -1104,6 +1102,13 @@ export default function ProgrammeDetailPage() {
         </div>
       </Card>
 
+
+      {/* Bottom action bar */}
+      <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-start gap-3 border-t border-border bg-surface/95 px-[clamp(24px,2.6vw,40px)] py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] backdrop-blur">
+        <Button variant="outline" onClick={() => router.push('/programmes')}>
+          Back
+        </Button>
+      </div>
 
       {/* Application form preview */}
       {formTemplate && formDrawerOpen && (

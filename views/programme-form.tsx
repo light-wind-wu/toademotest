@@ -22,7 +22,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui-legacy/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Sheet,
@@ -266,7 +266,7 @@ function makeNewRule(id: number): CriteriaRule {
   return { id, type: t.key, operator: OPS[t.kind]?.[0] ?? '', value: selectInitVal(t) };
 }
 function makeNewGroup(id: number): CriteriaGroup {
-  return { id, matchType: 'ALL', rules: [], pathways: [] };
+  return { id, matchType: 'ANY', rules: [], pathways: [] };
 }
 function makeNewPathway(id: number): CriteriaPathway {
   return { id, rules: [] };
@@ -407,15 +407,18 @@ function RuleRow({
   const liveOpts = cfg.kind === 'subject-grade' ? (subjectOpts?.[rule.type] ?? cfg.opts) : cfg.opts;
 
   return (
-    <div className="flex items-center gap-2 py-2.5 border-b border-border/40 last:border-0 last:pb-0 flex-wrap">
+    <div className="relative flex items-start gap-2 py-2.5 pr-8 border-b border-border/40 last:border-0 last:pb-0 flex-wrap">
       {/* Criterion type */}
       <Select
+        modal={false}
         value={rule.type}
         onValueChange={value => onTypeChange(value ?? '')}
       >
-        <SelectTrigger className="w-[176px] shrink-0 bg-surface">
-          <span className="truncate">{cfg.label}</span>
-        </SelectTrigger>
+          <SelectTrigger className="w-[176px] shrink-0 bg-surface">
+            <SelectValue>
+              {() => <span className="truncate">{cfg.label}</span>}
+            </SelectValue>
+          </SelectTrigger>
         <SelectContent>
           {/* Palette sectioned by tier. Nationality and Race are baseline-only (managed
               in the Basics panel) so they're excluded; Education stays available because
@@ -435,16 +438,17 @@ function RuleRow({
 
       {/* Operator / label */}
       {cfg.kind === 'multiselect' ? (
-        <span className="text-body-sm text-fg-muted shrink-0">is any of</span>
+        <span className="text-body-sm text-fg-muted shrink-0 h-9 flex items-center">is any of</span>
       ) : cfg.kind === 'subject-grade' ? (
         <>
-          <span className="text-body-sm text-fg-muted shrink-0">min grade</span>
+          <span className="text-body-sm text-fg-muted shrink-0 h-9 flex items-center">min grade</span>
           <Select
+            modal={false}
             value={rule.gradeValue ?? ''}
             onValueChange={value => onGradeChange?.(value ?? '')}
           >
             <SelectTrigger className="w-[84px] shrink-0 bg-surface">
-              <SelectValue placeholder="-" />
+              <SelectValue className="truncate" placeholder="-" />
             </SelectTrigger>
             <SelectContent>
               {cfg.gradeOpts?.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
@@ -453,11 +457,12 @@ function RuleRow({
         </>
       ) : (
         <Select
+          modal={false}
           value={rule.operator}
           onValueChange={value => onOpChange(value ?? '')}
         >
-          <SelectTrigger className="w-auto min-w-[88px] shrink-0 bg-surface">
-            <SelectValue />
+          <SelectTrigger className="w-[100px] shrink-0 bg-surface">
+            <SelectValue className="truncate" />
           </SelectTrigger>
           <SelectContent>
             {OPS[cfg.kind]?.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
@@ -468,11 +473,12 @@ function RuleRow({
       {/* Value */}
       {cfg.kind === 'select' && (
         <Select
+          modal={false}
           value={rule.value as string}
           onValueChange={value => onValChange(value ?? '')}
         >
-          <SelectTrigger className="min-w-[140px] flex-1">
-            <SelectValue />
+          <SelectTrigger className="w-[160px] shrink-0 bg-surface">
+            <SelectValue className="truncate" />
           </SelectTrigger>
           <SelectContent>
             {cfg.opts?.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
@@ -486,11 +492,11 @@ function RuleRow({
           placeholder={cfg.placeholder}
           step={cfg.step}
           onChange={e => onValChange(e.target.value)}
-          className="min-w-[120px] flex-1"
+          className="w-[160px] shrink-0"
         />
       )}
       {(cfg.kind === 'multiselect' || cfg.kind === 'subject-grade') && (
-        <div className="flex-1 min-w-[180px]">
+        <div className="w-full shrink-0">
           <Combobox
             selected={selected}
             onToggle={onMultiToggle}
@@ -505,8 +511,8 @@ function RuleRow({
       {/* GPA institution scope (TOA-063) — threshold applies only to these schools */}
       {rule.type === 'gpa' && onInstToggle && (
         <>
-          <span className="text-body-sm text-fg-muted shrink-0">for</span>
-          <div className="flex-1 min-w-[160px]">
+          <span className="text-body-sm text-fg-muted shrink-0 h-9 flex items-center">for</span>
+          <div className="w-[200px] shrink-0">
             <Combobox
               selected={rule.institutions ?? []}
               onToggle={onInstToggle}
@@ -517,13 +523,13 @@ function RuleRow({
         </>
       )}
 
-      {/* Remove — pushed to end */}
+      {/* Remove — pinned to top-right */}
       <button
         type="button"
         onClick={onRemove}
-        className="w-6 h-6 rounded-full flex items-center justify-center text-fg-subtle hover:bg-danger-bg hover:text-danger transition-all shrink-0 ml-auto"
+        className="absolute right-0 top-4 w-6 h-6 rounded-full flex items-center justify-center text-fg-subtle hover:bg-danger-bg hover:text-danger transition-all"
       >
-        <X size={14} />
+        <Trash2 size={14} />
       </button>
     </div>
   );
@@ -610,54 +616,51 @@ function BasicsPanel({ groups, onChange }: {
       {rows.length === 0 ? (
         <p className="px-4 py-4 text-caption italic text-fg-muted">No basic requirements yet — add a field to gate who can apply.</p>
       ) : (
-        <>
-          {/* Column header */}
-          <div className="flex items-center gap-2 border-b border-border/60 px-3 pb-1.5 pt-2.5">
-            <span className="w-[176px] shrink-0 text-caption font-medium text-fg-muted">Requirement</span>
-            <span className="flex-1 text-caption font-medium text-fg-muted">Value</span>
-            <span className="w-6 shrink-0" aria-hidden />
-          </div>
-          <div className="divide-y divide-border/60">
-            {rows.map(rule => {
-              const field = baselineField(rule.type);
-              // Offer this row's own type plus any type not already used elsewhere.
-              const typeOpts = BASELINE_FIELDS.filter(o => o.key === rule.type || !usedTypes.has(o.key));
-              // multi fields keep the value as an array ("is any of"); others as a scalar.
-              const selected = field?.multi
-                ? ((Array.isArray(rule.value) ? rule.value[0] : (rule.value as string)) ?? '')
-                : ((rule.value as string) ?? '');
-              return (
-                <div key={rule.id} className="flex items-center gap-2 px-3 py-2.5">
-                  {/* Field type — render the label directly (SelectValue would show the raw key) */}
-                  <Select value={rule.type} onValueChange={v => v && changeType(rule.id, v)}>
-                    <SelectTrigger className="w-[176px] shrink-0 bg-surface">{field?.label ?? 'Select field'}</SelectTrigger>
-                    <SelectContent>{typeOpts.map(o => <SelectItem key={o.key} value={o.key}>{o.label}</SelectItem>)}</SelectContent>
-                  </Select>
+        <div className="divide-y divide-border/60">
+          {rows.map(rule => {
+            const field = baselineField(rule.type);
+            // Offer this row's own type plus any type not already used elsewhere.
+            const typeOpts = BASELINE_FIELDS.filter(o => o.key === rule.type || !usedTypes.has(o.key));
+            // multi fields keep the value as an array ("is any of"); others as a scalar.
+            const selected = field?.multi
+              ? ((Array.isArray(rule.value) ? rule.value[0] : (rule.value as string)) ?? '')
+              : ((rule.value as string) ?? '');
+            return (
+              <div key={rule.id} className="flex items-center gap-2 px-3 py-2.5">
+                {/* Field type */}
+                <Select modal={false} value={rule.type} onValueChange={v => v && changeType(rule.id, v)}>
+                  <SelectTrigger className="w-[176px] shrink-0 bg-surface">
+                    <SelectValue>
+                      {() => <span className="truncate">{field?.label ?? 'Select field'}</span>}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>{typeOpts.map(o => <SelectItem key={o.key} value={o.key}>{o.label}</SelectItem>)}</SelectContent>
+                </Select>
 
-                  {/* Value — options come from the chosen field */}
-                  <div className="min-w-0 flex-1">
-                    <Select
-                      value={selected}
-                      onValueChange={v => patchRule(rule.id, { value: field?.multi ? (v ? [v] : []) : (v ?? '') })}
-                    >
-                      <SelectTrigger className="bg-surface"><SelectValue placeholder={field?.placeholder ?? 'Select…'} /></SelectTrigger>
-                      <SelectContent>{(field?.options ?? []).map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Remove */}
-                  <button
-                    type="button"
-                    onClick={() => removeRule(rule.id)}
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-fg-subtle transition-all hover:bg-danger-bg hover:text-danger"
+                {/* Value — options come from the chosen field */}
+                <div className="w-[200px] shrink-0">
+                  <Select
+                    modal={false}
+                    value={selected}
+                    onValueChange={v => patchRule(rule.id, { value: field?.multi ? (v ? [v] : []) : (v ?? '') })}
                   >
-                    <X size={14} />
-                  </button>
+                    <SelectTrigger className="bg-surface"><SelectValue className="truncate" placeholder={field?.placeholder ?? 'Select…'} /></SelectTrigger>
+                    <SelectContent>{(field?.options ?? []).map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                  </Select>
                 </div>
-              );
-            })}
-          </div>
-        </>
+
+                {/* Remove */}
+                <button
+                  type="button"
+                  onClick={() => removeRule(rule.id)}
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-fg-subtle transition-all hover:bg-danger-bg hover:text-danger"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
       )}
 
       <div className="border-t border-border px-3 py-2.5">
@@ -687,8 +690,15 @@ function ReqBuilder({ groups, onChange, hiddenRuleIds }: { groups: CriteriaGroup
 
   function addGroup() {
     const gid = nextId();
+    const pid = nextId();
     const rid = nextId();
-    onChange([...groups, { ...makeNewGroup(gid), rules: [makeNewRule(rid)] }]);
+    onChange([
+      ...groups,
+      {
+        ...makeNewGroup(gid),
+        pathways: [{ ...makeNewPathway(pid), rules: [makeNewRule(rid)] }],
+      },
+    ]);
   }
   function removeGroup(gid: number) { onChange(groups.filter(g => g.id !== gid)); }
 
@@ -779,13 +789,6 @@ function ReqBuilder({ groups, onChange, hiddenRuleIds }: { groups: CriteriaGroup
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg border border-border bg-surface">
-          {/* Column header — matches Basic Requirements */}
-          <div className="flex items-center gap-2 border-b border-border/60 px-3 pb-1.5 pt-2.5">
-            <span className="w-[176px] shrink-0 text-caption font-medium text-fg-muted">Requirement</span>
-            <span className="flex-1 text-caption font-medium text-fg-muted">Value</span>
-            <span className="w-6 shrink-0" aria-hidden />
-          </div>
-
           {visibleGroups.map((group, gi) => {
             const visibleRules = group.rules.filter(r => !hidden.has(r.id));
             // all/any toggle + remove — kept from the old group header, slimmed down.
@@ -794,10 +797,10 @@ function ReqBuilder({ groups, onChange, hiddenRuleIds }: { groups: CriteriaGroup
                 <div className="inline-flex rounded-md border border-border bg-surface p-0.5">
                   <Button type="button" variant={group.matchType === 'ALL' ? 'primary' : 'ghost'} size="xs"
                     onClick={() => group.matchType === 'ANY' && toggleMatchType(group.id)} aria-pressed={group.matchType === 'ALL'}
-                    className="rounded px-2 py-0.5">all</Button>
+                    className="rounded px-2 py-0.5">All</Button>
                   <Button type="button" variant={group.matchType === 'ANY' ? 'primary' : 'ghost'} size="xs"
                     onClick={() => group.matchType === 'ALL' && toggleMatchType(group.id)} aria-pressed={group.matchType === 'ANY'}
-                    className="rounded px-2 py-0.5">any</Button>
+                    className="rounded px-2 py-0.5">Any</Button>
                 </div>
                 {visibleGroups.length > 1 && (
                   <button type="button" onClick={() => removeGroup(group.id)}
@@ -818,6 +821,10 @@ function ReqBuilder({ groups, onChange, hiddenRuleIds }: { groups: CriteriaGroup
 
                 {group.matchType === 'ALL' ? (
                   <>
+                    <div className="mb-2 flex items-center justify-between gap-2 px-3">
+                      <p className="text-label-sm font-semibold text-fg-muted">All of these conditions</p>
+                      {groupControls}
+                    </div>
                     {visibleRules.length === 0 ? (
                       <p className="px-3 py-3 text-caption italic text-fg-muted">No conditions yet — add a field below.</p>
                     ) : (
@@ -837,11 +844,10 @@ function ReqBuilder({ groups, onChange, hiddenRuleIds }: { groups: CriteriaGroup
                         ))}
                       </div>
                     )}
-                    <div className="flex items-center justify-between gap-2 px-3 py-2">
+                    <div className="px-3 py-2">
                       <Button type="button" variant="ghost" size="xs" onClick={() => addRule(group.id)}>
                         <Plus size={13} />Add field
                       </Button>
-                      {groupControls}
                     </div>
                   </>
                 ) : (
@@ -863,8 +869,8 @@ function ReqBuilder({ groups, onChange, hiddenRuleIds }: { groups: CriteriaGroup
                                 <div className="h-px flex-1 bg-border/50" />
                               </div>
                             )}
-                            <div className="overflow-hidden rounded-md border border-border/60 bg-bg-subtle/30">
-                              <div className="flex items-center justify-between px-3 py-1.5">
+                            <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
+                              <div className="flex items-center justify-between border-b border-border/60 bg-bg-subtle/40 px-3 py-1.5">
                                 <p className="text-label-sm font-semibold text-fg-subtle">Option {pi + 1}</p>
                                 <button type="button" onClick={() => removePathway(group.id, pathway.id)}
                                   className="flex h-5 w-5 items-center justify-center rounded-full text-fg-subtle transition-all hover:bg-danger-bg hover:text-danger">
@@ -872,7 +878,7 @@ function ReqBuilder({ groups, onChange, hiddenRuleIds }: { groups: CriteriaGroup
                                 </button>
                               </div>
                               {pathway.rules.length > 0 && (
-                                <div className="border-t border-border/60 bg-surface px-3">
+                                <div className="px-3">
                                   {pathway.rules.map(r => (
                                     <RuleRow
                                       key={r.id} rule={r}
@@ -1340,9 +1346,7 @@ function TemplatePreviewModal({ templateName, onClose }: { templateName: string;
           ) : (
             <div className="bg-surface shadow-md mx-auto max-w-[720px] px-14 py-12">
               <div className="flex items-center gap-4 pb-5 mb-6 border-b-2 border-accent">
-                <div className="w-12 h-12 bg-accent rounded-md flex-shrink-0 flex items-center justify-center">
-                  <span className="text-accent-fg text-caption font-black tracking-tight leading-none text-center">DSTA</span>
-                </div>
+                <img src="/images/dsta-logo.svg" alt="DSTA" className="h-12 w-auto object-contain shrink-0" />
                 <div>
                   <p className="text-caption uppercase tracking-widest text-accent font-semibold leading-tight">Defence Science and Technology Agency</p>
                   <p className="text-caption text-fg-muted">Singapore</p>
@@ -1368,6 +1372,9 @@ function TemplatePreviewModal({ templateName, onClose }: { templateName: string;
             </div>
           )}
         </SheetBody>
+        <SheetFooter className="shrink-0 border-t border-border px-6 py-4">
+          <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   );
@@ -2949,48 +2956,50 @@ export default function ProgrammeFormPage() {
         </div>
 
         {/* Footer — full-bleed sticky action bar (matches the project-request wizard) */}
-        <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-end gap-3 border-t border-border bg-surface/95 px-[clamp(24px,2.6vw,40px)] py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] backdrop-blur">
-        {step === 1 ? (
+        <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-surface/95 px-[clamp(24px,2.6vw,40px)] py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] backdrop-blur">
+          <Button variant="ghost" onClick={() => safeNavigate('/programmes')}>
+            Back
+          </Button>
           <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={() => safeNavigate('/programmes')}>Cancel</Button>
-            <Button variant="outline" onClick={saveAsDraft}>
-              <Save size={15} />Save as Draft
-            </Button>
-            <Button onClick={goToIntakes}>
-              {/* label derived from STEP_DEFS so it always matches the step header */}
-              Next: {STEP_DEFS[step].label} <ArrowRight size={16} />
-            </Button>
+            {step === 1 ? (
+              <>
+                <Button variant="outline" onClick={saveAsDraft}>
+                  Save as Draft
+                </Button>
+                <Button onClick={goToIntakes}>
+                  {/* label derived from STEP_DEFS so it always matches the step header */}
+                  Next: {STEP_DEFS[step].label} <ArrowRight size={16} />
+                </Button>
+              </>
+            ) : step === 2 ? (
+              /* Set Up Intakes & Assign Projects — validate intakes before Review */
+              <>
+                <Button variant="outline" onClick={() => setStep(1)}>
+                  Cancel
+                </Button>
+                <Button variant="outline" onClick={saveAsDraft}>
+                  Save as Draft
+                </Button>
+                <Button onClick={goToAttach} disabled={!canReviewIntakes} title={!canReviewIntakes ? 'Complete all intake dates before reviewing.' : undefined}>
+                  Next: {STEP_DEFS[step].label} <ArrowRight size={16} />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setStep(2)}>
+                  Cancel
+                </Button>
+                <Button variant="outline" onClick={saveAsDraft}>
+                  Save as Draft
+                </Button>
+                <Button onClick={submitWizard}>
+                  {isEdit
+                    ? 'Save Changes'
+                    : 'Create Programme'}
+                </Button>
+              </>
+            )}
           </div>
-        ) : step === 2 ? (
-          /* Set Up Intakes & Assign Projects — validate intakes before Review */
-          <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={() => setStep(1)}>
-              <ArrowLeft size={16} />Back
-            </Button>
-            <Button variant="outline" onClick={saveAsDraft}>
-              <Save size={15} />Save as Draft
-            </Button>
-            <Button onClick={goToAttach} disabled={!canReviewIntakes} title={!canReviewIntakes ? 'Complete all intake dates before reviewing.' : undefined}>
-              Next: {STEP_DEFS[step].label} <ArrowRight size={16} />
-            </Button>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={() => setStep(2)}>
-                <ArrowLeft size={16} />Back
-              </Button>
-              <Button variant="outline" onClick={saveAsDraft}>
-                <Save size={15} />Save as Draft
-              </Button>
-              <Button onClick={submitWizard}>
-                {isEdit
-                  ? <><Save size={16} />Save Changes</>
-                  : <><CheckCircle2 size={16} />Create Programme</>}
-              </Button>
-            </div>
-          </>
-        )}
         </div>
       </div>
 
@@ -3004,7 +3013,7 @@ export default function ProgrammeFormPage() {
       <Sheet open={reqsDrawer !== null} onOpenChange={(open) => !open && setReqsDrawer(null)}>
         <SheetContent side="right" className="w-full sm:max-w-[640px]">
           <SheetHeader>
-            <SheetTitle>{reqsDrawer === 'edit' ? 'Edit eligibility criteria' : 'Eligibility criteria'}</SheetTitle>
+            <SheetTitle>{reqsDrawer === 'edit' ? 'Edit criteria' : 'Eligibility criteria'}</SheetTitle>
             {cpCategory.length > 0 && (
               <SheetDescription>{cpCategory.join(', ')}</SheetDescription>
             )}

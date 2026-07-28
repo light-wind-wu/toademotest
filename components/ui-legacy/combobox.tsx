@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -21,8 +22,19 @@ export default function Combobox({
 }: ComboboxProps) {
   const [open, setOpen]     = useState(false);
   const [query, setQuery]   = useState('');
+  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const containerRef        = useRef<HTMLDivElement>(null);
   const inputRef            = useRef<HTMLInputElement>(null);
+
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    setPosition({
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: Math.max(rect.width, 280),
+    });
+  }, []);
 
   useEffect(() => {
     function onOutside(e: MouseEvent) {
@@ -31,9 +43,18 @@ export default function Combobox({
         setQuery('');
       }
     }
-    if (open) document.addEventListener('mousedown', onOutside);
-    return () => document.removeEventListener('mousedown', onOutside);
-  }, [open]);
+    if (open) {
+      updatePosition();
+      document.addEventListener('mousedown', onOutside);
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        document.removeEventListener('mousedown', onOutside);
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [open, updatePosition]);
 
   useEffect(() => {
     if (open) inputRef.current?.focus();
@@ -74,7 +95,7 @@ export default function Combobox({
         type="button"
         onClick={() => setOpen(v => !v)}
         className={cn(
-          'w-full flex items-center gap-2 px-3 py-1.5 border rounded-lg text-body-sm bg-surface transition-colors text-left',
+          'w-full max-w-full flex items-center gap-2 px-3 py-1.5 border rounded-lg text-body-sm bg-surface transition-colors text-left',
           open ? 'border-accent ring-1 ring-accent/30' : 'border-border hover:border-fg-muted',
           chips === 'inline' && 'min-h-[38px]',
         )}
@@ -105,8 +126,12 @@ export default function Combobox({
       )}
 
       {/* Dropdown */}
-      {open && (
-        <div className="absolute z-[200] left-0 top-full mt-1 w-full min-w-[280px] bg-surface border border-border rounded-xl shadow-xl overflow-hidden">
+      {open && createPortal(
+        <div
+          onMouseDown={e => e.stopPropagation()}
+          style={{ position: 'fixed', top: position.top, left: position.left, width: position.width }}
+          className="z-[200] bg-surface border border-border rounded-xl shadow-xl overflow-hidden"
+        >
           {/* Search */}
           <div className="p-2 border-b border-border">
             <div className="relative">
@@ -131,7 +156,8 @@ export default function Combobox({
               <button type="button" onClick={() => selected.forEach(s => onToggle(s))} className="text-[13px] text-danger hover:underline">Clear all</button>
             </div>
           )}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
