@@ -1005,8 +1005,8 @@ function OverviewSection({
   return (
     <div className="space-y-5">
       {/* Programme Details */}
-      <div className="overflow-hidden rounded-lg border border-border bg-surface">
-        <div className="border-b border-border px-5 py-4">
+      <div className="overflow-hidden rounded-lg bg-surface">
+        <div className="border-border">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-body-md font-semibold text-fg">Programme Details</p>
@@ -1015,20 +1015,22 @@ function OverviewSection({
           </div>
         </div>
 
-        <div className="p-5 space-y-5">
+        <div className="py-5 space-y-5">
           {/* Row 1: core metadata */}
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-            <div>
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_auto_1fr_auto_1fr] lg:gap-0">
+            <div className="lg:pr-4">
               <p className="text-caption text-fg-muted">Internship year</p>
               <p className="mt-1 text-body-sm font-medium text-fg">{year}</p>
             </div>
-            <div>
+            <div className="hidden lg:block w-px bg-border" />
+            <div className="lg:px-4">
               <p className="text-caption text-fg-muted">Intern category</p>
               <p className="mt-1 text-body-sm font-medium text-fg">
                 {category.length > 0 ? category.join(', ') : '—'}
               </p>
             </div>
-            <div>
+            <div className="hidden lg:block w-px bg-border" />
+            <div className="lg:pl-4">
               <p className="text-caption text-fg-muted">Programme Title</p>
               <p className="mt-1 text-body-sm font-medium text-fg">{title || '—'}</p>
             </div>
@@ -1111,7 +1113,7 @@ function OverviewSection({
 
       {/* Intakes + Eligibility Requirements */}
       <div className="grid grid-cols-1 gap-0 overflow-hidden rounded-lg border border-border bg-surface lg:grid-cols-[360px_minmax(0,1fr)]">
-        <aside className="relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-border bg-surface shadow-lg lg:overflow-visible lg:border-b-0 lg:border-r" aria-label="Intakes">
+        <aside className="relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-t-lg border-b border-border bg-surface shadow-lg lg:overflow-visible lg:rounded-b-none lg:rounded-l-lg lg:border-b-0 lg:border-r" aria-label="Intakes">
           <div className="flex min-w-0 flex-1 flex-col">
             {intakeSummaries.length === 0 ? (
               <p className="px-4 py-3 text-caption text-fg-muted">No intake windows configured.</p>
@@ -1132,7 +1134,7 @@ function OverviewSection({
                     }}
                     className={cn(
                       'group relative box-border w-full min-w-0 cursor-pointer border-b px-4 py-3 transition-colors',
-                      isActive ? 'z-10 border-y border-border bg-bg-muted' : 'border-border bg-surface hover:bg-bg-subtle',
+                      isActive ? 'z-10 border-border bg-bg-muted' : 'border-border bg-surface hover:bg-bg-subtle',
                     )}
                   >
                     <div className="flex items-center justify-between gap-3">
@@ -1162,7 +1164,7 @@ function OverviewSection({
           </div>
         </aside>
 
-        <section className="min-w-0 p-5">
+        <section className="min-w-0 rounded-b-lg p-5 lg:rounded-b-none lg:rounded-r-lg">
           <div className="mb-3">
             <p className="text-label-md font-semibold text-fg">Eligibility Requirements</p>
             <p className="mt-0.5 text-caption text-fg-muted">Generated from configured criteria</p>
@@ -2370,7 +2372,7 @@ export default function ProgrammeFormPage() {
 
           {/* ── Step 2: Set Up Intakes & Assign Projects ── */}
           {step === 2 && (
-            <div className="px-6 py-6">
+            <div className="px-0 py-0">
               {(() => {
                 const poolSubtitle = selectedIntake
                   ? `Intake ${selectedIndex + 1} · ${selectedIntake.start && selectedIntake.end ? intakeLabel(selectedIntake) : 'Set internship window'}`
@@ -2379,8 +2381,8 @@ export default function ProgrammeFormPage() {
                 return (
                   <div className="space-y-5">
                     <div className="relative">
-                      <section className="grid min-h-[620px] overflow-hidden rounded-lg border border-border bg-surface lg:grid-cols-[360px_minmax(0,1fr)]">
-                      <aside className="relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-border bg-surface shadow-lg lg:overflow-visible lg:border-b-0 lg:border-r">
+                      <section className="grid min-h-[620px] overflow-hidden rounded-lg bg-surface lg:grid-cols-[360px_minmax(0,1fr)]">
+                      <aside className="relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-t-lg border-b border-border bg-surface shadow-lg lg:overflow-visible lg:rounded-b-none lg:rounded-l-lg lg:border-b-0 lg:border-r">
                         <div className="space-y-3 border-b border-border bg-surface px-4 py-3.5">
                           <div className="flex items-center justify-between gap-3">
                             <div>
@@ -2478,7 +2480,7 @@ export default function ProgrammeFormPage() {
                         </div>
                       </aside>
 
-                      <section className="flex min-h-0 min-w-0 flex-col bg-surface">
+                      <section className="flex min-h-0 min-w-0 flex-col rounded-b-lg bg-surface lg:rounded-b-none lg:rounded-r-lg">
                         <div className="flex flex-col gap-3 border-b border-border bg-[rgba(249,248,244,1)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                           <div>
                             <h3 className="text-label-md font-semibold text-fg">Assign Projects</h3>
