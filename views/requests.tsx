@@ -95,7 +95,7 @@ type FlatProj = {
 
 type PendingPCGroup = { pc: string; rows: FlatProj[] };
 
-type TabKey = 'sent' | 'pending' | 'pendingDce' | 'rejected' | 'approved' | 'all';
+type TabKey = 'sent' | 'pending' | 'pendingDce' | 'pendingAll' | 'rejected' | 'approved' | 'all';
 type PCGroup = { key?: string; pc: string; headName: string; requests: ProjectRequest[] };
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
@@ -123,6 +123,33 @@ function requestInternCategory(req: ProjectRequest, progMap: Record<string, stri
 function todayISO() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function groupByPc(rows: FlatProj[]): PendingPCGroup[] {
+  const map = new Map<string, { pc: string; rows: FlatProj[] }>();
+  for (const r of rows) {
+    if (!map.has(r.pc)) map.set(r.pc, { pc: r.pc, rows: [] });
+    map.get(r.pc)!.rows.push(r);
+  }
+  return Array.from(map.values());
+}
+
+function exportLockedProjects(selectedKeys: string[], flatRows: FlatProj[]) {
+  const selectedRows = flatRows.filter(r => selectedKeys.includes(r.key) && r.status === 'frozen');
+  exportToCSV(
+    'locked-project-submissions',
+    ['Programme Centre', 'Project', 'Intern Category', 'Discipline of Study', 'Placements', 'Status', 'Locked By', 'Locked At'],
+    selectedRows.map(r => [
+      r.pc,
+      r.title,
+      r.educationLevel || r.requestedEducationLevels.join(', ') || '—',
+      parseDisciplines(r.discipline).join(' / '),
+      r.slots,
+      'Pending DCE Approval',
+      r.frozenBy || '—',
+      r.frozenAt ? fmtDate(r.frozenAt) : '—',
+    ]),
+  );
 }
 
 function dateOnlyTime(value: string) {
@@ -617,6 +644,8 @@ export default function RequestsPage() {
   const [dceReturnRemarks,  setDceReturnRemarks]  = useState('');
   const [dceRejectOpen,     setDceRejectOpen]     = useState(false);
   const [dceRejectRemarks,  setDceRejectRemarks]  = useState('');
+  const [unlockOpen,        setUnlockOpen]        = useState(false);
+  const [unlockReason,      setUnlockReason]      = useState('');
   const [extendGroup, setExtendGroup] = useState<{ pc: string; headName: string; requests: ProjectRequest[] } | null>(null);
   const [extendDeadline, setExtendDeadline] = useState('');
   const [withdrawGroup, setWithdrawGroup] = useState<PCGroup | null>(null);
@@ -1187,7 +1216,7 @@ export default function RequestsPage() {
       cols.push(flatColumnHelper.display({
         id: 'pc',
         header: () => <SortHeader label="Programme Centre" colId="pc" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
-        meta: { size: 'medium', truncate: true },
+        meta: { size: 'long', truncate: true },
         cell: ({ row }) => <span className="text-body-sm text-fg-muted truncate">{row.original.pc}</span>,
       }));
     }
@@ -1248,7 +1277,7 @@ export default function RequestsPage() {
       cols.push(flatColumnHelper.display({
         id: 'slots',
         header: () => <SortHeader label="Placements" colId="slots" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
-        meta: { size: 'short', truncate: true },
+        meta: { size: 'medium', truncate: true },
         cell: ({ row }) => <span className="text-body-sm text-fg-muted truncate">{row.original.slots}</span>,
       }));
     }
@@ -1298,7 +1327,7 @@ export default function RequestsPage() {
       cols.push(pendingColumnHelper.display({
         id: 'pc',
         header: () => <SortHeader label="Programme Centre" colId="pc" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
-        meta: { size: 'medium', truncate: true },
+        meta: { size: 'long', truncate: true },
         cell: ({ row }) => {
           const group = row.original;
           const collapsed = !expandedSubPcs.has(group.pc);
@@ -1347,7 +1376,7 @@ export default function RequestsPage() {
       cols.push(pendingColumnHelper.display({
         id: 'slots',
         header: () => <SortHeader label="Placements" colId="slots" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
-        meta: { size: 'short', truncate: true },
+        meta: { size: 'medium', truncate: true },
         cell: ({ row }) => {
           const group = row.original;
           const groupSlots = group.rows.reduce((s, r) => s + r.slots, 0);
@@ -1358,6 +1387,15 @@ export default function RequestsPage() {
         },
       }));
     }
+    // Status column for pending rows (visible in merged tab and existing Pending Review tab)
+    cols.push(pendingColumnHelper.display({
+      id: 'status',
+      header: () => <SortHeader label="Status" colId="status" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+      meta: { size: 'long' },
+      cell: () => (
+        <span className="badge text-caption font-normal text-warning">Pending</span>
+      ),
+    }));
     return cols;
   })();
 
@@ -1423,6 +1461,361 @@ export default function RequestsPage() {
           {visibleCols.slots && (
             <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('slots')?.getSize()} truncate>{r.slots}</TableCell>
           )}
+          <TableCell className="px-4 py-3" maxWidth={table.getColumn('status')?.getSize()}>
+            <span className="badge text-caption font-normal text-warning">Pending</span>
+          </TableCell>
+        </TableRow>
+      );
+    });
+  };
+
+  const frozenColumns: ColumnDef<PendingPCGroup, any>[] = (() => {
+    const cols: ColumnDef<PendingPCGroup, any>[] = [];
+    cols.push(pendingColumnHelper.display({
+      id: 'select',
+      header: () => (
+        <Checkbox
+          checked={allFrozenSel}
+          data-state={someFrozenSel && !allFrozenSel ? 'indeterminate' : undefined}
+          aria-label="Select all frozen project requests"
+          onCheckedChange={() => {
+            if (allFrozenSel) setSelectedKeys(prev => { const n = new Set(prev); frozenKeys.forEach(k => n.delete(k)); return n; });
+            else setSelectedKeys(prev => { const n = new Set(prev); frozenKeys.forEach(k => n.add(k)); return n; });
+          }}
+        />
+      ),
+      meta: { size: 'icon' },
+      cell: ({ row }) => {
+        const group = row.original;
+        const groupKeys = group.rows.map(r => r.key);
+        const allSel = groupKeys.length > 0 && groupKeys.every(k => selectedKeys.has(k));
+        const someSel = groupKeys.some(k => selectedKeys.has(k));
+        return (
+          <div onClick={e => e.stopPropagation()}>
+            <Checkbox
+              checked={allSel}
+              data-state={someSel && !allSel ? 'indeterminate' : undefined}
+              aria-label={`Select frozen projects for ${group.pc}`}
+              onCheckedChange={() => setSelectedKeys(prev => {
+                const n = new Set(prev);
+                if (allSel) groupKeys.forEach(k => n.delete(k));
+                else groupKeys.forEach(k => n.add(k));
+                return n;
+              })}
+            />
+          </div>
+        );
+      },
+    }));
+    if (visibleCols.pc) {
+      cols.push(pendingColumnHelper.display({
+        id: 'pc',
+        header: () => <SortHeader label="Programme Centre" colId="pc" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 'long', truncate: true },
+        cell: ({ row }) => {
+          const group = row.original;
+          const collapsed = !expandedSubPcs.has(group.pc);
+          return (
+            <button
+              type="button"
+              onClick={() => togglePcGroup(group.pc)}
+              aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${group.pc} projects`}
+              className="flex min-w-0 items-center gap-2 text-left w-full"
+            >
+              <ChevronRight size={16} className={cn('shrink-0 text-fg-muted transition-transform', !collapsed && 'rotate-90')} />
+              <span className="text-body-sm font-medium text-fg truncate">{group.pc}</span>
+            </button>
+          );
+        },
+      }));
+    }
+    if (visibleCols.title) {
+      cols.push(pendingColumnHelper.display({
+        id: 'title',
+        header: () => <SortHeader label="Project" colId="title" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 'fill', truncate: true },
+        cell: ({ row }) => <span className="text-body-sm text-fg truncate">{row.original.rows.length} project{row.original.rows.length !== 1 ? 's' : ''} to review</span>,
+      }));
+    }
+    if (visibleCols.category) {
+      cols.push(pendingColumnHelper.display({
+        id: 'category',
+        header: () => <SortHeader label="Intern Category" colId="category" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 'long', truncate: true },
+        cell: ({ row }) => {
+          const categoryCount = new Set(row.original.rows.map(r => r.educationLevel || r.requestedEducationLevels.join(', ') || '—')).size;
+          return <span className="text-body-sm text-fg-muted truncate">{categoryCount} intern categor{categoryCount === 1 ? 'y' : 'ies'}</span>;
+        },
+      }));
+    }
+    if (visibleCols.discipline) {
+      cols.push(pendingColumnHelper.display({
+        id: 'discipline',
+        header: () => <SortHeader label="Discipline of Study" colId="discipline" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 'long', truncate: true },
+        cell: () => <span className="text-body-sm text-fg-muted truncate">—</span>,
+      }));
+    }
+    if (visibleCols.slots) {
+      cols.push(pendingColumnHelper.display({
+        id: 'slots',
+        header: () => <SortHeader label="Placements" colId="slots" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 'medium', truncate: true },
+        cell: ({ row }) => {
+          const group = row.original;
+          const groupSlots = group.rows.reduce((s, r) => s + r.slots, 0);
+          return <span className="text-body-sm text-fg truncate">{groupSlots}</span>;
+        },
+      }));
+    }
+    // Status column specific to frozen rows
+    cols.push(pendingColumnHelper.display({
+      id: 'status',
+      header: () => <SortHeader label="Status" colId="status" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+      meta: { size: 'long' },
+      cell: () => (
+        <span className="badge text-caption font-normal text-warning">
+          Pending DCE Approval
+        </span>
+      ),
+    }));
+    return cols;
+  })();
+
+  const renderFrozenSubRows = (row: Row<PendingPCGroup>, table: TanStackTable<PendingPCGroup>) => {
+    const group = row.original;
+    const collapsed = !expandedSubPcs.has(group.pc);
+    if (collapsed) return null;
+    return group.rows.map(r => {
+      const category = r.educationLevel || r.requestedEducationLevels.join(', ') || '—';
+      const disciplines = parseDisciplines(r.discipline);
+      return (
+        <TableRow
+          key={r.key}
+          className={cn(
+            'hover:bg-bg transition-colors group',
+            selectedKeys.has(r.key) && 'bg-accent/5',
+          )}
+        >
+          <TableCell className="px-4 py-3 w-10" maxWidth={table.getColumn('select')?.getSize()} onClick={e => e.stopPropagation()}>
+            <Checkbox
+              checked={selectedKeys.has(r.key)}
+              onCheckedChange={() => toggleSelectProj(r.batchId, r.projId)}
+              aria-label={`Select ${r.title}`}
+            />
+          </TableCell>
+          {visibleCols.pc && (
+            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('pc')?.getSize()} />
+          )}
+          {visibleCols.title && (
+            <TableCell className="px-4 py-3" maxWidth={table.getColumn('title')?.getSize()}>
+              <TruncatedTooltip className="text-body-sm font-normal text-fg-muted">
+                <CornerDownRight size={16} className="inline" />
+                {r.title}
+              </TruncatedTooltip>
+            </TableCell>
+          )}
+          {visibleCols.category && (
+            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('category')?.getSize()} truncate>{category}</TableCell>
+          )}
+          {visibleCols.discipline && (
+            <TableCell className="px-4 py-3" maxWidth={table.getColumn('discipline')?.getSize()}>
+              {disciplines.length === 0 ? (
+                <span className="text-body-sm text-fg-muted truncate block">—</span>
+              ) : (
+                <div className="flex flex-wrap gap-1 max-w-full">
+                  {disciplines.map(d => (
+                    <span key={d} className="badge bg-bg-muted text-fg-muted text-caption font-normal truncate max-w-full">{d}</span>
+                  ))}
+                </div>
+              )}
+            </TableCell>
+          )}
+          {visibleCols.slots && (
+            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('slots')?.getSize()} truncate>{r.slots}</TableCell>
+          )}
+          <TableCell className="" maxWidth={table.getColumn('status')?.getSize()}>
+            <span className="badge text-caption font-normal text-warning">Pending DCE Approval</span>
+          </TableCell>
+        </TableRow>
+      );
+    });
+  };
+
+  const pendingAllColumns: ColumnDef<PendingPCGroup, any>[] = (() => {
+    const cols: ColumnDef<PendingPCGroup, any>[] = [];
+    cols.push(pendingColumnHelper.display({
+      id: 'select',
+      header: () => (
+        <Checkbox
+          checked={allPendingAllSel}
+          data-state={somePendingAllSel && !allPendingAllSel ? 'indeterminate' : undefined}
+          aria-label="Select all pending IO review project requests"
+          onCheckedChange={() => {
+            if (allPendingAllSel) setSelectedKeys(prev => { const n = new Set(prev); pendingAllKeys.forEach(k => n.delete(k)); return n; });
+            else setSelectedKeys(prev => { const n = new Set(prev); pendingAllKeys.forEach(k => n.add(k)); return n; });
+          }}
+        />
+      ),
+      meta: { size: 'icon' },
+      cell: ({ row }) => {
+        const group = row.original;
+        const groupKeys = group.rows.map(r => r.key);
+        const allSel = groupKeys.length > 0 && groupKeys.every(k => selectedKeys.has(k));
+        const someSel = groupKeys.some(k => selectedKeys.has(k));
+        return (
+          <div onClick={e => e.stopPropagation()}>
+            <Checkbox
+              checked={allSel}
+              data-state={someSel && !allSel ? 'indeterminate' : undefined}
+              aria-label={`Select pending IO review projects for ${group.pc}`}
+              onCheckedChange={() => setSelectedKeys(prev => {
+                const n = new Set(prev);
+                if (allSel) groupKeys.forEach(k => n.delete(k));
+                else groupKeys.forEach(k => n.add(k));
+                return n;
+              })}
+            />
+          </div>
+        );
+      },
+    }));
+    if (visibleCols.pc) {
+      cols.push(pendingColumnHelper.display({
+        id: 'pc',
+        header: () => <SortHeader label="Programme Centre" colId="pc" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 'long', truncate: true },
+        cell: ({ row }) => {
+          const group = row.original;
+          const collapsed = !expandedSubPcs.has(group.pc);
+          return (
+            <button
+              type="button"
+              onClick={() => togglePcGroup(group.pc)}
+              aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${group.pc} projects`}
+              className="flex min-w-0 items-center gap-2 text-left w-full"
+            >
+              <ChevronRight size={16} className={cn('shrink-0 text-fg-muted transition-transform', !collapsed && 'rotate-90')} />
+              <span className="text-body-sm font-medium text-fg truncate">{group.pc}</span>
+            </button>
+          );
+        },
+      }));
+    }
+    if (visibleCols.title) {
+      cols.push(pendingColumnHelper.display({
+        id: 'title',
+        header: () => <SortHeader label="Project" colId="title" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 'fill', truncate: true },
+        cell: ({ row }) => <span className="text-body-sm text-fg truncate">{row.original.rows.length} project{row.original.rows.length !== 1 ? 's' : ''} to review</span>,
+      }));
+    }
+    if (visibleCols.category) {
+      cols.push(pendingColumnHelper.display({
+        id: 'category',
+        header: () => <SortHeader label="Intern Category" colId="category" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 'long', truncate: true },
+        cell: ({ row }) => {
+          const categoryCount = new Set(row.original.rows.map(r => r.educationLevel || r.requestedEducationLevels.join(', ') || '—')).size;
+          return <span className="text-body-sm text-fg-muted truncate">{categoryCount} intern categor{categoryCount === 1 ? 'y' : 'ies'}</span>;
+        },
+      }));
+    }
+    if (visibleCols.discipline) {
+      cols.push(pendingColumnHelper.display({
+        id: 'discipline',
+        header: () => <SortHeader label="Discipline of Study" colId="discipline" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 'long', truncate: true },
+        cell: () => <span className="text-body-sm text-fg-muted truncate">—</span>,
+      }));
+    }
+    if (visibleCols.slots) {
+      cols.push(pendingColumnHelper.display({
+        id: 'slots',
+        header: () => <SortHeader label="Placements" colId="slots" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+        meta: { size: 'medium', truncate: true },
+        cell: ({ row }) => {
+          const group = row.original;
+          const groupSlots = group.rows.reduce((s, r) => s + r.slots, 0);
+          return <span className="text-body-sm text-fg truncate">{groupSlots}</span>;
+        },
+      }));
+    }
+    // Status column: group rows show Incomplete; sub-rows show per-project status
+    cols.push(pendingColumnHelper.display({
+      id: 'status',
+      header: () => <SortHeader label="Status" colId="status" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
+      meta: { size: 'long' },
+      cell: ({ row }) => {
+        const hasUnfinished = row.original.rows.some(r => r.status === 'pending' || r.status === 'frozen');
+        return hasUnfinished ? (
+          <span className="badge text-caption font-normal text-warning">Incomplete</span>
+        ) : null;
+      },
+    }));
+    return cols;
+  })();
+
+  const renderPendingAllSubRows = (row: Row<PendingPCGroup>, table: TanStackTable<PendingPCGroup>) => {
+    const group = row.original;
+    const collapsed = !expandedSubPcs.has(group.pc);
+    if (collapsed) return null;
+    return group.rows.map(r => {
+      const category = r.educationLevel || r.requestedEducationLevels.join(', ') || '—';
+      const disciplines = parseDisciplines(r.discipline);
+      const isPending = r.status === 'pending';
+      return (
+        <TableRow
+          key={r.key}
+          className={cn(
+            'hover:bg-bg transition-colors group',
+            isPending && 'cursor-pointer',
+            isPending && selectedKeys.has(r.key) && 'bg-accent/5',
+          )}
+          onClick={isPending ? () => router.push(`/requests/project/${encodeURIComponent(r.batchId)}/${encodeURIComponent(r.projId)}`) : undefined}
+        >
+          <TableCell className="px-4 py-3 w-10" maxWidth={table.getColumn('select')?.getSize()} onClick={e => e.stopPropagation()}>
+            <Checkbox
+              checked={selectedKeys.has(r.key)}
+              onCheckedChange={() => toggleSelectProj(r.batchId, r.projId)}
+              aria-label={`Select ${r.title}`}
+            />
+          </TableCell>
+          {visibleCols.pc && (
+            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('pc')?.getSize()} />
+          )}
+          {visibleCols.title && (
+            <TableCell className="px-4 py-3" maxWidth={table.getColumn('title')?.getSize()}>
+              <TruncatedTooltip className={cn('text-body-sm font-normal text-fg-muted', isPending ? 'group-hover:text-accent transition-colors' : '')}>
+                <CornerDownRight size={16} className="inline" />
+                {r.title}
+              </TruncatedTooltip>
+            </TableCell>
+          )}
+          {visibleCols.category && (
+            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('category')?.getSize()} truncate>{category}</TableCell>
+          )}
+          {visibleCols.discipline && (
+            <TableCell className="px-4 py-3" maxWidth={table.getColumn('discipline')?.getSize()}>
+              {disciplines.length === 0 ? (
+                <span className="text-body-sm text-fg-muted truncate block">—</span>
+              ) : (
+                <div className="flex flex-wrap gap-1 max-w-full">
+                  {disciplines.map(d => (
+                    <span key={d} className="badge bg-bg-muted text-fg-muted text-caption font-normal truncate max-w-full">{d}</span>
+                  ))}
+                </div>
+              )}
+            </TableCell>
+          )}
+          {visibleCols.slots && (
+            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('slots')?.getSize()} truncate>{r.slots}</TableCell>
+          )}
+          <TableCell className="px-4 py-3" maxWidth={table.getColumn('status')?.getSize()}>
+            <span className={cn('badge text-caption font-normal', r.status === 'frozen' ? 'text-warning' : 'text-warning')}>
+              {r.status === 'frozen' ? 'Pending DCE Approval' : 'Pending'}
+            </span>
+          </TableCell>
         </TableRow>
       );
     });
@@ -1744,6 +2137,45 @@ export default function RequestsPage() {
     showToast(`${selectedKeys.size} project${selectedKeys.size !== 1 ? 's' : ''} returned for update by DCE.`);
   }
 
+  function doUnlockForEditing() {
+    if (!unlockReason.trim()) return;
+    let updated = [...batches];
+    Array.from(selectedKeys).forEach(key => {
+      const [batchId, projId] = key.split('::');
+      updated = updated.map(b => b.id !== batchId ? b : {
+        ...b,
+        projects: b.projects.map(p =>
+          p.id !== projId || p.status !== 'frozen' ? p : { ...p, status: 'pending' as const, remarks: unlockReason.trim() }
+        ),
+      });
+    });
+    setBatches(updated);
+    saveSubmissions(updated);
+    syncProjectsToRequests(updated);
+    const notifiedReturn = new Set<string>();
+    Array.from(selectedKeys).forEach(key => {
+      const [batchId, projId] = key.split('::');
+      if (!notifiedReturn.has(`${batchId}::${projId}`)) {
+        notifiedReturn.add(`${batchId}::${projId}`);
+        const batch = batches.find(b => b.id === batchId);
+        const proj = batch?.projects.find(p => p.id === projId);
+        if (batch && proj) {
+          addNotification({
+            forRole: 'ad-pnc',
+            title: `Project unlocked for editing — ${proj.title}`,
+            body: `Your project "${proj.title}" has been unlocked for editing. Reason: ${unlockReason.trim()}`,
+            href: '/submissions',
+            tier: 'action',
+          });
+        }
+      }
+    });
+    setSelectedKeys(new Set());
+    setUnlockOpen(false);
+    setUnlockReason('');
+    showToast(`${selectedKeys.size} project${selectedKeys.size !== 1 ? 's' : ''} unlocked for editing.`);
+  }
+
 
   if (roleReady && role !== 'io-admin') return null;
 
@@ -1892,6 +2324,10 @@ export default function RequestsPage() {
   const allPendingSel  = pendingKeys.length > 0 && pendingKeys.every(k => selectedKeys.has(k));
   const somePendingSel = pendingKeys.some(k => selectedKeys.has(k));
 
+  const frozenKeys     = tableRows.filter(r => r.status === 'frozen').map(r => r.key);
+  const allFrozenSel   = frozenKeys.length > 0 && frozenKeys.every(k => selectedKeys.has(k));
+  const someFrozenSel  = frozenKeys.some(k => selectedKeys.has(k));
+
   // Pending Review is grouped by Programme Centre (Projects-style collapsible groups).
   const pendingPcGroups = (() => {
     const map = new Map<string, { pc: string; rows: FlatProj[] }>();
@@ -1901,6 +2337,21 @@ export default function RequestsPage() {
     }
     return Array.from(map.values());
   })();
+
+  const pendingAllGroups = groupByPc(tableRows.filter(r => r.status === 'pending' || r.status === 'frozen'));
+  const pendingAllKeys = pendingAllGroups.flatMap(g => g.rows.map(r => r.key));
+  const allPendingAllSel = pendingAllKeys.length > 0 && pendingAllKeys.every(k => selectedKeys.has(k));
+  const somePendingAllSel = pendingAllKeys.some(k => selectedKeys.has(k));
+  const pendingAllSelectedKeys = Array.from(selectedKeys).filter(k =>
+    pendingAllGroups.some(g => g.rows.some(r => r.key === k))
+  );
+  const pendingAllSelectedPendingKeys = pendingAllSelectedKeys.filter(k =>
+    pendingAllGroups.some(g => g.rows.some(r => r.key === k && r.status === 'pending'))
+  );
+  const pendingAllSelectedFrozenKeys = pendingAllSelectedKeys.filter(k =>
+    pendingAllGroups.some(g => g.rows.some(r => r.key === k && r.status === 'frozen'))
+  );
+
   const togglePcGroup = (pc: string) =>
     setExpandedSubPcs(prev => { const n = new Set(prev); n.has(pc) ? n.delete(pc) : n.add(pc); return n; });
 
@@ -1920,6 +2371,7 @@ export default function RequestsPage() {
     sent:       pcGroups.length,
     pending:    flatRows.filter(r => r.status === 'pending').length,
     pendingDce: flatRows.filter(r => r.status === 'frozen').length,
+    pendingAll: flatRows.filter(r => r.status === 'pending' || r.status === 'frozen').length,
     rejected:   flatRows.filter(r => r.status === 'rejected').length,
     approved:   flatRows.filter(r => r.status === 'approved').length,
     all:        flatRows.length,
@@ -2018,11 +2470,16 @@ export default function RequestsPage() {
           {...(topTab === 'submissions' ? {
             colDefs: COL_DEFS.map(c => ({ key: c.key, label: c.label, locked: (c as any).locked })),
             visibleCols, onToggleCol: (k: string) => toggleCol(k as ColKey),
-            onExport: () => exportToCSV(
+            onExport: tab === 'pendingAll' ? undefined : () => exportToCSV(
               'project-submissions',
               ['Programme Centre', 'Project', 'Intern Category', 'Discipline of Study', 'Placements'],
               tableRows.map(r => [r.pc, r.title, r.educationLevel || r.requestedEducationLevels.join(', '), parseDisciplines(r.discipline).join(' / '), r.slots]),
             ),
+            extraActions: tab === 'pendingAll' ? (
+              <Button variant="outline" size="md" onClick={() => exportLockedProjects(flatRows.filter(r => r.status === 'frozen').map(r => r.key), flatRows)}>
+                <Download size={14} />Export Locked Projects
+              </Button>
+            ) : undefined,
           } : {
             colDefs: SENT_COL_DEFS.map(c => ({ key: c.key, label: c.label, locked: (c as any).locked })),
             visibleCols: sentVisibleCols, onToggleCol: (k: string) => toggleSentCol(k as SentColKey),
@@ -2070,6 +2527,9 @@ export default function RequestsPage() {
                 </TabsTrigger>
                 <TabsTrigger value="pendingDce">
                   Pending DCE Approval ({tabCounts.pendingDce})
+                </TabsTrigger>
+                <TabsTrigger value="pendingAll">
+                  Pending IO Review ({tabCounts.pendingAll})
                 </TabsTrigger>
                 <TabsTrigger value="approved">
                   Approved ({tabCounts.approved})
@@ -2242,41 +2702,62 @@ export default function RequestsPage() {
         ) : (
           /* ── Submissions tabs ──────────────────────────────────────────── */
           <>
-            {tab === 'pending' && selectedKeys.size > 0 && (
+            {tab === 'pending' && (
               <div className="flex items-center gap-3 mb-3 px-4 py-2.5 bg-bg-muted rounded-lg">
                 <span className="text-body-sm font-semibold flex-1">
                   {selectedKeys.size} project{selectedKeys.size !== 1 ? 's' : ''} selected
                 </span>
-                <Button size="sm" onClick={() => setFreezeOpen(true)}>
-                  Freeze Selected
+                <Button size="sm" disabled={selectedKeys.size === 0} onClick={() => setFreezeOpen(true)}>
+                  Lock for Review
                 </Button>
               </div>
             )}
 
-            {tab === 'pendingDce' && selectedKeys.size > 0 && (
+            {tab === 'pendingDce' && (
               <div className="flex items-center gap-3 mb-3 px-4 py-2.5 bg-bg-muted rounded-lg">
                 <span className="text-body-sm font-semibold flex-1">
                   {selectedKeys.size} project{selectedKeys.size !== 1 ? 's' : ''} selected
                 </span>
-                <Button size="sm" variant="outline" onClick={() => { setDceReturnRemarks(''); setDceReturnOpen(true); }}>
-                  Returned for Update
+                <Button size="sm" variant="outline" disabled={selectedKeys.size === 0} onClick={() => { setUnlockReason(''); setUnlockOpen(true); }}>
+                  Unlock for Editing
                 </Button>
-                <Button size="sm" onClick={() => doDceApprove()}>
+                <Button size="sm" disabled={selectedKeys.size === 0} onClick={() => doDceApprove()}>
                   Approve
                 </Button>
-                <Button size="sm" variant="danger" onClick={() => { setDceRejectRemarks(''); setDceRejectOpen(true); }}>
-                  Reject
-                </Button>
               </div>
             )}
 
-            {tab === 'pending' || tab === 'pendingDce' ? (
+            {tab === 'pendingAll' ? (
+              <div className="px-4 py-3">
+                <div className="flex items-center gap-3 mb-3 px-4 py-2.5 bg-bg-muted rounded-lg">
+                  <span className="text-body-sm font-semibold flex-1">
+                    {pendingAllSelectedKeys.length} project{pendingAllSelectedKeys.length !== 1 ? 's' : ''} selected
+                  </span>
+                  <Button size="sm" disabled={pendingAllSelectedPendingKeys.length === 0} onClick={() => setFreezeOpen(true)}>
+                    Lock for Review
+                  </Button>
+                  <Button size="sm" variant="outline" disabled={pendingAllSelectedFrozenKeys.length === 0} onClick={() => { setUnlockReason(''); setUnlockOpen(true); }}>
+                    Unlock
+                  </Button>
+                </div>
+                <DataTable
+                  tableKey="requests_submissions_pending_all"
+                  columns={pendingAllColumns}
+                  data={pendingAllGroups}
+                  enableSorting={false}
+                  renderSubRows={renderPendingAllSubRows}
+                  getRowId={group => group.pc}
+                  emptyState={<div className="px-6 py-16 text-center text-body-sm text-fg-muted">No projects match your filters.</div>}
+                  wrapperClassName="px-0"
+                />
+              </div>
+            ) : tab === 'pending' || tab === 'pendingDce' ? (
               <DataTable
                 tableKey={tab === 'pending' ? 'requests_submissions_pending' : 'requests_submissions_dce'}
-                columns={pendingColumns}
+                columns={tab === 'pending' ? pendingColumns : frozenColumns}
                 data={pagedPendingGroups}
                 enableSorting={false}
-                renderSubRows={renderPendingSubRows}
+                renderSubRows={tab === 'pending' ? renderPendingSubRows : renderFrozenSubRows}
                 getRowId={group => group.pc}
                 emptyState={<div className="px-6 py-16 text-center text-body-sm text-fg-muted">No projects match your filters.</div>}
                 wrapperClassName="px-4"
@@ -2436,15 +2917,15 @@ export default function RequestsPage() {
       <Dialog open={freezeOpen} onOpenChange={setFreezeOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Freeze selected projects?</DialogTitle>
+            <DialogTitle>Lock selected projects for review?</DialogTitle>
             <DialogDescription>
-              You have selected {selectedKeys.size} project{selectedKeys.size !== 1 ? 's' : ''}. Once frozen, these projects can be exported for DCE review and will no longer be editable.
+              You have selected {selectedKeys.size} project{selectedKeys.size !== 1 ? 's' : ''}. Once locked, these projects can be exported for DCE review and will no longer be editable.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setFreezeOpen(false)}>Cancel</Button>
             <Button onClick={doFreezeSelected}>
-              Freeze {selectedKeys.size} Project{selectedKeys.size !== 1 ? 's' : ''}
+              Lock {selectedKeys.size} Project{selectedKeys.size !== 1 ? 's' : ''}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2504,6 +2985,41 @@ export default function RequestsPage() {
           <Button variant="ghost" onClick={() => setDceRejectOpen(false)}>Cancel</Button>
         </div>
       </Modal>
+
+      {/* Unlock for Editing dialog */}
+      <Dialog open={unlockOpen} onOpenChange={setUnlockOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Unlock for Editing?</DialogTitle>
+            <DialogDescription>
+              The selected project(s) will be returned to the Pending Review state so AD (P&amp;C) can edit and resubmit them.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-label-sm text-fg">
+              Reason for unlocking <span className="text-danger">*</span>
+            </p>
+            <textarea
+              rows={4}
+              autoFocus
+              className="w-full resize-none rounded-lg border border-border bg-surface px-3 py-2 text-body-sm text-fg outline-none focus:ring-2 focus:ring-warning/30"
+              placeholder="Explain why these projects are being unlocked..."
+              value={unlockReason}
+              onChange={e => setUnlockReason(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setUnlockOpen(false)}>Cancel</Button>
+            <Button
+              disabled={!unlockReason.trim()}
+              onClick={doUnlockForEditing}
+              className="bg-[rgba(251,44,54,0.1)] text-[#C10007] hover:bg-[rgba(251,44,54,0.15)] border border-[#F8A4A8]"
+            >
+              Unlock
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {extendGroup && (
         <Modal open onClose={() => setExtendGroup(null)} maxWidth="sm" labelledBy="extend-deadline-title">

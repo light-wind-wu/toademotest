@@ -53,7 +53,7 @@ import EmptyState from '@/components/ui-legacy/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import {
   AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2,
-  ChevronDown, ChevronRight, Eye, Folder, Info, Pencil, Plus, Save, ShieldCheck, Trash2, Wand2, X,
+  ChevronRight, Eye, Folder, Info, Pencil, Plus, Save, ShieldCheck, Sparkles, Trash2, X,
 } from 'lucide-react';
 import { REQ_TYPES, REQ_TIER_LABELS, EDUCATION_LEVELS, OPS, loadSubjectTaxonomy, toEducationLevel } from '@/lib/data';
 import { loadProgrammes, saveProgrammes, loadProjects, saveProjects, loadAttachments, saveAttachments } from '@/lib/storage';
@@ -85,8 +85,9 @@ import {
 import appFormSeed from '@/data/app-form-templates.json';
 import { useUnsavedChanges } from '@/lib/unsaved-changes';
 import { useSystemConfig } from '@/lib/portal-config';
+import { AI_COLOURS } from '@/lib/ai-colours';
+import AiSparkleIcon from '@/components/ui-legacy/ai-sparkle-icon';
 // import PreviewFlagFab from '@/components/dev/preview-flag-fab'; // DEV-ONLY — disabled for now (was: the floating preview-flag toggle on the programme form)
-import TimelineGantt from '@/components/programme/timeline-gantt'; // Review-step timeline — remove this import + section to drop the feature
 
 const AFT_KEY      = 'dsta_app_form_templates';
 const AFT_SEED_VER = '23';
@@ -113,11 +114,6 @@ function intakeLabel(w: IntakeWindow): string {
   return `${formatMMMYY(s)} – ${formatMMMYY(e)}`;
 }
 
-function intakeIdsForProjectFromMap(projectId: string, attachmentMap: Record<string, string[]>): string[] {
-  return Object.entries(attachmentMap)
-    .filter(([, projectIds]) => projectIds.includes(projectId))
-    .map(([intakeId]) => intakeId);
-}
 /* Auto-derived intake title: programme name + internship window,
    e.g. "University 2027 (Jun27 – Dec27)". Falls back to the period when unnamed. */
 function intakeTitleFor(programmeTitle: string, w: IntakeWindow): string {
@@ -955,22 +951,21 @@ function EligibilitySummaryPanel({ groups, onViewDetail }: { groups: CriteriaGro
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-0.5">
-          <span className="flex items-center gap-1.5 text-caption text-fg-subtle">
-            <Wand2 size={11} />Generated from configured criteria
-          </span>
+        <div className="flex items-center justify-between pt-3">
           {groups.length > 0 && onViewDetail && (
             <Button
               type="button"
-              variant="link"
-              size="xs"
+              variant="outline"
+              size="sm"
               onClick={onViewDetail}
-              className="px-0 py-0"
             >
-              View eligibility
-              <ChevronRight size={12} />
+              View Eligibility
             </Button>
           )}
+          <span className={cn('badge inline-flex items-center gap-1 text-caption font-normal', AI_COLOURS.suggestButton)}>
+            <AiSparkleIcon size={12} />
+            Generated from configured criteria
+          </span>
         </div>
       </div>
     </div>
@@ -979,299 +974,202 @@ function EligibilitySummaryPanel({ groups, onViewDetail }: { groups: CriteriaGro
 
 /* ── Review overview ────────────────────────────────────────────── */
 function OverviewSection({
-  title, category, intakes, groups, formTemplate, onViewDetail, onViewDescription,
-  availableProjects, attachmentMap, placementMap, timelineProjects,
+  title, year, description, category, intakes, groups, formTemplate, onPreviewApplicationForm, onPreviewCriteria,
+  attachmentMap, onCancel,
 }: {
-  title: string; category: string[];
+  title: string; year: number; description: string; category: string[];
   intakes?: IntakeWindow[];
   groups: CriteriaGroup[]; formTemplate?: string;
-  availableProjects: ProjectEntry[];
   attachmentMap: Record<string, string[]>;
-  placementMap: Record<string, Record<string, number>>;
-  timelineProjects: ProjectEntry[];
-  onViewDetail?: () => void;
-  onViewDescription?: () => void;
+  onPreviewApplicationForm?: () => void;
+  onPreviewCriteria?: () => void;
+  onCancel?: () => void;
 }) {
-  const [reviewLayout, setReviewLayout] = useState<'accordion' | 'index'>('index');
-  const [activeReviewPanel, setActiveReviewPanel] = useState('eligibility');
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    eligibility: true,
-    intakes: false,
-    timeline: false,
-  });
-  const projectById = useMemo(() => new Map(availableProjects.map(p => [p.id, p])), [availableProjects]);
+  const [activeIntake, setActiveIntake] = useState<number>(0);
+  const criteriaCount = groups.reduce((total, group) => total + group.rules.length + group.pathways.reduce((n, pathway) => n + pathway.rules.length, 0), 0);
   const intakeSummaries = useMemo(() => {
     return (intakes ?? []).map((w, i) => {
       const intakeId = w.id as string | undefined;
-      const assignedIds = intakeId ? (attachmentMap[intakeId] ?? []) : [];
-      const assignedProjects = assignedIds.map(id => projectById.get(id)).filter(Boolean) as ProjectEntry[];
-      const appWindow = w.appOpen && w.appClose ? `${formatDate(w.appOpen)} – ${formatDate(w.appClose)}` : '— Not set';
+      const assignedCount = intakeId ? (attachmentMap[intakeId] ?? []).length : 0;
       const internshipWindow = w.start && w.end ? `${isoToMMMYY(w.start)} – ${isoToMMMYY(w.end)}` : '— Not set';
       return {
         id: intakeId ?? `intake-${i}`,
-        intake: w,
         index: i,
-        assignedProjects,
-        appWindow,
+        assignedCount,
         internshipWindow,
-        title: intakeTitleFor(title, w) || `Intake ${i + 1}`,
+        title: `Intake ${i + 1}`,
       };
     });
-  }, [attachmentMap, intakes, projectById, title]);
-  const attachedIds = useMemo(() => Object.values(attachmentMap).flat(), [attachmentMap]);
-  const uniqueAttachedIds = useMemo(() => Array.from(new Set(attachedIds)), [attachedIds]);
-  const sharedProjectCount = useMemo(() => {
-    const counts = attachedIds.reduce<Record<string, number>>((acc, id) => {
-      acc[id] = (acc[id] ?? 0) + 1;
-      return acc;
-    }, {});
-    return Object.values(counts).filter(n => n > 1).length;
-  }, [attachedIds]);
-  const placementTotal = useMemo(() => {
-    return Object.entries(attachmentMap).reduce((total, [intakeId, ids]) => {
-      return total + ids.reduce((sum, projectId) => sum + (placementMap[intakeId]?.[projectId] ?? 1), 0);
-    }, 0);
-  }, [attachmentMap, placementMap]);
-  const criteriaCount = groups.reduce((total, group) => total + group.rules.length + group.pathways.reduce((n, pathway) => n + pathway.rules.length, 0), 0);
-  const programmeMeta = [
-    category.length > 0 ? category.join(', ') : '—',
-    formTemplate || '— (no template)',
-    `${criteriaCount} criteria configured`,
-  ].join(' · ');
+  }, [attachmentMap, intakes, title]);
 
-  function toggleSection(id: keyof typeof openSections) {
-    setOpenSections(prev => ({ ...prev, [id]: !prev[id] }));
-  }
-
-  function ReviewMetric({ value, label }: { value: number | string; label: string }) {
-    return (
-      <div className="rounded-lg border border-border bg-bg-subtle px-4 py-3">
-        <p className="text-metric text-fg">{value}</p>
-        <p className="mt-1 text-caption text-fg-muted">{label}</p>
-      </div>
-    );
-  }
-
-  function ReviewDisclosure({
-    id,
-    title: rowTitle,
-    subtitle,
-    chip,
-    children,
-  }: {
-    id: keyof typeof openSections;
-    title: string;
-    subtitle?: string;
-    chip?: string;
-    children: ReactNode;
-  }) {
-    const isOpen = openSections[id];
-    return (
-      <section className="border-t border-border">
-        <button
-          type="button"
-          aria-expanded={isOpen}
-          onClick={() => toggleSection(id)}
-          className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-bg-subtle/60"
-        >
-          <span className="min-w-0 flex-1">
-            <span className="block text-body-sm font-medium text-fg">{rowTitle}</span>
-            {subtitle && <span className="mt-0.5 block text-caption text-fg-muted">{subtitle}</span>}
-          </span>
-          {chip && (
-            <span className="shrink-0 rounded-full border border-border bg-surface px-2 py-0.5 text-caption font-medium text-fg-muted">
-              {chip}
-            </span>
-          )}
-          <ChevronDown size={16} className={cn('shrink-0 text-fg-muted transition-transform', isOpen && 'rotate-180')} />
-        </button>
-        {isOpen && <div className="px-4 pb-4">{children}</div>}
-      </section>
-    );
-  }
-
-  function ReviewIndexButton({
-    id,
-    title: itemTitle,
-    subtitle,
-    chip,
-  }: {
-    id: string;
-    title: string;
-    subtitle?: string;
-    chip?: string;
-  }) {
-    const isActive = activeReviewPanel === id;
-    return (
-      <button
-        type="button"
-        onClick={() => setActiveReviewPanel(id)}
-        className={cn(
-          'flex w-full items-start gap-3 rounded-lg border px-3 py-3 text-left transition-colors',
-          isActive ? 'border-accent bg-accent/5' : 'border-border bg-surface hover:bg-bg-subtle/60',
-        )}
-      >
-        <span className="min-w-0 flex-1">
-          <span className="block text-body-sm font-medium text-fg">{itemTitle}</span>
-          {subtitle && <span className="mt-0.5 block text-caption text-fg-muted">{subtitle}</span>}
-        </span>
-        {chip && (
-          <span className="shrink-0 rounded-full border border-border bg-surface px-2 py-0.5 text-caption font-medium text-fg-muted">
-            {chip}
-          </span>
-        )}
-      </button>
-    );
-  }
-
-  function IntakePreview({ summary }: { summary: (typeof intakeSummaries)[number] }) {
-    return (
-      <div className="rounded-lg border border-border bg-bg-subtle/40">
-        <div className="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-body-sm font-medium text-fg">{summary.title}</p>
-            <p className="mt-0.5 text-caption text-fg-muted">App: {summary.appWindow}</p>
-            <p className="mt-0.5 text-caption text-fg-muted">Internship: {summary.internshipWindow}</p>
+  return (
+    <div className="space-y-5">
+      {/* Programme Details */}
+      <div className="overflow-hidden rounded-lg border border-border bg-surface">
+        <div className="border-b border-border px-5 py-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-body-md font-semibold text-fg">Programme Details</p>
+              <p className="mt-0.5 text-caption text-fg-muted">Review the programme configuration before creating.</p>
+            </div>
           </div>
-          <span className="w-fit rounded-full border border-border bg-surface px-2 py-0.5 text-caption font-medium text-fg-muted">
-            {summary.assignedProjects.length} project{summary.assignedProjects.length !== 1 ? 's' : ''}
-          </span>
         </div>
-        {summary.assignedProjects.length > 0 ? (
-          <div className="divide-y divide-border border-t border-border bg-surface">
-            {summary.assignedProjects.map(project => (
-              <div key={`${summary.id}-${project.id}`} className="flex items-center justify-between gap-3 px-3 py-2.5">
-                <div className="min-w-0">
-                  <p className="truncate text-body-sm font-medium text-fg">{project.title}</p>
-                  <p className="mt-0.5 text-caption text-fg-muted">
-                    {placementMap[summary.id]?.[project.id] ?? 1} placement{(placementMap[summary.id]?.[project.id] ?? 1) !== 1 ? 's' : ''}
-                  </p>
-                </div>
-                <span className="shrink-0 rounded-full border border-border bg-bg-subtle px-2 py-0.5 text-caption font-medium text-fg-muted">
-                  {intakeIdsForProjectFromMap(project.id, attachmentMap).length > 1 ? 'Shared project' : 'Single intake'}
-                </span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="border-t border-border bg-surface px-3 py-2.5 text-caption text-fg-muted">No assigned project.</p>
-        )}
-      </div>
-    );
-  }
 
-  function renderIndexPanel() {
-    if (activeReviewPanel === 'eligibility') {
-      return (
-        <div>
+        <div className="p-5 space-y-5">
+          {/* Row 1: core metadata */}
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+            <div>
+              <p className="text-caption text-fg-muted">Internship year</p>
+              <p className="mt-1 text-body-sm font-medium text-fg">{year}</p>
+            </div>
+            <div>
+              <p className="text-caption text-fg-muted">Intern category</p>
+              <p className="mt-1 text-body-sm font-medium text-fg">
+                {category.length > 0 ? category.join(', ') : '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-caption text-fg-muted">Programme Title</p>
+              <p className="mt-1 text-body-sm font-medium text-fg">{title || '—'}</p>
+            </div>
+          </div>
+
+          {/* Row 2: Application Form + Eligibility Criteria */}
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            {/* Application Form preview */}
+            <div className="rounded-lg border border-border bg-bg-subtle p-4">
+              <label className="block text-body-sm font-semibold text-fg">Application Form</label>
+              <p className="mb-3 mt-1 text-xs leading-relaxed text-fg-muted">
+                A read-only preview is generated from the selected intern category.
+              </p>
+              <div className="flex min-h-[72px] items-center justify-between gap-3 rounded-lg border border-border bg-bg-muted px-3 py-3">
+                <span className="flex items-center gap-3 min-w-0">
+                  <span className="min-w-0">
+                    <span className="block text-body-sm font-semibold text-fg">
+                      {formTemplate || 'Not configured'}
+                    </span>
+                    <span className="block text-caption text-fg-muted">
+                      {formTemplate ? 'View or edit application form.' : 'Select an intern category to load the default form.'}
+                    </span>
+                  </span>
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={!formTemplate}
+                  onClick={onPreviewApplicationForm}
+                >
+                  <Eye size={14} />Preview Application Form
+                </Button>
+              </div>
+            </div>
+
+            {/* Eligibility Criteria */}
+            <div className="rounded-lg border border-border bg-bg-subtle p-4">
+              <label className="block text-body-sm font-semibold text-fg">Eligibility Criteria</label>
+              <p className="mb-3 mt-1 text-xs leading-relaxed text-fg-muted">
+                Who can apply. Defaults based on education level, editable.
+              </p>
+              <div className="flex min-h-[72px] items-center justify-between gap-3 rounded-lg border border-border bg-bg-muted px-3 py-3">
+                <span className="flex items-center gap-3 min-w-0">
+                  <span className="min-w-0">
+                    <span className="block text-body-sm font-semibold text-fg">
+                      {category.length === 0
+                        ? 'Not configured'
+                        : `${criteriaCount} ${criteriaCount === 1 ? 'criterion' : 'criteria'} configured`}
+                    </span>
+                    <span className="block text-caption text-fg-muted">
+                      {category.length === 0
+                        ? 'Select an intern category above to load criteria'
+                        : 'View or edit eligibility criteria'}
+                    </span>
+                  </span>
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={category.length === 0}
+                  onClick={onPreviewCriteria}
+                >
+                  <Eye size={14} />Preview Criteria
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Row 3: Programme Description */}
+          <div>
+            <p className="text-caption text-fg-muted">Programme Description</p>
+            <p className="mt-1 text-body-sm leading-relaxed text-fg">
+              {description || '— Not set'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Intakes + Eligibility Requirements */}
+      <div className="grid grid-cols-1 gap-0 overflow-hidden rounded-lg border border-border bg-surface lg:grid-cols-[360px_minmax(0,1fr)]">
+        <aside className="relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-border bg-surface shadow-lg lg:overflow-visible lg:border-b-0 lg:border-r" aria-label="Intakes">
+          <div className="flex min-w-0 flex-1 flex-col">
+            {intakeSummaries.length === 0 ? (
+              <p className="px-4 py-3 text-caption text-fg-muted">No intake windows configured.</p>
+            ) : (
+              intakeSummaries.map(summary => {
+                const isActive = activeIntake === summary.index;
+                return (
+                  <div
+                    key={summary.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setActiveIntake(summary.index)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setActiveIntake(summary.index);
+                      }
+                    }}
+                    className={cn(
+                      'group relative box-border w-full min-w-0 cursor-pointer border-b px-4 py-3 transition-colors',
+                      isActive ? 'z-10 border-y border-border bg-bg-muted' : 'border-border bg-surface hover:bg-bg-subtle',
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className={cn('min-w-0 text-left', isActive && 'pr-3')}>
+                        <span className={cn('block truncate text-body-sm', isActive ? 'font-semibold text-fg' : 'font-medium text-fg')}>
+                          {summary.title}
+                        </span>
+                        <span className="mt-0.5 block truncate text-caption text-fg-muted">
+                          {summary.internshipWindow}
+                        </span>
+                      </div>
+                      <span className="shrink-0 rounded-full border border-border bg-surface px-2 py-0.5 text-caption font-medium text-fg-muted">
+                        {summary.assignedCount} project{summary.assignedCount !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    {isActive && (
+                      <span
+                        className="absolute right-[-11px] top-1/2 z-10 h-full w-[11px] -translate-y-1/2 bg-[length:auto_100%] bg-right bg-no-repeat"
+                        style={{ backgroundImage: 'url(/assets/request-arrow.svg)' }}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </aside>
+
+        <section className="min-w-0 p-5">
           <div className="mb-3">
             <p className="text-label-md font-semibold text-fg">Eligibility Requirements</p>
             <p className="mt-0.5 text-caption text-fg-muted">Generated from configured criteria</p>
           </div>
-          <EligibilitySummaryPanel groups={groups} onViewDetail={onViewDetail} />
-        </div>
-      );
-    }
-    if (activeReviewPanel === 'timeline') {
-      return (
-        <div>
-          <div className="mb-3">
-            <p className="text-label-md font-semibold text-fg">Programme Timeline</p>
-            <p className="mt-0.5 text-caption text-fg-muted">Application, internship, and assigned project timing</p>
-          </div>
-          <TimelineGantt intakes={intakes ?? []} projects={timelineProjects} />
-        </div>
-      );
-    }
-    const intakePanel = intakeSummaries.find(summary => activeReviewPanel === `intake-${summary.index}`);
-    return intakePanel ? (
-      <div>
-        <div className="mb-3">
-          <p className="text-label-md font-semibold text-fg">Intake Windows</p>
-          <p className="mt-0.5 text-caption text-fg-muted">{intakePanel.title}</p>
-        </div>
-        <IntakePreview summary={intakePanel} />
+          <EligibilitySummaryPanel groups={groups} onViewDetail={onPreviewCriteria} />
+        </section>
       </div>
-    ) : null;
-  }
-
-  return (
-    <div className="overflow-hidden rounded-lg border border-border bg-surface">
-      <div className="border-b border-border px-5 py-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="min-w-0 text-body-md font-semibold text-fg">{title || '—'}</p>
-              <button
-                type="button"
-                aria-label="View programme description"
-                onClick={onViewDescription}
-                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-fg-muted transition-colors hover:bg-bg-subtle hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-              >
-                <AlertCircle size={14} aria-hidden="true" />
-              </button>
-            </div>
-            <p className="mt-0.5 text-caption text-fg-muted">{programmeMeta}</p>
-          </div>
-          <Tabs value={reviewLayout} onValueChange={value => setReviewLayout(value as 'accordion' | 'index')}>
-            <TabsList aria-label="Review layout">
-              <TabsTrigger value="accordion">Accordion</TabsTrigger>
-              <TabsTrigger value="index">Index preview</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-4">
-          <ReviewMetric value={intakes?.length ?? 0} label="intakes" />
-          <ReviewMetric value={uniqueAttachedIds.length} label="assigned projects" />
-          <ReviewMetric value={sharedProjectCount} label="shared projects" />
-          <ReviewMetric value={placementTotal} label="placements" />
-        </div>
-      </div>
-
-      {reviewLayout === 'accordion' ? (
-        <>
-          <ReviewDisclosure id="eligibility" title="Eligibility Requirements" subtitle="Generated from configured criteria" chip={`${criteriaCount} criteria`}>
-            <EligibilitySummaryPanel groups={groups} onViewDetail={onViewDetail} />
-          </ReviewDisclosure>
-
-          <ReviewDisclosure
-            id="intakes"
-            title="Intake Windows"
-            subtitle={intakes?.length ? `${intakes.length} intake${intakes.length !== 1 ? 's' : ''} configured` : 'No intake windows configured'}
-            chip={`${uniqueAttachedIds.length} projects`}
-          >
-            {intakeSummaries.length ? (
-              <div className="space-y-3">
-                {intakeSummaries.map(summary => <IntakePreview key={summary.id} summary={summary} />)}
-              </div>
-            ) : (
-              <p className="text-body-sm text-fg-muted">— Not set</p>
-            )}
-          </ReviewDisclosure>
-
-          <ReviewDisclosure id="timeline" title="Programme Timeline" subtitle="Application, internship, and assigned project timing">
-            <TimelineGantt intakes={intakes ?? []} projects={timelineProjects} />
-          </ReviewDisclosure>
-        </>
-      ) : (
-        <div className="grid gap-0 border-t border-border lg:grid-cols-[280px_minmax(0,1fr)]">
-          <nav className="space-y-2 border-b border-border bg-bg-subtle/40 p-3 lg:border-b-0 lg:border-r" aria-label="Review sections">
-            <ReviewIndexButton id="eligibility" title="Eligibility Requirements" subtitle="Generated from configured criteria" chip={`${criteriaCount} criteria`} />
-            {intakeSummaries.map(summary => (
-              <ReviewIndexButton
-                key={summary.id}
-                id={`intake-${summary.index}`}
-                title={`Intake ${summary.index + 1}`}
-                subtitle={`${summary.internshipWindow} · ${summary.assignedProjects.length} project${summary.assignedProjects.length !== 1 ? 's' : ''}`}
-              />
-            ))}
-            <ReviewIndexButton id="timeline" title="Programme Timeline" subtitle="Application, internship, and assigned project timing" />
-          </nav>
-          <section className="min-w-0 p-4">
-            {renderIndexPanel()}
-          </section>
-        </div>
-      )}
     </div>
   );
 }
@@ -1583,7 +1481,6 @@ export default function ProgrammeFormPage() {
   // plain-English summary in Programme Details. A single drawer handles both the detailed
   // read view ('view') and the criteria builder ('edit'); null = closed.
   const [reqsDrawer, setReqsDrawer]     = useState<null | 'view' | 'edit'>(null);
-  const [descriptionDrawer, setDescriptionDrawer] = useState(false);
   // Projects attached to this programme on the new Attach-Projects step. Approved projects
   // are submitted unassigned (no programme) and tagged by Intern Category; here the IO picks
   // approved unassigned projects of the programme's Intern Category to attach.
@@ -2313,11 +2210,6 @@ export default function ProgrammeFormPage() {
         <div className="flex-1">
         <div className="card flex flex-col">
 
-          {/* Section header */}
-          <div className="px-6 pt-5">
-            <SectionDivider label={stepTitle} />
-          </div>
-
           {/* ── Step 1: Details — dense grid, should fit without scrolling ── */}
           {step === 1 && (
             <div className="px-6 py-5">
@@ -2914,16 +2806,16 @@ export default function ProgrammeFormPage() {
             <div className="px-6 py-5">
               <OverviewSection
                 title={cpTitle}
+                year={cpIntakeYear}
+                description={cpDescription}
                 category={cpCategory}
                 intakes={cpIntakes}
                 groups={cpReqs}
                 formTemplate={derivedTemplate}
-                availableProjects={availableProjects}
                 attachmentMap={cpAttach}
-                placementMap={cpPlacement}
-                timelineProjects={availableProjects.filter(p => allocatedIds.has(p.id))}
-                onViewDetail={() => setReqsDrawer('view')}
-                onViewDescription={() => setDescriptionDrawer(true)}
+                onPreviewApplicationForm={() => setPreviewTemplate(derivedTemplate)}
+                onPreviewCriteria={() => setReqsDrawer('view')}
+                onCancel={() => setStep(2)}
               />
 
               {(() => {
@@ -3054,26 +2946,7 @@ export default function ProgrammeFormPage() {
         </SheetContent>
       </Sheet>
 
-      <Sheet open={descriptionDrawer} onOpenChange={setDescriptionDrawer}>
-        <SheetContent side="right" className="w-full sm:max-w-[560px]">
-          <SheetHeader>
-            <SheetTitle>Description</SheetTitle>
-            <SheetDescription>{cpTitle || 'Programme description'}</SheetDescription>
-          </SheetHeader>
-          <SheetBody>
-            <div className="rounded-lg border border-border bg-surface px-4 py-3">
-              <p className="text-body-sm leading-relaxed text-fg">
-                {cpDescription || '— Not set'}
-              </p>
-            </div>
-          </SheetBody>
-          <SheetFooter>
-            <Button variant="ghost" onClick={() => setDescriptionDrawer(false)}>Close</Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
 
-      {/* DEV-ONLY: floating toggle for the category-form-preview flag — remove before ship */}
       {/* Disabled for now — re-enable by uncommenting (and its import above). */}
       {/* <PreviewFlagFab /> */}
 
