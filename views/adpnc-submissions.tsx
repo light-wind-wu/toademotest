@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, useMemo, useRef, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
 import EmptyState from '@/components/ui-legacy/empty-state';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
-import { Inbox, CheckCircle2, Calendar } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Inbox, CheckCircle2, Calendar, ListFilter, Filter } from 'lucide-react';
 import { loadLiveProgrammeOptions, CONTACTS, STATUS_COLOURS } from '@/lib/data';
 import { loadRequests, loadSubmissions } from '@/lib/storage';
 import { useRole } from '@/lib/role';
@@ -146,6 +147,93 @@ function textOnly(cls: string) {
   return cls.split(' ').filter(c => c.startsWith('text-')).join(' ') || cls;
 }
 
+/* ── Status filter ─────────────────────────────────────────────────────────── */
+const STATUS_OPTIONS = ['Pending', 'Incomplete', 'Fulfilled'] as const;
+
+function StatusFilter({
+  selected,
+  onChange,
+}: {
+  selected: string[];
+  onChange: (selected: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative border-b border-border">
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={() => setOpen(prev => !prev)}
+        className={cn(
+          'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-body-sm font-medium transition-colors whitespace-nowrap',
+          open || selected.length > 0
+            ? 'bg-accent/8 text-accent'
+            : 'text-fg-muted hover:text-fg'
+        )}
+      >
+        <Filter size={14} />
+        Filter
+      </Button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1.5 min-w-[11rem] rounded-xl border border-border bg-surface shadow-lg z-50 py-1">
+          <p className="px-3 py-1 text-[12px] font-bold text-fg-subtle uppercase tracking-widest">
+            Filter by Status
+          </p>
+          {STATUS_OPTIONS.map(status => {
+            const checked = selected.includes(status);
+            return (
+              <button
+                key={status}
+                type="button"
+                onClick={() => {
+                  onChange(checked
+                    ? selected.filter(s => s !== status)
+                    : [...selected, status]
+                  );
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-1.5 text-body-sm text-fg hover:bg-bg-subtle transition-colors text-left"
+              >
+                <Checkbox
+                  checked={checked}
+                  aria-label={`Toggle ${status}`}
+                  tabIndex={-1}
+                  className="pointer-events-none"
+                />
+                {status}
+              </button>
+            );
+          })}
+          <div className="border-t border-border mt-1 pt-1">
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              disabled={selected.length === 0}
+              className="w-full px-3 py-1.5 text-body-sm text-left text-fg-muted hover:text-fg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Clear filter
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Page ─────────────────────────────────────────────────────────────────── */
 export default function AdPncSubmissionsPage() {
   const { toast: toastMsg, showToast } = useToast();
@@ -156,6 +244,7 @@ export default function AdPncSubmissionsPage() {
   const [batches,  setBatches]  = useState<ProjectSubmissionBatch[]>([]);
   const [progMap,  setProgMap]  = useState<Record<string, string>>({});
   const [tab, setTab] = useState<'open' | 'done'>('open');
+  const [statusFilters, setStatusFilters] = useState<string[]>([]);
 
   useEffect(() => {
     // Surface a one-shot flash toast set by the upload/create flows before redirect.
@@ -189,6 +278,11 @@ export default function AdPncSubmissionsPage() {
   const openGroups = groups.filter(g => !isGroupClosed(g));
   const doneGroups = groups.filter(isGroupClosed);
   const visibleGroups = tab === 'open' ? openGroups : doneGroups;
+
+  const filteredGroups = useMemo(() => {
+    if (statusFilters.length === 0) return visibleGroups;
+    return visibleGroups.filter(g => statusFilters.includes(getGroupBadge(g, batches).label));
+  }, [visibleGroups, statusFilters, batches]);
 
   function upload(group: RequestGroup) {
     router.push(`/submissions/respond?token=${encodeURIComponent(group.key)}&mode=upload`);
@@ -229,31 +323,34 @@ export default function AdPncSubmissionsPage() {
         </div>
       ) : (
         <>
-          {/* Tabs */}
-          <UnderlineTabs
-            value={tab}
-            onValueChange={value => value && setTab(value as 'open' | 'done')}
-            ariaLabel="Project request status"
-            tabs={[
-              { value: 'open', label: 'Open Requests', count: openGroups.length },
-              { value: 'done', label: 'Closed Requests', count: doneGroups.length },
-            ]}
-            className="mb-5"
-          />
+          {/* Tabs + Filter */}
+          <div className="mb-5 flex items-end justify-between gap-0">
+            <UnderlineTabs
+              value={tab}
+              onValueChange={value => value && setTab(value as 'open' | 'done')}
+              ariaLabel="Project request status"
+              tabs={[
+                { value: 'open', label: 'Open Requests', count: openGroups.length },
+                { value: 'done', label: 'Closed Requests', count: doneGroups.length },
+              ]}
+              className="flex-1"
+            />
+            <StatusFilter selected={statusFilters} onChange={setStatusFilters} />
+          </div>
 
           {/* Request cards */}
-          {visibleGroups.length === 0 ? (
+          {filteredGroups.length === 0 ? (
             <div className="rounded-lg border border-border bg-surface">
               <EmptyState
                 icon={CheckCircle2}
-                title={tab === 'open' ? 'No open requests' : 'No closed requests yet'}
-                description={tab === 'open' ? "You're all caught up." : 'Requests move here once their response deadline has passed.'}
+                title={statusFilters.length > 0 ? 'No matching requests' : (tab === 'open' ? 'No open requests' : 'No closed requests yet')}
+                description={statusFilters.length > 0 ? 'Try adjusting the status filter.' : (tab === 'open' ? "You're all caught up." : 'Requests move here once their response deadline has passed.')}
                 size="sm"
               />
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {visibleGroups.map(group => (
+              {filteredGroups.map(group => (
                 <RequestCard
                   key={group.key}
                   group={group}

@@ -53,7 +53,7 @@ import EmptyState from '@/components/ui-legacy/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import {
   AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2,
-  ChevronRight, Eye, Folder, Info, Pencil, Plus, Save, ShieldCheck, Sparkles, Trash2, X,
+  ChevronRight, Eye, FileInput, FileOutput, Folder, Info, Pencil, Plus, Save, ShieldCheck, Sparkles, Trash2, X,
 } from 'lucide-react';
 import { REQ_TYPES, REQ_TIER_LABELS, EDUCATION_LEVELS, OPS, loadSubjectTaxonomy, toEducationLevel } from '@/lib/data';
 import { loadProgrammes, saveProgrammes, loadProjects, saveProjects, loadAttachments, saveAttachments } from '@/lib/storage';
@@ -191,19 +191,21 @@ const ProjectTableRow = memo(function ProjectTableRow({
         {isAssigned ? (
           <Button
             type="button"
-            variant="link"
+            variant="ghost"
             size="xs"
             onClick={() => selectedIntakeId && onToggleAttach(selectedIntakeId, p.id)}
           >
-            Remove
+            <FileOutput size={14} />
+            Unassign
           </Button>
         ) : (
           <Button
             type="button"
-            variant="link"
+            variant="ghost"
             size="xs"
             onClick={() => onOpenSingleAssign(p.id, selectedIntakeId)}
           >
+            <FileInput size={14} />
             Assign
           </Button>
         )}
@@ -2572,7 +2574,6 @@ export default function ProgrammeFormPage() {
                           <div className="border-border px-4 py-3">
                             <Tabs value={assignFilter} onValueChange={value => setAssignFilter(value as 'assigned' | 'unassigned')}>
                               <TabsList aria-label="Filter projects for this intake">
-                                <TabsTrigger value="assigned">Assigned ({assignedProjects.length})</TabsTrigger>
                                 <TabsTrigger
                                   value="unassigned"
                                   className={cn(
@@ -2583,6 +2584,7 @@ export default function ProgrammeFormPage() {
                                   {notAssignedProjects.length > 0 && <AlertTriangle size={13} />}
                                   Not assigned ({notAssignedProjects.length})
                                 </TabsTrigger>
+                                <TabsTrigger value="assigned">Assigned ({assignedProjects.length})</TabsTrigger>
                               </TabsList>
                             </Tabs>
                           </div>
