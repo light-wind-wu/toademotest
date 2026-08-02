@@ -1114,7 +1114,7 @@ export default function AdPncRespondPage() {
   }
 
   function activeSubmittedProjects(projects: SubmittedProject[]) {
-    return projects.filter(project => project.status !== 'rejected' && project.status !== 'withdrawn');
+    return projects.filter(project => project.status !== 'withdrawn');
   }
 
   function withdrawProject(projectId: string) {

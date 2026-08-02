@@ -43,6 +43,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Tooltip,
   TooltipContent,
@@ -2204,6 +2205,16 @@ export default function ProgrammeFormPage() {
           <ChevronRight size={14} className="text-fg-subtle" />
           <span className="text-fg font-semibold">{isEdit ? 'Edit Programme' : 'Create Programme'}</span>
         </nav>
+
+        {/* Flow hint */}
+        {step === 2 && (
+          <Alert className="mb-4 bg-[rgba(243,239,229,1)] border-[rgba(230,225,216,1)] text-[rgba(22,33,51,1)]">
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              Set up programme details, configure intake windows and project assignments, then review everything before creation.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Stepper */}
         <div className="shrink-0 mb-6">

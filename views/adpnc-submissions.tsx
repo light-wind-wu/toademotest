@@ -15,7 +15,7 @@ import { useRole } from '@/lib/role';
 import { cn } from '@/lib/utils';
 import { useToast, Toast } from '@/components/ui-legacy/toast';
 import {
-  groupRequests, isGroupClosed, groupTotals, submittedForGroup,
+  groupRequests, isGroupClosed, groupTotals, submittedForGroup, projectMatchesRequest,
   type RequestGroup,
 } from '@/lib/request-groups';
 import type { ProjectRequest, ProjectSubmissionBatch } from '@/lib/types';
@@ -47,18 +47,29 @@ function requestCategoryLabel(req: ProjectRequest, progMap: Record<string, strin
   return REQUEST_CATEGORY_LABELS[raw] ?? progMap[req.educationLevel] ?? req.educationLevel;
 }
 
-function requestCategoryTotals(requests: ProjectRequest[], progMap: Record<string, string>) {
+function requestCategoryTotals(
+  group: RequestGroup,
+  batches: ProjectSubmissionBatch[],
+  progMap: Record<string, string>,
+) {
   const totals = new Map<string, { label: string; uploaded: number; placements: number }>();
 
-  requests.forEach(req => {
+  group.requests.forEach(req => {
     const label = requestCategoryLabel(req, progMap);
     const existing = totals.get(label) ?? { label, uploaded: 0, placements: 0 };
-    totals.set(label, {
-      label,
-      uploaded: existing.uploaded + (req.uploaded ?? 0),
-      placements: existing.placements + req.placements,
-    });
+    existing.placements += req.placements;
+    totals.set(label, existing);
   });
+
+  submittedForGroup(group, batches)
+    .filter(p => p.status !== 'withdrawn')
+    .forEach(p => {
+      const matched = group.requests.find(req => projectMatchesRequest(p, req));
+      if (!matched) return;
+      const label = requestCategoryLabel(matched, progMap);
+      const existing = totals.get(label);
+      if (existing) existing.uploaded += p.slots;
+    });
 
   return Array.from(totals.values());
 }
@@ -89,20 +100,32 @@ type ProjectStatusCounts = {
   pending: number;
   returnedForUpdate: number;
   approved: number;
+  frozen: number;
 };
+
+function groupSubmittedSlots(
+  group: RequestGroup,
+  batches: ProjectSubmissionBatch[],
+): number {
+  return submittedForGroup(group, batches)
+    .filter(p => p.status !== 'withdrawn')
+    .reduce((sum, p) => sum + p.slots, 0);
+}
 
 function getProjectStatusCounts(
   group: RequestGroup,
   batches: ProjectSubmissionBatch[],
 ): ProjectStatusCounts {
   const submitted = submittedForGroup(group, batches);
-  const { uploaded, placements } = groupTotals(group);
+  const { placements } = groupTotals(group);
+  const submittedSlots = groupSubmittedSlots(group, batches);
 
   return {
-    notSubmitted: Math.max(0, placements - uploaded),
+    notSubmitted: Math.max(0, placements - submittedSlots),
     pending: submitted.filter(p => p.status === 'pending').length,
     returnedForUpdate: submitted.filter(p => p.status === 'rejected').length,
     approved: submitted.filter(p => p.status === 'approved').length,
+    frozen: submitted.filter(p => p.status === 'frozen').length,
   };
 }
 
@@ -380,8 +403,9 @@ function RequestCard({
   onUpload: () => void;
   onViewProject: () => void;
 }) {
-  const { placements, uploaded } = groupTotals(group);
-  const categoryTotals = requestCategoryTotals(group.requests, progMap);
+  const { placements } = groupTotals(group);
+  const uploaded = groupSubmittedSlots(group, batches);
+  const categoryTotals = requestCategoryTotals(group, batches, progMap);
   const badge = getGroupBadge(group, batches);
   const counts = getProjectStatusCounts(group, batches);
   const rejected = getRejectedProjects(group, batches);
@@ -393,6 +417,7 @@ function RequestCard({
     counts.pending > 0 && { key: 'pending', label: 'Pending', count: counts.pending, cls: textOnly(STATUS_COLOURS.pending) },
     counts.returnedForUpdate > 0 && { key: 'returnedForUpdate', label: 'Returned for update', count: counts.returnedForUpdate, cls: textOnly(RETURNED_FOR_UPDATE_COLOURS) },
     counts.approved > 0 && { key: 'approved', label: 'Approved', count: counts.approved, cls: textOnly(STATUS_COLOURS.approved) },
+    counts.frozen > 0 && { key: 'frozen', label: 'Pending DCE Approval', count: counts.frozen, cls: textOnly(STATUS_COLOURS.frozen) },
   ].filter(Boolean) as { key: string; label: string; count: number; cls: string }[];
 
   return (
