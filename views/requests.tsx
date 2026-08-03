@@ -59,7 +59,7 @@ import {
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import {
   Send, Check, X, FileText, ChevronRight, Filter, MoreVertical, Eye, Bell, CalendarClock, Pencil, Trash2, Ban,
-  ArrowUp, ArrowDown, ArrowUpDown, CornerDownRight, Plus,
+  ArrowUp, ArrowDown, ArrowUpDown, CornerDownRight, Plus, ArrowLeft,
 } from 'lucide-react';
 import { CONTACTS, STATUS_COLOURS, progEducationLevelMap, batchEducationLevel } from '@/lib/data';
 import { projectMatchesRequest } from '@/lib/request-groups';
@@ -211,7 +211,7 @@ function EmailSentModal({
       `We are requesting project submissions for the intern categories, calendar periods and durations listed below.`,
       '',
       `What you need to do:`,
-      `1. Complete the attached Excel template (DSTA_Project_Request_Template.xlsx) with your proposed projects for each intern category and calendar period.`,
+      `1. Complete the attached Excel template (DSTA_Project_Request_Template_Skillset.xlsx) with your proposed projects for each intern category and calendar period.`,
       `2. Ensure every submitted project has obtained the necessary security clearance.`,
       `3. Obtain approval from the PC Head for all submitted projects before they are uploaded.`,
       `4. Upload the completed projects into the system using the link below.`,
@@ -219,7 +219,7 @@ function EmailSentModal({
       `Requested placements:`,
       placementLines,
       '',
-      `Attachment: DSTA_Project_Request_Template.xlsx. Please fill in your project details in this template.`,
+      `Attachment: DSTA_Project_Request_Template_Skillset.xlsx. Please fill in your project details in this template.`,
       '',
       `System upload link (for the AD (P&C) to enter the system and upload the completed projects):`,
       link,
@@ -285,10 +285,10 @@ function EmailSentModal({
                   <div className="flex items-center gap-3 rounded-lg border border-border bg-bg-subtle px-4 py-3">
                     <Paperclip size={16} className="shrink-0 text-fg-muted" />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-body-sm font-medium text-fg">DSTA_Project_Request_Template.xlsx</p>
+                      <p className="truncate text-body-sm font-medium text-fg">DSTA_Project_Request_Template_Skillset.xlsx</p>
                       <p className="text-caption text-fg-muted">Project-submission template — pre-structured with the requested categories &amp; periods.</p>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => downloadRequestTemplateXLSX(email.reqs, 'DSTA_Project_Request_Template.xlsx')}>
+                    <Button variant="outline" size="sm" onClick={() => downloadRequestTemplateXLSX(email.reqs, 'DSTA_Project_Request_Template_Skillset.xlsx')}>
                       <Download size={14} />Download
                     </Button>
                   </div>
@@ -831,6 +831,37 @@ export default function RequestsPage() {
               </MenuItem>
             </>
           )}
+        </MenuContent>
+      </Menu>
+    );
+  }
+
+  function frozenGroupActionMenu(group: PendingPCGroup) {
+    const groupKeys = group.rows.filter(r => r.status === 'frozen').map(r => r.key);
+    if (groupKeys.length === 0) return null;
+    return (
+      <Menu>
+        <MenuTrigger
+          aria-label={`Actions for ${group.pc}`}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-bg-muted hover:text-fg focus-visible:outline-1 focus-visible:outline-accent"
+          onClick={e => e.stopPropagation()}
+        >
+          <MoreVertical size={16} />
+        </MenuTrigger>
+        <MenuContent className="w-48" sideOffset={6}>
+          <MenuItem onClick={() => { setSelectedKeys(new Set(groupKeys)); setUnlockReason(''); setUnlockOpen(true); }}>
+            Unlock
+          </MenuItem>
+          <MenuItem onClick={() => { setSelectedKeys(new Set(groupKeys)); setDceReturnRemarks(''); setDceReturnOpen(true); }}>
+            Return for Update
+          </MenuItem>
+          <MenuSeparator />
+          <MenuItem onClick={() => { setSelectedKeys(new Set(groupKeys)); doDceApprove(); }}>
+            Approve
+          </MenuItem>
+          <MenuItem onClick={() => { setSelectedKeys(new Set(groupKeys)); setDceRejectRemarks(''); setDceRejectOpen(true); }} className="text-danger">
+            Reject
+          </MenuItem>
         </MenuContent>
       </Menu>
     );
@@ -1579,6 +1610,16 @@ export default function RequestsPage() {
         </span>
       ),
     }));
+    cols.push(pendingColumnHelper.display({
+      id: 'actions',
+      header: () => null,
+      meta: { size: 'icon' },
+      cell: ({ row }) => (
+        <div className="text-right" onClick={e => e.stopPropagation()}>
+          {frozenGroupActionMenu(row.original)}
+        </div>
+      ),
+    }));
     return cols;
   })();
 
@@ -1637,6 +1678,7 @@ export default function RequestsPage() {
           <TableCell className="" maxWidth={table.getColumn('status')?.getSize()}>
             <span className="badge text-caption font-normal text-warning">Pending DCE Approval</span>
           </TableCell>
+          <TableCell className="px-4 py-3" maxWidth={table.getColumn('actions')?.getSize()} />
         </TableRow>
       );
     });

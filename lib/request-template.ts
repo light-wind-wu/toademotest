@@ -63,7 +63,7 @@ function safeTab(name: string, used: Set<string>): string {
 /** Build + download the structured template for one request (rows sharing a token). */
 export async function downloadRequestTemplateXLSX(
   requests: ProjectRequest[],
-  fileName = 'DSTA_Project_Request_Template.xlsx',
+  fileName = 'DSTA_Project_Request_Template_Skillset.xlsx',
 ): Promise<void> {
   const ExcelJS = (await import('exceljs')).default;
   const wb = new ExcelJS.Workbook();
@@ -204,6 +204,263 @@ export async function downloadRequestTemplateXLSX(
       r = tr + 2; // gap before next block
     }
   }
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer as ArrayBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Template-file-based variant: clones the provided DSTA xlsx template and
+   injects the same dynamic data per intern category.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+const TEMPLATE_PATH = '/DSTA_Project_Request_Template_Skillset.xlsx';
+const TEMPLATE_SHEET_NAME = 'Tech UP';
+
+/** Deep copy a JSON-serialisable value. */
+function copy<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+/** Clone an ExcelJS worksheet into a new (already-created) worksheet. */
+function cloneWorksheet(source: any, target: any) {
+  if (source.properties) target.properties = copy(source.properties);
+  if (source.pageSetup) target.pageSetup = copy(source.pageSetup);
+  if (source.views) target.views = copy(source.views);
+
+  source.columns.forEach((col: any, i: number) => {
+    const targetCol = target.getColumn(i + 1);
+    targetCol.width = col.width;
+    targetCol.hidden = col.hidden;
+    targetCol.outlineLevel = col.outlineLevel;
+    if (col.style) targetCol.style = copy(col.style);
+  });
+
+  source.eachRow((row: any, rowNum: number) => {
+    const targetRow = target.getRow(rowNum);
+    targetRow.height = row.height;
+    targetRow.hidden = row.hidden;
+    targetRow.outlineLevel = row.outlineLevel;
+    if (row.style) targetRow.style = copy(row.style);
+
+    row.eachCell((cell: any, colNum: number) => {
+      const targetCell = targetRow.getCell(colNum);
+      if (cell.formula) {
+        targetCell.value = { formula: cell.formula, result: cell.result };
+      } else {
+        targetCell.value = cell.value;
+      }
+      if (cell.style) targetCell.style = copy(cell.style);
+      if (cell.dataValidation) targetCell.dataValidation = copy(cell.dataValidation);
+      if (cell.hyperlink) targetCell.hyperlink = cell.hyperlink;
+    });
+  });
+
+  (source.model.merges || []).forEach((merge: string) => {
+    target.mergeCells(merge);
+  });
+
+  target.conditionalFormattings = (source.conditionalFormattings || []).map(copy);
+
+  source.getImages().forEach((img: any) => {
+    target.addImage(img.imageId, img.range);
+  });
+}
+
+/** Copy styles, validations and merged-cell structure from the template block
+ *  to a target block. Values are left untouched; caller fills them in. */
+function stampBlock(
+  ws: any,
+  template: any,
+  blockStart: number,
+  templateBlockStart: number,
+  entryRows: number,
+) {
+  for (let k = 0; k < entryRows; k++) {
+    const srcRow = template.getRow(templateBlockStart + k);
+    const dstRow = ws.getRow(blockStart + k);
+    dstRow.height = srcRow.height;
+    if (srcRow.style) dstRow.style = copy(srcRow.style);
+
+    srcRow.eachCell((srcCell: any, colNum: number) => {
+      const dstCell = dstRow.getCell(colNum);
+      if (srcCell.style) dstCell.style = copy(srcCell.style);
+      if (srcCell.dataValidation) dstCell.dataValidation = copy(srcCell.dataValidation);
+      if (srcCell.alignment) dstCell.alignment = copy(srcCell.alignment);
+    });
+  }
+
+  (template.model.merges || []).forEach((merge: string) => {
+    const [topLeft, bottomRight] = merge.split(':');
+    const srcStartRow = parseInt(topLeft.replace(/[A-Z]+/g, ''), 10);
+    const srcEndRow = parseInt(bottomRight.replace(/[A-Z]+/g, ''), 10);
+    if (srcStartRow >= templateBlockStart && srcEndRow <= templateBlockStart + entryRows - 1) {
+      const colStart = topLeft.replace(/[0-9]+/g, '');
+      const colEnd = bottomRight.replace(/[0-9]+/g, '');
+      const offset = blockStart - templateBlockStart;
+      ws.mergeCells(`${colStart}${srcStartRow + offset}:${colEnd}${srcEndRow + offset}`);
+    }
+  });
+}
+
+/** Copy the tracker row style and merge from the template. */
+function stampTracker(ws: any, template: any, tr: number, templateTrackerRow: number) {
+  const srcRow = template.getRow(templateTrackerRow);
+  const dstRow = ws.getRow(tr);
+  dstRow.height = srcRow.height;
+  if (srcRow.style) dstRow.style = copy(srcRow.style);
+
+  srcRow.eachCell((srcCell: any, colNum: number) => {
+    const dstCell = dstRow.getCell(colNum);
+    if (srcCell.style) dstCell.style = copy(srcCell.style);
+  });
+
+  (template.model.merges || []).forEach((merge: string) => {
+    const [topLeft, bottomRight] = merge.split(':');
+    const srcRowNum = parseInt(topLeft.replace(/[A-Z]+/g, ''), 10);
+    if (srcRowNum === templateTrackerRow) {
+      const colStart = topLeft.replace(/[0-9]+/g, '');
+      const colEnd = bottomRight.replace(/[0-9]+/g, '');
+      const offset = tr - templateTrackerRow;
+      ws.mergeCells(`${colStart}${srcRowNum + offset}:${colEnd}${srcRowNum + offset}`);
+    }
+  });
+}
+
+/** Build + download the structured template by cloning the provided xlsx file. */
+export async function downloadRequestTemplateFromXlsx(
+  requests: ProjectRequest[],
+  fileName = 'DSTA_Project_Request_Template_Skillset.xlsx',
+): Promise<void> {
+  const ExcelJS = (await import('exceljs')).default;
+
+  const res = await fetch(TEMPLATE_PATH);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch template: ${res.status} ${res.statusText}`);
+  }
+  const arrayBuffer = await res.arrayBuffer();
+
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(arrayBuffer);
+
+  const template = wb.getWorksheet(TEMPLATE_SHEET_NAME);
+  if (!template) {
+    throw new Error(`Template sheet '${TEMPLATE_SHEET_NAME}' not found`);
+  }
+
+  const lookups = wb.getWorksheet('_Lookups');
+  if (lookups) lookups.state = 'veryHidden';
+
+  const pc = requests.find(r => r.programmeCenter)?.programmeCenter ?? '';
+  const headName = requests.find(r => r.headName)?.headName ?? '';
+  const sender = requests.find(r => r.senderName)?.senderName ?? 'Internship Office';
+  const deadline = requests.find(r => r.deadline)?.deadline ?? '';
+
+  const byCat = new Map<string, ProjectRequest[]>();
+  for (const r of requests) {
+    const cat = (r.internCategory || r.educationLevel || 'Uncategorised') as string;
+    if (!byCat.has(cat)) byCat.set(cat, []);
+    byCat.get(cat)!.push(r);
+  }
+
+  const usedTabs = new Set<string>();
+  const lastCol = template.columns.length;
+  const lastLetter = template.getColumn(lastCol).letter;
+
+  const ENTRY_ROWS = 3;
+  const TEMPLATE_TITLE_ROW = 1;
+  const TEMPLATE_INSTR_ROW = 2;
+  const TEMPLATE_BLOCK_START = 4;
+  const TEMPLATE_TRACKER_ROW = 7;
+
+  for (const [cat, rows] of Array.from(byCat.entries())) {
+    const ws = wb.addWorksheet(safeTab(cat, usedTabs));
+    cloneWorksheet(template, ws);
+
+    ws.getCell(`A${TEMPLATE_TITLE_ROW}`).value = `${cat} — Internship Project Submission`;
+    ws.getCell(`A${TEMPLATE_INSTR_ROW}`).value =
+      `Requested by ${sender}${headName ? ` · to ${headName}` : ''}${deadline ? ` · reply by ${deadline}` : ''}. `
+      + `Programme Centre (${pc || 'PC'}) is pre-filled. Each project uses 3 rows so you can pick up to 3 `
+      + `Tech Competencies and 3 Disciplines. Add projects until each block's placements are met.`;
+
+    const mergesToRemove = (ws.model.merges || []).filter((merge: string) => {
+      const [topLeft] = merge.split(':');
+      const row = parseInt(topLeft.replace(/[A-Z]+/g, ''), 10);
+      return row >= TEMPLATE_BLOCK_START;
+    });
+    mergesToRemove.forEach((merge: string) => ws.unMergeCells(merge));
+
+    let r = TEMPLATE_BLOCK_START;
+    for (const req of rows) {
+      const target = Math.max(1, req.placements || 1);
+      const blockStart = r;
+
+      for (let e = 0; e < target; e++) {
+        const es = r + e * ENTRY_ROWS;
+        stampBlock(ws, template, es, TEMPLATE_BLOCK_START, ENTRY_ROWS);
+
+        for (let k = 0; k < ENTRY_ROWS; k++) {
+          ws.getRow(es + k).eachCell((cell: any) => { cell.value = undefined; });
+        }
+
+        const pcCell = ws.getCell(`B${es}`);
+        pcCell.value = pc;
+        pcCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: GREY } };
+        pcCell.font = { color: { argb: 'FF666666' } };
+        pcCell.alignment = { vertical: 'middle', horizontal: 'center' };
+      }
+
+      const tr = r + target * ENTRY_ROWS;
+      stampTracker(ws, template, tr, TEMPLATE_TRACKER_ROW);
+      ws.getRow(tr).eachCell((cell: any) => { cell.value = undefined; });
+
+      const numLetter = ws.getColumn(lastCol).letter;
+      const tc = ws.getCell(`B${tr}`);
+      tc.value = { formula: `"Placements filled: "&SUM(${numLetter}${blockStart}:${numLetter}${tr - 1})&" of ${target}"` } as any;
+      tc.font = { italic: true, size: 10, color: { argb: NAVY } };
+      tc.alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
+      tc.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TRACK } };
+
+      ws.addConditionalFormatting({
+        ref: `B${tr}`,
+        rules: [{
+          type: 'expression',
+          priority: 1,
+          formulae: [`SUM(${numLetter}${blockStart}:${numLetter}${tr - 1})>=${target}`],
+          style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: GREEN_BG } }, font: { color: { argb: GREEN_FG } } },
+        }],
+      } as any);
+
+      ws.mergeCells(`A${blockStart}:A${tr}`);
+      const bar = ws.getCell(`A${blockStart}`);
+      bar.value = [req.calendarPeriod || 'Period TBC', req.duration || '', `${target} placement${target === 1 ? '' : 's'}`]
+        .filter(Boolean)
+        .join('\n');
+      bar.font = { bold: true, size: 11, color: { argb: NAVY } };
+      bar.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      bar.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT } };
+
+      for (let rr = blockStart; rr <= tr; rr++) {
+        for (let cc = 1; cc <= lastCol; cc++) {
+          ws.getCell(`${ws.getColumn(cc).letter}${rr}`).border = box();
+        }
+      }
+
+      r = tr + 2;
+    }
+  }
+
+  wb.removeWorksheet(template.id);
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer as ArrayBuffer], {

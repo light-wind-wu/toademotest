@@ -9,6 +9,7 @@ import Button from '@/components/ui-legacy/button';
 import Combobox from '@/components/ui-legacy/combobox';
 import EmptyState from '@/components/ui-legacy/empty-state';
 import RequestContextTable from '@/components/ui-legacy/request-context-table';
+import { SortHeader } from '@/components/ui-legacy/sort-header';
 import AiCheckBlock from '@/components/ui-legacy/ai-check-block';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -30,9 +31,6 @@ import Modal from '@/components/ui-legacy/modal';
 import { Toast, useToast } from '@/components/ui-legacy/toast';
 import {
   AlertTriangle,
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
   Calendar,
   ChevronDown,
   ChevronRight,
@@ -1825,6 +1823,39 @@ function UploadSummaryDialog({
   const issueRows = new Set(review.issues.map(issue => issue.row)).size;
   const canImportDemo = review.allProjects.length > 0;
 
+  const [sortCol, setSortCol] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<1 | -1>(1);
+
+  function doSort(col: string) {
+    setSortCol(prev => {
+      if (prev === col) {
+        setSortDir(d => d === 1 ? -1 : 1);
+        return prev;
+      }
+      setSortDir(1);
+      return col;
+    });
+  }
+
+  const sortedReadyProjects = useMemo(() => {
+    if (!sortCol || review.readyProjects.length === 0) return review.readyProjects;
+    const getValue = (project: SubmittedProject, col: string) => {
+      switch (col) {
+        case 'title': return project.title.toLowerCase();
+        case 'pc': return (project.pc || '').toLowerCase();
+        case 'slots': return project.slots;
+        default: return '';
+      }
+    };
+    return [...review.readyProjects].sort((a, b) => {
+      const av = getValue(a, sortCol);
+      const bv = getValue(b, sortCol);
+      if (av < bv) return -sortDir;
+      if (av > bv) return sortDir;
+      return a.title.toLowerCase().localeCompare(b.title.toLowerCase());
+    });
+  }, [review.readyProjects, sortCol, sortDir]);
+
   return (
     <Dialog open onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
       <DialogContent className="max-h-[88vh] max-w-3xl gap-0 overflow-hidden p-0">
@@ -1877,15 +1908,37 @@ function UploadSummaryDialog({
           ) : (
             <section>
               <h3 className="mb-2 text-label-md font-semibold text-fg">Ready to import</h3>
-              <div className="space-y-2">
-                {review.readyProjects.map(project => (
-                  <div key={project.id} className="flex items-center justify-between gap-4 rounded-lg border border-border px-3 py-2">
-                    <span className="min-w-0 truncate text-body-sm font-medium text-fg">{project.title}</span>
-                    <span className="shrink-0 text-caption text-fg-muted">
-                      {project.slots} placement{project.slots !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                ))}
+              <div className="overflow-hidden rounded-lg border border-border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>
+                        <SortHeader label="Project" colId="title" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />
+                      </TableHead>
+                      <TableHead>
+                        <SortHeader label="Programme Centre" colId="pc" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />
+                      </TableHead>
+                      <TableHead className="text-right">
+                        <SortHeader label="Placements" colId="slots" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedReadyProjects.map(project => (
+                      <TableRow key={project.id}>
+                        <TableCell>
+                          <span className="block truncate text-body-sm font-medium text-fg">{project.title}</span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-body-sm text-fg">{project.pc || '—'}</span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className="text-body-sm text-fg">{project.slots} placement{project.slots !== 1 ? 's' : ''}</span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             </section>
           )}
@@ -1941,40 +1994,6 @@ function EmptyProjectsCard({ isUploadMode, onUpload }: { isUploadMode: boolean; 
         size="sm"
       />
     </div>
-  );
-}
-
-function SortHeader({
-  label,
-  colId,
-  sortCol,
-  sortDir,
-  onSort,
-}: {
-  label: string;
-  colId: string;
-  sortCol: string | null;
-  sortDir: 1 | -1;
-  onSort: (col: string) => void;
-}) {
-  const isSorted = sortCol === colId;
-  return (
-    <button
-      type="button"
-      onClick={() => onSort(colId)}
-      className="flex items-center gap-1 text-left text-xs font-semibold text-fg-muted hover:text-fg"
-    >
-      {label}
-      {isSorted ? (
-        sortDir === 1 ? (
-          <ArrowUp size={13} className="text-accent" />
-        ) : (
-          <ArrowDown size={13} className="text-accent" />
-        )
-      ) : (
-        <ArrowUpDown size={13} className="text-fg-subtle" />
-      )}
-    </button>
   );
 }
 

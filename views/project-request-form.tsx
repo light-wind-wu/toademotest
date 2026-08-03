@@ -59,7 +59,7 @@ import {
   Paperclip, Download, Check, Users, ArrowUp,
 } from 'lucide-react';
 import { CONTACTS, toEducationLevel } from '@/lib/data';
-import { downloadRequestTemplateXLSX } from '@/lib/request-template';
+import { downloadRequestTemplateFromXlsx } from '@/lib/request-template';
 import { loadRequests, saveRequests } from '@/lib/storage';
 import { cn, formatDate } from '@/lib/utils';
 import { Field, FieldLabel, FieldLabelText } from '@/components/ui-legacy/field';
@@ -68,7 +68,7 @@ import { addNotification } from '@/lib/notifications';
 import type { RequestStatus, ProjectRequest } from '@/lib/types';
 
 /* Filename of the project-submission Excel template attached to each request email. */
-const TEMPLATE_FILENAME = 'DSTA_Project_Request_Template.xlsx';
+const TEMPLATE_FILENAME = 'DSTA_Project_Request_Template_Skillset.xlsx';
 import { useUnsavedChanges } from '@/lib/unsaved-changes';
 
 /* Reminders are sent automatically this many days before the response deadline. */
@@ -1308,7 +1308,22 @@ export default function ProjectRequestFormPage() {
                             <div className="flex items-center justify-end gap-1">
                               <div className="flex min-w-5 justify-end">
                                 {missingCount > 0 ? (
-                                  <span className="text-body-sm font-semibold text-danger">{missingCount}</span>
+                                  <Tooltip>
+                                    <TooltipTrigger
+                                      render={
+                                        <button
+                                          type="button"
+                                          aria-label={`${missingCount} missing field input${missingCount !== 1 ? 's' : ''}`}
+                                          className="inline-flex items-center justify-center text-danger transition-colors hover:text-danger/80 focus:outline-none focus:ring-2 focus:ring-danger/30"
+                                        >
+                                          <AlertCircle size={15} />
+                                        </button>
+                                      }
+                                    />
+                                    <TooltipContent side="top" align="center">
+                                      {missingCount} missing field input{missingCount !== 1 ? 's' : ''}
+                                    </TooltipContent>
+                                  </Tooltip>
                                 ) : (
                                   <Check size={15} className="text-success" aria-label="Complete" />
                                 )}
@@ -1558,7 +1573,7 @@ export default function ProjectRequestFormPage() {
                   <p className="truncate text-body-sm font-medium text-fg">{TEMPLATE_FILENAME}</p>
                   <p className="text-caption text-fg-muted">Project-submission template — pre-structured with the requested intern categories &amp; calendar periods.</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => downloadRequestTemplateXLSX(templateRequestsForEntry(previewReq), TEMPLATE_FILENAME)}>
+                <Button variant="outline" size="sm" onClick={() => downloadRequestTemplateFromXlsx(templateRequestsForEntry(previewReq), TEMPLATE_FILENAME)}>
                   <Download size={14} />Download
                 </Button>
               </div>

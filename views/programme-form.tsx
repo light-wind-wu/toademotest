@@ -8,6 +8,7 @@ import Button from '@/components/ui-legacy/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import Combobox from '@/components/ui-legacy/combobox';
 import DateRangePicker from '@/components/ui-legacy/date-range-picker';
+import { SortHeader } from '@/components/ui-legacy/sort-header';
 import {
   Field,
   FieldDescription,
@@ -1539,6 +1540,48 @@ export default function ProgrammeFormPage() {
   const notAssignedProjects = useMemo(() => availableProjects.filter(p => !assignedToIntake.has(p.id)), [availableProjects, assignedToIntake]);
   const visibleProjects = useMemo(() => assignFilter === 'assigned' ? assignedProjects : notAssignedProjects, [assignFilter, assignedProjects, notAssignedProjects]);
 
+  const [sortCol, setSortCol] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<1 | -1>(1);
+
+  function doSort(col: string) {
+    setSortCol(prev => {
+      if (prev === col) {
+        setSortDir(d => d === 1 ? -1 : 1);
+        return prev;
+      }
+      setSortDir(1);
+      return col;
+    });
+  }
+
+  const sortedVisibleProjects = useMemo(() => {
+    if (!sortCol || visibleProjects.length === 0) return visibleProjects;
+    const getValue = (p: ProjectEntry, col: string) => {
+      const placements = selectedIntakeId ? (cpPlacement[selectedIntakeId]?.[p.id] ?? 1) : 1;
+      switch (col) {
+        case 'title': return p.title.toLowerCase();
+        case 'pc': return (p.pc || '').toLowerCase();
+        case 'duration': {
+          const match = p.internshipDuration?.match(/(\d+)/);
+          return match ? parseInt(match[1], 10) : 0;
+        }
+        case 'placements': return placements;
+        case 'match': {
+          if (!hasPeriod(p)) return 2;
+          return !!selectedIntake && fitsIntake(p, selectedIntake) ? 0 : 1;
+        }
+        default: return '';
+      }
+    };
+    return [...visibleProjects].sort((a, b) => {
+      const av = getValue(a, sortCol);
+      const bv = getValue(b, sortCol);
+      if (av < bv) return -sortDir;
+      if (av > bv) return sortDir;
+      return a.title.toLowerCase().localeCompare(b.title.toLowerCase());
+    });
+  }, [visibleProjects, sortCol, sortDir, selectedIntakeId, cpPlacement, selectedIntake]);
+
   /* Map each category to its applicant-facing application form (intern forms; scholar
      variants excluded for now). Mirrors the applicant-side resolution in apply-form.tsx
      so the preview shows the exact form a candidate will fill. There is no dedicated
@@ -2625,20 +2668,30 @@ export default function ProgrammeFormPage() {
                               </div>
                             ) : (
                               <TooltipProvider>
-                                <div className="overflow-hidden border-border bg-surface min-w-[1000px]">
+                                <div className="overflow-hidden border-border bg-surface max-w-[1000px]">
                                   <Table className="table-fixed">
                                     <TableHeader>
                                       <TableRow>
-                                        <TableHead className="w-[250px]">Project Name</TableHead>
-                                        <TableHead className="w-[150px]">Programme Centre</TableHead>
-                                        <TableHead>Project Duration</TableHead>
-                                        <TableHead className="w-[90px]">Placements</TableHead>
-                                        <TableHead className="w-[200px]">Match</TableHead>
+                                        <TableHead className="w-[250px]">
+                                          <SortHeader label="Project Name" colId="title" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />
+                                        </TableHead>
+                                        <TableHead className="w-[150px]">
+                                          <SortHeader label="Programme Centre" colId="pc" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />
+                                        </TableHead>
+                                        <TableHead>
+                                          <SortHeader label="Project Duration" colId="duration" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />
+                                        </TableHead>
+                                        <TableHead className="w-[90px]">
+                                          <SortHeader label="Placements" colId="placements" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />
+                                        </TableHead>
+                                        <TableHead className="w-[200px]">
+                                          <SortHeader label="Match" colId="match" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />
+                                        </TableHead>
                                         <TableHead className="w-[130px]"></TableHead>
                                       </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                      {visibleProjects.map(p => (
+                                      {sortedVisibleProjects.map(p => (
                                         <ProjectTableRow
                                           key={p.id}
                                           project={p}

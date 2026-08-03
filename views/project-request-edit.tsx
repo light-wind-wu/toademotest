@@ -224,7 +224,7 @@ function recipientLabel(email: string) {
 /* HQ recipients cc'd on every project-request email (sent from a system address). */
 const HQ_CC_RECIPIENTS = ['Jasline', 'Jenyn'];
 
-const TEMPLATE_FILENAME = 'DSTA_Project_Request_Template.xlsx';
+const TEMPLATE_FILENAME = 'DSTA_Project_Request_Template_Skillset.xlsx';
 
 function parseCcList(cc: string | undefined): string[] {
   if (!cc) return [];
