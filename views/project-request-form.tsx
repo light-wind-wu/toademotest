@@ -970,6 +970,7 @@ export default function ProjectRequestFormPage() {
   const [showErrors,  setShowErrors]  = useState(false);
   const [buildLayout, setBuildLayout] = useState<BuildLayout>('Layout 1');
   const [confirmSendOpen, setConfirmSendOpen] = useState(false);
+  const [deleteReqId, setDeleteReqId] = useState<number | null>(null);
   const highlightedReadiness: ReadinessKey | null = null;
   const idRef = useRef(0);
 
@@ -1328,11 +1329,11 @@ export default function ProjectRequestFormPage() {
                                   <Check size={15} className="text-success" aria-label="Complete" />
                                 )}
                               </div>
-                              <div className="flex h-7 w-7 items-center justify-center">
+                              <div className="flex h-7 w-7 items-center justify-center hidden">
                                 {reqs.length > 1 && (
                                   <button
                                     type="button"
-                                    onClick={() => removeReq(r.id)}
+                                    onClick={() => setDeleteReqId(r.id)}
                                     className="flex h-7 w-7 items-center justify-center rounded-lg text-fg-muted opacity-0 transition-colors hover:bg-danger-bg hover:text-danger focus:opacity-100 group-hover:opacity-100"
                                     aria-label={`Remove request ${number}`}
                                   >
@@ -1369,7 +1370,7 @@ export default function ProjectRequestFormPage() {
                           variant="outline"
                           size="sm"
                           disabled={reqs.length <= 1}
-                          onClick={() => removeReq(activeReq.id)}
+                          onClick={() => setDeleteReqId(activeReq.id)}
                         >
                           <Trash2 size={14} />Delete
                         </Button>
@@ -1383,7 +1384,7 @@ export default function ProjectRequestFormPage() {
                       number={numberById.get(activeReq.id) ?? 0}
                       showErrors={showErrors}
                       onChange={patch => updateReq(activeReq.id, patch)}
-                      onRemove={() => removeReq(activeReq.id)}
+                      onRemove={() => setDeleteReqId(activeReq.id)}
                       guided
                       highlightedSection={highlightedReadiness}
                       ccEdit={emailEdits[activeReq.id]?.cc}
@@ -1426,7 +1427,7 @@ export default function ProjectRequestFormPage() {
                       number={numberById.get(r.id) ?? 0}
                       showErrors={showErrors}
                       onChange={patch => updateReq(r.id, patch)}
-                      onRemove={() => removeReq(r.id)}
+                      onRemove={() => setDeleteReqId(r.id)}
                       canRemove={reqs.length > 1}
                       highlightedSection={highlightedReadiness}
                       ccEdit={emailEdits[r.id]?.cc}
@@ -1632,6 +1633,24 @@ export default function ProjectRequestFormPage() {
             </Button>
             <Button onClick={() => { setConfirmSendOpen(false); handleSend(); }}>
               <Send size={14} />Confirm Send
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={deleteReqId !== null} onOpenChange={open => { if (!open) setDeleteReqId(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Request?</DialogTitle>
+            <DialogDescription>
+              Deleting request will permanently remove all entered information and cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteReqId(null)}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={() => { if (deleteReqId !== null) removeReq(deleteReqId); setDeleteReqId(null); }}>
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>
