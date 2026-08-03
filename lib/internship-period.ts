@@ -239,4 +239,10 @@ INTERNSHIP_WINDOWS['Undergraduate Student'] = [
   { label: 'May – Aug 2026', start: 'May26', end: 'Aug26' },
   { label: 'Jul – Dec 2026', start: 'Jul26', end: 'Dec26' },
 ];
-INTERNSHIP_WINDOWS['Tech UP'] = INTERNSHIP_WINDOWS['Undergraduate Student'];
+INTERNSHIP_WINDOWS['Tech UP'] = [
+  { label: 'Jan – Jun 2026', start: 'Jan26', end: 'Jun26' },
+  { label: 'May – Sep 2026', start: 'May26', end: 'Sep26' },
+  { label: 'Jul – Dec 2026', start: 'Jul26', end: 'Dec26' },
+  { label: 'Jan – Dec 2026', start: 'Jan26', end: 'Dec26' },
+];
+

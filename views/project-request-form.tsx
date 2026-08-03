@@ -1308,7 +1308,7 @@ export default function ProjectRequestFormPage() {
                             </button>
                             <div className="flex items-center justify-end gap-1">
                               <div className="flex min-w-5 justify-end">
-                                {missingCount > 0 ? (
+                                {showErrors && missingCount > 0 ? (
                                   <Tooltip>
                                     <TooltipTrigger
                                       render={
