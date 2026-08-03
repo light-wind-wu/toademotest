@@ -15,7 +15,14 @@ export default function CloudSyncProvider({ children }: { children: ReactNode })
   const [ready, setReady] = useState(!enabled);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) {
+      console.info(
+        '[cloud-sync] OFF — missing NEXT_PUBLIC_SUPABASE_URL or key in this build. Redeploy Vercel without Build Cache after setting env vars.',
+      );
+      return;
+    }
+
+    console.info('[cloud-sync] ON — hydrating from Supabase…');
 
     let unsubscribe = () => {};
     let cancelled = false;
@@ -25,6 +32,7 @@ export default function CloudSyncProvider({ children }: { children: ReactNode })
       await hydrateFromCloud();
       if (cancelled) return;
       unsubscribe = subscribeCloudRealtime();
+      console.info('[cloud-sync] ready');
       setReady(true);
     })().catch((err) => {
       console.warn('[CloudSyncProvider]', err);

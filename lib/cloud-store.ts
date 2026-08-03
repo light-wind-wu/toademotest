@@ -33,6 +33,9 @@ export const SHARED_CLOUD_KEYS = new Set<string>([
   'dsta_subject_taxonomy',
   'dsta_scoring_weights',
   'dsta_apply_session_draft',
+  'dsta_programme_view',
+  'dsta_app_form_templates',
+  'dsta_app_form_templates_seed_v',
 ]);
 
 export const CLOUD_HYDRATED_EVENT = 'dsta_cloud_hydrated';
