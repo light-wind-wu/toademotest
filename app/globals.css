@@ -317,6 +317,82 @@
   }
 }
 
+/* ── Chapter intro (concept demo session gate) ───────────────────────────── */
+@keyframes chapterCardCycle {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.97);
+  }
+  18%,
+  82% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.99);
+  }
+}
+
+@keyframes chapterLineIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes chapterProgress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.chapter-intro-card {
+  animation: chapterCardCycle 2000ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.chapter-intro-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 6px;
+  background: var(--prizm-color-accent);
+  transform-origin: left;
+  animation: chapterProgress 1700ms linear 220ms both;
+}
+
+.chapter-intro-line {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: chapterLineIn 420ms ease forwards;
+}
+
+.chapter-intro-copy > .chapter-intro-line:nth-child(1) {
+  animation-delay: 220ms;
+}
+.chapter-intro-copy > .chapter-intro-line:nth-child(2) {
+  animation-delay: 320ms;
+}
+.chapter-intro-copy > .chapter-intro-line:nth-child(3) {
+  animation-delay: 430ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chapter-intro-card,
+  .chapter-intro-line {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .chapter-intro-card::before {
+    animation: none !important;
+    transform: scaleX(1);
+  }
+}
+
 /* ── Modal animation ─────────────────────────────────────────────────────── */
 @keyframes modal-in {
   from {
