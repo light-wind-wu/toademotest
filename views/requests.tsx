@@ -59,7 +59,7 @@ import {
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import {
   Send, Check, X, FileText, ChevronRight, Filter, MoreVertical, Eye, Bell, CalendarClock, Pencil, Trash2, Ban,
-  ArrowUp, ArrowDown, ArrowUpDown, CornerDownRight, Plus, ArrowLeft,
+  ArrowUp, ArrowDown, ArrowUpDown, CornerDownRight, Plus, ArrowLeft, Lock,
 } from 'lucide-react';
 import { CONTACTS, STATUS_COLOURS, progEducationLevelMap, batchEducationLevel } from '@/lib/data';
 import { projectMatchesRequest } from '@/lib/request-groups';
@@ -192,7 +192,7 @@ function EmailSentModal({
     const progNames = reqs.map(r => requestInternCategory(r, progMap));
     // If the IO customised the email in the request preview, use their edits.
     const edited = reqs.find(r => r.emailIntro !== undefined || r.emailClosing !== undefined || r.emailSubject !== undefined);
-    const subject  = edited?.emailSubject || `[DSTA] Project Request – ${progNames.join(', ')}`;
+    const subject  = edited?.emailSubject || `Project Request – ${progNames.join(', ')}`;
     const placementLines = reqs
       .map(r => {
         const period = r.calendarPeriod
@@ -1646,7 +1646,13 @@ export default function RequestsPage() {
             />
           </TableCell>
           {visibleCols.pc && (
-            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('pc')?.getSize()} />
+            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('pc')?.getSize()}>
+              {r.status === 'frozen' && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(244,242,236,1)] text-[rgba(69,85,108,1)] px-2 py-0.5 text-caption font-medium">
+                  <Lock size={12} />Locked
+                </span>
+              )}
+            </TableCell>
           )}
           {visibleCols.title && (
             <TableCell className="px-4 py-3" maxWidth={table.getColumn('title')?.getSize()}>
@@ -1824,7 +1830,13 @@ export default function RequestsPage() {
             />
           </TableCell>
           {visibleCols.pc && (
-            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('pc')?.getSize()} />
+            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('pc')?.getSize()}>
+              {r.status === 'frozen' && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(244,242,236,1)] text-[rgba(69,85,108,1)] px-2 py-0.5 text-caption font-medium">
+                  <Lock size={12} />Locked
+                </span>
+              )}
+            </TableCell>
           )}
           {visibleCols.title && (
             <TableCell className="px-4 py-3" maxWidth={table.getColumn('title')?.getSize()}>
@@ -2570,9 +2582,9 @@ export default function RequestsPage() {
                 <TabsTrigger value="pendingDce">
                   Pending DCE Approval ({tabCounts.pendingDce})
                 </TabsTrigger>
-                <TabsTrigger value="pendingAll">
+                {/*<TabsTrigger value="pendingAll">
                   Pending IO Review ({tabCounts.pendingAll})
-                </TabsTrigger>
+                </TabsTrigger>*/}
                 <TabsTrigger value="approved">
                   Approved ({tabCounts.approved})
                 </TabsTrigger>

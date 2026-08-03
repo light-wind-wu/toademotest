@@ -476,8 +476,8 @@ export interface ProjectRequest {
   internCategory?: string;
   educationLevel: EducationLevel;   // the requested Intern Category. Requests are raised per category, not per programme.
   calendarPeriod?: string;          // free-text period label (her request-workflow UX)
-  periodStart?: string;             // Calendar Period start month, "MMM YYYY" (e.g. "Jan 2027")
-  periodEnd?:   string;             // Calendar Period end month, "MMM YYYY" (e.g. "Jun 2027")
+  periodStart?: string;             // Calendar Period start day, ISO "YYYY-MM-DD" (legacy seed may still hold "MMM YYYY")
+  periodEnd?:   string;             // Calendar Period end day, ISO "YYYY-MM-DD" (legacy seed may still hold "MMM YYYY")
   duration?:    string;             // requested internship duration label (e.g. "3 Months")
   placements:   number;
   created:      number;

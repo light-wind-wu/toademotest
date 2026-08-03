@@ -1037,7 +1037,7 @@ export default function ProjectRequestFormPage() {
       const uploadLink = `${origin}/upload/${token}`;
       const levelList  = Array.from(new Set(r.levels.map(l => l.level).filter(Boolean))).join(', ');
       edits[r.id] = {
-        subject: `[DSTA] Project Request – ${levelList}`,
+        subject: `Project Request – ${levelList}`,
         before:  `Dear ${recipientLabel(r.adpnc)},\n\n`
           + `We are requesting project submissions for the intern categories, calendar periods and durations listed below.\n\n`
           + `What you need to do:\n`
@@ -1308,25 +1308,27 @@ export default function ProjectRequestFormPage() {
                             </button>
                             <div className="flex items-center justify-end gap-1">
                               <div className="flex min-w-5 justify-end">
-                                {showErrors && missingCount > 0 ? (
-                                  <Tooltip>
-                                    <TooltipTrigger
-                                      render={
-                                        <button
-                                          type="button"
-                                          aria-label={`${missingCount} missing field input${missingCount !== 1 ? 's' : ''}`}
-                                          className="inline-flex items-center justify-center text-danger transition-colors hover:text-danger/80 focus:outline-none focus:ring-2 focus:ring-danger/30"
-                                        >
-                                          <AlertCircle size={15} />
-                                        </button>
-                                      }
-                                    />
-                                    <TooltipContent side="top" align="center">
-                                      {missingCount} missing field input{missingCount !== 1 ? 's' : ''}
-                                    </TooltipContent>
-                                  </Tooltip>
-                                ) : (
-                                  <Check size={15} className="text-success" aria-label="Complete" />
+                                {showErrors && (
+                                  missingCount > 0 ? (
+                                    <Tooltip>
+                                      <TooltipTrigger
+                                        render={
+                                          <button
+                                            type="button"
+                                            aria-label={`${missingCount} missing field input${missingCount !== 1 ? 's' : ''}`}
+                                            className="inline-flex items-center justify-center text-danger transition-colors hover:text-danger/80 focus:outline-none focus:ring-2 focus:ring-danger/30"
+                                          >
+                                            <AlertCircle size={15} />
+                                          </button>
+                                        }
+                                      />
+                                      <TooltipContent side="top" align="center">
+                                        {missingCount} missing field input{missingCount !== 1 ? 's' : ''}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  ) : (
+                                    <Check size={15} className="text-success" aria-label="Complete" />
+                                  )
                                 )}
                               </div>
                               <div className="flex h-7 w-7 items-center justify-center hidden">
@@ -1535,7 +1537,7 @@ export default function ProjectRequestFormPage() {
                     recipientLabel(previewReq.pcHead),
                   ].filter(Boolean)}
                   placeholder="Select recipients"
-                  chips="inline"
+                  chips="inline-text"
                   className="flex-1"
                 />
               </label>
@@ -1553,7 +1555,7 @@ export default function ProjectRequestFormPage() {
                     ...HQ_CC_RECIPIENTS,
                   ].filter(Boolean)}
                   placeholder="Select recipients"
-                  chips="inline"
+                  chips="inline-text"
                   className="flex-1"
                 />
               </label>

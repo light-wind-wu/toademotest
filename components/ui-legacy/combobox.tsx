@@ -14,7 +14,7 @@ interface ComboboxProps {
   searchOnly?:   boolean;  // hide all options until user types
   className?:    string;
   chipClassName?: string;
-  chips?:        'inline' | 'below';
+  chips?:        'inline' | 'below' | 'inline-text';
 }
 
 export default function Combobox({
@@ -87,6 +87,9 @@ export default function Combobox({
   const inlineChips = chips === 'inline' && selected.length > 0
     ? renderInlineChips(selected, chipClassName, onToggle)
     : null;
+  const inlineText = chips === 'inline-text' && selected.length > 0
+    ? <span className="truncate">{selected.join(', ')}</span>
+    : null;
 
   return (
     <div ref={containerRef} className={cn('relative', className)}>
@@ -103,6 +106,8 @@ export default function Combobox({
         <span className={cn('flex-1 flex items-center gap-1.5 truncate', selected.length === 0 ? 'text-fg-muted' : 'text-fg')}>
           {chips === 'inline' ? (
             selected.length === 0 ? placeholder : inlineChips
+          ) : chips === 'inline-text' ? (
+            selected.length === 0 ? placeholder : inlineText
           ) : (
             selected.length === 0 ? placeholder : `${selected.length} selected`
           )}

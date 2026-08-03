@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
+  AlertCircle,
   ArrowLeft,
   Check,
   ChevronRight,
@@ -25,7 +26,7 @@ import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
 import DatePicker from '@/components/ui-legacy/date-picker';
 import { DateRangePicker, type DateRange } from '@/components/date-range-picker';
-import { parseMMMYY, MONTHS, periodLabelToMMMYY, mmmyyToISO, mmmyyToISOEnd } from '@/lib/internship-period';
+import { parseMMMYY, MONTHS, periodLabelToMMMYY, mmmyyToISO, mmmyyToISOEnd, INTAKE_BASE_YEAR, DEFAULT_INTAKE_YEAR, INTAKE_YEARS, shiftMMMYY, toMonthIndex, INTERNSHIP_WINDOWS } from '@/lib/internship-period';
 import { parseISO, formatISO } from 'date-fns';
 import Combobox from '@/components/ui-legacy/combobox';
 import Drawer from '@/components/ui-legacy/drawer';
@@ -81,7 +82,7 @@ import {
 } from '@/components/ui/table';
 import { CONTACTS, toEducationLevel } from '@/lib/data';
 import { addNotification } from '@/lib/notifications';
-import { useRole } from '@/lib/role';
+import { useRole, ROLE_PROFILES } from '@/lib/role';
 import {
   loadRequestAuditLogs,
   loadRequests,
@@ -109,6 +110,7 @@ const INTERN_CATEGORIES = [
 ] as const;
 const DURATIONS = ['1 Month', '2 Months', '3 Months', '4 Months', '6 Months', '12 Months'] as const;
 const AUTO_REMINDER_DAYS = [14, 7];
+const MISSING_CHECK_HELP = 'Missing required fields: Programme Centre, Response deadline, and Placement requirements.';
 
 /** "Jun26" → "Jun 2026". */
 function mmmyyLabel(mmmyy: string): string {
@@ -143,6 +145,32 @@ function parseCalendarPeriod(label: string): { start: string; end: string } {
   return { start, end };
 }
 
+/** Shift an ISO day ("2026-06-01") by whole years, clamping the day to the month. */
+function shiftIsoYears(iso: string, years: number): string {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return iso;
+  const y = parseInt(m[1], 10) + years;
+  const day = Math.min(parseInt(m[3], 10), new Date(y, parseInt(m[2], 10), 0).getDate());
+  return `${y}-${m[2]}-${String(day).padStart(2, '0')}`;
+}
+
+function intakeYearFromPeriodStart(periodStart?: string): number {
+  const idx = toMonthIndex(periodStart);
+  return idx === null ? DEFAULT_INTAKE_YEAR : Math.floor(idx / 12);
+}
+
+function windowPresetsForCategory(category: string, year: number): Array<{ start: string; end: string }> {
+  const yearShift = year - INTAKE_BASE_YEAR;
+  return (INTERNSHIP_WINDOWS[category] || []).map(p => ({
+    start: mmmyyToISO(shiftMMMYY(p.start, yearShift)),
+    end: mmmyyToISOEnd(shiftMMMYY(p.end, yearShift)),
+  }));
+}
+
+function isPresetWindow(category: string, start: string, end: string, year: number): boolean {
+  return windowPresetsForCategory(category, year).some(p => p.start === start && p.end === end);
+}
+
 type RequestMode = 'draft' | 'open';
 type DisplayRequestStatus = 'draft' | 'pending' | 'incomplete' | 'fulfilled' | 'closed';
 
@@ -163,6 +191,7 @@ interface EditLine {
   calendarEnd: string;     // ISO "YYYY-MM-DD"
   duration: string;
   placements: number;
+  customWindow?: boolean;  // true → free date-range picker instead of category presets
   requestId?: string;
 }
 
@@ -172,6 +201,7 @@ interface EditModel {
   headName: string;
   adpnc: string;
   deadline: string;
+  intakeYear: number;   // calendar year the internship windows are anchored to
   lines: EditLine[];
 }
 
@@ -218,7 +248,9 @@ function fmtDate(value: string) {
 
 function recipientLabel(email: string) {
   if (!email) return '';
-  return CONTACTS.find(c => c.email === email)?.name ?? email;
+  return CONTACTS.find(c => c.email === email)?.name
+    ?? Object.values(ROLE_PROFILES).find(p => p.email === email)?.name
+    ?? email;
 }
 
 /* HQ recipients cc'd on every project-request email (sent from a system address). */
@@ -252,11 +284,59 @@ function FieldHelpTooltip({ label, children }: { label: string; children: string
   );
 }
 
+/* Canonical Programme Centre order (mirrors the PC dropdown in PROJECT_SUBMISSION_COLUMNS),
+   so the request-form picker lists centres in the same order as the rest of the app. */
+const PC_ORDER = ['AS', 'CIO', 'Cyber', 'DH', 'EDS', 'Info', 'MDS', 'PC3', 'PC4', 'PC5', 'PC6', 'PC8', 'PC9', 'PC10', 'PC11', 'SECC', 'STSH', 'CSIT'];
+
+type RecipientDepartment = 'DSTA' | 'DSO' | 'CSIT';
+
+function contactPcForProgrammeCentre(programmeCentre: string): string {
+  if (programmeCentre === 'DSO') {
+    return CONTACTS.find(c => c.title === 'Programme Centre Head' && c.department === 'DSO' && c.pc)?.pc ?? '';
+  }
+  return programmeCentre;
+}
+
 function programmeCentreOptions() {
-  return CONTACTS
+  const options = CONTACTS
     .filter(c => c.title === 'Programme Centre Head' && c.pc)
-    .map(c => c.pc!)
-    .filter((pc, index, list) => list.indexOf(pc) === index);
+    .map(c => ({
+      value: c.department === 'DSO' ? 'DSO' : c.pc!,
+      department: c.department as RecipientDepartment,
+    }));
+
+  const unique = Array.from(new Map(options.map(option => [option.value, option])).values());
+  // Canonical PC order first, DSO (and any unlisted centre) last.
+  return unique.sort((a, b) => {
+    const ia = PC_ORDER.indexOf(a.value), ib = PC_ORDER.indexOf(b.value);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  });
+}
+
+function departmentForProgrammeCentre(programmeCentre: string): RecipientDepartment {
+  const pc = contactPcForProgrammeCentre(programmeCentre);
+  return (CONTACTS.find(c => c.title === 'Programme Centre Head' && c.pc === pc)?.department as RecipientDepartment) ?? 'DSTA';
+}
+
+/** DSO and CSIT are external agencies with no Programme Centre Head — requests to
+    them go straight to their AD (P&C), with no PC Head recipient. */
+function centreHasNoPcHead(programmeCentre: string): boolean {
+  if (!programmeCentre) return false;
+  return departmentForProgrammeCentre(programmeCentre) !== 'DSTA';
+}
+
+function pcHeadForProgrammeCentre(programmeCentre: string): string {
+  if (centreHasNoPcHead(programmeCentre)) return '';
+  const pc = contactPcForProgrammeCentre(programmeCentre);
+  return CONTACTS.find(c => c.title === 'Programme Centre Head' && c.pc === pc)?.email ?? '';
+}
+
+function adPncForProgrammeCentre(programmeCentre: string): string {
+  // Derived straight from the centre (not via the PC Head), so DSO/CSIT — which
+  // have no PC Head — still resolve their AD (P&C).
+  const pc = contactPcForProgrammeCentre(programmeCentre);
+  const department = departmentForProgrammeCentre(programmeCentre);
+  return CONTACTS.find(c => c.title === 'AD (P&C)' && c.department === department && c.pc === pc)?.email ?? '';
 }
 
 function pcHeadsForCentre(programmeCentre: string) {
@@ -265,11 +345,9 @@ function pcHeadsForCentre(programmeCentre: string) {
 
 function adPncForPcHead(email: string) {
   const head = CONTACTS.find(c => c.email === email);
-  return CONTACTS.find(c =>
-    c.title === 'AD (P&C)' &&
-    c.department === head?.department &&
-    c.pc === head?.pc
-  )?.email ?? '';
+  const pc = head?.pc;
+  const department = head?.department;
+  return CONTACTS.find(c => c.title === 'AD (P&C)' && c.department === department && c.pc === pc)?.email ?? '';
 }
 
 function programmeCentreForPcHead(email: string) {
@@ -278,29 +356,38 @@ function programmeCentreForPcHead(email: string) {
 
 function modelFromRequests(requests: ProjectRequest[]): EditModel {
   const first = requests[0];
+  const lines = requests.map((req, index) => {
+    const cp = req.calendarPeriod ?? '';
+    const { start, end } = parseCalendarPeriod(cp);
+    // Prefer stored ISO day bounds; fall back to converting the legacy month label to first/last day.
+    const isoStart = /^\d{4}-\d{2}-\d{2}$/.test(req.periodStart ?? '') ? req.periodStart! : isoDay(start, false);
+    const isoEnd = /^\d{4}-\d{2}-\d{2}$/.test(req.periodEnd ?? '') ? req.periodEnd! : isoDay(end, true);
+    const category = req.internCategory ?? req.educationLevel;
+    const year = intakeYearFromPeriodStart(isoStart || req.periodStart);
+    return {
+      id: req.id || `line-${index}`,
+      requestId: req.id,
+      internCategory: toEducationLevel(category),
+      calendarPeriod: monthRangeLabel(isoStart, isoEnd) || cp,
+      calendarStart: isoStart,
+      calendarEnd: isoEnd,
+      duration: req.duration ?? '',
+      placements: req.placements,
+      customWindow: !isPresetWindow(category, isoStart, isoEnd, year),
+    };
+  });
+  const intakeYear = lines[0]?.calendarStart
+    ? intakeYearFromPeriodStart(lines[0].calendarStart)
+    : DEFAULT_INTAKE_YEAR;
+  const programmeCentre = first?.programmeCenter || programmeCentreForPcHead(first?.pc ?? '');
   return {
-    programmeCentre: first?.programmeCenter || programmeCentreForPcHead(first?.pc ?? ''),
-    pcHead: first?.pc ?? '',
+    programmeCentre,
+    pcHead: centreHasNoPcHead(programmeCentre) ? '' : (first?.pc ?? ''),
     headName: first?.headName ?? recipientLabel(first?.pc ?? ''),
-    adpnc: adPncForPcHead(first?.pc ?? ''),
+    adpnc: adPncForProgrammeCentre(programmeCentre),
     deadline: first?.deadline ?? '',
-    lines: requests.map((req, index) => {
-      const cp = req.calendarPeriod ?? '';
-      const { start, end } = parseCalendarPeriod(cp);
-      // Prefer stored ISO day bounds; fall back to converting the legacy month label to first/last day.
-      const isoStart = /^\d{4}-\d{2}-\d{2}$/.test(req.periodStart ?? '') ? req.periodStart! : isoDay(start, false);
-      const isoEnd = /^\d{4}-\d{2}-\d{2}$/.test(req.periodEnd ?? '') ? req.periodEnd! : isoDay(end, true);
-      return {
-        id: req.id || `line-${index}`,
-        requestId: req.id,
-        internCategory: toEducationLevel(req.internCategory ?? req.educationLevel),
-        calendarPeriod: monthRangeLabel(isoStart, isoEnd) || cp,
-        calendarStart: isoStart,
-        calendarEnd: isoEnd,
-        duration: req.duration ?? '',
-        placements: req.placements,
-      };
-    }),
+    intakeYear,
+    lines,
   };
 }
 
@@ -311,7 +398,8 @@ function emptyDraftModel(): EditModel {
     headName: '',
     adpnc: '',
     deadline: '',
-    lines: [{ id: `line-${Date.now()}`, internCategory: '', calendarPeriod: '', calendarStart: '', calendarEnd: '', duration: '', placements: 1 }],
+    intakeYear: DEFAULT_INTAKE_YEAR,
+    lines: [{ id: `line-${Date.now()}`, internCategory: '', calendarPeriod: '', calendarStart: '', calendarEnd: '', duration: '', placements: 1, customWindow: false }],
   };
 }
 
@@ -492,17 +580,18 @@ function PlacementChangesTable({
   );
 }
 
-function RecipientChip({ name, role, badgeVariant }: { name: string; role: string; badgeVariant?: 'info' | 'neutral' | 'subtle' }) {
+function RecipientChip({ email, role, badgeVariant }: { email: string; role: string; badgeVariant?: 'info' | 'neutral' | 'subtle' }) {
   return (
     <span className="inline-flex h-9 max-w-full items-center gap-2 text-sm">
-      <span className="min-w-0 truncate text-sm font-medium text-fg">{name}</span>
+      <span className="min-w-0 truncate text-sm font-medium text-fg">{recipientLabel(email)}</span>
       <Badge variant={badgeVariant || 'neutral'} className="shrink-0 text-caption font-medium">{role}</Badge>
     </span>
   );
 }
 
-function DerivedRecipients({ pcHead, adpnc, showAll = false }: { pcHead: string; adpnc: string; showAll?: boolean }) {
+function DerivedRecipients({ pcHead, adpnc, showAll = false, ccEmails }: { pcHead: string; adpnc: string; showAll?: boolean; ccEmails?: string }) {
   const [showAllRecipients, setShowAllRecipients] = useState(showAll);
+  const ccList = ccEmails ? parseCcList(ccEmails) : HQ_CC_RECIPIENTS;
 
   if (!pcHead && !adpnc) {
     return (
@@ -515,18 +604,18 @@ function DerivedRecipients({ pcHead, adpnc, showAll = false }: { pcHead: string;
   return (
     <div className="rounded-lg border border-border bg-bg-subtle p-4">
       <div className="flex min-h-9 flex-wrap items-center gap-2">
-        <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">To:</span>
-        {pcHead && <RecipientChip name={recipientLabel(pcHead)} role="PC Head" badgeVariant="info" />}
+        <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">To</span>
+        {pcHead && <RecipientChip email={pcHead} role="PC Head" badgeVariant="info" />}
         {pcHead && adpnc && <span className="text-fg-muted">,</span>}
-        {adpnc && <RecipientChip name={recipientLabel(adpnc)} role="AD (P&C)" badgeVariant="info" />}
+        {adpnc && <RecipientChip email={adpnc} role="AD (P&C)" badgeVariant="info" />}
       </div>
       {showAllRecipients ? (
         <div className="flex min-h-9 flex-wrap items-center gap-2">
-          <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">Cc:</span>
-          {HQ_CC_RECIPIENTS.map((name, i) => (
+          <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">Cc</span>
+          {ccList.map((name, i) => (
             <Fragment key={name}>
-              <RecipientChip name={name} role="HQ" badgeVariant="subtle" />
-              {i < HQ_CC_RECIPIENTS.length - 1 && <span className="text-fg-muted">,</span>}
+              <RecipientChip email={name} role="HQ" badgeVariant="subtle" />
+              {i < ccList.length - 1 && <span className="text-fg-muted">,</span>}
             </Fragment>
           ))}
           <Button variant="outline" size="sm" onClick={() => setShowAllRecipients(false)}>
@@ -535,9 +624,9 @@ function DerivedRecipients({ pcHead, adpnc, showAll = false }: { pcHead: string;
         </div>
       ) : (
         <div className="flex min-h-9 flex-wrap items-center gap-2">
-          <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">Cc:</span>
+          <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">Cc</span>
           <Button variant="outline" size="sm" onClick={() => setShowAllRecipients(true)}>
-            <Users size={14} />View {HQ_CC_RECIPIENTS.length} CC recipients
+            <Users size={14} />View {ccList.length} CC recipients
           </Button>
         </div>
       )}
@@ -554,6 +643,7 @@ function RequestEditor({
   canEditPlacements,
   additionalLines,
   showErrors = false,
+  ccEdit,
   onRemove,
   onChange,
   onAdditionalLinesChange,
@@ -566,6 +656,7 @@ function RequestEditor({
   canEditPlacements?: boolean;
   additionalLines?: EditLine[];
   showErrors?: boolean;
+  ccEdit?: string;
   onRemove?: () => void;
   onChange: (model: EditModel) => void;
   onAdditionalLinesChange?: (lines: EditLine[]) => void;
@@ -589,7 +680,7 @@ function RequestEditor({
   }
 
   function addLine() {
-    const nextLine = { id: `line-${Date.now()}`, internCategory: '', calendarPeriod: '', calendarStart: '', calendarEnd: '', duration: '', placements: 1 };
+    const nextLine = { id: `line-${Date.now()}`, internCategory: '', calendarPeriod: '', calendarStart: '', calendarEnd: '', duration: '', placements: 1, customWindow: false as const };
     if (mode === 'draft') {
       onChange({ ...model, lines: [...model.lines, nextLine] });
       return;
@@ -598,31 +689,7 @@ function RequestEditor({
   }
 
   return (
-    <section className="rounded-xl border border-border bg-surface shadow-sm">
-      <div className="border-b border-border px-5 py-4">
-        <div className="flex items-start gap-3">
-          <div className="min-w-0 flex-1">
-            <h2 className={cn('text-label-lg text-fg', mode === 'draft' ? 'font-semibold' : 'font-medium')}>
-              {title ?? (mode === 'draft' ? 'Build Request' : 'Request Details')}
-            </h2>
-            <p className="mt-0.5 text-body-sm text-fg-muted">
-              {description ?? (mode === 'draft'
-                ? 'Complete the request, then review it before sending.'
-                : 'Sent request details stay controlled. You can update placements, extend the response deadline, and send reminders.')}
-            </p>
-          </div>
-          {onRemove && (
-            <button
-              type="button"
-              onClick={onRemove}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg-muted transition-colors hover:bg-danger-bg hover:text-danger"
-              aria-label="Remove request"
-            >
-              <X size={15} />
-            </button>
-          )}
-        </div>
-      </div>
+    <section className="rounded-xl border-border bg-surface shadow-sm">
 
       <div className="space-y-6 p-5">
         <div>
@@ -636,23 +703,23 @@ function RequestEditor({
                 value={model.programmeCentre}
                 onValueChange={value => {
                   const programmeCentre = value ?? '';
-                  const pcHead = pcHeadsForCentre(programmeCentre)[0]?.email ?? '';
+                  const pcHead = pcHeadForProgrammeCentre(programmeCentre);
                   onChange({
                     ...model,
                     programmeCentre,
                     pcHead,
                     headName: recipientLabel(pcHead),
-                    adpnc: adPncForPcHead(pcHead),
+                    adpnc: adPncForProgrammeCentre(programmeCentre),
                   });
                 }}
                 disabled={disabled}
               >
                 <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !model.programmeCentre && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select programme centre" /></SelectTrigger>
                 <SelectContent>
-                  {programmeCentreOptions().map(pc => <SelectItem key={pc} value={pc}>{pc}</SelectItem>)}
+                  {programmeCentreOptions().map(option => <SelectItem key={option.value} value={option.value}>{option.value}</SelectItem>)}
                 </SelectContent>
-                <FieldRequired show={showErrors && !model.programmeCentre} />
               </Select>
+              <FieldRequired show={showErrors && !model.programmeCentre} />
             </Field>
             <Field>
               <FieldLabel>
@@ -675,7 +742,7 @@ function RequestEditor({
                 {!model.programmeCentre && <ArrowUp size={13} className="text-fg-subtle" aria-hidden="true" />}
                 Recipients
               </FieldLabel>
-              <DerivedRecipients pcHead={model.pcHead} adpnc={model.adpnc} />
+              <DerivedRecipients pcHead={model.pcHead} adpnc={model.adpnc} ccEmails={ccEdit} />
             </Field>
           </div>
         </div>
@@ -683,6 +750,37 @@ function RequestEditor({
         <div>
           <SectionDivider label="Placement requirements" uppercase={false} showLine={false} />
           <div className="min-w-0 space-y-3 overflow-x-auto pb-1">
+            <div className="mb-4">
+              <Field className="w-fit">
+                <FieldLabel className="flex items-center gap-1.5">
+                  Internship year <span className="text-danger">*</span>
+                  <FieldHelpTooltip label="Internship year">The calendar year these internship windows are for — the window options shift to this year.</FieldHelpTooltip>
+                </FieldLabel>
+                <Select
+                  value={String(model.intakeYear ?? INTAKE_BASE_YEAR)}
+                  onValueChange={v => {
+                    if (!v) return;
+                    const ny = parseInt(v, 10);
+                    const dy = ny - (model.intakeYear ?? INTAKE_BASE_YEAR);
+                    onChange({
+                      ...model,
+                      intakeYear: ny,
+                      lines: model.lines.map(l => {
+                        if (l.customWindow || !l.calendarStart || !l.calendarEnd) return l;
+                        const cs = shiftIsoYears(l.calendarStart, dy), ce = shiftIsoYears(l.calendarEnd, dy);
+                        return { ...l, calendarStart: cs, calendarEnd: ce, calendarPeriod: monthRangeLabel(cs, ce) };
+                      }),
+                    });
+                  }}
+                  disabled={disabled}
+                >
+                  <SelectTrigger className="h-9 w-28"><SelectValue className="truncate block" /></SelectTrigger>
+                  <SelectContent>
+                    {INTAKE_YEARS.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
             <div className="hidden gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
               <FieldLabelText className="flex items-center gap-1.5">
                 Intern category {!disabled && <span className="text-danger">*</span>}
@@ -704,10 +802,10 @@ function RequestEditor({
                   <FieldLabel className="flex items-center gap-1.5 lg:hidden">
                     Intern category {!disabled && <span className="text-danger">*</span>}
                   </FieldLabel>
-                  <Select value={line.internCategory} onValueChange={value => updateLine(line.id, { internCategory: value ?? '' })} disabled={disabled}>
+                  <Select value={line.internCategory} onValueChange={value => updateLine(line.id, { internCategory: value ?? '', calendarStart: '', calendarEnd: '', calendarPeriod: '', customWindow: false })} disabled={disabled}>
                     <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !line.internCategory && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select intern category" /></SelectTrigger>
-                    <SelectContent>
-                      {INTERN_CATEGORIES.map(category => <SelectItem key={category} value={category}>{category}</SelectItem>)}
+                    <SelectContent className="max-w-[min(28rem,var(--available-width))]">
+                      {INTERN_CATEGORIES.map(category => <SelectItem key={category} value={category} className="whitespace-normal leading-snug">{category}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <FieldRequired show={showErrors && !line.internCategory} />
@@ -715,35 +813,89 @@ function RequestEditor({
                 <Field>
                   <FieldLabel className="flex items-center gap-1.5 lg:hidden">
                     Internship window {!disabled && <span className="text-danger">*</span>}
+                    <FieldHelpTooltip label="Internship window">Options follow the selected intern category; pick Customise for a bespoke window</FieldHelpTooltip>
                   </FieldLabel>
-                  <DateRangePicker
-                    value={{
-                      from: line.calendarStart ? parseISO(line.calendarStart) : undefined,
-                      to: line.calendarEnd ? parseISO(line.calendarEnd) : undefined,
-                    }}
-                    onChange={(range: DateRange) => {
-                      const calendarStart = range.from ? formatISO(range.from, { representation: 'date' }) : '';
-                      const calendarEnd = range.to ? formatISO(range.to, { representation: 'date' }) : '';
-                      updateLine(line.id, { calendarStart, calendarEnd, calendarPeriod: monthRangeLabel(calendarStart, calendarEnd) });
-                    }}
-                    disabled={disabled}
-                    placeholder="Select start and end date"
-                    hideLabels
-                    hideFooter
-                    className={cn('w-full min-w-0', showErrors && !!disabled && (!line.calendarStart || !line.calendarEnd) && 'border-danger')}
-                  />
+                  {(() => {
+                    const yearShift = (model.intakeYear ?? INTAKE_BASE_YEAR) - INTAKE_BASE_YEAR;
+                    const winPresets = (INTERNSHIP_WINDOWS[line.internCategory] || []).map(p => {
+                      const start = mmmyyToISO(shiftMMMYY(p.start, yearShift)), end = mmmyyToISOEnd(shiftMMMYY(p.end, yearShift));
+                      return { label: monthRangeLabel(start, end), start, end };
+                    });
+                    const winCustom = !!line.customWindow || (!!line.internCategory && winPresets.length === 0);
+                    const winSelected = winPresets.find(p => p.start === line.calendarStart && p.end === line.calendarEnd)?.label ?? '';
+                    return !line.internCategory ? (
+                      <Select disabled>
+                        <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !line.calendarStart && 'border-danger disabled:opacity-100')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select intern category first" /></SelectTrigger>
+                      </Select>
+                    ) : winCustom ? (
+                      <div className="space-y-1">
+                        <DateRangePicker
+                          value={{
+                            from: line.calendarStart ? parseISO(line.calendarStart) : undefined,
+                            to: line.calendarEnd ? parseISO(line.calendarEnd) : undefined,
+                          }}
+                          onChange={(range: DateRange) => {
+                            const calendarStart = range.from ? formatISO(range.from, { representation: 'date' }) : '';
+                            const calendarEnd = range.to ? formatISO(range.to, { representation: 'date' }) : '';
+                            const s = toMonthIndex(calendarStart), e = toMonthIndex(calendarEnd);
+                            const wm = (s !== null && e !== null && e >= s) ? (e - s + 1) : 0;
+                            const patch: Partial<EditLine> = { calendarStart, calendarEnd, calendarPeriod: monthRangeLabel(calendarStart, calendarEnd) };
+                            if (wm && line.duration && parseInt(line.duration, 10) > wm) patch.duration = '';
+                            updateLine(line.id, patch);
+                          }}
+                          disabled={disabled}
+                          placeholder="Select start and end date"
+                          hideLabels
+                          hideFooter
+                          className={cn('w-full min-w-0', showErrors && !!line.internCategory && (!line.calendarStart || !line.calendarEnd) && 'border-danger')}
+                        />
+                        {winPresets.length > 0 && !disabled && (
+                          <button type="button" className="text-label-sm text-accent hover:underline" onClick={() => updateLine(line.id, { customWindow: false, calendarStart: '', calendarEnd: '', calendarPeriod: '' })}>Use a preset window</button>
+                        )}
+                      </div>
+                    ) : (
+                      <Select
+                        value={winSelected}
+                        onValueChange={v => {
+                          if (v === '__custom__') { updateLine(line.id, { customWindow: true, calendarStart: '', calendarEnd: '', calendarPeriod: '' }); return; }
+                          const p = winPresets.find(x => x.label === v);
+                          if (!p) return;
+                          const ps = toMonthIndex(p.start), pe = toMonthIndex(p.end);
+                          const wm = (ps !== null && pe !== null) ? (pe - ps + 1) : 0;
+                          const patch: Partial<EditLine> = { calendarStart: p.start, calendarEnd: p.end, calendarPeriod: monthRangeLabel(p.start, p.end), customWindow: false };
+                          if (wm && line.duration && parseInt(line.duration, 10) > wm) patch.duration = '';
+                          updateLine(line.id, patch);
+                        }}
+                        disabled={disabled}
+                      >
+                        <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !line.calendarStart && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select internship window" /></SelectTrigger>
+                        <SelectContent>
+                          {winPresets.map(p => <SelectItem key={p.label} value={p.label}>{p.label}</SelectItem>)}
+                          <SelectItem value="__custom__">Customise…</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    );
+                  })()}
                   <FieldRequired show={showErrors && (!line.calendarStart || !line.calendarEnd)} />
                 </Field>
                 <Field>
                   <FieldLabel className="flex items-center gap-1.5 lg:hidden">
                     Project duration {!disabled && <span className="text-danger">*</span>}
+                    <FieldHelpTooltip label="Project duration">Proposed projects should last around this length of time</FieldHelpTooltip>
                   </FieldLabel>
-                  <Select value={line.duration} onValueChange={value => updateLine(line.id, { duration: value ?? '' })} disabled={disabled}>
-                    <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !line.duration && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select duration" /></SelectTrigger>
-                    <SelectContent>
-                      {DURATIONS.map(duration => <SelectItem key={duration} value={duration}>{duration}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  {(() => {
+                    const winStart = toMonthIndex(line.calendarStart), winEnd = toMonthIndex(line.calendarEnd);
+                    const winMonths = (winStart !== null && winEnd !== null && winEnd >= winStart) ? (winEnd - winStart + 1) : 0;
+                    const durOptions = winMonths ? DURATIONS.filter(d => parseInt(d, 10) <= winMonths) : [...DURATIONS];
+                    return (
+                      <Select value={line.duration} onValueChange={value => updateLine(line.id, { duration: value ?? '' })} disabled={disabled}>
+                        <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !line.duration && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Project duration" /></SelectTrigger>
+                        <SelectContent>
+                          {durOptions.map(duration => <SelectItem key={duration} value={duration}>{duration}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    );
+                  })()}
                   <FieldRequired show={showErrors && !line.duration} />
                 </Field>
                 <div className="flex flex-col gap-1.5">
@@ -770,32 +922,83 @@ function RequestEditor({
             ))}
             {additionalLines?.map(line => (
               <div key={line.id} className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
-                <Select value={line.internCategory} onValueChange={value => updateAdditionalLine(line.id, { internCategory: value ?? '' })}>
-                  <SelectTrigger><SelectValue placeholder="Select intern category" /></SelectTrigger>
-                  <SelectContent>
-                    {INTERN_CATEGORIES.map(category => <SelectItem key={category} value={category}>{category}</SelectItem>)}
+                <Select value={line.internCategory} onValueChange={value => updateAdditionalLine(line.id, { internCategory: value ?? '', calendarStart: '', calendarEnd: '', calendarPeriod: '', customWindow: false })}>
+                  <SelectTrigger className="min-w-0 overflow-hidden"><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select intern category" /></SelectTrigger>
+                  <SelectContent className="max-w-[min(28rem,var(--available-width))]">
+                    {INTERN_CATEGORIES.map(category => <SelectItem key={category} value={category} className="whitespace-normal leading-snug">{category}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                <DateRangePicker
-                  value={{
-                    from: line.calendarStart ? parseISO(line.calendarStart) : undefined,
-                    to: line.calendarEnd ? parseISO(line.calendarEnd) : undefined,
-                  }}
-                  onChange={(range: DateRange) => {
-                    const calendarStart = range.from ? formatISO(range.from, { representation: 'date' }) : '';
-                    const calendarEnd = range.to ? formatISO(range.to, { representation: 'date' }) : '';
-                    updateAdditionalLine(line.id, { calendarStart, calendarEnd, calendarPeriod: monthRangeLabel(calendarStart, calendarEnd) });
-                  }}
-                  placeholder="Select start and end date"
-                  hideLabels
-                  hideFooter
-                />
-                <Select value={line.duration} onValueChange={value => updateAdditionalLine(line.id, { duration: value ?? '' })}>
-                  <SelectTrigger><SelectValue placeholder="Select duration" /></SelectTrigger>
-                  <SelectContent>
-                    {DURATIONS.map(duration => <SelectItem key={duration} value={duration}>{duration}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                {(() => {
+                  const yearShift = (model.intakeYear ?? INTAKE_BASE_YEAR) - INTAKE_BASE_YEAR;
+                  const winPresets = (INTERNSHIP_WINDOWS[line.internCategory] || []).map(p => {
+                    const start = mmmyyToISO(shiftMMMYY(p.start, yearShift)), end = mmmyyToISOEnd(shiftMMMYY(p.end, yearShift));
+                    return { label: monthRangeLabel(start, end), start, end };
+                  });
+                  const winCustom = !!line.customWindow || (!!line.internCategory && winPresets.length === 0);
+                  const winSelected = winPresets.find(p => p.start === line.calendarStart && p.end === line.calendarEnd)?.label ?? '';
+                  const winStart = toMonthIndex(line.calendarStart), winEnd = toMonthIndex(line.calendarEnd);
+                  const winMonths = (winStart !== null && winEnd !== null && winEnd >= winStart) ? (winEnd - winStart + 1) : 0;
+                  const durOptions = winMonths ? DURATIONS.filter(d => parseInt(d, 10) <= winMonths) : [...DURATIONS];
+                  return (
+                    <>
+                      {!line.internCategory ? (
+                        <Select disabled>
+                          <SelectTrigger className="min-w-0 overflow-hidden"><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select intern category first" /></SelectTrigger>
+                        </Select>
+                      ) : winCustom ? (
+                        <div className="space-y-1">
+                          <DateRangePicker
+                            value={{
+                              from: line.calendarStart ? parseISO(line.calendarStart) : undefined,
+                              to: line.calendarEnd ? parseISO(line.calendarEnd) : undefined,
+                            }}
+                            onChange={(range: DateRange) => {
+                              const calendarStart = range.from ? formatISO(range.from, { representation: 'date' }) : '';
+                              const calendarEnd = range.to ? formatISO(range.to, { representation: 'date' }) : '';
+                              const s = toMonthIndex(calendarStart), e = toMonthIndex(calendarEnd);
+                              const wm = (s !== null && e !== null && e >= s) ? (e - s + 1) : 0;
+                              const patch: Partial<EditLine> = { calendarStart, calendarEnd, calendarPeriod: monthRangeLabel(calendarStart, calendarEnd) };
+                              if (wm && line.duration && parseInt(line.duration, 10) > wm) patch.duration = '';
+                              updateAdditionalLine(line.id, patch);
+                            }}
+                            placeholder="Select start and end date"
+                            hideLabels
+                            hideFooter
+                          />
+                          {winPresets.length > 0 && (
+                            <button type="button" className="text-label-sm text-accent hover:underline" onClick={() => updateAdditionalLine(line.id, { customWindow: false, calendarStart: '', calendarEnd: '', calendarPeriod: '' })}>Use a preset window</button>
+                          )}
+                        </div>
+                      ) : (
+                        <Select
+                          value={winSelected}
+                          onValueChange={v => {
+                            if (v === '__custom__') { updateAdditionalLine(line.id, { customWindow: true, calendarStart: '', calendarEnd: '', calendarPeriod: '' }); return; }
+                            const p = winPresets.find(x => x.label === v);
+                            if (!p) return;
+                            const ps = toMonthIndex(p.start), pe = toMonthIndex(p.end);
+                            const wm = (ps !== null && pe !== null) ? (pe - ps + 1) : 0;
+                            const patch: Partial<EditLine> = { calendarStart: p.start, calendarEnd: p.end, calendarPeriod: monthRangeLabel(p.start, p.end), customWindow: false };
+                            if (wm && line.duration && parseInt(line.duration, 10) > wm) patch.duration = '';
+                            updateAdditionalLine(line.id, patch);
+                          }}
+                        >
+                          <SelectTrigger className="min-w-0 overflow-hidden"><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select internship window" /></SelectTrigger>
+                          <SelectContent>
+                            {winPresets.map(p => <SelectItem key={p.label} value={p.label}>{p.label}</SelectItem>)}
+                            <SelectItem value="__custom__">Customise…</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                      <Select value={line.duration} onValueChange={value => updateAdditionalLine(line.id, { duration: value ?? '' })}>
+                        <SelectTrigger className="min-w-0 overflow-hidden"><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Project duration" /></SelectTrigger>
+                        <SelectContent>
+                          {durOptions.map(duration => <SelectItem key={duration} value={duration}>{duration}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  );
+                })()}
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center gap-2">
                     <Field>
@@ -919,7 +1122,7 @@ function DraftEmailPreview({ model }: { model: EditModel }) {
     model.pcHead ? recipientLabel(model.pcHead) : '',
     ...HQ_CC_RECIPIENTS,
   ].filter(Boolean).join(', '));
-  const [subjectDraft, setSubjectDraft] = useState(() => `[DSTA] Project Request - ${model.programmeCentre || 'Programme Centre'}`);
+  const [subjectDraft, setSubjectDraft] = useState(() => `Project Request - ${model.programmeCentre || 'Programme Centre'}`);
   const [beforeDraft, setBeforeDraft] = useState(() =>
     `Dear ${recipientLabel(model.adpnc) || 'recipient'},\n\n`
     + `We are requesting project submissions for the intern categories, calendar periods and durations listed below.`
@@ -944,7 +1147,7 @@ function DraftEmailPreview({ model }: { model: EditModel }) {
             }}
             options={[recipientLabel(model.adpnc)].filter(Boolean)}
             placeholder="Select recipients"
-            chips="inline"
+            chips="inline-text"
             className="flex-1"
           />
         </label>
@@ -959,7 +1162,7 @@ function DraftEmailPreview({ model }: { model: EditModel }) {
             }}
             options={[recipientLabel(model.pcHead), ...HQ_CC_RECIPIENTS].filter(Boolean)}
             placeholder="Select recipients"
-            chips="inline"
+            chips="inline-text"
             className="flex-1"
           />
         </label>
@@ -1283,8 +1486,8 @@ function ManageEmailPreview({
 }) {
   const hasAdditional = additionalLines.length > 0;
   const subject = mode === 'additional'
-    ? `[DSTA] Additional Project Request - ${model.programmeCentre}`
-    : `[DSTA] Project Request Update - ${model.programmeCentre}`;
+    ? `Additional Project Request - ${model.programmeCentre}`
+    : `Project Request Update - ${model.programmeCentre}`;
   const rows = model.lines.map(line => ({
     label: line.internCategory,
     calendarPeriod: line.calendarPeriod,
@@ -1349,7 +1552,7 @@ function ManageEmailPreview({
             }}
             options={[recipientLabel(model.pcHead)].filter(Boolean)}
             placeholder="Select recipients"
-            chips="inline"
+            chips="inline-text"
             className="flex-1"
           />
         </label>
@@ -1364,7 +1567,7 @@ function ManageEmailPreview({
             }}
             options={[recipientLabel(model.adpnc), ...HQ_CC_RECIPIENTS].filter(Boolean)}
             placeholder="Select recipients"
-            chips="inline"
+            chips="inline-text"
             className="flex-1"
           />
         </label>
@@ -1443,7 +1646,7 @@ export default function ProjectRequestEditPage() {
   const [model, setModel] = useState<EditModel | null>(null);
   const [extraDraftModels, setExtraDraftModels] = useState<EditModel[]>([]);
   const [additionalLines, setAdditionalLines] = useState<EditLine[]>([
-    { id: 'additional-1', internCategory: '', calendarPeriod: '', calendarStart: '', calendarEnd: '', duration: '', placements: 1 },
+    { id: 'additional-1', internCategory: '', calendarPeriod: '', calendarStart: '', calendarEnd: '', duration: '', placements: 1, customWindow: false },
   ]);
   const [logs, setLogs] = useState<ProjectRequestAuditEntry[]>([]);
   const [step, setStep] = useState<1 | 2>(1);
@@ -1453,6 +1656,7 @@ export default function ProjectRequestEditPage() {
   const [draftPreviewModel, setDraftPreviewModel] = useState<EditModel | null>(null);
   const [draftConfirmSendOpen, setDraftConfirmSendOpen] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
+  const [deleteDraftIndex, setDeleteDraftIndex] = useState<number | null>(null);
 
   const group = useMemo(() => {
     if (!routeKey) return [];
@@ -2010,19 +2214,19 @@ export default function ProjectRequestEditPage() {
                         <div>
                           <h2 className="text-label-lg font-semibold text-fg">Requests</h2>
                           <p className="mt-0.5 text-caption text-fg-muted">
-                            {draftModels.length} request{draftModels.length !== 1 ? 's' : ''} ·{' '}
-                            <span className={missing.length > 0 ? 'font-semibold text-danger' : 'text-success'}>
-                              {missing.length} filed missing
-                            </span>
+                            {draftModels.length} request{draftModels.length !== 1 ? 's' : ''}
                           </p>
                         </div>
-                        <Button size="sm" onClick={addDraftModel}><Plus size={14} />Add Request</Button>
+                        <Button size="sm" onClick={addDraftModel}><Plus size={14} />Add Project Request</Button>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-[minmax(0,1fr)_64px] border-b border-border bg-[#FDFCFA] px-4 py-3 text-caption text-fg-muted">
                       <span>Request</span>
-                      <span className="text-right">Missing</span>
+                      <span className="flex items-center justify-end gap-1">
+                        Status
+                        <FieldHelpTooltip label="Missing">{MISSING_CHECK_HELP}</FieldHelpTooltip>
+                      </span>
                     </div>
 
                     <div className="flex min-w-0 flex-col">
@@ -2056,17 +2260,34 @@ export default function ProjectRequestEditPage() {
                               </button>
                               <div className="flex items-center justify-end gap-1">
                                 <div className="flex min-w-5 justify-end">
-                                  {requestMissing > 0 ? (
-                                    <span className="text-body-sm font-semibold text-danger">{requestMissing}</span>
-                                  ) : (
-                                    <Check size={15} className="text-success" aria-label="Complete" />
+                                  {showErrors && (
+                                    requestMissing > 0 ? (
+                                      <Tooltip>
+                                        <TooltipTrigger
+                                          render={
+                                            <button
+                                              type="button"
+                                              aria-label={`${requestMissing} missing field input${requestMissing !== 1 ? 's' : ''}`}
+                                              className="inline-flex items-center justify-center text-danger transition-colors hover:text-danger/80 focus:outline-none focus:ring-2 focus:ring-danger/30"
+                                            >
+                                              <AlertCircle size={15} />
+                                            </button>
+                                          }
+                                        />
+                                        <TooltipContent side="top" align="center">
+                                          {requestMissing} missing field input{requestMissing !== 1 ? 's' : ''}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    ) : (
+                                      <Check size={15} className="text-success" aria-label="Complete" />
+                                    )
                                   )}
                                 </div>
-                                <div className="flex h-7 w-7 items-center justify-center">
+                                <div className="flex h-7 w-7 items-center justify-center hidden">
                                   {draftModels.length > 1 && index > 0 && (
                                     <button
                                       type="button"
-                                      onClick={() => removeDraftModel(index)}
+                                      onClick={() => setDeleteDraftIndex(index)}
                                       className="flex h-7 w-7 items-center justify-center rounded-lg text-fg-muted opacity-0 transition-colors hover:bg-danger-bg hover:text-danger focus:opacity-100 group-hover:opacity-100"
                                       aria-label={`Remove request ${index + 1}`}
                                     >
@@ -2087,9 +2308,20 @@ export default function ProjectRequestEditPage() {
                       <h3 className="text-label-md font-semibold text-[#0F172B]">
                         Current Editing - Request {activeDraftIndex + 1}
                       </h3>
+                      {activeDraftModel && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={draftModels.length <= 1}
+                          onClick={() => setDeleteDraftIndex(activeDraftIndex)}
+                        >
+                          <Trash2 size={14} />Delete
+                        </Button>
+                      )}
                     </div>
                     {activeDraftModel && (
-                      <div className="p-4">
+                      <div className="p-1">
                         <RequestEditor
                           model={activeDraftModel}
                           mode="draft"
@@ -2099,7 +2331,6 @@ export default function ProjectRequestEditPage() {
                           canEditPlacements
                           showErrors={showErrors}
                           onChange={next => updateDraftModel(activeDraftIndex, next)}
-                          onRemove={activeDraftIndex > 0 ? () => removeDraftModel(activeDraftIndex) : undefined}
                         />
                       </div>
                     )}
@@ -2327,6 +2558,24 @@ export default function ProjectRequestEditPage() {
             </Button>
             <Button onClick={sendDraft}>
               <Send size={14} />Confirm Send
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={deleteDraftIndex !== null} onOpenChange={open => { if (!open) setDeleteDraftIndex(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Request?</DialogTitle>
+            <DialogDescription>
+              Deleting request will permanently remove all entered information and cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDraftIndex(null)}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={() => { if (deleteDraftIndex !== null) removeDraftModel(deleteDraftIndex); setDeleteDraftIndex(null); }}>
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>
