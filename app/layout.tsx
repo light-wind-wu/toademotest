@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import PasswordGate from '@/components/layout/password-gate';
+import CloudSyncProvider from '@/components/cloud-sync-provider';
 import { ThemeProvider } from '@/lib/theme';
 import { RoleProvider } from '@/lib/role';
 import { ProgrammeProvider } from '@/lib/programme-context';
@@ -50,15 +51,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ThemeProvider>
-          <RoleProvider>
-            <ProgrammeProvider>
-              <UnsavedChangesProvider>
-                <PasswordGate>
-                  {children}
-                </PasswordGate>
-              </UnsavedChangesProvider>
-            </ProgrammeProvider>
-          </RoleProvider>
+          <CloudSyncProvider>
+            <RoleProvider>
+              <ProgrammeProvider>
+                <UnsavedChangesProvider>
+                  <PasswordGate>
+                    {children}
+                  </PasswordGate>
+                </UnsavedChangesProvider>
+              </ProgrammeProvider>
+            </RoleProvider>
+          </CloudSyncProvider>
         </ThemeProvider>
       </body>
     </html>
