@@ -51,6 +51,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import EmptyState from '@/components/ui-legacy/empty-state';
+import { TruncatedTooltip } from '@/components/ui-legacy/truncated-tooltip';
 import { Spinner } from '@/components/ui/spinner';
 import {
   AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2,
@@ -160,7 +161,7 @@ const ProjectTableRow = memo(function ProjectTableRow({
     <TableRow>
       <TableCell>
         <div className="min-w-0">
-          <p className="truncate text-body-sm font-semibold text-fg">{p.title}</p>
+          <TruncatedTooltip className="text-body-sm font-semibold text-fg">{p.title}</TruncatedTooltip>
           <p className="text-caption text-fg-muted">{p.id}</p>
         </div>
       </TableCell>
@@ -2228,6 +2229,7 @@ export default function ProgrammeFormPage() {
           {/* ── Step 1: Details — dense grid, should fit without scrolling ── */}
           {step === 1 && (
             <div className="px-6 py-5">
+              <h2 className="text-body-lg font-semibold text-fg leading-tight mb-3">Programme Details</h2>
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
 
                 <div className="space-y-1.5">
@@ -2410,8 +2412,8 @@ export default function ProgrammeFormPage() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-[minmax(0,1fr)_80px] border-b border-border bg-[rgba(253,252,250,1)] px-4 py-3 text-caption text-fg-muted">
-                          <span>Intake</span>
+                        <div className="grid grid-cols-[minmax(0,1fr)_140px] border-b border-border bg-[rgba(253,252,250,1)] px-4 py-3 text-caption text-fg-muted">
+                          <span>Request</span>
                           <span className="flex items-center justify-end gap-1">
                             Projects assigned
                             <TooltipProvider>
@@ -2517,7 +2519,7 @@ export default function ProgrammeFormPage() {
 
                         {selectedIntake && (
                           <div className="border-border px-4 py-4">
-                            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_1px_1fr_2fr]">
+                            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(230px,1fr)_1px_minmax(230px,1fr)_2fr] xl:min-w-[460px]">
                               <div className="min-w-0">
                                 <Field>
                                   <FieldLabel>
@@ -2546,7 +2548,7 @@ export default function ProgrammeFormPage() {
                                   )}
                                 </Field>
                               </div>
-                              <div className="hidden lg:block border-l border-border" aria-hidden="true" />
+                              <div className="hidden xl:block border-l border-border" aria-hidden="true" />
                               <div className="min-w-0">
                                 <Field>
                                   <FieldLabel>
@@ -2622,35 +2624,37 @@ export default function ProgrammeFormPage() {
                                 />
                               </div>
                             ) : (
-                              <div className="overflow-hidden border-border bg-surface">
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Project Name</TableHead>
-                                      <TableHead>Programme Centre</TableHead>
-                                      <TableHead>Project Duration</TableHead>
-                                      <TableHead>Placements</TableHead>
-                                      <TableHead>Match</TableHead>
-                                      <TableHead className="w-24 text-right"></TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {visibleProjects.map(p => (
-                                      <ProjectTableRow
-                                        key={p.id}
-                                        project={p}
-                                        selectedIntake={selectedIntake}
-                                        selectedIntakeId={selectedIntakeId}
-                                        cpPlacement={cpPlacement}
-                                        assignedToIntake={assignedToIntake}
-                                        onToggleAttach={toggleAttach}
-                                        onOpenSingleAssign={openSingleAssign}
-                                        onOpenPeriodEdit={openPeriodEdit}
-                                      />
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </div>
+                              <TooltipProvider>
+                                <div className="overflow-hidden border-border bg-surface min-w-[1000px]">
+                                  <Table className="table-fixed">
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead className="w-[250px]">Project Name</TableHead>
+                                        <TableHead className="w-[150px]">Programme Centre</TableHead>
+                                        <TableHead>Project Duration</TableHead>
+                                        <TableHead className="w-[90px]">Placements</TableHead>
+                                        <TableHead className="w-[200px]">Match</TableHead>
+                                        <TableHead className="w-[130px]"></TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {visibleProjects.map(p => (
+                                        <ProjectTableRow
+                                          key={p.id}
+                                          project={p}
+                                          selectedIntake={selectedIntake}
+                                          selectedIntakeId={selectedIntakeId}
+                                          cpPlacement={cpPlacement}
+                                          assignedToIntake={assignedToIntake}
+                                          onToggleAttach={toggleAttach}
+                                          onOpenSingleAssign={openSingleAssign}
+                                          onOpenPeriodEdit={openPeriodEdit}
+                                        />
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              </TooltipProvider>
                             )}
                           </div>
                         </div>

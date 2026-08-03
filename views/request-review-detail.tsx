@@ -372,14 +372,6 @@ function ReviewRequiredSection({
             </div>
           </div>
         )}
-
-        {canReview && (
-          <div className="mt-4">
-            <Button variant="outline" size="sm" onClick={onEdit}>
-              Edit
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -451,19 +443,25 @@ function BottomActionBar({
   onReturn,
   onReject,
   onApprove,
+  onEdit,
 }: {
   reviewingLabel: string;
   onReturn: () => void;
   onReject: () => void;
   onApprove: () => void;
+  onEdit: () => void;
 }) {
   const router = useRouter();
   return (
     <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-8 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-gradient-to-b from-surface to-bg px-[clamp(24px,2.6vw,40px)] py-2">
-      <p className="text-body-sm text-fg-muted">{reviewingLabel}</p>
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
-        <Button variant="outline" size="md" onClick={() => router.back()}>
+      <p className="text-body-sm text-fg-muted">
+        <Button variant="ghost" size="md" onClick={() => router.back()}>
           Back
+        </Button>
+      </p>
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
+        <Button variant="outline" size="md" onClick={onEdit}>
+          Edit
         </Button>
         <Button
           variant="outline"
@@ -767,7 +765,7 @@ export default function RequestReviewDetail() {
 
         {activeTab === 'review' && (
           <div className="mt-4">
-            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="grid items-start gap-6">
               <div className="space-y-6">
                 {/* Education-level mismatch */}
                 {levelMismatch && (
@@ -801,18 +799,18 @@ export default function RequestReviewDetail() {
               </div>
 
               <aside className="space-y-4">
-                <SubmissionInformationCard
+                {/*<SubmissionInformationCard
                   projectId={proj.id}
                   request={`Request from ${batch.pcHead || 'AD (P&C)'}`}
                   submittedBy={submittedBy}
                   submittedOn={submittedOn}
                   lastUpdated={lastUpdated}
-                />
-                <ReviewChecklistCard
+                />*/}
+                {/*<ReviewChecklistCard
                   requiredFieldsPass
                   scopeNeedsJudgement={descriptionResult !== 'pass'}
                   titleChecked={titleResult === 'pass'}
-                />
+                />*/}
               </aside>
             </div>
           </div>
@@ -842,6 +840,7 @@ export default function RequestReviewDetail() {
           onReturn={() => setReturnDialogOpen(true)}
           onReject={() => setRejectDialogOpen(true)}
           onApprove={() => setConfirmApprove(true)}
+          onEdit={openEdit}
         />
       )}
 

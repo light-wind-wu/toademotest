@@ -1457,16 +1457,6 @@ export default function AdPncRespondPage() {
             </div>
             {showRequestDetails && (
               <div className="mt-4 border-t border-border pt-4">
-                <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <p className="text-caption text-fg-muted">Programme centre</p>
-                    <p className="mt-1 text-body-sm font-medium text-fg">{group.requests[0]?.programmeCenter || '—'}</p>
-                  </div>
-                  <div>
-                    <p className="text-caption text-fg-muted">Response deadline</p>
-                    <p className="mt-1 text-body-sm font-medium text-fg">{fmtDate(group.requests[0]?.deadline)}</p>
-                  </div>
-                </div>
                 <RequestContextTable requests={group.requests} title="Placement requirements" />
               </div>
             )}
@@ -1850,7 +1840,7 @@ function UploadSummaryDialog({
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               <SummaryTile label="Rows found" value={review.allProjects.length} />
               <SummaryTile label="Ready to import" value={review.readyProjects.length} valueClassName="text-success" />
-              <SummaryTile label="Need fixing" value={issueRows} valueClassName={issueRows ? 'text-danger' : 'text-success'} />
+              <SummaryTile label="Rows with issues" value={issueRows} valueClassName={issueRows ? 'text-danger' : 'text-success'} />
             </div>
           </div>
 
@@ -1858,7 +1848,7 @@ function UploadSummaryDialog({
             <section>
               <div className="mb-2 flex items-center gap-2">
                 <AlertTriangle size={16} className="text-danger" />
-                <h3 className="text-label-md font-semibold text-fg">Needs fixing</h3>
+                <h3 className="text-label-md font-semibold text-fg">Issues Found</h3>
               </div>
               <div className="overflow-hidden rounded-lg border border-border">
                 <table className="w-full text-left text-body-sm">

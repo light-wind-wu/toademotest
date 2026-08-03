@@ -1264,7 +1264,7 @@ export default function ProjectRequestFormPage() {
                   <div className="grid grid-cols-[minmax(0,1fr)_64px] border-b border-border px-4 py-3 text-caption text-fg-muted bg-[#FDFCFA]">
                     <span>Request</span>
                     <span className="flex items-center justify-end gap-1">
-                      Missing
+                      Status
                       <FieldHelpTooltip label="Missing">{MISSING_CHECK_HELP}</FieldHelpTooltip>
                     </span>
                   </div>

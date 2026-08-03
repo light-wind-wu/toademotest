@@ -497,53 +497,59 @@ export default function AdPncEditSubmissionPage() {
           </div>
 
           {/* Audit Log */}
-          <div className="rounded-lg border border-border bg-surface p-6">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <h2 className="text-label-lg font-semibold text-fg">Audit Log</h2>
-                <div className="flex items-center gap-2 text-body-sm text-fg-muted hidden">
-                  <Clock size={14} />
-                  <span>Current status</span>
-                  <Badge variant="warning">Returned for Update</Badge>
+          {edit && (
+            <div className="rounded-lg border border-border bg-surface p-6">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-label-lg font-semibold text-fg">Audit Log</h2>
+                  <div className="flex items-center gap-2 text-body-sm text-fg-muted hidden">
+                    <Clock size={14} />
+                    <span>Current status</span>
+                    <Badge variant="warning">Returned for Update</Badge>
+                  </div>
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAuditOpen(o => !o)}
+                >
+                  <FileClock size={14} />
+                  {auditOpen ? 'Collapse Audit Log' : 'View All Audit Log'}
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setAuditOpen(o => !o)}
-              >
-                <FileClock size={14} />
-                {auditOpen ? 'Collapse Audit Log' : 'View All Audit Log'}
-              </Button>
-            </div>
 
-            {auditOpen && (
-              <div className="mt-5 space-y-4">
-                {auditLog.length === 0 ? (
-                  <p className="text-body-sm text-fg-muted">No audit log entries available.</p>
-                ) : (
-                  auditLog.map((entry, index) => (
-                    <div key={index} className="flex items-start gap-4 border-t border-border pt-4 first:border-t-0 first:pt-0">
-                      <span className="w-28 shrink-0 text-body-sm text-fg-muted">{entry.date}</span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-body-sm font-medium text-fg">{entry.label}</p>
-                        <p className="text-body-sm text-fg-muted">{entry.description}</p>
+              {auditOpen && (
+                <div className="mt-5 space-y-4">
+                  {auditLog.length === 0 ? (
+                    <p className="text-body-sm text-fg-muted">No audit log entries available.</p>
+                  ) : (
+                    auditLog.map((entry, index) => (
+                      <div key={index} className="flex items-start gap-4 border-t border-border pt-4 first:border-t-0 first:pt-0">
+                        <span className="w-28 shrink-0 text-body-sm text-fg-muted">{entry.date}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-body-sm font-medium text-fg">{entry.label}</p>
+                          <p className="text-body-sm text-fg-muted">{entry.description}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Footer */}
       <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-gradient-to-b from-surface to-bg px-[clamp(24px,2.6vw,40px)] py-2">
-        <p className="text-body-sm text-fg-muted">Editing project details</p>
+        <p className="text-body-sm text-fg-muted">
+          <Button variant="ghost" size="md" onClick={() => router.push('/submissions')}>
+            Back
+          </Button>
+        </p>
         <div className="flex items-center gap-3">
           <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>
-            Back
+            Cancel
           </Button>
           <Button size="md" disabled={saving} onClick={() => {
             const validationErrors = validate(edit);
