@@ -3,8 +3,10 @@
    - Hydrate cloud → localStorage on boot
    - Dual-write on localStorage.setItem for shared keys
    - Realtime: remote change → localStorage (no reload loop)
+   - localStorage.clear() must NOT wipe cloud (rehydrate; pause dual-write)
 */
 import { getSupabaseBrowserClient, isCloudSyncEnabled } from '@/lib/supabase/client';
+import { SEED_VERSIONS, STORAGE_KEYS } from '@/lib/storage';
 
 const TABLE = 'app_kv';
 
@@ -42,14 +44,44 @@ export const CLOUD_HYDRATED_EVENT = 'dsta_cloud_hydrated';
 export const CLOUD_UPDATED_EVENT = 'dsta_cloud_updated';
 
 let applyingRemote = false;
+/** Pause dual-write while recovering from localStorage.clear() / hydrate. */
+let dualWritePaused = false;
 let bridgeInstalled = false;
 let origSetItem: ((key: string, value: string) => void) | null = null;
+let origClear: (() => void) | null = null;
 /** Ignore Realtime echoes from our own upserts / hydrate window. */
 let suppressRealtimeUntil = 0;
 const upsertTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 function bumpRealtimeSuppress(ms = 2500) {
   suppressRealtimeUntil = Math.max(suppressRealtimeUntil, Date.now() + ms);
+}
+
+function cancelPendingUpserts() {
+  for (const t of upsertTimers.values()) clearTimeout(t);
+  upsertTimers.clear();
+}
+
+/**
+ * After cloud restore, align local seed version stamps with the running app.
+ * Otherwise loadSeeded() treats missing/stale ver as "reseed" and setItem(seed)
+ * dual-writes over the real cloud payload (wiping user data).
+ */
+function stampLocalSeedVersions(): void {
+  const stamps: [string, string][] = [
+    [STORAGE_KEYS.programmes.verKey, SEED_VERSIONS.programmes],
+    [STORAGE_KEYS.projects.verKey, SEED_VERSIONS.projects],
+    [STORAGE_KEYS.requests.verKey, SEED_VERSIONS.requests],
+    [STORAGE_KEYS.submissions.verKey, SEED_VERSIONS.submissions],
+    [STORAGE_KEYS.attachments.verKey, SEED_VERSIONS.attachments],
+    // Keep in sync with admin-settings / loadAppsFromStorage callers
+    ['dsta_applications_seed_v', '30'],
+    ['dsta_app_form_templates_seed_v', '23'],
+  ];
+  for (const [key, value] of stamps) {
+    if (origSetItem) origSetItem.call(window.localStorage, key, value);
+    else window.localStorage.setItem(key, value);
+  }
 }
 
 function safeParse(raw: string): unknown {
@@ -89,12 +121,14 @@ async function upsertCloud(key: string, value: unknown): Promise<void> {
 }
 
 function scheduleUpsert(key: string, value: unknown) {
+  if (dualWritePaused) return;
   const prev = upsertTimers.get(key);
   if (prev) clearTimeout(prev);
   upsertTimers.set(
     key,
     setTimeout(() => {
       upsertTimers.delete(key);
+      if (dualWritePaused) return;
       void upsertCloud(key, value);
     }, 400),
   );
@@ -150,6 +184,8 @@ export async function hydrateFromCloud(): Promise<'skipped' | 'hydrated' | 'seed
       if (origSetItem) origSetItem.call(window.localStorage, row.key, raw);
       else window.localStorage.setItem(row.key, raw);
     }
+    // Cloud is source of truth — prevent local seed OVERWRITE from clobbering it.
+    stampLocalSeedVersions();
   } finally {
     applyingRemote = false;
   }
@@ -158,17 +194,34 @@ export async function hydrateFromCloud(): Promise<'skipped' | 'hydrated' | 'seed
   return 'hydrated';
 }
 
-/** Intercept localStorage.setItem for shared keys → dual-write to Supabase. */
+/** Intercept localStorage writes; clear() rehydrates instead of wiping cloud. */
 export function installLocalStorageBridge(): void {
   if (bridgeInstalled || typeof window === 'undefined' || !isCloudSyncEnabled()) return;
   bridgeInstalled = true;
   origSetItem = window.localStorage.setItem.bind(window.localStorage);
+  origClear = window.localStorage.clear.bind(window.localStorage);
 
   window.localStorage.setItem = (key: string, value: string) => {
     origSetItem!(key, value);
-    if (applyingRemote) return;
+    if (applyingRemote || dualWritePaused) return;
     if (!SHARED_CLOUD_KEYS.has(key)) return;
     scheduleUpsert(key, safeParse(value));
+  };
+
+  // DevTools "Clear" must empty the browser cache only — cloud stays, then refill local.
+  window.localStorage.clear = () => {
+    cancelPendingUpserts();
+    dualWritePaused = true;
+    origClear!();
+    void (async () => {
+      try {
+        await hydrateFromCloud();
+      } catch (err) {
+        console.warn('[cloud-store] rehydrate after clear failed', err);
+      } finally {
+        dualWritePaused = false;
+      }
+    })();
   };
 }
 
