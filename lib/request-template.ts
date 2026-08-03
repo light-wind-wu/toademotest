@@ -63,7 +63,7 @@ function safeTab(name: string, used: Set<string>): string {
 /** Build + download the structured template for one request (rows sharing a token). */
 export async function downloadRequestTemplateXLSX(
   requests: ProjectRequest[],
-  fileName = 'DSTA_Project_Request_Template_Skillset.xlsx',
+  fileName = 'DSTA_Project_Request_Template.xlsx',
 ): Promise<void> {
   const ExcelJS = (await import('exceljs')).default;
   const wb = new ExcelJS.Workbook();
@@ -224,7 +224,7 @@ export async function downloadRequestTemplateXLSX(
    injects the same dynamic data per intern category.
    ──────────────────────────────────────────────────────────────────────────── */
 
-const TEMPLATE_PATH = '/DSTA_Project_Request_Template_Skillset.xlsx';
+const TEMPLATE_PATH = '/DSTA_Project_Request_Template.xlsx';
 const TEMPLATE_SHEET_NAME = 'Tech UP';
 
 /** Deep copy a JSON-serialisable value. */

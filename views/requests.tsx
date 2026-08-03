@@ -211,7 +211,7 @@ function EmailSentModal({
       `We are requesting project submissions for the intern categories, calendar periods and durations listed below.`,
       '',
       `What you need to do:`,
-      `1. Complete the attached Excel template (DSTA_Project_Request_Template_Skillset.xlsx) with your proposed projects for each intern category and calendar period.`,
+      `1. Complete the attached Excel template (DSTA_Project_Request_Template.xlsx) with your proposed projects for each intern category and calendar period.`,
       `2. Ensure every submitted project has obtained the necessary security clearance.`,
       `3. Obtain approval from the PC Head for all submitted projects before they are uploaded.`,
       `4. Upload the completed projects into the system using the link below.`,
@@ -219,7 +219,7 @@ function EmailSentModal({
       `Requested placements:`,
       placementLines,
       '',
-      `Attachment: DSTA_Project_Request_Template_Skillset.xlsx. Please fill in your project details in this template.`,
+      `Attachment: DSTA_Project_Request_Template.xlsx. Please fill in your project details in this template.`,
       '',
       `System upload link (for the AD (P&C) to enter the system and upload the completed projects):`,
       link,
@@ -285,10 +285,10 @@ function EmailSentModal({
                   <div className="flex items-center gap-3 rounded-lg border border-border bg-bg-subtle px-4 py-3">
                     <Paperclip size={16} className="shrink-0 text-fg-muted" />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-body-sm font-medium text-fg">DSTA_Project_Request_Template_Skillset.xlsx</p>
+                      <p className="truncate text-body-sm font-medium text-fg">DSTA_Project_Request_Template.xlsx</p>
                       <p className="text-caption text-fg-muted">Project-submission template — pre-structured with the requested categories &amp; periods.</p>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => downloadRequestTemplateXLSX(email.reqs, 'DSTA_Project_Request_Template_Skillset.xlsx')}>
+                    <Button variant="outline" size="sm" onClick={() => downloadRequestTemplateXLSX(email.reqs, 'DSTA_Project_Request_Template.xlsx')}>
                       <Download size={14} />Download
                     </Button>
                   </div>

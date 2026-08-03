@@ -61,14 +61,14 @@ import {
 import { CONTACTS, toEducationLevel } from '@/lib/data';
 import { downloadRequestTemplateFromXlsx } from '@/lib/request-template';
 import { loadRequests, saveRequests } from '@/lib/storage';
-import { cn, formatDate } from '@/lib/utils';
+import { cn, formatDate, sgTomorrow } from '@/lib/utils';
 import { Field, FieldLabel, FieldLabelText } from '@/components/ui-legacy/field';
 import { useRole, ROLE_PROFILES } from '@/lib/role';
 import { addNotification } from '@/lib/notifications';
 import type { RequestStatus, ProjectRequest } from '@/lib/types';
 
 /* Filename of the project-submission Excel template attached to each request email. */
-const TEMPLATE_FILENAME = 'DSTA_Project_Request_Template_Skillset.xlsx';
+const TEMPLATE_FILENAME = 'DSTA_Project_Request_Template.xlsx';
 import { useUnsavedChanges } from '@/lib/unsaved-changes';
 
 /* Reminders are sent automatically this many days before the response deadline. */
@@ -360,9 +360,10 @@ function RecipientChip({ email, role, badgeVariant }: { email: string; role: str
   );
 }
 
-function DerivedRecipients({ pcHead, adpnc, hasProgrammeCentre, ccEmails }: { pcHead: string; adpnc: string; hasProgrammeCentre: boolean; ccEmails?: string }) {
+function DerivedRecipients({ pcHead, adpnc, hasProgrammeCentre, ccEmails, toEmails }: { pcHead: string; adpnc: string; hasProgrammeCentre: boolean; ccEmails?: string; toEmails?: string }) {
   const [showAllRecipients, setShowAllRecipients] = useState(true);
   const ccList = ccEmails ? parseCcList(ccEmails) : HQ_CC_RECIPIENTS;
+  const toList = toEmails ? parseCcList(toEmails) : [];
 
   if (!pcHead && !adpnc) {
     return (
@@ -376,9 +377,18 @@ function DerivedRecipients({ pcHead, adpnc, hasProgrammeCentre, ccEmails }: { pc
     <div className="rounded-lg border border-border bg-bg-subtle p-4">
       <div className="flex min-h-9 flex-wrap items-center gap-2">
         <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">To</span>
-        {pcHead && <RecipientChip email={pcHead} role="PC Head" badgeVariant="info" />}
-        {pcHead && adpnc && <span className="text-fg-muted">,</span>}
-        {adpnc && <RecipientChip email={adpnc} role="AD (P&C)" badgeVariant="info" />}
+        {toList.length > 0 ? toList.map((email, i) => (
+          <Fragment key={email}>
+            <RecipientChip email={email} role={email === pcHead ? 'PC Head' : email === adpnc ? 'AD (P&C)' : ''} badgeVariant="info" />
+            {i < toList.length - 1 && <span className="text-fg-muted">,</span>}
+          </Fragment>
+        )) : (
+          <>
+            {pcHead && <RecipientChip email={pcHead} role="PC Head" badgeVariant="info" />}
+            {pcHead && adpnc && <span className="text-fg-muted">,</span>}
+            {adpnc && <RecipientChip email={adpnc} role="AD (P&C)" badgeVariant="info" />}
+          </>
+        )}
       </div>
       {showAllRecipients ? (
         <div className="flex min-h-9 flex-wrap items-center gap-2">
@@ -407,7 +417,7 @@ function DerivedRecipients({ pcHead, adpnc, hasProgrammeCentre, ccEmails }: { pc
 
 /* ── Request card ────────────────────────────────────────────────── */
 function RequestCard({
-  entry, number, showErrors, onChange, onRemove, canRemove = true, guided = false, hideAddInternCategory = false, highlightedSection = null, ccEdit,
+  entry, number, showErrors, onChange, onRemove, canRemove = true, guided = false, hideAddInternCategory = false, highlightedSection = null, ccEdit, toEdit,
 }: {
   entry: ReqEntry;
   number: number;
@@ -419,6 +429,7 @@ function RequestCard({
   hideAddInternCategory?: boolean;
   highlightedSection?: ReadinessKey | null;
   ccEdit?: string;
+  toEdit?: string;
 }) {
   const filledLevels = entry.levels.filter(l => l.level).length;
   const totalPlacements = entry.levels.reduce((sum, level) => sum + Math.max(0, level.placements || 0), 0);
@@ -513,7 +524,7 @@ function RequestCard({
                 <FieldLabel>
                   Response deadline <span className="text-danger">*</span>
                 </FieldLabel>
-                <DatePicker value={entry.deadline} onChange={d => onChange({ deadline: d })} placeholder="Pick a date" align="right" error={showErrors && !entry.deadline} />
+                <DatePicker value={entry.deadline} onChange={d => onChange({ deadline: d })} placeholder="Pick a date" align="right" minDate={sgTomorrow()} error={showErrors && !entry.deadline} />
                 <FieldRequired show={showErrors && !entry.deadline} />
               </Field>
             </div>
@@ -523,7 +534,7 @@ function RequestCard({
                   {!entry.programmeCentre && <ArrowUp size={13} className="text-fg-subtle" aria-hidden="true" />}
                   Recipients
                 </FieldLabel>
-                <DerivedRecipients pcHead={entry.pcHead} adpnc={entry.adpnc} hasProgrammeCentre={Boolean(entry.programmeCentre)} ccEmails={ccEdit} />
+                <DerivedRecipients pcHead={entry.pcHead} adpnc={entry.adpnc} hasProgrammeCentre={Boolean(entry.programmeCentre)} ccEmails={ccEdit} toEmails={toEdit} />
               </Field>
             </div>
           </div>
@@ -726,15 +737,25 @@ function ReviewField({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ReviewRecipientChips({ entry, ccEmails }: { entry: ReqEntry; ccEmails?: string }) {
+function ReviewRecipientChips({ entry, ccEmails, toEmails }: { entry: ReqEntry; ccEmails?: string; toEmails?: string }) {
   const ccList = ccEmails ? parseCcList(ccEmails) : HQ_CC_RECIPIENTS;
+  const toList = toEmails ? parseCcList(toEmails) : [];
   return (
     <div className="space-y-2">
       <div className="flex min-h-9 flex-wrap items-center gap-2">
         <span className="shrink-0 text-body-sm text-fg-muted">To:</span>
-        {entry.pcHead && <RecipientChip email={entry.pcHead} role="PC Head" badgeVariant="info" />}
-        {entry.pcHead && entry.adpnc && <span className="text-fg-muted">,</span>}
-        {entry.adpnc && <RecipientChip email={entry.adpnc} role="AD (P&C)" badgeVariant="info" />}
+        {toList.length > 0 ? toList.map((email, i) => (
+          <Fragment key={email}>
+            <RecipientChip email={email} role={email === entry.pcHead ? 'PC Head' : email === entry.adpnc ? 'AD (P&C)' : ''} badgeVariant="info" />
+            {i < toList.length - 1 && <span className="text-fg-muted">,</span>}
+          </Fragment>
+        )) : (
+          <>
+            {entry.pcHead && <RecipientChip email={entry.pcHead} role="PC Head" badgeVariant="info" />}
+            {entry.pcHead && entry.adpnc && <span className="text-fg-muted">,</span>}
+            {entry.adpnc && <RecipientChip email={entry.adpnc} role="AD (P&C)" badgeVariant="info" />}
+          </>
+        )}
       </div>
       <div className="flex min-h-9 flex-wrap items-center gap-2">
         <span className="shrink-0 text-body-sm text-fg-muted">CC:</span>
@@ -749,7 +770,7 @@ function ReviewRecipientChips({ entry, ccEmails }: { entry: ReqEntry; ccEmails?:
   );
 }
 
-function ReviewDetails({ entry, onPreview, ccEdit }: { entry: ReqEntry; onPreview: () => void; ccEdit?: string }) {
+function ReviewDetails({ entry, onPreview, ccEdit, toEdit }: { entry: ReqEntry; onPreview: () => void; ccEdit?: string; toEdit?: string }) {
   return (
     <div className="space-y-5 px-5 pb-5 pt-4">
       <div>
@@ -766,7 +787,7 @@ function ReviewDetails({ entry, onPreview, ccEdit }: { entry: ReqEntry; onPrevie
           </div>
           <Field>
             <FieldLabel className="text-fg-muted">Recipients</FieldLabel>
-            <ReviewRecipientChips entry={entry} ccEmails={ccEdit} />
+            <ReviewRecipientChips entry={entry} ccEmails={ccEdit} toEmails={toEdit} />
           </Field>
         </div>
       </div>
@@ -789,7 +810,7 @@ function ReviewDetails({ entry, onPreview, ccEdit }: { entry: ReqEntry; onPrevie
   );
 }
 
-function ReviewCard({ entry, number, onPreview, ccEdit }: { entry: ReqEntry; number: number; onPreview: () => void; ccEdit?: string }) {
+function ReviewCard({ entry, number, onPreview, ccEdit, toEdit }: { entry: ReqEntry; number: number; onPreview: () => void; ccEdit?: string; toEdit?: string }) {
   const [open, setOpen] = useState(true);
   const totalPlacements = entry.levels.reduce((s, l) => s + l.placements, 0);
 
@@ -814,7 +835,7 @@ function ReviewCard({ entry, number, onPreview, ccEdit }: { entry: ReqEntry; num
         </span>
       </button>
       {open && (
-        <ReviewDetails entry={entry} onPreview={onPreview} ccEdit={ccEdit} />
+        <ReviewDetails entry={entry} onPreview={onPreview} ccEdit={ccEdit} toEdit={toEdit} />
       )}
     </div>
   );
@@ -906,7 +927,7 @@ function ReviewListLayout({
             </div>
           </div>
         {activeReq ? (
-          <ReviewDetails entry={activeReq} onPreview={() => onPreview(activeReq.id)} ccEdit={emailEdits[activeReq.id]?.cc} />
+          <ReviewDetails entry={activeReq} onPreview={() => onPreview(activeReq.id)} ccEdit={emailEdits[activeReq.id]?.cc} toEdit={emailEdits[activeReq.id]?.to} />
         ) : (
           <div className="flex min-h-72 items-center justify-center p-6 text-body-sm text-fg-muted">
             Select a request to review.
@@ -1390,6 +1411,7 @@ export default function ProjectRequestFormPage() {
                       guided
                       highlightedSection={highlightedReadiness}
                       ccEdit={emailEdits[activeReq.id]?.cc}
+                      toEdit={emailEdits[activeReq.id]?.to}
                     />
                   ) : (
                     <div className="flex min-h-72 items-center justify-center p-6 text-body-sm text-fg-muted">
@@ -1433,6 +1455,7 @@ export default function ProjectRequestFormPage() {
                       canRemove={reqs.length > 1}
                       highlightedSection={highlightedReadiness}
                       ccEdit={emailEdits[r.id]?.cc}
+                      toEdit={emailEdits[r.id]?.to}
                     />
                   ))}
                 </section>
@@ -1475,7 +1498,7 @@ export default function ProjectRequestFormPage() {
                   <p className="mt-0.5 text-body-sm text-fg-muted">Check each request before sending. Use “Preview email” to see the message a recipient will receive.</p>
                 </div>
                 {reqs.map(r => (
-                  <ReviewCard key={r.id} entry={r} number={numberById.get(r.id) ?? 0} onPreview={() => setPreviewId(r.id)} ccEdit={emailEdits[r.id]?.cc} />
+                  <ReviewCard key={r.id} entry={r} number={numberById.get(r.id) ?? 0} onPreview={() => setPreviewId(r.id)} ccEdit={emailEdits[r.id]?.cc} toEdit={emailEdits[r.id]?.to} />
                 ))}
               </section>
             )}
@@ -1538,6 +1561,7 @@ export default function ProjectRequestFormPage() {
                   ].filter(Boolean)}
                   placeholder="Select recipients"
                   chips="inline-text"
+                  hideSearch
                   className="flex-1"
                 />
               </label>
@@ -1556,6 +1580,7 @@ export default function ProjectRequestFormPage() {
                   ].filter(Boolean)}
                   placeholder="Select recipients"
                   chips="inline-text"
+                  hideSearch
                   className="flex-1"
                 />
               </label>

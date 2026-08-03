@@ -90,7 +90,7 @@ import {
   saveRequests,
 } from '@/lib/storage';
 import { useUnsavedChanges } from '@/lib/unsaved-changes';
-import { cn, formatDate } from '@/lib/utils';
+import { cn, formatDate, sgTomorrow } from '@/lib/utils';
 import { Field, FieldLabel, FieldLabelText } from '@/components/ui-legacy/field';
 import FieldRequired from '@/components/ui-legacy/field-required';
 import type {
@@ -256,7 +256,7 @@ function recipientLabel(email: string) {
 /* HQ recipients cc'd on every project-request email (sent from a system address). */
 const HQ_CC_RECIPIENTS = ['Jasline', 'Jenyn'];
 
-const TEMPLATE_FILENAME = 'DSTA_Project_Request_Template_Skillset.xlsx';
+const TEMPLATE_FILENAME = 'DSTA_Project_Request_Template.xlsx';
 
 function parseCcList(cc: string | undefined): string[] {
   if (!cc) return [];
@@ -589,9 +589,10 @@ function RecipientChip({ email, role, badgeVariant }: { email: string; role: str
   );
 }
 
-function DerivedRecipients({ pcHead, adpnc, showAll = false, ccEmails }: { pcHead: string; adpnc: string; showAll?: boolean; ccEmails?: string }) {
+function DerivedRecipients({ pcHead, adpnc, showAll = false, ccEmails, toEmails }: { pcHead: string; adpnc: string; showAll?: boolean; ccEmails?: string; toEmails?: string }) {
   const [showAllRecipients, setShowAllRecipients] = useState(showAll);
   const ccList = ccEmails ? parseCcList(ccEmails) : HQ_CC_RECIPIENTS;
+  const toList = toEmails ? parseCcList(toEmails) : [];
 
   if (!pcHead && !adpnc) {
     return (
@@ -605,9 +606,18 @@ function DerivedRecipients({ pcHead, adpnc, showAll = false, ccEmails }: { pcHea
     <div className="rounded-lg border border-border bg-bg-subtle p-4">
       <div className="flex min-h-9 flex-wrap items-center gap-2">
         <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">To</span>
-        {pcHead && <RecipientChip email={pcHead} role="PC Head" badgeVariant="info" />}
-        {pcHead && adpnc && <span className="text-fg-muted">,</span>}
-        {adpnc && <RecipientChip email={adpnc} role="AD (P&C)" badgeVariant="info" />}
+        {toList.length > 0 ? toList.map((email, i) => (
+          <Fragment key={email}>
+            <RecipientChip email={email} role={email === pcHead ? 'PC Head' : email === adpnc ? 'AD (P&C)' : ''} badgeVariant="info" />
+            {i < toList.length - 1 && <span className="text-fg-muted">,</span>}
+          </Fragment>
+        )) : (
+          <>
+            {pcHead && <RecipientChip email={pcHead} role="PC Head" badgeVariant="info" />}
+            {pcHead && adpnc && <span className="text-fg-muted">,</span>}
+            {adpnc && <RecipientChip email={adpnc} role="AD (P&C)" badgeVariant="info" />}
+          </>
+        )}
       </div>
       {showAllRecipients ? (
         <div className="flex min-h-9 flex-wrap items-center gap-2">
@@ -731,6 +741,7 @@ function RequestEditor({
                 placeholder="Pick a date"
                 align="right"
                 disabled={!canEditDeadline}
+                minDate={sgTomorrow()}
                 error={showErrors && !model.deadline}
               />
               <FieldRequired show={showErrors && !model.deadline} />
@@ -1109,7 +1120,7 @@ function AdditionalInternCategoryPanel({
   );
 }
 
-function DraftEmailPreview({ model }: { model: EditModel }) {
+function DraftEmailPreview({ model, emailEdits, onEmailChange }: { model: EditModel; emailEdits: { to: string; cc: string }; onEmailChange: (patch: Partial<{ to: string; cc: string }>) => void }) {
   const rows = model.lines.map(line => ({
     label: line.internCategory,
     calendarPeriod: line.calendarPeriod,
@@ -1117,11 +1128,6 @@ function DraftEmailPreview({ model }: { model: EditModel }) {
     placements: line.placements,
   }));
 
-  const [toDraft, setToDraft] = useState(() => recipientLabel(model.adpnc));
-  const [ccDraft, setCcDraft] = useState(() => [
-    model.pcHead ? recipientLabel(model.pcHead) : '',
-    ...HQ_CC_RECIPIENTS,
-  ].filter(Boolean).join(', '));
   const [subjectDraft, setSubjectDraft] = useState(() => `Project Request - ${model.programmeCentre || 'Programme Centre'}`);
   const [beforeDraft, setBeforeDraft] = useState(() =>
     `Dear ${recipientLabel(model.adpnc) || 'recipient'},\n\n`
@@ -1139,30 +1145,32 @@ function DraftEmailPreview({ model }: { model: EditModel }) {
         <label className="flex items-start gap-3 border-b border-border pb-3">
           <span className="w-16 shrink-0 pt-2 text-body-sm font-medium text-fg-muted">To</span>
           <Combobox
-            selected={parseCcList(toDraft)}
+            selected={parseCcList(emailEdits.to)}
             onToggle={(val: string) => {
-              const current = new Set(parseCcList(toDraft));
+              const current = new Set(parseCcList(emailEdits.to));
               if (current.has(val)) current.delete(val); else current.add(val);
-              setToDraft(Array.from(current).join(', '));
+              onEmailChange({ to: Array.from(current).join(', ') });
             }}
             options={[recipientLabel(model.adpnc)].filter(Boolean)}
             placeholder="Select recipients"
             chips="inline-text"
+            hideSearch
             className="flex-1"
           />
         </label>
         <label className="flex items-start gap-3 border-b border-border pb-3">
           <span className="w-16 shrink-0 pt-2 text-body-sm font-medium text-fg-muted">Cc</span>
           <Combobox
-            selected={parseCcList(ccDraft)}
+            selected={parseCcList(emailEdits.cc)}
             onToggle={(val: string) => {
-              const current = new Set(parseCcList(ccDraft));
+              const current = new Set(parseCcList(emailEdits.cc));
               if (current.has(val)) current.delete(val); else current.add(val);
-              setCcDraft(Array.from(current).join(', '));
+              onEmailChange({ cc: Array.from(current).join(', ') });
             }}
             options={[recipientLabel(model.pcHead), ...HQ_CC_RECIPIENTS].filter(Boolean)}
             placeholder="Select recipients"
             chips="inline-text"
+            hideSearch
             className="flex-1"
           />
         </label>
@@ -1215,7 +1223,7 @@ function DraftEmailPreview({ model }: { model: EditModel }) {
   );
 }
 
-function DraftReviewDetails({ model, onPreview }: { model: EditModel; onPreview: () => void }) {
+function DraftReviewDetails({ model, onPreview, emailEdits }: { model: EditModel; onPreview: () => void; emailEdits?: { to: string; cc: string } }) {
   return (
     <div className="space-y-5 px-5 pb-5 pt-4">
       <div>
@@ -1227,7 +1235,7 @@ function DraftReviewDetails({ model, onPreview }: { model: EditModel; onPreview:
           </div>
           <div>
             <p className="mb-1 text-caption text-fg-muted">Recipients</p>
-            <ReviewRecipientChips model={model} />
+            <ReviewRecipientChips model={model} emailEdits={emailEdits} />
           </div>
         </div>
       </div>
@@ -1247,11 +1255,11 @@ function DraftReviewDetails({ model, onPreview }: { model: EditModel; onPreview:
   );
 }
 
-function ReviewRecipientChips({ model }: { model: EditModel }) {
-  return <DerivedRecipients pcHead={model.pcHead} adpnc={model.adpnc} showAll />;
+function ReviewRecipientChips({ model, emailEdits }: { model: EditModel; emailEdits?: { to: string; cc: string } }) {
+  return <DerivedRecipients pcHead={model.pcHead} adpnc={model.adpnc} showAll ccEmails={emailEdits?.cc} toEmails={emailEdits?.to} />;
 }
 
-function ReviewPanel({ model, mode, onPreview }: { model: EditModel; mode: RequestMode; onPreview?: () => void }) {
+function ReviewPanel({ model, mode, onPreview, emailEdits }: { model: EditModel; mode: RequestMode; onPreview?: () => void; emailEdits?: { to: string; cc: string } }) {
   const total = model.lines.reduce((sum, line) => sum + line.placements, 0);
   return (
     <section className="rounded-xl border border-border bg-surface shadow-sm">
@@ -1271,7 +1279,7 @@ function ReviewPanel({ model, mode, onPreview }: { model: EditModel; mode: Reque
             </div>
             <div>
               <p className="mb-1 text-caption text-fg-muted">Recipients</p>
-              <ReviewRecipientChips model={model} />
+              <ReviewRecipientChips model={model} emailEdits={emailEdits} />
             </div>
           </div>
         </div>
@@ -1298,6 +1306,7 @@ function ManageReviewPanel({
   placementChanges,
   additionalLines,
   onPreview,
+  emailEdits,
 }: {
   model: EditModel;
   group: ProjectRequest[];
@@ -1305,6 +1314,7 @@ function ManageReviewPanel({
   placementChanges: Array<{ field: string; from?: string; to?: string }>;
   additionalLines: EditLine[];
   onPreview: () => void;
+  emailEdits?: { to: string; cc: string };
 }) {
   const totalSlots = additionalLines.reduce((sum, line) => sum + line.placements, 0);
   const oldDeadline = group[0]?.deadline ?? '';
@@ -1340,7 +1350,7 @@ function ManageReviewPanel({
               </div>
               <div>
                 <p className="mb-1 text-caption text-fg-muted">Recipients</p>
-                <ReviewRecipientChips model={model} />
+                <ReviewRecipientChips model={model} emailEdits={emailEdits} />
               </div>
             </div>
           </div>
@@ -1477,12 +1487,16 @@ function ManageEmailPreview({
   group,
   placementChanges,
   additionalLines,
+  emailEdits,
+  onEmailChange,
 }: {
   mode: 'update' | 'additional' | 'combined';
   model: EditModel;
   group: ProjectRequest[];
   placementChanges: Array<{ field: string; from?: string; to?: string }>;
   additionalLines: EditLine[];
+  emailEdits: { to: string; cc: string };
+  onEmailChange: (patch: Partial<{ to: string; cc: string }>) => void;
 }) {
   const hasAdditional = additionalLines.length > 0;
   const subject = mode === 'additional'
@@ -1527,11 +1541,6 @@ function ManageEmailPreview({
     'Davina Tan',
     'Internship Officer, DSTA',
   ].join('\n');
-  const [toDraft, setToDraft] = useState(() => recipientLabel(model.pcHead));
-  const [ccDraft, setCcDraft] = useState(() => [
-    model.adpnc ? recipientLabel(model.adpnc) : '',
-    ...HQ_CC_RECIPIENTS,
-  ].filter(Boolean).join(', '));
   const [subjectDraft, setSubjectDraft] = useState(subject);
   const [beforeDraft, setBeforeDraft] = useState(before);
   const [afterDraft, setAfterDraft] = useState(after);
@@ -1544,30 +1553,32 @@ function ManageEmailPreview({
         <label className="flex items-start gap-3 border-b border-border pb-3">
           <span className="w-16 shrink-0 pt-2 text-body-sm font-medium text-fg-muted">To</span>
           <Combobox
-            selected={parseCcList(toDraft)}
+            selected={parseCcList(emailEdits.to)}
             onToggle={(val: string) => {
-              const current = new Set(parseCcList(toDraft));
+              const current = new Set(parseCcList(emailEdits.to));
               if (current.has(val)) current.delete(val); else current.add(val);
-              setToDraft(Array.from(current).join(', '));
+              onEmailChange({ to: Array.from(current).join(', ') });
             }}
             options={[recipientLabel(model.pcHead)].filter(Boolean)}
             placeholder="Select recipients"
             chips="inline-text"
+            hideSearch
             className="flex-1"
           />
         </label>
         <label className="flex items-start gap-3 border-b border-border pb-3">
           <span className="w-16 shrink-0 pt-2 text-body-sm font-medium text-fg-muted">Cc</span>
           <Combobox
-            selected={parseCcList(ccDraft)}
+            selected={parseCcList(emailEdits.cc)}
             onToggle={(val: string) => {
-              const current = new Set(parseCcList(ccDraft));
+              const current = new Set(parseCcList(emailEdits.cc));
               if (current.has(val)) current.delete(val); else current.add(val);
-              setCcDraft(Array.from(current).join(', '));
+              onEmailChange({ cc: Array.from(current).join(', ') });
             }}
             options={[recipientLabel(model.adpnc), ...HQ_CC_RECIPIENTS].filter(Boolean)}
             placeholder="Select recipients"
             chips="inline-text"
+            hideSearch
             className="flex-1"
           />
         </label>
@@ -1654,6 +1665,10 @@ export default function ProjectRequestEditPage() {
   const [auditOpen, setAuditOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<'update' | 'additional' | 'combined' | null>(null);
   const [draftPreviewModel, setDraftPreviewModel] = useState<EditModel | null>(null);
+  const [previewEmailEdits, setPreviewEmailEdits] = useState<{ to: string; cc: string }>({ to: '', cc: '' });
+  function patchPreviewEmailEdits(patch: Partial<{ to: string; cc: string }>) {
+    setPreviewEmailEdits(prev => ({ ...prev, ...patch }));
+  }
   const [draftConfirmSendOpen, setDraftConfirmSendOpen] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [deleteDraftIndex, setDeleteDraftIndex] = useState<number | null>(null);
@@ -1840,6 +1855,12 @@ export default function ProjectRequestEditPage() {
     if (mode === 'combined' && hasAdditionalLines && additionalMissing) {
       showToast('Complete the additional intern category before previewing.');
       return;
+    }
+    if (model) {
+      setPreviewEmailEdits({
+        to: recipientLabel(model.pcHead),
+        cc: [model.adpnc ? recipientLabel(model.adpnc) : '', ...HQ_CC_RECIPIENTS].filter(Boolean).join(', '),
+      });
     }
     setPreviewMode(mode);
   }
@@ -2401,7 +2422,13 @@ export default function ProjectRequestEditPage() {
                         </div>
                       </div>
                       {activeDraftModel ? (
-                        <DraftReviewDetails model={activeDraftModel} onPreview={() => setDraftPreviewModel(activeDraftModel)} />
+                        <DraftReviewDetails model={activeDraftModel} onPreview={() => {
+                          setDraftPreviewModel(activeDraftModel);
+                          setPreviewEmailEdits({
+                            to: recipientLabel(activeDraftModel.adpnc),
+                            cc: [activeDraftModel.pcHead ? recipientLabel(activeDraftModel.pcHead) : '', ...HQ_CC_RECIPIENTS].filter(Boolean).join(', '),
+                          });
+                        }} emailEdits={previewEmailEdits} />
                       ) : (
                         <div className="flex min-h-72 items-center justify-center p-6 text-body-sm text-fg-muted">
                           Select a request to review.
@@ -2437,6 +2464,7 @@ export default function ProjectRequestEditPage() {
                     placementChanges={placementChanges}
                     additionalLines={completedAdditionalLines}
                     onPreview={() => openPreview('combined')}
+                    emailEdits={previewEmailEdits}
                   />
                   )}
               </>
@@ -2515,6 +2543,8 @@ export default function ProjectRequestEditPage() {
                 group={group}
                 placementChanges={placementChanges}
                 additionalLines={previewMode === 'additional' || previewMode === 'combined' ? completedAdditionalLines : []}
+                emailEdits={previewEmailEdits}
+                onEmailChange={patchPreviewEmailEdits}
               />
             </SheetBody>
             <SheetFooter>
@@ -2536,7 +2566,7 @@ export default function ProjectRequestEditPage() {
               <SheetDescription>To {recipientLabel(draftPreviewModel.adpnc) || '-'}</SheetDescription>
             </SheetHeader>
             <SheetBody className="space-y-4">
-              <DraftEmailPreview model={draftPreviewModel} />
+              <DraftEmailPreview model={draftPreviewModel} emailEdits={previewEmailEdits} onEmailChange={patchPreviewEmailEdits} />
             </SheetBody>
             <SheetFooter>
               <Button variant="primary" size="md" onClick={() => setDraftPreviewModel(null)}>Done</Button>

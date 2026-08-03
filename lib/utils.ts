@@ -64,6 +64,17 @@ export function sgToday(): string {
   }).format(new Date());
 }
 
+/* Tomorrow's date in Singapore (UTC+8) as a YYYY-MM-DD string. Used to block
+   selection of today and earlier dates in date pickers. */
+export function sgTomorrow(): string {
+  const today = sgToday();
+  const [year, month, day] = today.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + 1));
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Singapore', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(date);
+}
+
 /* Later of two YYYY-MM-DD strings (ignores empties). Handy for computing a picker
    minimum from several constraints, e.g. max(today, openDate). */
 export function maxDateStr(...dates: (string | undefined | null)[]): string {

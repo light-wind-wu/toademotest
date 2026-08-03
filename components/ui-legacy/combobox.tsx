@@ -12,13 +12,14 @@ interface ComboboxProps {
   groups?:       { label: string; opts: string[] }[];
   placeholder?:  string;
   searchOnly?:   boolean;  // hide all options until user types
+  hideSearch?:   boolean;  // hide the search input but keep the option list
   className?:    string;
   chipClassName?: string;
   chips?:        'inline' | 'below' | 'inline-text';
 }
 
 export default function Combobox({
-  selected, onToggle, options = [], groups, placeholder = 'Select…', searchOnly = false, className, chipClassName, chips = 'below',
+  selected, onToggle, options = [], groups, placeholder = 'Select…', searchOnly = false, hideSearch = false, className, chipClassName, chips = 'below',
 }: ComboboxProps) {
   const [open, setOpen]     = useState(false);
   const [query, setQuery]   = useState('');
@@ -57,8 +58,8 @@ export default function Combobox({
   }, [open, updatePosition]);
 
   useEffect(() => {
-    if (open) inputRef.current?.focus();
-  }, [open]);
+    if (open && !hideSearch) inputRef.current?.focus();
+  }, [open, hideSearch]);
 
   const allOpts = groups ? groups.flatMap(g => g.opts) : options;
   const q       = query.trim().toLowerCase();
@@ -137,20 +138,22 @@ export default function Combobox({
           style={{ position: 'fixed', top: position.top, left: position.left, width: position.width }}
           className="z-[200] bg-surface border border-border rounded-xl shadow-xl overflow-hidden"
         >
-          {/* Search */}
-          <div className="p-2 border-b border-border">
-            <div className="relative">
-              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-muted pointer-events-none" />
-              <input
-                ref={inputRef}
-                type="text"
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Search…"
-                className="w-full pl-8 pr-3 py-1.5 text-body-sm bg-bg-subtle border border-border rounded-lg outline-none focus:border-accent"
-              />
-            </div>
+      {/* Search */}
+      {!hideSearch && (
+        <div className="p-2 border-b border-border">
+          <div className="relative">
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-muted pointer-events-none" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search…"
+              className="w-full pl-8 pr-3 py-1.5 text-body-sm bg-bg-subtle border border-border rounded-lg outline-none focus:border-accent"
+            />
           </div>
+        </div>
+      )}
           {/* Options */}
           <div className="max-h-56 overflow-y-auto">
             {renderOptions()}
