@@ -196,7 +196,7 @@ function recipientLabel(email: string): string {
 
 /* HQ recipients cc'd on every project-request email (it is sent from a system address,
    so the Internship HQ team is copied on every request). */
-const HQ_CC_RECIPIENTS = ['Jasmine', 'Jeryn'];
+const HQ_CC_RECIPIENTS = ['Jasmine (Internship HQ)', 'Jeryn', 'Keng Yen'];
 
 /** Parse a comma-separated Cc string into a list of names/emails. */
 function parseCcList(cc: string | undefined): string[] {

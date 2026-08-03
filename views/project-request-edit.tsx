@@ -254,7 +254,7 @@ function recipientLabel(email: string) {
 }
 
 /* HQ recipients cc'd on every project-request email (sent from a system address). */
-const HQ_CC_RECIPIENTS = ['Jasmine', 'Jeryn'];
+const HQ_CC_RECIPIENTS = ['Jasmine (Internship HQ)', 'Jeryn', 'Keng Yen'];
 
 const TEMPLATE_FILENAME = 'DSTA_Project_Request_Template.xlsx';
 

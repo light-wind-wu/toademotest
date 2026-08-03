@@ -624,6 +624,8 @@ export default function RequestsPage() {
   const [statusCFOpen, setStatusCFOpen] = useState(false);
   const [statusCFPos,  setStatusCFPos]  = useState({ top: 0, left: 0 });
   const [expandedPcs, setExpandedPcs] = useState<Set<string>>(new Set());
+  const [expandedDraftGroups, setExpandedDraftGroups] = useState<Set<string>>(new Set());
+  const [expandedFlatRows, setExpandedFlatRows] = useState<Set<string>>(new Set());
   const [visibleCols, setVisibleCols] = useState<Record<ColKey, boolean>>(DEFAULT_COLS);
   const [sentVisibleCols, setSentVisibleCols] = useState<Record<SentColKey, boolean>>(SENT_DEFAULT_COLS);
   const [sentPage, setSentPage] = useState(1);
@@ -900,17 +902,32 @@ export default function RequestsPage() {
         </StatusTooltip>
       ),
     }),
-    draftColumnHelper.display({
-      id: 'actions',
-      header: '',
-      meta: { size: 'icon', sticky: 'right' },
-      cell: ({ row }) => (
-        <div className="text-right" onClick={e => e.stopPropagation()}>
-          {sentActionMenu(row.original)}
-        </div>
-      ),
-    }),
   ], []);
+
+  const renderDraftSubRows = (row: Row<PCGroup>, table: TanStackTable<PCGroup>) => {
+    const group = row.original;
+    const key = draftRequestGroupKey(group.requests[0]);
+    if (!expandedDraftGroups.has(key)) return null;
+    return (
+      <Fragment key={`${key}-sub`}>
+        {group.requests.map(req => (
+          <TableRow key={req.id ?? req.pc} className="bg-surface hover:bg-bg transition-colors">
+            <TableCell className="px-4 py-2.5" colSpan={table.getAllColumns().length}>
+              <div className="flex items-center justify-between gap-4">
+                <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 text-body-sm text-fg-muted min-w-0 flex-1">
+                  <span className="truncate">{requestProgrammeCenter(req)}</span>
+                  <span className="truncate">{requestInternCategory(req, progMap)}</span>
+                  <span>{req.placements} placement{req.placements !== 1 ? 's' : ''}</span>
+                  <span>{req.duration || '—'}</span>
+                </div>
+                {sentActionMenu(group)}
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </Fragment>
+    );
+  };
 
   const sentColumnHelper = createColumnHelper<PCGroup>();
   const sentColumns: ColumnDef<PCGroup, any>[] = (() => {
@@ -1139,13 +1156,9 @@ export default function RequestsPage() {
 
     cols.push(sentColumnHelper.display({
       id: 'actions',
-      header: '',
-      meta: { size: 'icon', noResizable: true, thClassName: 'px-0', sticky: 'right' },
-      cell: ({ row }) => (
-        <div className="text-right" onClick={e => e.stopPropagation()}>
-          {sentActionMenu(row.original)}
-        </div>
-      ),
+      header: () => null,
+      meta: { size: 'icon' },
+      cell: () => null,
     }));
 
     return cols;
@@ -1155,89 +1168,98 @@ export default function RequestsPage() {
     const group = row.original;
     const gkey = group.key ?? group.pc;
     if (!expandedPcs.has(gkey)) return null;
-    return group.requests.map(req => {
-      const reqKey = `${req.uploadToken ?? req.id ?? req.pc}-${req.internCategory ?? req.educationLevel}`;
-      return (
-        <TableRow key={reqKey} className="bg-surface hover:bg-bg transition-colors">
-          {sentVisibleCols.programmeCenter && (
-            <TableCell
-              className="px-4 py-2.5"
-              maxWidth={table.getColumn('programmeCenter')?.getSize()}
-            />
-          )}
-          {sentVisibleCols.programmes && (
-            <TableCell
-              className={cn('py-2.5', sentVisibleCols.programmeCenter ? 'px-4' : 'pl-12 pr-4')}
-              maxWidth={table.getColumn('programmes')?.getSize()}
-            >
-              <TruncatedTooltip className="text-body-sm font-normal text-fg-muted">
-                <CornerDownRight size={16} className="inline" />
-                {requestInternCategory(req, progMap)}
-              </TruncatedTooltip>
-            </TableCell>
-          )}
-          <TableCell
-            className="px-4 py-2.5"
-            maxWidth={table.getColumn('recipient')?.getSize()}
-          />
-          {sentVisibleCols.placements && (
-            <TableCell
-              className="px-4 py-2.5 text-body-sm font-normal text-fg-muted"
-              maxWidth={table.getColumn('placements')?.getSize()}
-            >
-              <div className="flex items-center gap-2">
-                <TruncatedTooltip className="text-body-sm font-normal text-fg-muted">
-                  {req.uploaded ?? 0} / {req.placements}
-                </TruncatedTooltip>
-                {isOverTarget(req) && <LineStatusFlag meta={LINE_STATUS_META.overTarget} />}
-              </div>
-            </TableCell>
-          )}
-          {sentVisibleCols.internshipWindow && (
-            <TableCell
-              className="px-4 py-2.5 text-body-sm font-normal text-fg-muted"
-              maxWidth={table.getColumn('internshipWindow')?.getSize()}
-            >
-              {req.calendarPeriod
-                ? req.calendarPeriod
-                : req.periodStart && req.periodEnd
-                ? (req.periodStart === req.periodEnd ? req.periodStart : `${req.periodStart} – ${req.periodEnd}`)
-                : '—'}
-            </TableCell>
-          )}
-          {sentVisibleCols.projectDuration && (
-            <TableCell
-              className="px-4 py-2.5 text-body-sm font-normal text-fg-muted"
-              maxWidth={table.getColumn('projectDuration')?.getSize()}
-            >
-              {req.duration || '—'}
-            </TableCell>
-          )}
-          {sentVisibleCols.requestDate && (
-            <TableCell
-              className="px-4 py-2.5"
-              maxWidth={table.getColumn('requestDate')?.getSize()}
-            />
-          )}
-          {sentVisibleCols.deadline && (
-            <TableCell
-              className="px-4 py-2.5"
-              maxWidth={table.getColumn('deadline')?.getSize()}
-            />
-          )}
-          {sentVisibleCols.status && (
-            <TableCell
-              className="px-4 py-2.5"
-              maxWidth={table.getColumn('sentStatus')?.getSize()}
-            />
-          )}
-          <TableCell
-            className="px-4 py-2.5"
-            maxWidth={table.getColumn('actions')?.getSize()}
-          />
-        </TableRow>
-      );
-    });
+    return (
+      <Fragment key={`${gkey}-sub`}>
+        {group.requests.map(req => {
+          const reqKey = `${req.uploadToken ?? req.id ?? req.pc}-${req.internCategory ?? req.educationLevel}`;
+          return (
+            <TableRow key={reqKey} className="bg-surface hover:bg-bg transition-colors">
+              {sentVisibleCols.programmeCenter && (
+                <TableCell
+                  className="px-4 py-2.5"
+                  maxWidth={table.getColumn('programmeCenter')?.getSize()}
+                />
+              )}
+              {sentVisibleCols.programmes && (
+                <TableCell
+                  className={cn('py-2.5', sentVisibleCols.programmeCenter ? 'px-4' : 'pl-12 pr-4')}
+                  maxWidth={table.getColumn('programmes')?.getSize()}
+                >
+                  <TruncatedTooltip className="text-body-sm font-normal text-fg-muted">
+                    <CornerDownRight size={16} className="inline" />
+                    {requestInternCategory(req, progMap)}
+                  </TruncatedTooltip>
+                </TableCell>
+              )}
+              <TableCell
+                className="px-4 py-2.5"
+                maxWidth={table.getColumn('recipient')?.getSize()}
+              />
+              {sentVisibleCols.placements && (
+                <TableCell
+                  className="px-4 py-2.5 text-body-sm font-normal text-fg-muted"
+                  maxWidth={table.getColumn('placements')?.getSize()}
+                >
+                  <div className="flex items-center gap-2">
+                    <TruncatedTooltip className="text-body-sm font-normal text-fg-muted">
+                      {req.uploaded ?? 0} / {req.placements}
+                    </TruncatedTooltip>
+                    {isOverTarget(req) && <LineStatusFlag meta={LINE_STATUS_META.overTarget} />}
+                  </div>
+                </TableCell>
+              )}
+              {sentVisibleCols.internshipWindow && (
+                <TableCell
+                  className="px-4 py-2.5 text-body-sm font-normal text-fg-muted"
+                  maxWidth={table.getColumn('internshipWindow')?.getSize()}
+                >
+                  {req.calendarPeriod
+                    ? req.calendarPeriod
+                    : req.periodStart && req.periodEnd
+                    ? (req.periodStart === req.periodEnd ? req.periodStart : `${req.periodStart} – ${req.periodEnd}`)
+                    : '—'}
+                </TableCell>
+              )}
+              {sentVisibleCols.projectDuration && (
+                <TableCell
+                  className="px-4 py-2.5 text-body-sm font-normal text-fg-muted"
+                  maxWidth={table.getColumn('projectDuration')?.getSize()}
+                >
+                  {req.duration || '—'}
+                </TableCell>
+              )}
+              {sentVisibleCols.requestDate && (
+                <TableCell
+                  className="px-4 py-2.5"
+                  maxWidth={table.getColumn('requestDate')?.getSize()}
+                />
+              )}
+              {sentVisibleCols.deadline && (
+                <TableCell
+                  className="px-4 py-2.5"
+                  maxWidth={table.getColumn('deadline')?.getSize()}
+                />
+              )}
+              {sentVisibleCols.status && (
+                <TableCell
+                  className="px-4 py-2.5"
+                  maxWidth={table.getColumn('sentStatus')?.getSize()}
+                />
+              )}
+              <TableCell
+                className="px-4 py-2.5"
+                maxWidth={table.getColumn('actions')?.getSize()}
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-end">
+                  {sentActionMenu(group)}
+                </div>
+              </TableCell>
+            </TableRow>
+          );
+        })}
+      </Fragment>
+    );
   };
 
   const flatColumnHelper = createColumnHelper<FlatProj>();
@@ -1258,11 +1280,10 @@ export default function RequestsPage() {
         meta: { size: 'fill', truncate: true },
         cell: ({ row }) => {
           const rowData = row.original;
-          const isPending = rowData.status === 'pending';
           const isRejected = rowData.status === 'rejected';
           return (
             <div>
-              <p className={cn('text-body-sm font-medium truncate', isPending ? 'text-fg group-hover:text-accent transition-colors' : 'text-fg')}>
+              <p className="text-body-sm font-medium truncate text-fg">
                 {rowData.title}
               </p>
               {isRejected && rowData.remarks && (
@@ -1427,6 +1448,12 @@ export default function RequestsPage() {
         <span className="badge text-caption font-normal text-warning">Pending</span>
       ),
     }));
+    cols.push(pendingColumnHelper.display({
+      id: 'actions',
+      header: () => null,
+      meta: { size: 'icon' },
+      cell: () => null,
+    }));
     return cols;
   })();
 
@@ -1437,17 +1464,14 @@ export default function RequestsPage() {
     return group.rows.map(r => {
       const category = r.educationLevel || r.requestedEducationLevels.join(', ') || '—';
       const disciplines = parseDisciplines(r.discipline);
-      const isPending = r.status === 'pending';
       const isRejected = r.status === 'rejected';
       return (
         <TableRow
           key={r.key}
           className={cn(
             'hover:bg-bg transition-colors group',
-            isPending && 'cursor-pointer',
-            isPending && selectedKeys.has(r.key) && 'bg-accent/5',
+            selectedKeys.has(r.key) && 'bg-accent/5',
           )}
-          onClick={isPending ? () => router.push(`/requests/project/${encodeURIComponent(r.batchId)}/${encodeURIComponent(r.projId)}`) : undefined}
         >
           <TableCell className="px-4 py-3 w-10" maxWidth={table.getColumn('select')?.getSize()} onClick={e => e.stopPropagation()}>
             <Checkbox
@@ -1461,7 +1485,7 @@ export default function RequestsPage() {
           )}
           {visibleCols.title && (
             <TableCell className="px-4 py-3" maxWidth={table.getColumn('title')?.getSize()}>
-              <TruncatedTooltip className={cn('text-body-sm font-normal text-fg-muted', isPending ? 'group-hover:text-accent transition-colors' : '')}>
+              <TruncatedTooltip className="text-body-sm font-normal text-fg-muted">
                 <CornerDownRight size={16} className="inline" />
                 {r.title}
               </TruncatedTooltip>
@@ -1494,6 +1518,22 @@ export default function RequestsPage() {
           )}
           <TableCell className="px-4 py-3" maxWidth={table.getColumn('status')?.getSize()}>
             <span className="badge text-caption font-normal text-warning">Pending</span>
+          </TableCell>
+          <TableCell className="px-4 py-3" maxWidth={table.getColumn('actions')?.getSize()} onClick={e => e.stopPropagation()}>
+            <Menu>
+              <MenuTrigger
+                aria-label={`Actions for ${r.title}`}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-bg-muted hover:text-fg focus-visible:outline-1 focus-visible:outline-accent"
+                onClick={e => e.stopPropagation()}
+              >
+                <MoreVertical size={16} />
+              </MenuTrigger>
+              <MenuContent className="w-48" sideOffset={6}>
+                <MenuItem onClick={() => router.push(`/requests/project/${encodeURIComponent(r.batchId)}/${encodeURIComponent(r.projId)}`)}>
+                  View
+                </MenuItem>
+              </MenuContent>
+            </Menu>
           </TableCell>
         </TableRow>
       );
@@ -1614,11 +1654,7 @@ export default function RequestsPage() {
       id: 'actions',
       header: () => null,
       meta: { size: 'icon' },
-      cell: ({ row }) => (
-        <div className="text-right" onClick={e => e.stopPropagation()}>
-          {frozenGroupActionMenu(row.original)}
-        </div>
-      ),
+      cell: () => null,
     }));
     return cols;
   })();
@@ -1627,67 +1663,79 @@ export default function RequestsPage() {
     const group = row.original;
     const collapsed = !expandedSubPcs.has(group.pc);
     if (collapsed) return null;
-    return group.rows.map(r => {
-      const category = r.educationLevel || r.requestedEducationLevels.join(', ') || '—';
-      const disciplines = parseDisciplines(r.discipline);
-      return (
-        <TableRow
-          key={r.key}
-          className={cn(
-            'hover:bg-bg transition-colors group',
-            selectedKeys.has(r.key) && 'bg-accent/5',
-          )}
-        >
-          <TableCell className="px-4 py-3 w-10" maxWidth={table.getColumn('select')?.getSize()} onClick={e => e.stopPropagation()}>
-            <Checkbox
-              checked={selectedKeys.has(r.key)}
-              onCheckedChange={() => toggleSelectProj(r.batchId, r.projId)}
-              aria-label={`Select ${r.title}`}
-            />
-          </TableCell>
-          {visibleCols.pc && (
-            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('pc')?.getSize()}>
-              {r.status === 'frozen' && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(244,242,236,1)] text-[rgba(69,85,108,1)] px-2 py-0.5 text-caption font-medium">
-                  <Lock size={12} />Locked
-                </span>
+    return (
+      <Fragment key={`${group.pc}-sub`}>
+        {group.rows.map(r => {
+          const category = r.educationLevel || r.requestedEducationLevels.join(', ') || '—';
+          const disciplines = parseDisciplines(r.discipline);
+          return (
+            <TableRow
+              key={r.key}
+              className={cn(
+                'hover:bg-bg transition-colors group',
+                selectedKeys.has(r.key) && 'bg-accent/5',
               )}
-            </TableCell>
-          )}
-          {visibleCols.title && (
-            <TableCell className="px-4 py-3" maxWidth={table.getColumn('title')?.getSize()}>
-              <TruncatedTooltip className="text-body-sm font-normal text-fg-muted">
-                <CornerDownRight size={16} className="inline" />
-                {r.title}
-              </TruncatedTooltip>
-            </TableCell>
-          )}
-          {visibleCols.category && (
-            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('category')?.getSize()} truncate>{category}</TableCell>
-          )}
-          {visibleCols.discipline && (
-            <TableCell className="px-4 py-3" maxWidth={table.getColumn('discipline')?.getSize()}>
-              {disciplines.length === 0 ? (
-                <span className="text-body-sm text-fg-muted truncate block">—</span>
-              ) : (
-                <div className="flex flex-wrap gap-1 max-w-full">
-                  {disciplines.map(d => (
-                    <span key={d} className="badge bg-bg-muted text-fg-muted text-caption font-normal truncate max-w-full">{d}</span>
-                  ))}
+            >
+              <TableCell className="px-4 py-3 w-10" maxWidth={table.getColumn('select')?.getSize()} onClick={e => e.stopPropagation()}>
+                <Checkbox
+                  checked={selectedKeys.has(r.key)}
+                  onCheckedChange={() => toggleSelectProj(r.batchId, r.projId)}
+                  aria-label={`Select ${r.title}`}
+                />
+              </TableCell>
+              {visibleCols.pc && (
+                <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('pc')?.getSize()}>
+                  {r.status === 'frozen' && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(244,242,236,1)] text-[rgba(69,85,108,1)] px-2 py-0.5 text-caption font-medium">
+                      <Lock size={12} />Locked
+                    </span>
+                  )}
+                </TableCell>
+              )}
+              {visibleCols.title && (
+                <TableCell className="px-4 py-3" maxWidth={table.getColumn('title')?.getSize()}>
+                  <TruncatedTooltip className="text-body-sm font-normal text-fg-muted">
+                    <CornerDownRight size={16} className="inline" />
+                    {r.title}
+                  </TruncatedTooltip>
+                </TableCell>
+              )}
+              {visibleCols.category && (
+                <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('category')?.getSize()} truncate>{category}</TableCell>
+              )}
+              {visibleCols.discipline && (
+                <TableCell className="px-4 py-3" maxWidth={table.getColumn('discipline')?.getSize()}>
+                  {disciplines.length === 0 ? (
+                    <span className="text-body-sm text-fg-muted truncate block">—</span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1 max-w-full">
+                      {disciplines.map(d => (
+                        <span key={d} className="badge bg-bg-muted text-fg-muted text-caption font-normal truncate max-w-full">{d}</span>
+                      ))}
+                    </div>
+                  )}
+                </TableCell>
+              )}
+              {visibleCols.slots && (
+                <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('slots')?.getSize()} truncate>{r.slots}</TableCell>
+              )}
+              <TableCell className="" maxWidth={table.getColumn('status')?.getSize()}>
+                <span className="badge text-caption font-normal text-warning">Pending DCE Approval</span>
+              </TableCell>
+              <TableCell
+                className="px-4 py-3"
+                maxWidth={table.getColumn('actions')?.getSize()}
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-end">
+                  {frozenGroupActionMenu(group)}
                 </div>
-              )}
-            </TableCell>
-          )}
-          {visibleCols.slots && (
-            <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('slots')?.getSize()} truncate>{r.slots}</TableCell>
-          )}
-          <TableCell className="" maxWidth={table.getColumn('status')?.getSize()}>
-            <span className="badge text-caption font-normal text-warning">Pending DCE Approval</span>
-          </TableCell>
-          <TableCell className="px-4 py-3" maxWidth={table.getColumn('actions')?.getSize()} />
-        </TableRow>
-      );
-    });
+              </TableCell>
+            </TableRow>
+          );
+        })}
+      </Fragment>
+    );
   };
 
   const pendingAllColumns: ColumnDef<PendingPCGroup, any>[] = (() => {
@@ -1801,6 +1849,12 @@ export default function RequestsPage() {
         ) : null;
       },
     }));
+    cols.push(pendingColumnHelper.display({
+      id: 'actions',
+      header: () => null,
+      meta: { size: 'icon' },
+      cell: () => null,
+    }));
     return cols;
   })();
 
@@ -1811,16 +1865,13 @@ export default function RequestsPage() {
     return group.rows.map(r => {
       const category = r.educationLevel || r.requestedEducationLevels.join(', ') || '—';
       const disciplines = parseDisciplines(r.discipline);
-      const isPending = r.status === 'pending';
       return (
         <TableRow
           key={r.key}
           className={cn(
             'hover:bg-bg transition-colors group',
-            isPending && 'cursor-pointer',
-            isPending && selectedKeys.has(r.key) && 'bg-accent/5',
+            selectedKeys.has(r.key) && 'bg-accent/5',
           )}
-          onClick={isPending ? () => router.push(`/requests/project/${encodeURIComponent(r.batchId)}/${encodeURIComponent(r.projId)}`) : undefined}
         >
           <TableCell className="px-4 py-3 w-10" maxWidth={table.getColumn('select')?.getSize()} onClick={e => e.stopPropagation()}>
             <Checkbox
@@ -1840,7 +1891,7 @@ export default function RequestsPage() {
           )}
           {visibleCols.title && (
             <TableCell className="px-4 py-3" maxWidth={table.getColumn('title')?.getSize()}>
-              <TruncatedTooltip className={cn('text-body-sm font-normal text-fg-muted', isPending ? 'group-hover:text-accent transition-colors' : '')}>
+              <TruncatedTooltip className="text-body-sm font-normal text-fg-muted">
                 <CornerDownRight size={16} className="inline" />
                 {r.title}
               </TruncatedTooltip>
@@ -1870,9 +1921,58 @@ export default function RequestsPage() {
               {r.status === 'frozen' ? 'Pending DCE Approval' : 'Pending'}
             </span>
           </TableCell>
+          <TableCell className="px-4 py-3" maxWidth={table.getColumn('actions')?.getSize()} onClick={e => e.stopPropagation()}>
+            <Menu>
+              <MenuTrigger
+                aria-label={`Actions for ${r.title}`}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-bg-muted hover:text-fg focus-visible:outline-1 focus-visible:outline-accent"
+                onClick={e => e.stopPropagation()}
+              >
+                <MoreVertical size={16} />
+              </MenuTrigger>
+              <MenuContent className="w-48" sideOffset={6}>
+                <MenuItem onClick={() => router.push(`/requests/project/${encodeURIComponent(r.batchId)}/${encodeURIComponent(r.projId)}`)}>
+                  <Eye size={14} />View Project
+                </MenuItem>
+              </MenuContent>
+            </Menu>
+          </TableCell>
         </TableRow>
       );
     });
+  };
+
+  const renderFlatSubRows = (row: Row<FlatProj>, table: TanStackTable<FlatProj>) => {
+    const r = row.original;
+    if (!expandedFlatRows.has(r.key)) return null;
+    const category = r.educationLevel || r.requestedEducationLevels.join(', ') || '—';
+    const disciplines = parseDisciplines(r.discipline);
+    return (
+      <TableRow className="bg-surface hover:bg-bg transition-colors">
+        <TableCell className="px-4 py-3" colSpan={row.getVisibleCells().length}>
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1 text-body-sm text-fg-muted">
+              <p><span className="font-medium text-fg">{r.title}</span></p>
+              <p>{category}{disciplines.length > 0 && ` · ${disciplines.join(' / ')}`} · {r.slots} placement{r.slots !== 1 ? 's' : ''}</p>
+            </div>
+            <Menu>
+              <MenuTrigger
+                aria-label={`Actions for ${r.title}`}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-bg-muted hover:text-fg focus-visible:outline-1 focus-visible:outline-accent"
+                onClick={e => e.stopPropagation()}
+              >
+                <MoreVertical size={16} />
+              </MenuTrigger>
+              <MenuContent className="w-48" sideOffset={6}>
+                <MenuItem onClick={() => router.push(`/requests/project/${encodeURIComponent(r.batchId)}/${encodeURIComponent(r.projId)}`)}>
+                  <Eye size={14} />View Project
+                </MenuItem>
+              </MenuContent>
+            </Menu>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
   };
 
   function statusHeaderFilterButton() {
@@ -2409,6 +2509,12 @@ export default function RequestsPage() {
   const togglePcGroup = (pc: string) =>
     setExpandedSubPcs(prev => { const n = new Set(prev); n.has(pc) ? n.delete(pc) : n.add(pc); return n; });
 
+  const toggleFlatRow = (key: string) =>
+    setExpandedFlatRows(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
+
+  const toggleDraftGroup = (key: string) =>
+    setExpandedDraftGroups(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
+
   // Paginate the submissions view: PC groups on the Pending/PendingDCE tab, flat rows otherwise.
   const subItemsCount = (tab === 'pending' || tab === 'pendingDce') ? pendingPcGroups.length : tableRows.length;
   const subTotalPages = Math.max(1, Math.ceil(subItemsCount / subPageSize));
@@ -2615,6 +2721,8 @@ export default function RequestsPage() {
               data={draftGroups}
               enableSorting={false}
               getRowId={group => draftRequestGroupKey(group.requests[0])}
+              onRowClick={(group) => toggleDraftGroup(draftRequestGroupKey(group.requests[0]))}
+              renderSubRows={renderDraftSubRows}
               wrapperClassName="px-4"
             />
           ) : (
@@ -2822,11 +2930,8 @@ export default function RequestsPage() {
                 columns={flatColumns}
                 data={pagedFlatRows}
                 enableSorting={false}
-                onRowClick={(row) => {
-                  if (row.status === 'pending') {
-                    router.push(`/requests/project/${encodeURIComponent(row.batchId)}/${encodeURIComponent(row.projId)}`);
-                  }
-                }}
+                onRowClick={(row) => toggleFlatRow(row.key)}
+                renderSubRows={renderFlatSubRows}
                 getRowId={row => row.key}
                 emptyState={<div className="px-6 py-16 text-center text-body-sm text-fg-muted">No projects match your filters.</div>}
                 wrapperClassName="px-4"
