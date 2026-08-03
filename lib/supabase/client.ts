@@ -1,32 +1,49 @@
-/* Browser Supabase client — only active when env vars are set. */
+/* Browser Supabase client — build-time NEXT_PUBLIC_* or runtime /api/cloud-config. */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { cleanEnv, readSupabaseKey, readSupabaseUrl } from '@/lib/supabase/env';
 
 let client: SupabaseClient | null | undefined;
-
-/** Strip accidental quotes / BOM that Vercel UI paste often leaves in. */
-function cleanEnv(value: string | undefined): string {
-  return (value ?? '')
-    .replace(/^\uFEFF/, '')
-    .trim()
-    .replace(/^["']|["']$/g, '')
-    .trim();
-}
+let runtimeUrl = '';
+let runtimeKey = '';
+let configPromise: Promise<boolean> | null = null;
 
 function supabaseUrl(): string {
-  return cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_URL);
+  return readSupabaseUrl() || runtimeUrl;
 }
 
-/** Prefer classic anon JWT; fall back to new publishable key. */
 function supabaseKey(): string {
-  return (
-    cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) ||
-    cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) ||
-    ''
-  );
+  return readSupabaseKey() || runtimeKey;
 }
 
 export function isCloudSyncEnabled(): boolean {
   return Boolean(supabaseUrl() && supabaseKey());
+}
+
+/**
+ * Resolves credentials from the client bundle, or falls back to /api/cloud-config
+ * (Vercel Runtime env) when NEXT_PUBLIC_* was not inlined at build time.
+ */
+export async function ensureCloudConfig(): Promise<boolean> {
+  if (isCloudSyncEnabled()) return true;
+  if (typeof window === 'undefined') return false;
+
+  if (!configPromise) {
+    configPromise = (async () => {
+      try {
+        const res = await fetch('/api/cloud-config', { cache: 'no-store' });
+        if (!res.ok) return false;
+        const data = (await res.json()) as { url?: string; key?: string };
+        runtimeUrl = cleanEnv(data.url);
+        runtimeKey = cleanEnv(data.key);
+        client = undefined;
+        return Boolean(runtimeUrl && runtimeKey);
+      } catch {
+        return false;
+      }
+    })();
+  }
+
+  return configPromise;
 }
 
 /** Returns null when cloud sync is not configured (local-only mode). */

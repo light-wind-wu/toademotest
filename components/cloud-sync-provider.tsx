@@ -1,33 +1,35 @@
 'use client';
 
-/* Boots Supabase KV sync when NEXT_PUBLIC_SUPABASE_* is set.
-   Without env vars this is a no-op and the app stays localStorage-only. */
+/* Boots Supabase KV sync when Supabase env is available (build-time or /api/cloud-config).
+   Without credentials this is a no-op and the app stays localStorage-only. */
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   hydrateFromCloud,
   installLocalStorageBridge,
   subscribeCloudRealtime,
 } from '@/lib/cloud-store';
-import { isCloudSyncEnabled } from '@/lib/supabase/client';
+import { ensureCloudConfig } from '@/lib/supabase/client';
 
 export default function CloudSyncProvider({ children }: { children: ReactNode }) {
-  const enabled = isCloudSyncEnabled();
-  const [ready, setReady] = useState(!enabled);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (!enabled) {
-      console.info(
-        '[cloud-sync] OFF — missing NEXT_PUBLIC_SUPABASE_URL or key in this build. Redeploy Vercel without Build Cache after setting env vars.',
-      );
-      return;
-    }
-
-    console.info('[cloud-sync] ON — hydrating from Supabase…');
-
     let unsubscribe = () => {};
     let cancelled = false;
 
     (async () => {
+      const enabled = await ensureCloudConfig();
+      if (cancelled) return;
+
+      if (!enabled) {
+        console.info(
+          '[cloud-sync] OFF — set NEXT_PUBLIC_SUPABASE_URL + PUBLISHABLE/ANON key on Vercel (Production), then Redeploy.',
+        );
+        setReady(true);
+        return;
+      }
+
+      console.info('[cloud-sync] ON — hydrating from Supabase…');
       installLocalStorageBridge();
       await hydrateFromCloud();
       if (cancelled) return;
@@ -43,7 +45,7 @@ export default function CloudSyncProvider({ children }: { children: ReactNode })
       cancelled = true;
       unsubscribe();
     };
-  }, [enabled]);
+  }, []);
 
   if (!ready) {
     return (
