@@ -1145,10 +1145,10 @@ function OverviewSection({
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className={cn('min-w-0 text-left', isActive && 'pr-3')}>
-                        <span className={cn('block truncate text-body-sm font-medium text-fg')}>
+                        <span className={cn('block truncate text-sm font-medium text-fg')}>
                           {summary.title}
                         </span>
-                        <span className="mt-0.5 block truncate text-caption font-normal text-fg-muted">
+                        <span className="mt-0.5 block truncate text-xs font-normal text-fg-muted">
                           {summary.internshipWindow}
                         </span>
                       </div>
@@ -2653,10 +2653,10 @@ export default function ProgrammeFormPage() {
                               >
                                 <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_80px] items-center gap-3">
                                   <div className={cn('min-w-0 text-left', isActive && 'pr-3')}>
-                                    <span className={cn('block truncate text-body-sm font-medium text-fg')}>
+                                    <span className={cn('block truncate text-sm font-medium text-fg')}>
                                       Intake {i + 1} · {periodLabel}
                                     </span>
-                                    <span className="mt-1 block truncate text-caption font-normal text-fg-muted">
+                                    <span className="mt-1 block truncate text-xs font-normal text-fg-muted">
                                       {intake.appOpen && intake.appClose
                                         ? `Applications: ${formatDate(intake.appOpen)} – ${formatDate(intake.appClose)} · ${assignedCount} project${assignedCount !== 1 ? 's' : ''}`
                                         : `Set application window · ${assignedCount} project${assignedCount !== 1 ? 's' : ''}`}

@@ -417,13 +417,14 @@ function DerivedRecipients({ pcHead, adpnc, hasProgrammeCentre, ccEmails, toEmai
 
 /* ── Request card ────────────────────────────────────────────────── */
 function RequestCard({
-  entry, number, showErrors, onChange, onRemove, canRemove = true, guided = false, hideAddInternCategory = false, highlightedSection = null, ccEdit, toEdit,
+  entry, number, showErrors, onChange, onRemove, onTouchRequest, canRemove = true, guided = false, hideAddInternCategory = false, highlightedSection = null, ccEdit, toEdit,
 }: {
   entry: ReqEntry;
   number: number;
   showErrors: boolean;
   onChange: (patch: Partial<ReqEntry>) => void;
   onRemove: () => void;
+  onTouchRequest: () => void;
   canRemove?: boolean;
   guided?: boolean;
   hideAddInternCategory?: boolean;
@@ -457,7 +458,7 @@ function RequestCard({
   }
 
   return (
-    <div className={cn('border-t border-border first:border-t-0', guided && 'border-t-0')}>
+    <div className={cn('border-t border-border first:border-t-0', guided && 'border-t-0')} onFocusCapture={onTouchRequest}>
       {/* Collapsed header bar */}
       {!guided && <div className="flex items-center gap-3 px-5 py-3.5">
         <button
@@ -470,7 +471,7 @@ function RequestCard({
             {entry.open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-body-sm font-medium text-fg">
+            <span className="block truncate text-sm font-medium text-fg">
               Request {number} · {summaryParts.join(' · ')}
             </span>
           </span>
@@ -893,10 +894,10 @@ function ReviewListLayout({
               >
                 <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_64px] items-center gap-3">
                   <span className={cn('min-w-0', isActive && 'pr-3')}>
-                    <span className="block truncate text-body-sm font-semibold text-fg">
+                    <span className="block truncate text-sm font-medium text-fg">
                       Request {number} - {r.programmeCentre}
                     </span>
-                    <span className="mt-1 block truncate text-caption text-fg-muted">
+                    <span className="mt-1 block truncate text-xs font-normal text-fg-muted">
                       {filledLevels} intern categor{filledLevels === 1 ? 'y' : 'ies'} · {totalPlacements} placement{totalPlacements === 1 ? '' : 's'}
                     </span>
                   </span>
@@ -988,7 +989,11 @@ export default function ProjectRequestFormPage() {
   const [previewId,   setPreviewId]   = useState<number | null>(null);
   const [emailEdits,  setEmailEdits]  = useState<Record<number, EmailEdit>>({});
   const [tokens,      setTokens]      = useState<Record<number, string>>({});
-  const [showErrors,  setShowErrors]  = useState(false);
+  // Per-request touched state. A request only shows its field-level errors once it has
+  // been interacted with, or the form explicitly requests all errors (Next click /
+  // return from Review). This avoids newly-added requests appearing red before the
+  // user has interacted with them.
+  const [touched,     setTouched]     = useState<Record<number, boolean>>({});
   const [buildLayout, setBuildLayout] = useState<BuildLayout>('Layout 1');
   const [confirmSendOpen, setConfirmSendOpen] = useState(false);
   const [deleteReqId, setDeleteReqId] = useState<number | null>(null);
@@ -1019,6 +1024,38 @@ export default function ProjectRequestFormPage() {
   }
   function removeReq(id: number) {
     setReqs(prev => prev.filter(r => r.id !== id));
+    setTouched(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }
+  function touchRequest(id: number) {
+    setTouched(prev => (prev[id] ? prev : { ...prev, [id]: true }));
+  }
+  function touchAllRequests() {
+    setTouched(prev => {
+      const next = { ...prev };
+      for (const r of reqs) next[r.id] = true;
+      return next;
+    });
+  }
+  const isRequestTouched = (id: number) => touched[id] ?? false;
+
+  function focusFirstError() {
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const el = document.querySelector('.border-danger');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+    });
+  }
+
+  function handleReturnToBuild() {
+    touchAllRequests();
+    setReqs(prev => prev.map(r => reqMissing(r).length > 0 ? { ...r, open: true } : r));
+    setStep(1);
+    focusFirstError();
   }
   const anyOpen = reqs.some(r => r.open);
   function toggleCollapseAll() {
@@ -1027,6 +1064,7 @@ export default function ProjectRequestFormPage() {
 
   const readyCount = reqs.filter(r => reqMissing(r).length === 0).length;
   const missingReqCount = reqs.filter(r => reqMissing(r).length > 0).length;
+  const anyTouchedIncomplete = reqs.some(r => isRequestTouched(r.id) && reqMissing(r).length > 0);
   const activeReq = reqs.find(r => r.open) ?? reqs[0];
 
   // Number each request by creation order (ids increase as requests are added),
@@ -1037,14 +1075,14 @@ export default function ProjectRequestFormPage() {
   );
   function goToPreview() {
     if (reqs.length === 0) return;
-    // Incomplete: turn on inline field highlighting and expand any request with
-    // missing fields so the red fields are visible, then stop.
+    // Incomplete: touch every request and expand any request with missing fields so
+    // the red fields are visible, then stop.
     if (readyCount < reqs.length) {
-      setShowErrors(true);
+      touchAllRequests();
       setReqs(prev => prev.map(r => reqMissing(r).length > 0 ? { ...r, open: true } : r));
+      focusFirstError();
       return;
     }
-    setShowErrors(false);
 
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const nextTokens: Record<number, string> = {};
@@ -1297,19 +1335,28 @@ export default function ProjectRequestFormPage() {
                       const isActive = activeReq?.id === r.id;
                       const missingCount = reqMissing(r).length;
                       const totalSlots = r.levels.reduce((sum, level) => sum + Math.max(0, level.placements || 0), 0);
+                      const hasAnyData = !!(r.programmeCentre || r.deadline || r.levels.some(l => l.level || l.calendarStart || l.calendarEnd || l.duration));
+                      const status = missingCount === 0
+                        ? 'ready'
+                        : !hasAnyData && !isRequestTouched(r.id)
+                          ? 'not-started'
+                          : 'incomplete';
+                      const StatusIcon = status === 'ready' ? Check : status === 'incomplete' ? AlertCircle : Info;
+                      const statusLabel = status === 'ready' ? 'Ready' : status === 'incomplete' ? 'Incomplete' : 'Not Started';
+                      const touchedAndMissing = isRequestTouched(r.id) && missingCount > 0;
                       return (
                         <div
                           key={r.id}
                           className={cn(
                             'group relative box-border w-full min-w-0 border-b px-4 py-3 transition-colors',
-                            isActive && showErrors && missingCount > 0
+                            isActive && touchedAndMissing
                               ? 'z-10 border-y border-[#F8A4A8] bg-white'
                               : isActive
                                 ? 'z-10 border-y border-[#E7E4DD] bg-[#F4F2EC]'
                                 : 'border-border bg-surface hover:bg-bg-muted',
                           )}
                           style={
-                            isActive && showErrors && missingCount > 0
+                            isActive && touchedAndMissing
                               ? { backgroundImage: 'linear-gradient(rgba(251,44,54,0.1), rgba(251,44,54,0.1))' }
                               : undefined
                           }
@@ -1320,37 +1367,38 @@ export default function ProjectRequestFormPage() {
 	                              onClick={() => selectReq(r.id)}
 	                              className={cn('min-w-0 text-left', isActive && 'pr-3')}
 	                            >
-                              <span className={`block truncate text-body-sm font-semibold ${showErrors && missingCount > 0 ? 'text-danger' : 'text-fg'}`}>
+                              <span className={cn('block truncate text-sm font-medium', touchedAndMissing ? 'text-danger' : 'text-fg')}>
                                 Request {number} - {r.programmeCentre || 'Start editing'}
                               </span>
-                              <span className={`mt-1 block truncate text-caption ${showErrors && missingCount > 0 ? 'text-danger' : 'text-fg-muted'}`}>
+                              <span className={cn('mt-1 block truncate text-xs font-normal', touchedAndMissing ? 'text-danger' : 'text-fg-muted')}>
                                 {r.levels.filter(l => l.level).length || 0} intern categor{r.levels.filter(l => l.level).length === 1 ? 'y' : 'ies'} · {totalSlots} placement{totalSlots === 1 ? '' : 's'}
                               </span>
                             </button>
                             <div className="flex items-center justify-end gap-1">
                               <div className="flex min-w-5 justify-end">
-                                {showErrors && (
-                                  missingCount > 0 ? (
-                                    <Tooltip>
-                                      <TooltipTrigger
-                                        render={
-                                          <button
-                                            type="button"
-                                            aria-label={`${missingCount} missing field input${missingCount !== 1 ? 's' : ''}`}
-                                            className="inline-flex items-center justify-center text-danger transition-colors hover:text-danger/80 focus:outline-none focus:ring-2 focus:ring-danger/30"
-                                          >
-                                            <AlertCircle size={15} />
-                                          </button>
-                                        }
-                                      />
-                                      <TooltipContent side="top" align="center">
-                                        {missingCount} missing field input{missingCount !== 1 ? 's' : ''}
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  ) : (
-                                    <Check size={15} className="text-success" aria-label="Complete" />
-                                  )
-                                )}
+                                <Tooltip>
+                                  <TooltipTrigger
+                                    render={
+                                      <button
+                                        type="button"
+                                        aria-label={statusLabel}
+                                        className={cn(
+                                          'inline-flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-accent/40',
+                                          status === 'incomplete' && 'text-danger hover:text-danger/80',
+                                          status === 'ready' && 'text-success',
+                                          status === 'not-started' && 'text-fg-subtle opacity-0 group-hover:opacity-100',
+                                        )}
+                                      >
+                                        <StatusIcon size={15} />
+                                      </button>
+                                    }
+                                  />
+                                  <TooltipContent side="top" align="center">
+                                    {status === 'not-started'
+                                      ? statusLabel
+                                      : `${missingCount} missing field input${missingCount !== 1 ? 's' : ''}`}
+                                  </TooltipContent>
+                                </Tooltip>
                               </div>
                               <div className="flex h-7 w-7 items-center justify-center hidden">
                                 {reqs.length > 1 && (
@@ -1370,7 +1418,7 @@ export default function ProjectRequestFormPage() {
                             <span
                               className="absolute right-[-11px] top-1/2 z-10 h-full w-[11px] -translate-y-1/2 bg-[length:auto_100%] bg-right bg-no-repeat"
                               style={{
-                                backgroundImage: `url(${showErrors && missingCount > 0 ? '/assets/request-error-arrow.svg' : '/assets/request-arrow.svg'})`,
+                                backgroundImage: `url(${touchedAndMissing ? '/assets/request-error-arrow.svg' : '/assets/request-arrow.svg'})`,
                               }}
                               aria-hidden="true"
                             />
@@ -1405,9 +1453,10 @@ export default function ProjectRequestFormPage() {
                       key={activeReq.id}
                       entry={activeReq}
                       number={numberById.get(activeReq.id) ?? 0}
-                      showErrors={showErrors}
+                      showErrors={isRequestTouched(activeReq.id)}
                       onChange={patch => updateReq(activeReq.id, patch)}
                       onRemove={() => setDeleteReqId(activeReq.id)}
+                      onTouchRequest={() => touchRequest(activeReq.id)}
                       guided
                       highlightedSection={highlightedReadiness}
                       ccEdit={emailEdits[activeReq.id]?.cc}
@@ -1421,7 +1470,7 @@ export default function ProjectRequestFormPage() {
                 </section>
               </section>
 
-              {showErrors && readyCount < reqs.length && (
+              {anyTouchedIncomplete && (
                 <div className="flex items-center gap-2 rounded-lg bg-danger-bg px-4 py-2.5">
                   <AlertCircle size={14} className="shrink-0 text-danger" />
                   <p className="text-body-sm text-danger">Some mandatory fields are missing. Please complete the fields highlighted in red.</p>
@@ -1449,9 +1498,10 @@ export default function ProjectRequestFormPage() {
                       key={r.id}
                       entry={r}
                       number={numberById.get(r.id) ?? 0}
-                      showErrors={showErrors}
+                      showErrors={isRequestTouched(r.id)}
                       onChange={patch => updateReq(r.id, patch)}
                       onRemove={() => setDeleteReqId(r.id)}
+                      onTouchRequest={() => touchRequest(r.id)}
                       canRemove={reqs.length > 1}
                       highlightedSection={highlightedReadiness}
                       ccEdit={emailEdits[r.id]?.cc}
@@ -1460,7 +1510,7 @@ export default function ProjectRequestFormPage() {
                   ))}
                 </section>
 
-                {showErrors && readyCount < reqs.length && (
+                {anyTouchedIncomplete && (
                   <div className="mt-4 flex items-center gap-2 rounded-lg bg-danger-bg px-4 py-2.5">
                     <AlertCircle size={14} className="shrink-0 text-danger" />
                     <p className="text-body-sm text-danger">Some mandatory fields are missing. Please complete the fields highlighted in red.</p>
@@ -1518,7 +1568,7 @@ export default function ProjectRequestFormPage() {
               </>
             ) : (
               <>
-                <Button variant="outline" size="md" onClick={() => setStep(1)}>Cancel</Button>
+                <Button variant="outline" size="md" onClick={handleReturnToBuild}>Cancel</Button>
                 <Button variant="outline" size="md" onClick={handleSaveDraft}>Save as Draft</Button>
                 <Button size="md" onClick={() => setConfirmSendOpen(true)}>Confirm Send</Button>
               </>
