@@ -2,6 +2,7 @@
 
 import AiSparkleIcon from './ai-sparkle-icon';
 import { cn } from '@/lib/utils';
+import { AI_COLOURS } from '@/lib/ai-colours';
 import { runPublicProjectCheck } from '@/lib/ai-check';
 
 interface AiCheckBlockProps {
@@ -57,15 +58,27 @@ export default function AiCheckBlock({
 
   return (
     <div className={cn('mt-2 flex flex-wrap items-center gap-2', className)}>
-      <span
-        className={cn(
-          'badge inline-flex items-center gap-1 text-caption font-normal',
-          'border border-[rgba(37,99,235,0.3)] bg-[rgba(37,99,235,0.05)] text-[rgba(26,101,248,1)]',
-        )}
-      >
-        <AiSparkleIcon size={12} />
-        {aiCheckStatusLabel(result)}
-      </span>
+      {hasIssue ? (
+        <span
+          className={cn(
+            'badge inline-flex items-center gap-1 text-caption font-normal',
+            AI_COLOURS.checkReview.badge,
+          )}
+        >
+          <AiSparkleIcon size={12} />
+          {aiCheckStatusLabel(result)}
+        </span>
+      ) : (
+        <span
+          className={cn(
+            'badge inline-flex items-center gap-1 text-caption font-normal',
+            AI_COLOURS.checkPass.badge,
+          )}
+        >
+          <AiSparkleIcon size={12} />
+          <span className={AI_COLOURS.checkPass.label}>{aiCheckStatusLabel(result)}</span>
+        </span>
+      )}
       <span className="text-body-sm text-fg-muted">{note}</span>
     </div>
   );

@@ -137,11 +137,6 @@ function requestLineKey(req: ProjectRequest, index: number) {
   return req.id || `${req.uploadToken || 'request'}-${requestRawCategory(req)}-${index}`;
 }
 
-function fmtDate(date: string) {
-  if (!date) return '—';
-  return new Date(date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
 function requestYearLabel(group: RequestGroup): string {
   const start = group.requests[0]?.periodStart || group.requests[0]?.calendarPeriod;
   if (!start) return new Date().getFullYear().toString();
@@ -162,19 +157,6 @@ function requestStatusForGroup(
   if (placements > 0 && uploaded >= placements) return { label: 'Fulfilled', variant: 'success' };
   if (uploaded > 0) return { label: 'Incomplete', variant: 'warning' };
   return { label: 'Pending', variant: 'info' };
-}
-
-function requestContextSubtitle(group: RequestGroup): string {
-  const categories = group.requests.map(r => requestCategoryLabel(r));
-  const uniqueCategories = [...new Set(categories)];
-  const { uploaded, placements } = groupTotals(group);
-  const parts = [
-    fmtDate(group.sentDate),
-    group.requests[0]?.programmeCenter || '—',
-    ...uniqueCategories,
-    `${uploaded} of ${placements} submitted`,
-  ].filter(Boolean);
-  return parts.join(' · ');
 }
 
 function requestPeriodForProject(request: ProjectRequest | undefined): { start: string; end: string } {
@@ -921,7 +903,6 @@ export default function AdPncRespondPage() {
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<1 | -1>(1);
   const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
-  const [showRequestDetails, setShowRequestDetails] = useState(false);
 
   useEffect(() => {
     try {
@@ -1044,7 +1025,8 @@ export default function AdPncRespondPage() {
   }, [visibleProjects, sortCol, sortDir, group, categories]);
 
   const activeVisibleProjects = activeSubmittedProjects(visibleProjects);
-  const canSubmit = activeVisibleProjects.length > 0 && pcCleared && securityCleared;
+  const selectedSubmittableProjects = activeVisibleProjects.filter(p => selectedProjectIds.has(p.id));
+  const canSubmit = selectedSubmittableProjects.length > 0 && pcCleared && securityCleared;
 
   const requestStatus = group ? requestStatusForGroup(group, batches) : null;
   const requestYear = group ? requestYearLabel(group) : '';
@@ -1216,7 +1198,7 @@ export default function AdPncRespondPage() {
     if (!group || !canSubmit) return;
     const submittedAt = new Date().toISOString();
     const submittedBy = 'Ng Shu Qi';
-    const submitProjects = draftProjects.map(project => ({ ...project, status: 'pending' as const, submittedAt, submittedBy }));
+    const submitProjects = selectedSubmittableProjects.map(project => ({ ...project, status: 'pending' as const, submittedAt, submittedBy }));
     const defaultCategory = group.requests[0] ? requestRawCategory(group.requests[0]) : '';
     const batch: ProjectSubmissionBatch = {
       id: `batch-inline-${Date.now()}`,
@@ -1439,25 +1421,7 @@ export default function AdPncRespondPage() {
 
           {/* Request Context */}
           <div className="rounded-lg border border-border bg-surface p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-caption text-fg-muted">Request Context</p>
-                <h2 className="text-headline-sm text-fg mt-1">Request from {group.senderName ?? 'IO Admin'}</h2>
-                <p className="text-body-sm text-fg-muted mt-0.5">{requestContextSubtitle(group)}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowRequestDetails(v => !v)}
-                className="text-body-sm text-accent hover:underline"
-              >
-                {showRequestDetails ? 'Hide Details' : 'Show Details'}
-              </button>
-            </div>
-            {showRequestDetails && (
-              <div className="mt-4 border-t border-border pt-4">
-                <RequestContextTable requests={group.requests} title="Placement requirements" />
-              </div>
-            )}
+            <RequestContextTable requests={group.requests} title="Placement requirements" />
           </div>
 
           {visibleProjects.length === 0 ? (
@@ -1729,8 +1693,8 @@ export default function AdPncRespondPage() {
           <DialogHeader>
             <DialogTitle>Submit project response?</DialogTitle>
             <DialogDescription>
-              {activeVisibleProjects.length > 0
-                ? `This will submit ${activeVisibleProjects.length} project${activeVisibleProjects.length !== 1 ? 's' : ''} for IO review.`
+              {selectedSubmittableProjects.length > 0
+                ? `This will submit ${selectedSubmittableProjects.length} project${selectedSubmittableProjects.length !== 1 ? 's' : ''} for IO review.`
                 : 'This will submit the project response for IO review.'}
             </DialogDescription>
           </DialogHeader>
