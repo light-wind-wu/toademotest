@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Search, Bell, Settings, HelpCircle, LogOut, ChevronDown, ShieldCheck, UserCircle2, Briefcase, ClipboardList, GraduationCap, Award, User, CheckCheck, Gavel } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import { Search, Bell, Settings, HelpCircle, LogOut, ChevronDown, ShieldCheck, UserCircle2, Briefcase, ClipboardList, GraduationCap, Award, User, CheckCheck, Gavel, LayoutGrid, ListTodo } from 'lucide-react';
 import { useRole, ROLE_LABELS, ROLE_PROFILES } from '@/lib/role';
 import type { UserRole } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -11,7 +11,7 @@ import { useUnsavedChanges } from '@/lib/unsaved-changes';
 import { buildSearchIndex, buildRecordIndex, runSearch, type SearchEntry } from '@/lib/ia-nav';
 import { useSystemConfig } from '@/lib/portal-config';
 import Image from 'next/image';
-import { signOut, isApplicantRole } from '@/lib/session';
+import { signOut } from '@/lib/session';
 import {
   getNotificationsForRole, markRead, markAllRead,
   timeAgo, NOTIF_CHANGED_EVENT, type AppNotification,
@@ -37,11 +37,21 @@ const ROLE_SWITCHER: { role: UserRole; icon: typeof ShieldCheck }[] = [
   { role: 'existing-scholar-applicant', icon: Award         },
 ];
 
-export default function Topbar({ navigationHidden = false }: { navigationHidden?: boolean }) {
+export default function Topbar({
+  navigationHidden = false,
+  hideProfile = false,
+}: {
+  navigationHidden?: boolean;
+  /** Catalog entry: logo only, no profile / search / bell */
+  hideProfile?: boolean;
+}) {
   const { role, setRole, profile } = useRole();
   const { safeNavigate } = useUnsavedChanges();
   const { roleSwitcher } = useSystemConfig(); // Admin → System config feature switch
   const router = useRouter();
+  const pathname = usePathname();
+  const onApplyRoute = pathname.startsWith('/apply');
+  const onStartTasks = pathname === '/start-tasks';
   const [open,      setOpen]      = useState(false);
   const [bellOpen,  setBellOpen]  = useState(false);
   const [notifs,    setNotifs]    = useState<AppNotification[]>([]);
@@ -140,6 +150,8 @@ export default function Topbar({ navigationHidden = false }: { navigationHidden?
       </div>
 
       <div className="flex items-center gap-2 md:gap-4 shrink-0">
+        {!hideProfile && (
+        <>
         {/* Cross-IA search — desktop only. Spans every section the role can reach. */}
         <div className="relative hidden md:flex items-center group" ref={searchRef}>
           <Search size={18} className="absolute left-3 text-[rgba(244,242,236,0.72)] group-focus-within:text-topbar-fg transition-colors pointer-events-none" />
@@ -302,7 +314,7 @@ export default function Topbar({ navigationHidden = false }: { navigationHidden?
           </button>
 
           {open && (
-            <div className="absolute right-0 top-full mt-2 w-72 bg-surface rounded-2xl shadow-xl border border-border z-50 overflow-hidden">
+            <div className="absolute right-0 top-full mt-2 w-72 overflow-hidden rounded-2xl border border-border bg-surface shadow-xl z-50 [&_a]:cursor-pointer [&_button]:cursor-pointer">
               {/* Profile header */}
               <div className="flex items-center gap-3 p-4 bg-bg-subtle border-b border-border">
                 <div className="w-10 h-10 rounded-full bg-[rgba(27,101,248,1)] flex items-center justify-center text-surface font-bold text-body-sm shrink-0">
@@ -351,6 +363,19 @@ export default function Topbar({ navigationHidden = false }: { navigationHidden?
                     My Profile
                   </Link>
                 )}
+                {!onApplyRoute && !onStartTasks && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      router.push('/start-tasks');
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bg-subtle text-body-md text-fg transition-colors"
+                  >
+                    <ListTodo size={18} className="text-fg-muted shrink-0" />
+                    Go Tasks
+                  </button>
+                )}
                 <button onClick={() => setOpen(false)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bg-subtle text-body-md text-fg transition-colors">
                   <HelpCircle size={18} className="text-fg-muted shrink-0" />
                   Help and Support
@@ -365,16 +390,37 @@ export default function Topbar({ navigationHidden = false }: { navigationHidden?
                 </Link>
               </div>
               <div className="border-t border-border p-1.5">
-                <button
-                  onClick={() => { const dest = isApplicantRole(role) ? '/login' : '/login/staff'; signOut(); setOpen(false); window.location.href = dest; }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-danger-bg text-body-md text-danger transition-colors">
-                  <LogOut size={18} className="shrink-0" />
-                  Sign Out
-                </button>
+                {!onApplyRoute && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      router.push('/catlog');
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-danger-bg text-body-md text-danger transition-colors"
+                  >
+                    <LayoutGrid size={18} className="shrink-0" />
+                    Go Catlog
+                  </button>
+                )}
+                {onApplyRoute && (
+                  <button
+                    onClick={() => {
+                      signOut();
+                      setOpen(false);
+                      window.location.href = '/catlog';
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-danger-bg text-body-md text-danger transition-colors">
+                    <LogOut size={18} className="shrink-0" />
+                    Sign Out
+                  </button>
+                )}
               </div>
             </div>
           )}
         </div>
+        </>
+        )}
       </div>
     </header>
   );

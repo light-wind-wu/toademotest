@@ -41,6 +41,8 @@ export default function LoginApplicant() {
       profile: getMyinfoProfile(identity),
       at: new Date().toISOString(),
     });
+    /* Role drives Topbar profile on welcome / account-setup (post-Singpass). */
+    setRole(identity);
     // Keep Myinfo overlay mounted until welcome mounts — closing first flashes login.
     router.push('/apply/welcome');
   }

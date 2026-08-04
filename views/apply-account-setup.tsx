@@ -85,7 +85,8 @@ export default function ApplyAccountSetup() {
     setPersonal(p.profile);
     setMobile(p.profile.mobile);
     setEmail(p.profile.email);
-  }, [router]);
+    setRole(p.role);
+  }, [router, setRole]);
 
   useEffect(() => {
     if (!prompt) return;

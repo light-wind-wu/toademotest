@@ -6,20 +6,50 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import { useSession } from '@/lib/session';
+import Topbar from '@/components/layout/topbar';
 
 const ART_W = 1440;
 const ART_H = 900;
+const HEADER_H = 64;
+
+const PANEL_W = 1166;
+const PANEL_H = 650;
+const PANEL_LEFT = (ART_W - PANEL_W) / 2;
+const PANEL_TOP = (ART_H - PANEL_H) / 2;
 
 const PAGE_BG = 'rgba(248, 247, 242, 1)';
 const TITLE = 'rgba(10, 22, 40, 1)';
 const MUTED = 'rgba(69, 85, 108, 1)';
 const ACCENT = 'rgba(26, 101, 248, 1)';
 const TASK_TITLE = 'rgba(32, 32, 32, 1)';
-const EYEBROW = '#7C8693';
+const EYEBROW = 'rgba(124, 134, 147, 1)';
 const CARD_BORDER = 'rgba(231, 228, 221, 1)';
-const DIVIDER = 'rgba(231, 228, 221, 1)';
 const CARD_SHADOW =
   '0px 4px 6px -4px rgba(0, 0, 0, 0.05), 0px 10px 15px -3px rgba(0, 0, 0, 0.1)';
+
+const TASKS = [
+  {
+    id: 1,
+    title: 'Create Project Requests',
+    description:
+      'Create and issue Project Requests to the relevant Programme Centres for the annual internship intake.',
+    href: '/requests/new',
+  },
+  {
+    id: 2,
+    title: 'Review Project Submissions',
+    description:
+      'Assume that internship projects have subsequently been submitted by AD (P&C). Review the submitted projects and take the appropriate actions.',
+    href: '/submissions',
+  },
+  {
+    id: 3,
+    title: 'Track Intake Progress',
+    description:
+      'Monitor the status of issued requests and submitted projects so the annual internship intake stays on schedule.',
+    href: '/projects',
+  },
+] as const;
 
 export default function StartTasks() {
   const router = useRouter();
@@ -33,12 +63,16 @@ export default function StartTasks() {
 
   useEffect(() => {
     if (!mounted) return;
-    if (!signedIn) router.replace('/login/staff');
+    if (!signedIn) router.replace('/catlog');
   }, [mounted, signedIn, router]);
 
   useEffect(() => {
     function update() {
-      const next = Math.min(window.innerWidth / ART_W, window.innerHeight / ART_H, 1);
+      const next = Math.min(
+        window.innerWidth / ART_W,
+        (window.innerHeight - HEADER_H) / ART_H,
+        1,
+      );
       setScale(next);
     }
     update();
@@ -59,25 +93,26 @@ export default function StartTasks() {
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center overflow-hidden"
+      className="flex min-h-screen flex-col overflow-hidden"
       style={{ background: PAGE_BG }}
       data-zone="enterprise"
       data-mode="light"
     >
-      {/* Outer box matches scaled size so layout centers correctly */}
-      <div
-        className="relative shrink-0"
-        style={{ width: ART_W * scale, height: ART_H * scale }}
-      >
+      <Topbar navigationHidden />
+      <div className="flex flex-1 items-center justify-center pt-16">
         <div
-          className="absolute left-0 top-0 origin-top-left"
-          style={{
-            width: ART_W,
-            height: ART_H,
-            transform: `scale(${scale})`,
-          }}
+          className="relative shrink-0"
+          style={{ width: ART_W * scale, height: ART_H * scale }}
         >
-          {/* Layer 0 — line-art décor */}
+          <div
+            className="absolute left-0 top-0 origin-top-left"
+            style={{
+              width: ART_W,
+              height: ART_H,
+              transform: `scale(${scale})`,
+            }}
+          >
+          {/* Décor — pushed outward so the 1166 panel does not cover them */}
           <Image
             src="/images/left-top.png"
             alt=""
@@ -85,7 +120,7 @@ export default function StartTasks() {
             height={314}
             priority
             className="pointer-events-none absolute object-contain"
-            style={{ left: 41, top: 155, width: 467, height: 314, zIndex: 0 }}
+            style={{ left: -60, top: 40, width: 467, height: 314, zIndex: 0 }}
           />
           <Image
             src="/images/right-bottom.png"
@@ -94,74 +129,56 @@ export default function StartTasks() {
             height={326}
             priority
             className="pointer-events-none absolute object-contain"
-            style={{ right: 19, bottom: 8, width: 651, height: 326, zIndex: 0 }}
+            style={{ right: -80, bottom: -40, width: 651, height: 326, zIndex: 0 }}
           />
 
-          {/* Color shapes — above the briefing card */}
-          <Image
-            src="/images/left-red.png"
-            alt=""
-            width={280}
-            height={260}
-            className="pointer-events-none absolute object-contain object-left-bottom"
-            style={{ left: 172, bottom: 110, width: 280, height: 'auto', zIndex: 3 }}
-          />
-          <Image
-            src="/images/right-green.png"
-            alt=""
-            width={240}
-            height={140}
-            className="pointer-events-none absolute object-contain object-left-bottom"
-            style={{ left: 256, bottom: 142, width: 240, height: 'auto', zIndex: 3 }}
-          />
-
-          {/* Briefing card — right 114, bottom 189 */}
+          {/* Main panel 1166×650 */}
           <div
             className="absolute flex flex-col bg-white"
             style={{
-              right: 114,
-              bottom: 189,
-              width: 1065,
-              height: 522,
+              left: PANEL_LEFT,
+              top: PANEL_TOP,
+              width: PANEL_W,
+              height: PANEL_H,
               zIndex: 2,
               borderRadius: 12,
               border: `1px solid ${CARD_BORDER}`,
               boxShadow: CARD_SHADOW,
-              padding: '30px 35px 28px 35px',
+              padding: '28px 34px',
             }}
           >
             <p
-              className="uppercase"
               style={{
                 color: EYEBROW,
                 fontWeight: 500,
-                fontSize: 18,
-                lineHeight: '36px',
-                letterSpacing: 3.6,
+                fontSize: 17,
+                lineHeight: '34px',
+                letterSpacing: 3.38,
+                textTransform: 'uppercase',
               }}
             >
               Usability Test Scenario
             </p>
             <h1
               style={{
-                marginTop: 4,
+                marginTop: 13,
                 color: TITLE,
                 fontWeight: 600,
-                fontSize: 21,
-                lineHeight: '32px',
-                letterSpacing: -0.43,
+                fontSize: 20,
+                lineHeight: '30px',
+                letterSpacing: -0.41,
               }}
             >
               Prepare the Annual Internship Intake
             </h1>
             <p
               style={{
-                marginTop: 8,
+                marginTop: 0,
                 color: TITLE,
                 fontWeight: 400,
-                fontSize: 22,
-                lineHeight: '32px',
-                letterSpacing: -0.43,
+                fontSize: 20,
+                lineHeight: '30px',
+                letterSpacing: -0.41,
               }}
             >
               You are responsible for preparing the upcoming annual internship intake and managing
@@ -169,41 +186,40 @@ export default function StartTasks() {
             </p>
             <p
               style={{
-                marginTop: 16,
+                marginTop: 20,
                 color: MUTED,
                 fontWeight: 400,
                 fontSize: 14,
-                lineHeight: '21px',
+                lineHeight: '20px',
               }}
             >
               During this exercise, you will complete the following two tasks.
             </p>
 
-            <div className="mt-6 flex min-h-0 flex-1 flex-col justify-center">
-              <TaskBlock
-                label="Task 1"
-                title="Create Project Requests"
-                description="Create and issue Project Requests to the relevant Programme Centres for the annual internship intake."
-                cta="Start Task 1"
-                onClick={() => router.push('/requests/new')}
-              />
-              <div style={{ margin: '20px 0', borderTop: `1px solid ${DIVIDER}` }} />
-              <TaskBlock
-                label="Task 2"
-                title="Review and Manage Submitted Projects"
-                description="Assume that internship projects have subsequently been submitted by AD (P&C). Review the submitted projects and take the appropriate actions."
-                cta="Start Task 2"
-                onClick={() => router.push('/projects')}
-              />
+            <div
+              className="grid grid-cols-2"
+              style={{ marginTop: 11, gap: 16 }}
+            >
+              {TASKS.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  label={`Task ${task.id}`}
+                  title={task.title}
+                  description={task.description}
+                  cta={`Start Task ${task.id}`}
+                  onClick={() => router.push(task.href)}
+                />
+              ))}
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
 }
 
-function TaskBlock({
+function TaskCard({
   label,
   title,
   description,
@@ -217,42 +233,65 @@ function TaskBlock({
   onClick: () => void;
 }) {
   return (
-    <div className="grid grid-cols-[auto_1fr] items-baseline gap-x-3">
-      <span style={{ color: ACCENT, fontWeight: 600, fontSize: 18, lineHeight: '21px' }}>
+    <div
+      className="flex flex-col"
+      style={{
+        border: `0.95px solid ${CARD_BORDER}`,
+        background: 'rgba(255, 255, 255, 1)',
+        borderRadius: 8,
+        padding: 22,
+      }}
+    >
+      <p
+        style={{
+          fontWeight: 600,
+          fontSize: 16,
+          lineHeight: '20px',
+          textTransform: 'uppercase',
+          color: ACCENT,
+        }}
+      >
         {label}
-      </span>
-      <div>
-        <h2 style={{ color: TASK_TITLE, fontWeight: 600, fontSize: 18, lineHeight: '21px' }}>
-          {title}
-        </h2>
-        <p
-          style={{
-            marginTop: 6,
-            color: MUTED,
-            fontWeight: 400,
-            fontSize: 14,
-            lineHeight: '21px',
-          }}
-        >
-          {description}
-        </p>
-        <button
-          type="button"
-          onClick={onClick}
-          className="mt-3 inline-flex cursor-pointer items-center justify-center gap-1 rounded-md text-white transition-opacity hover:opacity-90"
-          style={{
-            width: 120,
-            height: 32,
-            background: ACCENT,
-            fontWeight: 600,
-            fontSize: 12,
-            lineHeight: '18px',
-          }}
-        >
-          {cta}
-          <ArrowRight className="size-3.5 shrink-0" strokeWidth={1.5} />
-        </button>
-      </div>
+      </p>
+      <h2
+        style={{
+          marginTop: 4,
+          fontWeight: 600,
+          fontSize: 16,
+          lineHeight: '20px',
+          color: TASK_TITLE,
+        }}
+      >
+        {title}
+      </h2>
+      <p
+        style={{
+          marginTop: 6,
+          flex: 1,
+          fontWeight: 400,
+          fontSize: 13,
+          lineHeight: '20px',
+          color: MUTED,
+        }}
+      >
+        {description}
+      </p>
+      <button
+        type="button"
+        onClick={onClick}
+        className="mt-4 inline-flex w-fit cursor-pointer items-center justify-center gap-1 rounded-md text-white transition-opacity hover:opacity-90"
+        style={{
+          height: 30,
+          padding: '0 12px',
+          background: ACCENT,
+          fontWeight: 600,
+          fontSize: 12,
+          lineHeight: '16px',
+        }}
+      >
+        {cta}
+        <ArrowRight className="size-3.5 shrink-0" strokeWidth={1.5} />
+      </button>
     </div>
   );
 }

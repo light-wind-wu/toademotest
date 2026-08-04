@@ -163,7 +163,7 @@ function InlineDateColumn({
         aria-expanded={open}
         aria-label={label}
         className={cn(
-          'flex h-10 w-full items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 text-[14px] shadow-sm',
+          'flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 text-[14px] shadow-sm',
           'outline-none transition-colors hover:border-border-strong',
           'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
           display ? 'text-fg' : 'text-fg-subtle',

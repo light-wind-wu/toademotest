@@ -34,6 +34,7 @@ export function DialogContent({
           "data-[starting-style]:opacity-0 data-[starting-style]:scale-95",
           "data-[ending-style]:opacity-0 data-[ending-style]:scale-95",
           "transition-all duration-200",
+          "[&_a]:cursor-pointer [&_button]:cursor-pointer [&_input]:cursor-pointer [&_label]:cursor-pointer",
           className,
         )}
         {...props}
@@ -42,7 +43,7 @@ export function DialogContent({
         {showCloseButton && (
           <BaseDialog.Close
             className={cn(
-              "absolute right-4 top-4 rounded-sm text-fg-muted opacity-70 transition-opacity",
+              "absolute right-4 top-4 cursor-pointer rounded-sm text-fg-muted opacity-70 transition-opacity",
               "hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
             )}
             aria-label="Close"

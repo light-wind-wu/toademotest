@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import ApplicantChrome from '@/components/apply/applicant-chrome';
 import { firstName, loadMyinfoPending } from '@/lib/myinfo';
+import { useRole } from '@/lib/role';
 import { cn } from '@/lib/utils';
 
 const AUTO_MS = 10000; // temporary — revert to 3000 when reviewing done
@@ -28,6 +29,7 @@ const PROGRAMME_LABEL = 'Polytechnic Internship 2027';
 
 export default function ApplyWelcome() {
   const router = useRouter();
+  const { setRole } = useRole();
   const [name, setName] = useState('');
   const [leaving, setLeaving] = useState(false);
   const [scale, setScale] = useState(1);
@@ -39,8 +41,9 @@ export default function ApplyWelcome() {
       router.replace('/login');
       return;
     }
+    setRole(pending.role);
     setName(firstName(pending.profile.name));
-  }, [router]);
+  }, [router, setRole]);
 
   useEffect(() => {
     if (!name) return;
@@ -53,8 +56,8 @@ export default function ApplyWelcome() {
 
   useEffect(() => {
     function update() {
-      // Leave room for applicant chrome (~56px); scale artboard as one unit
-      const availH = Math.max(window.innerHeight - 56, 320);
+      // Leave room for Topbar (64px); scale artboard as one unit
+      const availH = Math.max(window.innerHeight - 64, 320);
       setScale(Math.min(window.innerWidth / ART_W, availH / ART_H, 1));
     }
     update();
