@@ -2334,7 +2334,7 @@ export default function ProjectRequestEditPage() {
                   </aside>
 
                   <section className="flex min-h-0 min-w-0 flex-col bg-surface">
-                    <div className="flex flex-col gap-3 border-b border-[#E7E4DD] bg-[#F9F8F4] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-col gap-3 border-b border-[#E7E4DD] bg-[#F9F8F4] p-4 sm:flex-row sm:items-center sm:justify-between">
                       <h3 className="text-label-md font-semibold text-[#0F172B]">
                         Current Editing - Request {activeDraftIndex + 1}
                       </h3>

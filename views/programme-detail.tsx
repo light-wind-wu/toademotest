@@ -38,6 +38,7 @@ import Modal from '@/components/ui-legacy/modal';
 import SortTh from '@/components/ui-legacy/sort-th';
 import { loadProgrammes, saveProgrammes, loadProjects, loadAttachments } from '@/lib/storage';
 import ProgToggle from '@/components/ui-legacy/prog-toggle';
+import { Toast, useToast } from '@/components/ui-legacy/toast';
 import { internCategoriesForLevel } from '@/lib/data';
 import { RuleReadRow, ReqReadView } from '@/components/ui-legacy/eligibility-read';
 import { PROGRAMMES_CHANGED_EVENT } from '@/lib/programme-context';
@@ -645,6 +646,7 @@ function assignedProjectStatusLabel(status: ProjectEntry['status']): AssignedPro
 /* Main page */
 export default function ProgrammeDetailPage() {
   const router = useRouter();
+  const { toast, showToast } = useToast();
   const [prog,          setProg]          = useState<Programme | null>(null);
   const [deleteOpen,    setDeleteOpen]    = useState(false);
   const [statusOpen,    setStatusOpen]    = useState(false);
@@ -674,6 +676,12 @@ export default function ProgrammeDetailPage() {
       setAttachments(programmeAttachments);
       setSelIntakeId(currentIntakeId(p));
       if (p.formTemplate) setFormTemplate(loadTemplate(p.formTemplate));
+
+      const pendingToast = sessionStorage.getItem('dsta_pending_toast');
+      if (pendingToast) {
+        sessionStorage.removeItem('dsta_pending_toast');
+        showToast(pendingToast);
+      }
     } catch {}
   }, []);
 
@@ -1169,6 +1177,8 @@ export default function ProgrammeDetailPage() {
           <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancel</Button>
         </div>
       </Modal>
+
+      <Toast message={toast} />
     </Shell>
   );
 }

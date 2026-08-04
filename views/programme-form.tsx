@@ -17,6 +17,7 @@ import {
   FieldLabelText,
 } from '@/components/ui-legacy/field';
 import { Input } from '@/components/ui/input';
+import FieldRequired from '@/components/ui-legacy/field-required';
 import {
   Select,
   SelectContent,
@@ -1522,6 +1523,11 @@ export default function ProgrammeFormPage() {
   // levels reloads that level's defaults (see the step-1 effect below).
   const [defaultReqsCat,  setDefaultReqsCat]  = useState('');
   const [cpErrors, setCpErrors]         = useState<Record<string, string>>({});
+  // Per-field touched state. A field only shows its error once it has been touched
+  // (via blur/change) or the form explicitly requests all errors (Next click / return).
+  // This avoids newly-added intakes appearing red before the user has interacted with them.
+  const [touched, setTouched]           = useState<Record<string, boolean>>({});
+  const titleInputRef = useRef<HTMLInputElement>(null);
   // TOA-007: original criteria snapshot + re-screen opt-in (eligibility edited after
   // applications were already screened against the previous rules).
   const [origReqs, setOrigReqs]         = useState('');
@@ -1750,7 +1756,6 @@ export default function ProgrammeFormPage() {
   // Intakes that have usable (parseable) dates — only these can host a project.
   const datedIntakes = cpIntakes.filter(w => monthIndexFromISO(w.start) !== null && monthIndexFromISO(w.end) !== null);
   const intakesKey = cpIntakes.map(w => `${w.id}:${w.start}:${w.end}`).join('|');
-  const canReviewIntakes = cpIntakes.length > 0 && cpIntakes.every(w => !!(w.appOpen && w.appClose && w.start && w.end));
   const assignSheetProject = assignDialog?.mode === 'single'
     ? availableProjects.find(p => p.id === assignDialog.projectIds[0])
     : null;
@@ -1882,6 +1887,7 @@ export default function ProgrammeFormPage() {
     const removedId = cpIntakes[index]?.id as string | undefined;
     const fallbackId = (cpIntakes[index + 1]?.id ?? cpIntakes[index - 1]?.id ?? cpIntakes[0]?.id) as string | undefined;
     setCpIntakes(prev => prev.filter((_, j) => j !== index));
+    reindexAfterIntakeRemoval(index);
     if (removedId) {
       setCpAttach(prev => {
         const next = { ...prev };
@@ -2070,28 +2076,141 @@ export default function ProgrammeFormPage() {
     setDefaultReqsCat(catKey);
   }, [cpCategory]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function goToIntakes() {
-    const result = programmeStep1Schema.safeParse({
-      title: cpTitle,
-      category: cpCategory,
+  /* ── Field-level touched / validation helpers ────────────────────── */
+  const touchField = useCallback((key: string) => {
+    setTouched(prev => (prev[key] ? prev : { ...prev, [key]: true }));
+  }, []);
+  const touchFields = useCallback((keys: string[]) => {
+    setTouched(prev => {
+      if (keys.every(k => prev[k])) return prev;
+      const next = { ...prev };
+      for (const k of keys) next[k] = true;
+      return next;
     });
-    if (!result.success) {
-      setCpErrors(flattenErrors(result));
+  }, []);
+  const isFieldTouched = useCallback((key: string) => touched[key] ?? false, [touched]);
+
+  function validateStep1(titleOverride?: string, categoryOverride?: string[]): Record<string, string> {
+    const result = programmeStep1Schema.safeParse({
+      title: titleOverride ?? cpTitle,
+      category: categoryOverride ?? cpCategory,
+    });
+    return result.success ? {} : flattenErrors(result);
+  }
+  function validateIntakes(): Record<string, string> {
+    const result = programmeStep2Schema(isEdit, sgToday()).safeParse({ intakes: cpIntakes });
+    return result.success ? {} : formatIntakeErrors(result);
+  }
+
+  function focusStep1Error(errors: Record<string, string>) {
+    const firstKey = errors.title ? 'title' : errors.category ? 'category' : undefined;
+    if (firstKey === 'title' && titleInputRef.current) {
+      titleInputRef.current.focus();
+      titleInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
-    setCpErrors({}); setStep(2);
+    const el = document.querySelector(`[data-field-key="${firstKey}"]`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function focusFirstIntakeError(errors: Record<string, string>) {
+    const keys = Object.keys(errors)
+      .filter(k => k.startsWith('intake_'))
+      .sort();
+    if (keys.length === 0) return;
+    const first = keys[0];
+    const idxMatch = first.match(/^intake_(\d+)_/);
+    if (idxMatch) {
+      const idx = parseInt(idxMatch[1], 10);
+      const intakeId = cpIntakes[idx]?.id as string | undefined;
+      if (intakeId) selectIntake(intakeId);
+    }
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-field-key="${first}"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+
+  function intakeStatus(w: IntakeWindow): 'not-started' | 'incomplete' | 'ready' {
+    const hasAny = !!(w.appOpen || w.appClose || w.start || w.end);
+    const hasAll = !!(w.appOpen && w.appClose && w.start && w.end);
+    if (!hasAny) return 'not-started';
+    if (!hasAll) return 'incomplete';
+    return 'ready';
+  }
+
+  // When an intake is removed, indices shift. Re-index touched/errors so the remaining
+  // intakes keep their per-field visibility state aligned with the new array positions.
+  function reindexAfterIntakeRemoval(removedIndex: number) {
+    const reindex = (record: Record<string, string | boolean>) => {
+      const next: Record<string, string | boolean> = {};
+      for (const [key, value] of Object.entries(record)) {
+        const m = key.match(/^intake_(\d+)_(.+)$/);
+        if (!m) { next[key] = value; continue; }
+        const idx = parseInt(m[1], 10);
+        const field = m[2];
+        if (idx < removedIndex) next[key] = value;
+        else if (idx > removedIndex) next[`intake_${idx - 1}_${field}`] = value;
+      }
+      return next;
+    };
+    setTouched(prev => reindex(prev) as Record<string, boolean>);
+    setCpErrors(prev => reindex(prev) as Record<string, string>);
+  }
+
+  function goToIntakes() {
+    const errors = validateStep1();
+    if (Object.keys(errors).length === 0) {
+      setCpErrors({});
+      setStep(2);
+      return;
+    }
+    setCpErrors(errors);
+    touchFields(['title', 'category']);
+    setTimeout(() => focusStep1Error(errors), 0);
   }
 
   // Set Up Intakes & Assign Projects is step 2 → validate intake fields before Review (3).
   function goToAttach() {
-    const result = programmeStep2Schema(isEdit, sgToday()).safeParse({
-      intakes: cpIntakes,
-    });
-    if (!result.success) {
-      setCpErrors(formatIntakeErrors(result));
+    const errors = validateIntakes();
+    if (Object.keys(errors).length === 0) {
+      setCpErrors({});
+      setStep(3);
       return;
     }
-    setCpErrors({}); setStep(3);
+    setCpErrors(errors);
+    // Touch every intake field so all errors are revealed.
+    const keys: string[] = [];
+    cpIntakes.forEach((_, i) => {
+      keys.push(`intake_${i}_appOpen`, `intake_${i}_appClose`, `intake_${i}_start`, `intake_${i}_end`);
+    });
+    touchFields(keys);
+    setTimeout(() => focusFirstIntakeError(errors), 0);
+  }
+
+  // Navigating backward from a later step to an earlier step should reveal any
+  // incomplete fields so the user can fix them before proceeding again.
+  function handleReturnToStep(targetStep: number) {
+    if (targetStep >= step) return;
+    if (targetStep === 1) {
+      const errors = validateStep1();
+      setCpErrors(errors);
+      touchFields(['title', 'category']);
+      setStep(1);
+      setTimeout(() => focusStep1Error(errors), 0);
+      return;
+    }
+    if (targetStep === 2) {
+      const errors = validateIntakes();
+      setCpErrors(errors);
+      const keys: string[] = [];
+      cpIntakes.forEach((_, i) => {
+        keys.push(`intake_${i}_appOpen`, `intake_${i}_appClose`, `intake_${i}_start`, `intake_${i}_end`);
+      });
+      touchFields(keys);
+      setStep(2);
+      setTimeout(() => focusFirstIntakeError(errors), 0);
+    }
   }
 
   // TOA-007 — applications already screened against the *previous* criteria. Only the
@@ -2262,7 +2381,7 @@ export default function ProgrammeFormPage() {
 
         {/* Stepper */}
         <div className="shrink-0 mb-6">
-          <Stepper step={step} onStepClick={n => { setCpErrors({}); setStep(n); }} />
+          <Stepper step={step} onStepClick={n => { if (n < step) handleReturnToStep(n); }} />
         </div>
 
         {/* Full-width card */}
@@ -2290,16 +2409,20 @@ export default function ProgrammeFormPage() {
                   </Sel>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-1.5" data-field-key="category">
                   <FieldLabelText>
                     Intern Category <span className="text-danger">*</span>
                   </FieldLabelText>
                   <Sel
-                    className={cn('w-full', cpErrors.category && 'border-danger')}
+                    className={cn('w-full', isFieldTouched('category') && cpErrors.category && 'border-danger')}
                     value={selectedCategoryOption?.label ?? ''}
                     onChange={e => {
                       const opt = CATEGORY_OPTIONS.find(o => o.label === e.target.value);
-                      selectCategory(opt ? opt.values : []);
+                      const values = opt ? opt.values : [];
+                      selectCategory(values);
+                      touchField('category');
+                      const errors = validateStep1(undefined, values);
+                      setCpErrors(errors);
                     }}
                   >
                     <option value="" disabled>Select a category…</option>
@@ -2307,24 +2430,37 @@ export default function ProgrammeFormPage() {
                       <option key={label} value={label}>{label}</option>
                     ))}
                   </Sel>
-                  {cpErrors.category && <p className="text-xs leading-relaxed text-danger">{cpErrors.category}</p>}
+                  <FieldRequired show={isFieldTouched('category') && !!cpErrors.category} />
                   <p className="text-xs leading-relaxed text-fg-muted">
                     The default application form and eligibility requirements will update automatically.
                   </p>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-1.5" data-field-key="title">
                   <FieldLabelText>
                     Programme Title <span className="text-danger">*</span>
                   </FieldLabelText>
                   <Input
+                    ref={titleInputRef}
                     value={cpTitle}
-                    onChange={e => { setCpTitle(e.target.value); if (cpErrors.title) setCpErrors(p => ({ ...p, title: '' })); }}
+                    onChange={e => {
+                      const value = e.target.value;
+                      setCpTitle(value);
+                      if (cpErrors.title || isFieldTouched('title')) {
+                        const errors = validateStep1(value);
+                        setCpErrors(errors);
+                      }
+                    }}
+                    onBlur={() => {
+                      touchField('title');
+                      const errors = validateStep1();
+                      setCpErrors(errors);
+                    }}
                     placeholder="e.g. Undergraduate Internship Programme 2027"
-                    aria-invalid={Boolean(cpErrors.title)}
-                    className={cn(cpErrors.title && 'border-danger focus-visible:outline-none')}
+                    aria-invalid={isFieldTouched('title') && Boolean(cpErrors.title)}
+                    className={cn(isFieldTouched('title') && cpErrors.title && 'border-danger focus-visible:outline-none')}
                   />
-                  {cpErrors.title && <p className="text-xs leading-relaxed text-danger">{cpErrors.title}</p>}
+                  <FieldRequired show={isFieldTouched('title') && !!cpErrors.title} />
                 </div>
 
                 {/* Application Form preview */}
@@ -2487,6 +2623,17 @@ export default function ProgrammeFormPage() {
                             const assignedCount = assignedIds.length;
                             const isActive = selectedIntakeId === intakeId;
                             const periodLabel = intake.start && intake.end ? intakeLabel(intake) : 'Set internship window';
+                            const intakeErrorKeys = Object.keys(cpErrors).filter(k => k.startsWith(`intake_${i}_`));
+                            const intakeErrors = intakeErrorKeys.map(k => cpErrors[k]);
+                            const hasErrors = intakeErrorKeys.length > 0;
+                            const hasAnyIntakeField = !!(intake.appOpen || intake.appClose || intake.start || intake.end);
+                            const hasAllIntakeFields = !!(intake.appOpen && intake.appClose && intake.start && intake.end);
+                            const status = hasErrors ? 'incomplete' : hasAllIntakeFields ? 'ready' : hasAnyIntakeField ? 'incomplete' : 'not-started';
+                            const StatusIcon = status === 'ready' ? CheckCircle2 : status === 'incomplete' ? AlertCircle : Info;
+                            const statusClass = status === 'ready' ? 'text-success' : status === 'incomplete' ? 'text-danger' : 'text-fg-subtle';
+                            const statusLabel = status === 'ready' ? 'Ready' : status === 'incomplete' ? 'Incomplete' : 'Not Started';
+                            const showStatusOnHover = status === 'not-started';
+                            const missingFieldCount = [intake.appOpen, intake.appClose, intake.start, intake.end].filter(v => !v).length;
                             return (
                               <div
                                 key={intakeId ?? i}
@@ -2511,18 +2658,34 @@ export default function ProgrammeFormPage() {
                                     </span>
                                     <span className="mt-1 block truncate text-caption text-fg-muted">
                                       {intake.appOpen && intake.appClose
-                                        ? `Applications: ${formatDate(intake.appOpen)} – ${formatDate(intake.appClose)}`
-                                        : 'Set application window'}
+                                        ? `Applications: ${formatDate(intake.appOpen)} – ${formatDate(intake.appClose)} · ${assignedCount} project${assignedCount !== 1 ? 's' : ''}`
+                                        : `Set application window · ${assignedCount} project${assignedCount !== 1 ? 's' : ''}`}
                                     </span>
                                   </div>
                                   <div className="flex items-center justify-end gap-1">
-                                    <div className="flex h-7 w-7 items-center justify-center">
-                                      {isActive ? (
-                                        <Check size={15} className="text-success" aria-label="Selected" />
-                                      ) : (
-                                        <span className="text-body-sm font-semibold text-fg">{assignedCount}</span>
-                                      )}
-                                    </div>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger
+                                          render={
+                                            <button
+                                              type="button"
+                                              aria-label={statusLabel}
+                                              className={cn(
+                                                'inline-flex h-7 w-7 items-center justify-center rounded-full text-fg-subtle transition-all hover:bg-bg-muted focus:outline-none focus:ring-2 focus:ring-accent/40',
+                                                showStatusOnHover && 'opacity-0 group-hover:opacity-100'
+                                              )}
+                                            >
+                                              <StatusIcon size={15} className={statusClass} />
+                                            </button>
+                                          }
+                                        />
+                                        <TooltipContent side="top" align="end">
+                                          {status === 'not-started'
+                                            ? statusLabel
+                                            : `${missingFieldCount} missing field input${missingFieldCount !== 1 ? 's' : ''}`}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   </div>
                                 </div>
                                 {isActive && (
@@ -2539,7 +2702,7 @@ export default function ProgrammeFormPage() {
                       </aside>
 
                       <section className="flex min-h-0 min-w-0 flex-col rounded-b-lg bg-surface lg:rounded-b-none lg:rounded-r-lg">
-                        <div className="flex flex-col gap-3 border-b border-border bg-[rgba(249,248,244,1)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-col gap-3 border-b border-border bg-[rgba(249,248,244,1)] p-4 sm:flex-row sm:items-center sm:justify-between">
                           <div>
                             <h3 className="text-label-md font-semibold text-fg">Assign Projects</h3>
                             <p className="mt-0.5 text-caption text-fg-muted">Assign projects to the selected intake.</p>
@@ -2563,7 +2726,7 @@ export default function ProgrammeFormPage() {
                         {selectedIntake && (
                           <div className="border-border px-4 py-4">
                             <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(230px,1fr)_1px_minmax(230px,1fr)_2fr] xl:min-w-[460px]">
-                              <div className="min-w-0">
+                              <div className="min-w-0" data-field-key={`intake_${selectedIndex}_appOpen`}>
                                 <Field>
                                   <FieldLabel>
                                     Application Window <span className="text-danger">*</span>
@@ -2574,32 +2737,30 @@ export default function ProgrammeFormPage() {
                                     onChange={(openDate, closeDate) => {
                                       const next = cpIntakes.map((w, j) => j === selectedIndex ? { ...w, appOpen: openDate, appClose: closeDate } : w);
                                       setCpIntakes(next);
-                                      setCpErrors(p => {
-                                        const n = { ...p };
-                                        delete n[`intake_${selectedIndex}_appOpen`];
-                                        delete n[`intake_${selectedIndex}_appClose`];
-                                        return n;
-                                      });
+                                      const hasAny = !!(openDate || closeDate);
+                                      if (hasAny) touchFields([`intake_${selectedIndex}_appOpen`, `intake_${selectedIndex}_appClose`]);
+                                      const result = programmeStep2Schema(isEdit, sgToday()).safeParse({ intakes: next });
+                                      setCpErrors(result.success ? {} : formatIntakeErrors(result));
                                     }}
                                     placeholder="Pick the application dates"
                                     lockStart={isEdit && selectedIndex === 0}
                                     minDate={sgToday()}
-                                    error={Boolean(cpErrors[`intake_${selectedIndex}_appOpen`] || cpErrors[`intake_${selectedIndex}_appClose`])}
+                                    error={isFieldTouched(`intake_${selectedIndex}_appOpen`) && Boolean(cpErrors[`intake_${selectedIndex}_appOpen`] || cpErrors[`intake_${selectedIndex}_appClose`])}
                                   />
-                                  {(cpErrors[`intake_${selectedIndex}_appOpen`] || cpErrors[`intake_${selectedIndex}_appClose`]) && (
+                                  {isFieldTouched(`intake_${selectedIndex}_appOpen`) && (cpErrors[`intake_${selectedIndex}_appOpen`] || cpErrors[`intake_${selectedIndex}_appClose`]) && (
                                     <FieldError>{cpErrors[`intake_${selectedIndex}_appOpen`] || cpErrors[`intake_${selectedIndex}_appClose`]}</FieldError>
                                   )}
                                 </Field>
                               </div>
                               <div className="hidden xl:block border-l border-border" aria-hidden="true" />
-                              <div className="min-w-0">
+                              <div className="min-w-0" data-field-key={`intake_${selectedIndex}_start`}>
                                 <Field>
                                   <FieldLabel>
                                     Internship Window <span className="text-danger">*</span>
                                   </FieldLabel>
                                   <DateRangePicker
                                     placeholder="Pick the internship start and end dates"
-                                    error={!!(cpErrors[`intake_${selectedIndex}_start`] || cpErrors[`intake_${selectedIndex}_end`])}
+                                    error={isFieldTouched(`intake_${selectedIndex}_start`) && !!(cpErrors[`intake_${selectedIndex}_start`] || cpErrors[`intake_${selectedIndex}_end`])}
                                     start={selectedIntake.start}
                                     end={selectedIntake.end}
                                     onChange={(startDate, endDate) => {
@@ -2609,15 +2770,13 @@ export default function ProgrammeFormPage() {
                                         end: endDate,
                                       } : w);
                                       setCpIntakes(next);
-                                      setCpErrors(p => {
-                                        const n = { ...p };
-                                        delete n[`intake_${selectedIndex}_start`];
-                                        delete n[`intake_${selectedIndex}_end`];
-                                        return n;
-                                      });
+                                      const hasAny = !!(startDate || endDate);
+                                      if (hasAny) touchFields([`intake_${selectedIndex}_start`, `intake_${selectedIndex}_end`]);
+                                      const result = programmeStep2Schema(isEdit, sgToday()).safeParse({ intakes: next });
+                                      setCpErrors(result.success ? {} : formatIntakeErrors(result));
                                     }}
                                   />
-                                  {(cpErrors[`intake_${selectedIndex}_start`] || cpErrors[`intake_${selectedIndex}_end`]) && (
+                                  {isFieldTouched(`intake_${selectedIndex}_start`) && (cpErrors[`intake_${selectedIndex}_start`] || cpErrors[`intake_${selectedIndex}_end`]) && (
                                     <FieldError>{cpErrors[`intake_${selectedIndex}_start`] || cpErrors[`intake_${selectedIndex}_end`]}</FieldError>
                                   )}
                                 </Field>
@@ -2938,19 +3097,19 @@ export default function ProgrammeFormPage() {
             ) : step === 2 ? (
               /* Set Up Intakes & Assign Projects — validate intakes before Review */
               <>
-                <Button variant="outline" onClick={() => setStep(1)}>
+                <Button variant="outline" onClick={() => handleReturnToStep(1)}>
                   Cancel
                 </Button>
                 <Button variant="outline" onClick={saveAsDraft}>
                   Save as Draft
                 </Button>
-                <Button onClick={goToAttach} disabled={!canReviewIntakes} title={!canReviewIntakes ? 'Complete all intake dates before reviewing.' : undefined}>
+                <Button onClick={goToAttach}>
                   Next: {STEP_DEFS[step].label} <ArrowRight size={16} />
                 </Button>
               </>
             ) : (
               <>
-                <Button variant="outline" onClick={() => setStep(2)}>
+                <Button variant="outline" onClick={() => handleReturnToStep(2)}>
                   Cancel
                 </Button>
                 <Button variant="outline" onClick={saveAsDraft}>
