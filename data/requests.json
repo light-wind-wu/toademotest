@@ -158,5 +158,25 @@
     "sentDate": "2026-06-28",
     "deadline": "2026-09-15",
     "status": "excess"
+  },
+  {
+    "id": "seed-req-pc3-9",
+    "uploadToken": "seed-pc3-2027",
+    "pc": "james.tan@dsta.gov.sg",
+    "programmeCenter": "PC3",
+    "headName": "James Tan",
+    "senderName": "Davina Tan",
+    "internCategory": "Undergraduate Student",
+    "educationLevel": "Undergraduate Student",
+    "calendarPeriod": "Jul 2027 – Dec 2027",
+    "periodStart": "Jul 2027",
+    "periodEnd": "Dec 2027",
+    "duration": "6 Months",
+    "placements": 3,
+    "created": 2,
+    "uploaded": 2,
+    "sentDate": "2026-07-01",
+    "deadline": "2026-09-30",
+    "status": "partial"
   }
 ]

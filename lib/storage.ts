@@ -37,8 +37,8 @@ const isBrowser = (): boolean => typeof window !== 'undefined';
 export const SEED_VERSIONS = {
   programmes:  SEED_VERSION, // 'v17' (stored under the legacy `_ver` suffix)
   projects:    '24',         // bump: every seed project now carries an internship period
-  requests:    '14',         // bump: sample IO requests (all statuses, PC4/6/8/10) for the demo
-  submissions: '12',         // bump: linked all submissions to seeded requests + mentor emails
+  requests:    '15',         // bump: added PC3 seed request
+  submissions: '13',         // bump: added PC3 seed submission batch
   attachments: '1',          // late-binding programme↔project join; seeds empty
 } as const;
 

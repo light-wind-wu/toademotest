@@ -2199,25 +2199,34 @@ export default function ProjectRequestEditPage() {
           </BreadcrumbList>
         </Breadcrumb>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <h1 className="text-headline-lg text-fg">
-                {mode === 'draft' ? 'Edit Project Request' : canManageOpen ? 'Edit Project Request' : 'View Project Request'}
-              </h1>
-              <Badge variant={STATUS_PILL[openStatus].variant}>{STATUS_PILL[openStatus].label}</Badge>
-            </div>
-            <p className="text-body-sm text-fg-muted">
-              {mode === 'draft'
-                ? 'Drafts can still be edited before sending.'
-                : canManageOpen
+        {mode !== 'draft' && (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <div className="mb-2 flex items-center gap-2">
+                <h1 className="text-headline-lg text-fg">
+                  {canManageOpen ? 'Edit Project Request' : 'View Project Request'}
+                </h1>
+                <Badge variant={STATUS_PILL[openStatus].variant}>{STATUS_PILL[openStatus].label}</Badge>
+              </div>
+              <p className="text-body-sm text-fg-muted">
+                {canManageOpen
                   ? 'Open requests keep submitted fields controlled. You can update placements, add intern categories, extend the deadline, and send reminders.'
                   : 'Fulfilled requests are view-only.'}
-            </p>
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
-        <StepIndicator step={step} mode={mode} onStepClick={setStep} />
+        {mode !== 'draft' && <StepIndicator step={step} mode={mode} onStepClick={setStep} />}
+
+        {mode === 'draft' && step === 1 && (
+          <Alert variant="default" className="mb-6 shrink-0 bg-[#F3EFE5] border-[#E7E4DD]">
+            <Info size={16} className="shrink-0 text-fg-muted" />
+            <AlertDescription>
+              Add or select a request from the left panel. Complete the details on the right.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {model && mode === 'open' && (
           <LatestActivity log={logs[0]} onOpen={() => setAuditOpen(true)} />

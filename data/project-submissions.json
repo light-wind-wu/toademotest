@@ -238,5 +238,52 @@
         "workingLocation": "DSTA"
       }
     ]
+  },
+  {
+    "id": "batch-pc3-2027-demo",
+    "uploadToken": "seed-pc3-2027",
+    "pc": "james.tan@dsta.gov.sg",
+    "pcHead": "James Tan",
+    "submittedBy": "James Tan",
+    "programme": "",
+    "educationLevel": "University",
+    "requestedEducationLevels": ["Undergraduate Student"],
+    "placements": 3,
+    "uploadedAt": "2026-07-08",
+    "projects": [
+      {
+        "id": "sub-pc3-robotics-001",
+        "title": "Robotic Perception for Indoor Navigation",
+        "description": "Prototype a perception pipeline for small indoor robots using lidar and camera fusion, enabling robust localisation and obstacle avoidance in GPS-denied environments.",
+        "mentor": "Dr. Samuel Yeo",
+        "mentorAppointment": "Principal Engineer",
+        "mentorEmail": "samuel_yeo@dsta.gov.sg",
+        "mentorUserId": "mentor-samuel",
+        "mentorDept": "Robotics",
+        "mentorBio": "Specialises in perception, sensor fusion and mobile robot autonomy.",
+        "skills": ["Python", "ROS", "Computer Vision", "Sensor Fusion"],
+        "discipline": "Computer Science / Electrical Engineering / Mechanical Engineering",
+        "slots": 2,
+        "preferredEducation": "Undergraduate Student",
+        "minGpa": "",
+        "projectType": "Technical",
+        "additionalRequirements": "Basic Python and linear algebra; prior ROS experience is a plus.",
+        "aiCheck": {
+          "grammar": "pass",
+          "level": "pass",
+          "notes": []
+        },
+        "status": "pending",
+        "pc": "PC3",
+        "techDomain": "Autonomy",
+        "emergingArea": "Robotics & Autonomous Systems",
+        "educationLevel": "Undergraduate Student",
+        "requestLineId": "seed-req-pc3-9",
+        "internshipDuration": "6",
+        "internshipPeriodStart": "Jul 2027",
+        "internshipPeriodEnd": "Dec 2027",
+        "workingLocation": "DSTA"
+      }
+    ]
   }
 ]
