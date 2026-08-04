@@ -15,7 +15,10 @@ export function roleHome(role: UserRole): string {
     case 'ad-pnc':                     return '/submissions';
     case 'new-applicant':
     case 'existing-scholar-applicant': return '/apply/dashboard';
-    default:                           return '/dashboard'; // io-admin, io, mentor
+    case 'io-admin':
+    case 'io':
+    case 'mentor':                     return '/start-tasks';
+    default:                           return '/start-tasks';
   }
 }
 
