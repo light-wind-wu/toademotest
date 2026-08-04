@@ -62,12 +62,21 @@ export const STORAGE_KEYS = {
 function loadSeeded<T>(key: string, verKey: string, version: string, seed: T[]): T[] {
   if (!isBrowser()) return seed;
   try {
+    const raw = localStorage.getItem(key);
     if (localStorage.getItem(verKey) !== version) {
+      // When cloud sync is on, existing payloads (e.g. just hydrated) must win.
+      // Reseeding would dual-write seed JSON and wipe shared cloud data.
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw) as T[];
+          localStorage.setItem(verKey, version);
+          return parsed;
+        } catch { /* fall through to seed */ }
+      }
       localStorage.setItem(key, JSON.stringify(seed));
       localStorage.setItem(verKey, version);
       return seed;
     }
-    const raw = localStorage.getItem(key);
     return raw ? (JSON.parse(raw) as T[]) : seed;
   } catch {
     return seed;

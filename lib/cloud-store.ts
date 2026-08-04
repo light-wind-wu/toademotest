@@ -1,8 +1,9 @@
 /* Cloud KV sync over Supabase `app_kv`.
    - Keeps existing sync localStorage API (no page rewrite)
    - Hydrate cloud → localStorage on boot
-   - Dual-write on localStorage.setItem for shared keys
-   - Realtime: remote change → localStorage (no reload loop)
+   - Dual-write on localStorage.setItem for shared DATA keys only
+   - Seed version stamps (*_seed_v / *_ver) stay LOCAL — syncing them caused
+     clear→missing ver→reseed→dual-write to wipe cloud business data
    - localStorage.clear() must NOT wipe cloud (rehydrate; pause dual-write)
 */
 import { getSupabaseBrowserClient, isCloudSyncEnabled } from '@/lib/supabase/client';
@@ -10,23 +11,22 @@ import { SEED_VERSIONS, STORAGE_KEYS } from '@/lib/storage';
 
 const TABLE = 'app_kv';
 
+/** True for local-only seed/version stamps — never dual-write these to cloud. */
+export function isSeedVersionKey(key: string): boolean {
+  return key.endsWith('_seed_v') || key.endsWith('_ver');
+}
+
 /** Business data shared across browsers. Session / role / theme stay local. */
 export const SHARED_CLOUD_KEYS = new Set<string>([
   'dsta_programmes',
-  'dsta_programmes_ver',
   'dsta_projects',
-  'dsta_projects_seed_v',
   'dsta_requests',
-  'dsta_requests_seed_v',
   'dsta_project_submissions',
-  'dsta_submissions_seed_v',
   'dsta_attachments',
-  'dsta_attachments_seed_v',
   'dsta_project_drafts',
   'dsta_project_response_drafts',
   'dsta_request_audit_logs',
   'dsta_applications',
-  'dsta_applications_seed_v',
   'dsta_participants',
   'dsta_notifications',
   'dsta_access_log',
@@ -37,7 +37,6 @@ export const SHARED_CLOUD_KEYS = new Set<string>([
   'dsta_apply_session_draft',
   'dsta_programme_view',
   'dsta_app_form_templates',
-  'dsta_app_form_templates_seed_v',
 ]);
 
 export const CLOUD_HYDRATED_EVENT = 'dsta_cloud_hydrated';
@@ -62,10 +61,15 @@ function cancelPendingUpserts() {
   upsertTimers.clear();
 }
 
+function writeLocalOnly(key: string, value: string) {
+  if (origSetItem) origSetItem.call(window.localStorage, key, value);
+  else window.localStorage.setItem(key, value);
+}
+
 /**
  * After cloud restore, align local seed version stamps with the running app.
- * Otherwise loadSeeded() treats missing/stale ver as "reseed" and setItem(seed)
- * dual-writes over the real cloud payload (wiping user data).
+ * Versions are local-only; this prevents loadSeeded() from reseeding and
+ * dual-writing seed over real cloud payloads.
  */
 function stampLocalSeedVersions(): void {
   const stamps: [string, string][] = [
@@ -74,13 +78,12 @@ function stampLocalSeedVersions(): void {
     [STORAGE_KEYS.requests.verKey, SEED_VERSIONS.requests],
     [STORAGE_KEYS.submissions.verKey, SEED_VERSIONS.submissions],
     [STORAGE_KEYS.attachments.verKey, SEED_VERSIONS.attachments],
-    // Keep in sync with admin-settings / loadAppsFromStorage callers
-    ['dsta_applications_seed_v', '30'],
+    // Match highest in-app stamp used by admin / apply loaders
+    ['dsta_applications_seed_v', '31'],
     ['dsta_app_form_templates_seed_v', '23'],
   ];
   for (const [key, value] of stamps) {
-    if (origSetItem) origSetItem.call(window.localStorage, key, value);
-    else window.localStorage.setItem(key, value);
+    writeLocalOnly(key, value);
   }
 }
 
@@ -110,6 +113,7 @@ function samePayload(localRaw: string | null, incomingValue: unknown): boolean {
 }
 
 async function upsertCloud(key: string, value: unknown): Promise<void> {
+  if (isSeedVersionKey(key)) return;
   const sb = getSupabaseBrowserClient();
   if (!sb) return;
   bumpRealtimeSuppress();
@@ -121,7 +125,7 @@ async function upsertCloud(key: string, value: unknown): Promise<void> {
 }
 
 function scheduleUpsert(key: string, value: unknown) {
-  if (dualWritePaused) return;
+  if (dualWritePaused || isSeedVersionKey(key)) return;
   const prev = upsertTimers.get(key);
   if (prev) clearTimeout(prev);
   upsertTimers.set(
@@ -139,6 +143,7 @@ export async function pushAllSharedKeys(): Promise<void> {
   if (!isCloudSyncEnabled() || typeof window === 'undefined') return;
   const rows: { key: string; value: unknown }[] = [];
   for (const key of SHARED_CLOUD_KEYS) {
+    if (isSeedVersionKey(key)) continue;
     const raw = window.localStorage.getItem(key);
     if (raw == null) continue;
     rows.push({ key, value: safeParse(raw) });
@@ -163,35 +168,43 @@ export async function hydrateFromCloud(): Promise<'skipped' | 'hydrated' | 'seed
   const sb = getSupabaseBrowserClient();
   if (!sb) return 'skipped';
 
+  cancelPendingUpserts();
+  dualWritePaused = true;
   bumpRealtimeSuppress(5000);
 
-  const { data, error } = await sb.from(TABLE).select('key, value');
-  if (error) {
-    console.warn('[cloud-store] hydrate failed', error.message);
-    return 'skipped';
-  }
-
-  if (!data?.length) {
-    await pushAllSharedKeys();
-    return 'seeded';
-  }
-
-  applyingRemote = true;
   try {
-    for (const row of data) {
-      if (!SHARED_CLOUD_KEYS.has(row.key)) continue;
-      const raw = stableStringify(row.value);
-      if (origSetItem) origSetItem.call(window.localStorage, row.key, raw);
-      else window.localStorage.setItem(row.key, raw);
+    const { data, error } = await sb.from(TABLE).select('key, value');
+    if (error) {
+      console.warn('[cloud-store] hydrate failed', error.message);
+      return 'skipped';
     }
-    // Cloud is source of truth — prevent local seed OVERWRITE from clobbering it.
-    stampLocalSeedVersions();
-  } finally {
-    applyingRemote = false;
-  }
 
-  window.dispatchEvent(new Event(CLOUD_HYDRATED_EVENT));
-  return 'hydrated';
+    if (!data?.length) {
+      dualWritePaused = false;
+      await pushAllSharedKeys();
+      stampLocalSeedVersions();
+      return 'seeded';
+    }
+
+    applyingRemote = true;
+    try {
+      for (const row of data) {
+        // Ignore legacy version rows in cloud — stamps are local-only now.
+        if (isSeedVersionKey(row.key)) continue;
+        if (!SHARED_CLOUD_KEYS.has(row.key)) continue;
+        const raw = stableStringify(row.value);
+        writeLocalOnly(row.key, raw);
+      }
+      stampLocalSeedVersions();
+    } finally {
+      applyingRemote = false;
+    }
+
+    window.dispatchEvent(new Event(CLOUD_HYDRATED_EVENT));
+    return 'hydrated';
+  } finally {
+    dualWritePaused = false;
+  }
 }
 
 /** Intercept localStorage writes; clear() rehydrates instead of wiping cloud. */
@@ -204,6 +217,7 @@ export function installLocalStorageBridge(): void {
   window.localStorage.setItem = (key: string, value: string) => {
     origSetItem!(key, value);
     if (applyingRemote || dualWritePaused) return;
+    if (isSeedVersionKey(key)) return;
     if (!SHARED_CLOUD_KEYS.has(key)) return;
     scheduleUpsert(key, safeParse(value));
   };
@@ -216,6 +230,7 @@ export function installLocalStorageBridge(): void {
     void (async () => {
       try {
         await hydrateFromCloud();
+        window.dispatchEvent(new Event(CLOUD_HYDRATED_EVENT));
       } catch (err) {
         console.warn('[cloud-store] rehydrate after clear failed', err);
       } finally {
@@ -243,14 +258,14 @@ export function subscribeCloudRealtime(): () => void {
         if (Date.now() < suppressRealtimeUntil) return;
 
         const row = payload.new as { key?: string; value?: unknown } | null;
-        if (!row?.key || !SHARED_CLOUD_KEYS.has(row.key)) return;
+        if (!row?.key || isSeedVersionKey(row.key)) return;
+        if (!SHARED_CLOUD_KEYS.has(row.key)) return;
         if (samePayload(window.localStorage.getItem(row.key), row.value)) return;
 
         applyingRemote = true;
         try {
           const incoming = stableStringify(row.value ?? null);
-          if (origSetItem) origSetItem.call(window.localStorage, row.key, incoming);
-          else window.localStorage.setItem(row.key, incoming);
+          writeLocalOnly(row.key, incoming);
         } finally {
           applyingRemote = false;
         }

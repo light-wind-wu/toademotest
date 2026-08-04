@@ -237,13 +237,19 @@ export function loadLiveProgrammeOptions(): { value: string; label: string }[] {
   if (typeof window === 'undefined') return PROGRAMMES_LIST;
   try {
     const storedVer = localStorage.getItem('dsta_programmes_ver');
+    const raw = localStorage.getItem('dsta_programmes');
     let progs: Programme[];
     if (storedVer !== SEED_VERSION_REF) {
-      progs = DEFAULT_PROGRAMMES;
-      localStorage.setItem('dsta_programmes', JSON.stringify(DEFAULT_PROGRAMMES));
-      localStorage.setItem('dsta_programmes_ver', SEED_VERSION_REF);
+      // Prefer existing data (cloud hydrate) over wiping with seed.
+      if (raw) {
+        progs = JSON.parse(raw) as Programme[];
+        localStorage.setItem('dsta_programmes_ver', SEED_VERSION_REF);
+      } else {
+        progs = DEFAULT_PROGRAMMES;
+        localStorage.setItem('dsta_programmes', JSON.stringify(DEFAULT_PROGRAMMES));
+        localStorage.setItem('dsta_programmes_ver', SEED_VERSION_REF);
+      }
     } else {
-      const raw = localStorage.getItem('dsta_programmes');
       progs = raw ? JSON.parse(raw) : DEFAULT_PROGRAMMES;
     }
     return progs
