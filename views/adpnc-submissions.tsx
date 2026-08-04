@@ -320,7 +320,7 @@ export default function AdPncSubmissionsPage() {
     <Shell activeRoute="/submissions" hideNavigation>
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-headline-lg text-fg mb-1">Respond to Requests from Internship HQ</h1>
+        <h1 className="text-headline-lg text-fg mb-1">Internship Requests</h1>
         <p className="text-body-sm text-fg-muted">
           Review placement requirements and manage project submissions for each request.
         </p>

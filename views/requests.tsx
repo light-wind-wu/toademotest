@@ -835,9 +835,10 @@ export default function RequestsPage() {
     );
   }
 
-  function frozenGroupActionMenu(group: PendingPCGroup) {
+  function frozenGroupActionMenu(group: PendingPCGroup, currentRow?: FlatProj) {
     const groupKeys = group.rows.filter(r => r.status === 'frozen').map(r => r.key);
     if (groupKeys.length === 0) return null;
+    const groupKeysSet = new Set(groupKeys);
     return (
       <Menu>
         <MenuTrigger
@@ -848,17 +849,23 @@ export default function RequestsPage() {
           <MoreVertical size={16} />
         </MenuTrigger>
         <MenuContent className="w-48" sideOffset={6}>
-          <MenuItem onClick={() => { setSelectedKeys(new Set(groupKeys)); setUnlockReason(''); setUnlockOpen(true); }}>
+          {currentRow && (
+            <MenuItem onClick={() => router.push(`/requests/project/${encodeURIComponent(currentRow.batchId)}/${encodeURIComponent(currentRow.projId)}`)}>
+              View
+            </MenuItem>
+          )}
+          {currentRow && <MenuSeparator />}
+          <MenuItem onClick={() => { setSelectedKeys(groupKeysSet); setUnlockReason(''); setUnlockOpen(true); }}>
             Unlock
           </MenuItem>
-          <MenuItem onClick={() => { setSelectedKeys(new Set(groupKeys)); setDceReturnRemarks(''); setDceReturnOpen(true); }}>
+          <MenuItem onClick={() => { setSelectedKeys(groupKeysSet); setDceReturnRemarks(''); setDceReturnOpen(true); }}>
             Return for Update
           </MenuItem>
           <MenuSeparator />
-          <MenuItem onClick={() => { setSelectedKeys(new Set(groupKeys)); doDceApprove(); }}>
+          <MenuItem onClick={() => doDceApprove(groupKeysSet)}>
             Approve
           </MenuItem>
-          <MenuItem onClick={() => { setSelectedKeys(new Set(groupKeys)); setDceRejectRemarks(''); setDceRejectOpen(true); }} className="text-danger">
+          <MenuItem onClick={() => { setSelectedKeys(groupKeysSet); setDceRejectRemarks(''); setDceRejectOpen(true); }} className="text-danger">
             Reject
           </MenuItem>
         </MenuContent>
@@ -1360,6 +1367,12 @@ export default function RequestsPage() {
         cell: ({ row }) => <span className="text-body-sm text-fg-muted truncate">{row.original.slots}</span>,
       }));
     }
+    cols.push(flatColumnHelper.display({
+      id: 'actions',
+      header: () => null,
+      meta: { size: 'icon' },
+      cell: () => null,
+    }));
     return cols;
   })();
 
@@ -1500,7 +1513,7 @@ export default function RequestsPage() {
             selectedKeys.has(r.key) && 'bg-accent/5',
           )}
         >
-          <TableCell className="px-4 py-3 w-10" maxWidth={table.getColumn('select')?.getSize()} onClick={e => e.stopPropagation()}>
+          <TableCell className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
             <Checkbox
               checked={selectedKeys.has(r.key)}
               onCheckedChange={() => toggleSelectProj(r.batchId, r.projId)}
@@ -1702,15 +1715,15 @@ export default function RequestsPage() {
                 'hover:bg-bg transition-colors group',
                 selectedKeys.has(r.key) && 'bg-accent/5',
               )}
-            >
-              <TableCell className="px-4 py-3 w-10" maxWidth={table.getColumn('select')?.getSize()} onClick={e => e.stopPropagation()}>
-                <Checkbox
-                  checked={selectedKeys.has(r.key)}
-                  onCheckedChange={() => toggleSelectProj(r.batchId, r.projId)}
-                  aria-label={`Select ${r.title}`}
-                />
-              </TableCell>
-              {visibleCols.pc && (
+        >
+          <TableCell className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
+            <Checkbox
+              checked={selectedKeys.has(r.key)}
+              onCheckedChange={() => toggleSelectProj(r.batchId, r.projId)}
+              aria-label={`Select ${r.title}`}
+            />
+          </TableCell>
+          {visibleCols.pc && (
                 <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('pc')?.getSize()}>
                   {r.status === 'frozen' && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(244,242,236,1)] text-[rgba(69,85,108,1)] px-2 py-0.5 text-caption font-medium">
@@ -1755,7 +1768,7 @@ export default function RequestsPage() {
                 onClick={e => e.stopPropagation()}
               >
                 <div className="flex items-center justify-end">
-                  {frozenGroupActionMenu(group)}
+                  {frozenGroupActionMenu(group, r)}
                 </div>
               </TableCell>
             </TableRow>
@@ -1900,7 +1913,7 @@ export default function RequestsPage() {
             selectedKeys.has(r.key) && 'bg-accent/5',
           )}
         >
-          <TableCell className="px-4 py-3 w-10" maxWidth={table.getColumn('select')?.getSize()} onClick={e => e.stopPropagation()}>
+          <TableCell className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
             <Checkbox
               checked={selectedKeys.has(r.key)}
               onCheckedChange={() => toggleSelectProj(r.batchId, r.projId)}
@@ -1975,28 +1988,52 @@ export default function RequestsPage() {
     const category = r.educationLevel || r.requestedEducationLevels.join(', ') || '—';
     const disciplines = parseDisciplines(r.discipline);
     return (
-      <TableRow className="bg-surface hover:bg-bg transition-colors">
-        <TableCell className="px-4 py-3" colSpan={row.getVisibleCells().length}>
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1 text-body-sm text-fg-muted">
-              <p><span className="font-medium text-fg">{r.title}</span></p>
-              <p>{category}{disciplines.length > 0 && ` · ${disciplines.join(' / ')}`} · {r.slots} placement{r.slots !== 1 ? 's' : ''}</p>
-            </div>
-            <Menu>
-              <MenuTrigger
-                aria-label={`Actions for ${r.title}`}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-bg-muted hover:text-fg focus-visible:outline-1 focus-visible:outline-accent"
-                onClick={e => e.stopPropagation()}
-              >
-                <MoreVertical size={16} />
-              </MenuTrigger>
-              <MenuContent className="w-48" sideOffset={6}>
-                <MenuItem onClick={() => router.push(`/requests/project/${encodeURIComponent(r.batchId)}/${encodeURIComponent(r.projId)}`)}>
-                  View
-                </MenuItem>
-              </MenuContent>
-            </Menu>
-          </div>
+      <TableRow className="bg-surface hover:bg-bg transition-colors group">
+        {visibleCols.pc && (
+          <TableCell className="px-3 py-2.5" />
+        )}
+        {visibleCols.title && (
+          <TableCell className="px-3 py-2.5">
+            <TruncatedTooltip className="text-body-sm font-normal text-fg-muted">
+              <CornerDownRight size={16} className="inline" />
+              {r.title}
+            </TruncatedTooltip>
+          </TableCell>
+        )}
+        {visibleCols.category && (
+          <TableCell className="px-3 py-2.5 text-body-sm text-fg-muted" truncate>{category}</TableCell>
+        )}
+        {visibleCols.discipline && (
+          <TableCell className="px-3 py-2.5">
+            {disciplines.length === 0 ? (
+              <span className="text-body-sm text-fg-muted truncate block">—</span>
+            ) : (
+              <div className="flex flex-wrap gap-1 max-w-full">
+                {disciplines.map(d => (
+                  <span key={d} className="badge bg-bg-muted text-fg-muted text-caption font-normal truncate max-w-full">{d}</span>
+                ))}
+              </div>
+            )}
+          </TableCell>
+        )}
+        {visibleCols.slots && (
+          <TableCell className="px-3 py-2.5 text-body-sm text-fg-muted" truncate>{r.slots}</TableCell>
+        )}
+        <TableCell className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
+          <Menu>
+            <MenuTrigger
+              aria-label={`Actions for ${r.title}`}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-bg-muted hover:text-fg focus-visible:outline-1 focus-visible:outline-accent"
+              onClick={e => e.stopPropagation()}
+            >
+              <MoreVertical size={16} />
+            </MenuTrigger>
+            <MenuContent className="w-48" sideOffset={6}>
+              <MenuItem onClick={() => router.push(`/requests/project/${encodeURIComponent(r.batchId)}/${encodeURIComponent(r.projId)}`)}>
+                View
+              </MenuItem>
+            </MenuContent>
+          </Menu>
         </TableCell>
       </TableRow>
     );
@@ -2216,13 +2253,14 @@ export default function RequestsPage() {
     showToast(`${selectedKeys.size} project${selectedKeys.size !== 1 ? 's' : ''} frozen for DCE review.`);
   }
 
-  function doDceApprove() {
+  function doDceApprove(keys?: Set<string>) {
+    const targetKeys = keys ?? selectedKeys;
     let updated = [...batches];
     const existingProjs = loadProjects();
     const nums = existingProjs.map(p => parseInt(p.id.replace(/^PROJ-/, ''), 10)).filter(n => !isNaN(n));
     let nextNum = (nums.length > 0 ? Math.max(...nums) : 0) + 1;
     const newProjects: ProjectEntry[] = [];
-    Array.from(selectedKeys).forEach(key => {
+    Array.from(targetKeys).forEach(key => {
       const [batchId, projId] = key.split('::');
       updated = updated.map(b => b.id !== batchId ? b : {
         ...b,
@@ -2247,7 +2285,7 @@ export default function RequestsPage() {
     saveProjects([...existingProjs, ...newProjects]);
     syncProjectsToRequests(updated);
     const notifiedApprove = new Set<string>();
-    Array.from(selectedKeys).forEach(key => {
+    Array.from(targetKeys).forEach(key => {
       const [batchId] = key.split('::');
       if (!notifiedApprove.has(batchId)) {
         notifiedApprove.add(batchId);
@@ -2259,12 +2297,13 @@ export default function RequestsPage() {
       addNotification({ forRole: 'mentor', ...(p.mentorUserId ? { forMentorId: p.mentorUserId } : {}), title: `Your project has been approved — ${p.title}`, body: `"${p.title}" has been approved by the DCE and is now open for applicants.`, href: '/mentor/projects', tier: 'info' });
     });
     setSelectedKeys(new Set());
-    showToast(`${selectedKeys.size} project${selectedKeys.size !== 1 ? 's' : ''} approved by DCE.`);
+    showToast(`${targetKeys.size} project${targetKeys.size !== 1 ? 's' : ''} approved by DCE.`);
   }
 
-  function doDceReject() {
+  function doDceReject(keys?: Set<string>) {
+    const targetKeys = keys ?? selectedKeys;
     let updated = [...batches];
-    Array.from(selectedKeys).forEach(key => {
+    Array.from(targetKeys).forEach(key => {
       const [batchId, projId] = key.split('::');
       updated = updated.map(b => b.id !== batchId ? b : {
         ...b,
@@ -2278,12 +2317,13 @@ export default function RequestsPage() {
     syncProjectsToRequests(updated);
     setSelectedKeys(new Set());
     setDceRejectOpen(false);
-    showToast(`${selectedKeys.size} project${selectedKeys.size !== 1 ? 's' : ''} rejected by DCE.`);
+    showToast(`${targetKeys.size} project${targetKeys.size !== 1 ? 's' : ''} rejected by DCE.`);
   }
 
-  function doDceReturnForUpdate() {
+  function doDceReturnForUpdate(keys?: Set<string>) {
+    const targetKeys = keys ?? selectedKeys;
     let updated = [...batches];
-    Array.from(selectedKeys).forEach(key => {
+    Array.from(targetKeys).forEach(key => {
       const [batchId, projId] = key.split('::');
       updated = updated.map(b => b.id !== batchId ? b : {
         ...b,
@@ -2296,7 +2336,7 @@ export default function RequestsPage() {
     saveSubmissions(updated);
     syncProjectsToRequests(updated);
     const notifiedReturn = new Set<string>();
-    Array.from(selectedKeys).forEach(key => {
+    Array.from(targetKeys).forEach(key => {
       const [batchId, projId] = key.split('::');
       if (!notifiedReturn.has(`${batchId}::${projId}`)) {
         notifiedReturn.add(`${batchId}::${projId}`);
@@ -2315,13 +2355,14 @@ export default function RequestsPage() {
     });
     setSelectedKeys(new Set());
     setDceReturnOpen(false);
-    showToast(`${selectedKeys.size} project${selectedKeys.size !== 1 ? 's' : ''} returned for update by DCE.`);
+    showToast(`${targetKeys.size} project${targetKeys.size !== 1 ? 's' : ''} returned for update by DCE.`);
   }
 
-  function doUnlockForEditing() {
+  function doUnlockForEditing(keys?: Set<string>) {
     if (!unlockReason.trim()) return;
+    const targetKeys = keys ?? selectedKeys;
     let updated = [...batches];
-    Array.from(selectedKeys).forEach(key => {
+    Array.from(targetKeys).forEach(key => {
       const [batchId, projId] = key.split('::');
       updated = updated.map(b => b.id !== batchId ? b : {
         ...b,
@@ -2334,7 +2375,7 @@ export default function RequestsPage() {
     saveSubmissions(updated);
     syncProjectsToRequests(updated);
     const notifiedReturn = new Set<string>();
-    Array.from(selectedKeys).forEach(key => {
+    Array.from(targetKeys).forEach(key => {
       const [batchId, projId] = key.split('::');
       if (!notifiedReturn.has(`${batchId}::${projId}`)) {
         notifiedReturn.add(`${batchId}::${projId}`);
@@ -2354,7 +2395,7 @@ export default function RequestsPage() {
     setSelectedKeys(new Set());
     setUnlockOpen(false);
     setUnlockReason('');
-    showToast(`${selectedKeys.size} project${selectedKeys.size !== 1 ? 's' : ''} unlocked for editing.`);
+    showToast(`${targetKeys.size} project${targetKeys.size !== 1 ? 's' : ''} unlocked for editing.`);
   }
 
 
@@ -2951,28 +2992,23 @@ export default function RequestsPage() {
             )}
 
             <div className="flex flex-col gap-3 border-t border-border bg-surface px-4 py-3 text-body-sm text-fg-muted md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <span>Rows per page:</span>
-                  <Select
-                    value={String(subPageSize)}
-                    onValueChange={value => { setSubPageSize(Number(value)); setSubPage(1); }}
-                  >
-                    <SelectTrigger className="h-8 w-[88px] text-body-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SENT_PAGE_SIZE_OPTIONS.map(value => (
-                        <SelectItem key={value} value={String(value)}>
-                          {value}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {(tab === 'pending' || tab === 'pendingDce') && selectedKeys.size > 0 && (
-                  <span className="font-semibold text-accent">{selectedKeys.size} selected</span>
-                )}
+              <div className="flex items-center gap-2">
+                <span>Rows per page:</span>
+                <Select
+                  value={String(subPageSize)}
+                  onValueChange={value => { setSubPageSize(Number(value)); setSubPage(1); }}
+                >
+                  <SelectTrigger className="h-8 w-[88px] text-body-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SENT_PAGE_SIZE_OPTIONS.map(value => (
+                      <SelectItem key={value} value={String(value)}>
+                        {value}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -3128,7 +3164,7 @@ export default function RequestsPage() {
             <Button variant="ghost" onClick={() => setDceReturnOpen(false)}>Cancel</Button>
             <Button
               disabled={!dceReturnRemarks.trim()}
-              onClick={doDceReturnForUpdate}
+              onClick={() => doDceReturnForUpdate(selectedKeys)}
               className="bg-[rgba(251,44,54,0.1)] text-[#C10007] hover:bg-[rgba(251,44,54,0.15)] border border-[#F8A4A8]"
             >
               Return for Update
@@ -3149,12 +3185,12 @@ export default function RequestsPage() {
           value={dceRejectRemarks}
           onChange={e => setDceRejectRemarks(e.target.value)}
         />
-        <div className="flex justify-end gap-2">
-          <Button variant="danger" disabled={!dceRejectRemarks.trim()} onClick={doDceReject}>
-            <X size={14} />Reject Projects
-          </Button>
-          <Button variant="ghost" onClick={() => setDceRejectOpen(false)}>Cancel</Button>
-        </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="danger" disabled={!dceRejectRemarks.trim()} onClick={() => doDceReject(selectedKeys)}>
+              <X size={14} />Reject Projects
+            </Button>
+            <Button variant="ghost" onClick={() => setDceRejectOpen(false)}>Cancel</Button>
+          </div>
       </Modal>
 
       {/* Unlock for Editing dialog */}
@@ -3183,7 +3219,7 @@ export default function RequestsPage() {
             <Button variant="ghost" onClick={() => setUnlockOpen(false)}>Cancel</Button>
             <Button
               disabled={!unlockReason.trim()}
-              onClick={doUnlockForEditing}
+              onClick={() => doUnlockForEditing(selectedKeys)}
               className="bg-[rgba(251,44,54,0.1)] text-[#C10007] hover:bg-[rgba(251,44,54,0.15)] border border-[#F8A4A8]"
             >
               Unlock

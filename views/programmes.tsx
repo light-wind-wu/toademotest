@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
 import {
-  Plus, Pencil, Copy, Trash2, Info, SearchX,
+  Plus, Pencil, Copy, Trash2, Info, SearchX, Eye,
   ChevronRight, CircleCheck, CirclePlay, CornerDownRight,
   ArrowUp, ArrowDown, ArrowUpDown,
 } from 'lucide-react';
@@ -228,6 +228,7 @@ export default function ProgrammesPage() {
     const prog = progs.find(p => p.id === activeProgId);
     closeMenu();
     if (!prog) return;
+    if (action === 'view') viewDetail(prog);
     if (action === 'edit') openEdit(prog);
     if (action === 'duplicate') openDup(prog);
     if (action === 'delete') setDeleteProg(prog);
@@ -723,7 +724,12 @@ export default function ProgrammesPage() {
         const menuProg = progs.find(p => p.id === activeProgId);
         return (
           <RowDropdown pos={menuPos} onClose={closeMenu}>
-            <DropdownItem icon={<Pencil size={15} className="text-fg-muted" />} label="Edit" onClick={() => menuAction('edit')} />
+            {menuProg && (
+              <DropdownItem icon={<Eye size={15} className="text-fg-muted" />} label="View" onClick={() => menuAction('view')} />
+            )}
+            {menuProg?.status !== 'Completed' && (
+              <DropdownItem icon={<Pencil size={15} className="text-fg-muted" />} label="Edit" onClick={() => menuAction('edit')} />
+            )}
             <DropdownItem icon={<Copy size={15} className="text-fg-muted" />} label="Duplicate" onClick={() => menuAction('duplicate')} />
             {menuProg?.status === 'Active' && (
               <>
