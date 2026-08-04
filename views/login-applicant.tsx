@@ -41,7 +41,7 @@ export default function LoginApplicant() {
       profile: getMyinfoProfile(identity),
       at: new Date().toISOString(),
     });
-    setMyinfoOpen(false);
+    // Keep Myinfo overlay mounted until welcome mounts — closing first flashes login.
     router.push('/apply/welcome');
   }
 
