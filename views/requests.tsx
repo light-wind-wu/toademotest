@@ -813,9 +813,6 @@ export default function RequestsPage() {
                 <CalendarClock size={14} />Extend Deadline
               </MenuItem>
               <MenuSeparator />
-              <MenuItem onClick={() => setWithdrawGroup(group)} className="text-danger">
-                <Ban size={14} />Withdraw Request
-              </MenuItem>
             </>
           ) : isClosed ? (
             <>
