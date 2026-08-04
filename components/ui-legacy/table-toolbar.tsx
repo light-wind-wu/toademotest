@@ -30,6 +30,7 @@ interface Props {
   columnsLabel?: string;
 
   onExport?:     () => void;
+  exportLabel?:  string;
   dateRangeControl?: React.ReactNode;
   extraActions?: React.ReactNode;
   className?: string;
@@ -42,7 +43,7 @@ export default function TableToolbar({
   filterDefs, filters, onFiltersChange,
   colDefs, visibleCols, onToggleCol,
   columnsLabel = 'Columns',
-  onExport, dateRangeControl, extraActions, className,
+  onExport, exportLabel = 'Export', dateRangeControl, extraActions, className,
 }: Props) {
   const [colOpen, setColOpen] = useState(false);
   const [colPos,  setColPos]  = useState({ top: 0, left: 0 });
@@ -106,7 +107,7 @@ export default function TableToolbar({
         {extraActions && <div className="ml-auto flex items-center gap-2">{extraActions}</div>}
         {onExport && (
           <Button variant="outline" size="md" onClick={onExport} className={cn(extraActions ? '' : 'ml-auto')}>
-            <Download size={14} />Export
+            <Download size={14} />{exportLabel}
           </Button>
         )}
       </div>

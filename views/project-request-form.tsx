@@ -1514,7 +1514,7 @@ export default function ProjectRequestFormPage() {
             {step === 1 ? (
               <>
                 <Button variant="outline" size="md" onClick={handleSaveDraft}>Save as Draft</Button>
-                <Button size="md" onClick={goToPreview}>Preview</Button>
+                <Button size="md" onClick={goToPreview}>Next</Button>
               </>
             ) : (
               <>
@@ -1601,7 +1601,7 @@ export default function ProjectRequestFormPage() {
                   <p className="truncate text-body-sm font-medium text-fg">{TEMPLATE_FILENAME}</p>
                   <p className="text-caption text-fg-muted">Project-submission template — pre-structured with the requested intern categories &amp; calendar periods.</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => downloadRequestTemplateFromXlsx(templateRequestsForEntry(previewReq), TEMPLATE_FILENAME)}>
+                <Button variant="outline" size="sm" disabled onClick={() => downloadRequestTemplateFromXlsx(templateRequestsForEntry(previewReq), TEMPLATE_FILENAME)}>
                   <Download size={14} />Download
                 </Button>
               </div>

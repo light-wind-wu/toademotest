@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, Fragment } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
@@ -870,12 +870,24 @@ export default function RequestsPage() {
   }
 
   const draftColumnHelper = createColumnHelper<PCGroup>();
-  const draftColumns = useMemo(() => [
+  const draftColumns = [
     draftColumnHelper.accessor(() => 'draft', {
       id: 'draft',
       header: 'Draft',
       meta: { size: 'medium', truncate: true },
-      cell: () => 'Project Request Draft',
+      cell: ({ row }) => {
+        const group = row.original;
+        const isExpanded = expandedDraftGroups.has(draftRequestGroupKey(group.requests[0]));
+        return (
+          <div className="flex items-center gap-2">
+            <ChevronRight
+              size={14}
+              className={cn('text-fg-muted shrink-0 transition-transform duration-150', isExpanded && 'rotate-90')}
+            />
+            <span className="text-body-sm font-medium text-fg truncate">Project Request Draft</span>
+          </div>
+        );
+      },
     }),
     draftColumnHelper.accessor((group) => {
       const programmeCentreCount = new Set(group.requests.map(requestProgrammeCenter)).size;
@@ -902,7 +914,17 @@ export default function RequestsPage() {
         </StatusTooltip>
       ),
     }),
-  ], []);
+    draftColumnHelper.display({
+      id: 'actions',
+      header: () => null,
+      meta: { size: 'icon' },
+      cell: ({ row }) => (
+        <div className="flex items-center justify-end">
+          {sentActionMenu(row.original)}
+        </div>
+      ),
+    }),
+  ];
 
   const renderDraftSubRows = (row: Row<PCGroup>, table: TanStackTable<PCGroup>) => {
     const group = row.original;
@@ -913,14 +935,11 @@ export default function RequestsPage() {
         {group.requests.map(req => (
           <TableRow key={req.id ?? req.pc} className="bg-surface hover:bg-bg transition-colors">
             <TableCell className="px-4 py-2.5" colSpan={table.getAllColumns().length}>
-              <div className="flex items-center justify-between gap-4">
-                <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 text-body-sm text-fg-muted min-w-0 flex-1">
-                  <span className="truncate">{requestProgrammeCenter(req)}</span>
-                  <span className="truncate">{requestInternCategory(req, progMap)}</span>
-                  <span>{req.placements} placement{req.placements !== 1 ? 's' : ''}</span>
-                  <span>{req.duration || '—'}</span>
-                </div>
-                {sentActionMenu(group)}
+              <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 text-body-sm text-fg-muted min-w-0 flex-1">
+                <span className="truncate">{requestProgrammeCenter(req)}</span>
+                <span className="truncate">{requestInternCategory(req, progMap)}</span>
+                <span>{req.placements} placement{req.placements !== 1 ? 's' : ''}</span>
+                <span>{req.duration || '—'}</span>
               </div>
             </TableCell>
           </TableRow>
@@ -1158,7 +1177,11 @@ export default function RequestsPage() {
       id: 'actions',
       header: () => null,
       meta: { size: 'icon' },
-      cell: () => null,
+      cell: ({ row }) => (
+        <div className="flex items-center justify-end">
+          {sentActionMenu(row.original)}
+        </div>
+      ),
     }));
 
     return cols;
@@ -1250,11 +1273,7 @@ export default function RequestsPage() {
                 className="px-4 py-2.5"
                 maxWidth={table.getColumn('actions')?.getSize()}
                 onClick={e => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-end">
-                  {sentActionMenu(group)}
-                </div>
-              </TableCell>
+              />
             </TableRow>
           );
         })}
@@ -1270,7 +1289,18 @@ export default function RequestsPage() {
         id: 'pc',
         header: () => <SortHeader label="Programme Centre" colId="pc" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
         meta: { size: 'long', truncate: true },
-        cell: ({ row }) => <span className="text-body-sm text-fg-muted truncate">{row.original.pc}</span>,
+        cell: ({ row }) => {
+          const isExpanded = expandedFlatRows.has(row.original.key);
+          return (
+            <div className="flex items-center gap-2">
+              <ChevronRight
+                size={14}
+                className={cn('text-fg-muted shrink-0 transition-transform duration-150', isExpanded && 'rotate-90')}
+              />
+              <span className="text-body-sm text-fg-muted truncate">{row.original.pc}</span>
+            </div>
+          );
+        },
       }));
     }
     if (visibleCols.title) {
@@ -1932,7 +1962,7 @@ export default function RequestsPage() {
               </MenuTrigger>
               <MenuContent className="w-48" sideOffset={6}>
                 <MenuItem onClick={() => router.push(`/requests/project/${encodeURIComponent(r.batchId)}/${encodeURIComponent(r.projId)}`)}>
-                  <Eye size={14} />View Project
+                  View
                 </MenuItem>
               </MenuContent>
             </Menu>
@@ -1965,7 +1995,7 @@ export default function RequestsPage() {
               </MenuTrigger>
               <MenuContent className="w-48" sideOffset={6}>
                 <MenuItem onClick={() => router.push(`/requests/project/${encodeURIComponent(r.batchId)}/${encodeURIComponent(r.projId)}`)}>
-                  <Eye size={14} />View Project
+                  View
                 </MenuItem>
               </MenuContent>
             </Menu>
@@ -2635,6 +2665,7 @@ export default function RequestsPage() {
               ['Programme Centre', 'Project', 'Intern Category', 'Discipline of Study', 'Placements'],
               tableRows.map(r => [r.pc, r.title, r.educationLevel || r.requestedEducationLevels.join(', '), parseDisciplines(r.discipline).join(' / '), r.slots]),
             ),
+            exportLabel: tab === 'pendingDce' ? 'Export Locked Projects' : undefined,
             extraActions: tab === 'pendingAll' ? (
               <Button variant="outline" size="md" onClick={() => exportLockedProjects(flatRows.filter(r => r.status === 'frozen').map(r => r.key), flatRows)}>
                 <Download size={14} />Export Locked Projects
@@ -2643,22 +2674,6 @@ export default function RequestsPage() {
           } : {
             colDefs: SENT_COL_DEFS.map(c => ({ key: c.key, label: c.label, locked: (c as any).locked })),
             visibleCols: sentVisibleCols, onToggleCol: (k: string) => toggleSentCol(k as SentColKey),
-            onExport: () => exportToCSV(
-              'requests-sent',
-              ['Programme Centre', 'Intern Category', 'AD(P&C)', 'Placements Submitted', 'Placements Requested', 'Internship Window', 'Project Duration', 'Request Date', 'Response Deadline', 'Status'],
-              sortedSentGroups.flatMap(g => g.requests.map(r => {
-                const window = r.calendarPeriod
-                  ? r.calendarPeriod
-                  : r.periodStart && r.periodEnd
-                  ? (r.periodStart === r.periodEnd ? r.periodStart : `${r.periodStart} – ${r.periodEnd}`)
-                  : '';
-                return [
-                  requestProgrammeCenter(r), requestInternCategory(r, progMap), requestAdPnc(r),
-                  r.uploaded ?? 0, r.placements, window, r.duration || '',
-                  fmtDate(r.sentDate), fmtDate(r.deadline), STATUS_META[requestDisplayStatus(r)].label,
-                ];
-              })),
-            ),
           })}
         />
 
@@ -2723,7 +2738,7 @@ export default function RequestsPage() {
               getRowId={group => draftRequestGroupKey(group.requests[0])}
               onRowClick={(group) => toggleDraftGroup(draftRequestGroupKey(group.requests[0]))}
               renderSubRows={renderDraftSubRows}
-              wrapperClassName="px-4"
+              wrapperClassName="px-4 pb-4"
             />
           ) : (
             <>

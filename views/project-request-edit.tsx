@@ -2483,7 +2483,7 @@ export default function ProjectRequestEditPage() {
                   {step === 1 ? (
                     <>
                       <Button variant="outline" size="md" onClick={saveDraft}>Save as Draft</Button>
-                      <Button size="md" onClick={() => { if (missing.length > 0) { setShowErrors(true); } else { setShowErrors(false); setStep(2); } }}>Preview</Button>
+                      <Button size="md" onClick={() => { if (missing.length > 0) { setShowErrors(true); } else { setShowErrors(false); setStep(2); } }}>Next</Button>
                     </>
                   ) : (
                     <>

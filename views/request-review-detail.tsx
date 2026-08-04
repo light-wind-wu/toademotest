@@ -11,26 +11,21 @@ import { Badge } from '@/components/ui/badge';
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import Accordion from '@/components/ui-legacy/accordion';
 import {
-  Dialog, DialogContent, DialogDescription,
-  DialogFooter, DialogHeader, DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  AlertTriangle, Check, ChevronRight,
-  X, Pencil, MoreHorizontal, ChevronDown,
+  AlertTriangle, Check,
+  ChevronRight, ChevronDown,
 } from 'lucide-react';
 import { SUBMISSION_SEED, DEFAULT_PROGRAMMES, PC_CODES, TECH_DOMAINS, EMERGING_AREAS, INTERN_CATEGORIES, EDUCATION_LEVELS, toEducationLevel, progEducationLevelMap, batchEducationLevel, STATUS_COLOURS } from '@/lib/data';
+import { AI_COLOURS } from '@/lib/ai-colours';
 import { projectMatchesRequest } from '@/lib/request-groups';
-import { loadSubmissions, saveSubmissions, loadProjects, saveProjects, loadRequests, saveRequests } from '@/lib/storage';
+import { loadSubmissions, saveSubmissions, loadRequests, saveRequests } from '@/lib/storage';
 import { addNotification } from '@/lib/notifications';
 import { useRole } from '@/lib/role';
-import { logAccess } from '@/lib/audit';
-import { loadDceApprovalEnabled } from '@/lib/dce';
 import { cn } from '@/lib/utils';
 import Combobox from '@/components/ui-legacy/combobox';
 import DateRangePicker from '@/components/ui-legacy/date-range-picker';
 import { DISCIPLINE_OPTIONS, parseDisciplines, toggleDiscipline } from '@/lib/disciplines';
 import { periodLabelToMMMYY, mmmyyToISO, mmmyyToISOEnd } from '@/lib/internship-period';
-import type { ProjectEntry, ProjectSubmissionBatch, SubmittedProject } from '@/lib/types';
+import type { ProjectSubmissionBatch, SubmittedProject } from '@/lib/types';
 
 const DURATION_OPTS = ['1 Month', '2 Months', '3 Months', '4 Months', '6 Months', '12 Months'];
 const LOCATION_OPTS = ['Hybrid', 'On-Site'];
@@ -188,43 +183,16 @@ function AiCheckPill({ result, label }: { result: 'pass' | 'warn' | 'fail'; labe
 
 function AiRecommendationBanner({ onReview }: { onReview: () => void }) {
   return (
-    <div className="rounded-lg border border-warning/30 bg-warning-bg/40 px-4 py-3">
+    <div className="rounded-lg border border-[rgba(230,225,216,1)] bg-[rgba(243,239,229,1)] px-4 py-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
           <AiSparkleIcon size={13} />
           <div>
-            <p className="text-body-sm font-bold text-fg">1 AI recommendation requires attention</p>
-            <p className="text-body-sm text-fg-muted">
+            <p className="text-body-sm font-bold text-[rgba(22,33,51,1)]">1 AI recommendation requires attention</p>
+            <p className="text-body-sm text-[rgba(102,112,133,1)]">
               AI checks provide guidance only. Review the flagged field together with the complete project information before making a decision.
             </p>
           </div>
-        </div>
-        <Button variant="ghost" size="sm" onClick={onReview} className="shrink-0 text-accent">
-          Review Item <ChevronDown size={14} className="ml-1" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function ReviewSummaryCards({ version, submittedAt }: { version: string; submittedAt?: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-surface p-5 shadow-sm">
-      <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-        <div className="px-4 py-3 first:pl-0 last:pr-0 sm:py-0">
-          <p className="text-caption font-semibold text-fg-muted">Required fields</p>
-          <p className="mt-1 text-body-md font-bold text-fg">Complete</p>
-          <p className="text-caption text-fg-muted">All mandatory information is present</p>
-        </div>
-        <div className="px-4 py-3 first:pl-0 last:pr-0 sm:py-0">
-          <p className="text-caption font-semibold text-fg-muted">AI checks</p>
-          <p className="mt-1 text-body-md font-bold text-fg">1 recommendation</p>
-          <p className="text-caption text-fg-muted">1 additional check passed</p>
-        </div>
-        <div className="px-4 py-3 first:pl-0 last:pr-0 sm:py-0">
-          <p className="text-caption font-semibold text-fg-muted">Review version</p>
-          <p className="mt-1 text-body-md font-bold text-fg">{version}</p>
-          <p className="text-caption text-fg-muted">Submitted {formatDateTime(submittedAt)}</p>
         </div>
       </div>
     </div>
@@ -272,43 +240,6 @@ function SubmissionInformationCard({
   );
 }
 
-function ReviewChecklistCard({
-  requiredFieldsPass,
-  scopeNeedsJudgement,
-  titleChecked,
-}: {
-  requiredFieldsPass: boolean;
-  scopeNeedsJudgement: boolean;
-  titleChecked: boolean;
-}) {
-  const items = [
-    { label: 'Required fields complete', sub: 'No mandatory fields are missing', pass: requiredFieldsPass },
-    { label: 'Project Scope needs judgement', sub: 'AI recommendation does not block approval', pass: !scopeNeedsJudgement, warn: scopeNeedsJudgement },
-    { label: 'Project Title checked', sub: 'Clear for applicant-facing use', pass: titleChecked },
-  ];
-  return (
-    <div className="rounded-lg border border-border bg-surface p-5 shadow-sm">
-      <h2 className="text-body-md font-bold text-fg">Review Checklist</h2>
-      <div className="mt-4 space-y-3">
-        {items.map((item) => (
-          <div key={item.label} className="flex items-start gap-3">
-            <div className={cn(
-              'mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full',
-              item.warn ? 'bg-warning/10 text-warning' : item.pass ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'
-            )}>
-              {item.warn ? <AlertTriangle size={12} /> : item.pass ? <Check size={12} /> : <X size={12} />}
-            </div>
-            <div>
-              <p className={cn('text-body-sm font-semibold', item.warn ? 'text-fg' : 'text-fg')}>{item.label}</p>
-              <p className="text-caption text-fg-muted">{item.sub}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function ReviewRequiredSection({
   proj,
   batch,
@@ -348,7 +279,7 @@ function ReviewRequiredSection({
               Submitted by {submittedBy} · AI check run on {aiRunDate}
             </p>
           </div>
-          <span className="badge inline-flex items-center gap-1 text-caption font-normal border border-[rgba(37,99,235,0.3)] bg-[rgba(37,99,235,0.05)] text-[rgba(26,101,248,1)]">
+          <span className={cn('badge inline-flex items-center gap-1 text-caption font-normal border border-[rgba(254,154,0,0.3)]', AI_COLOURS.checkReview.badge)}>
             <AiSparkleIcon size={12} /> AI Recommendation
           </span>
         </div>
@@ -359,13 +290,13 @@ function ReviewRequiredSection({
         </div>
 
         {descriptionResult !== 'pass' && (
-          <div className="mt-4 rounded-lg border border-accent/30 bg-accent/5 px-3 py-3">
+          <div className={cn('mt-4 rounded-lg border border-warning/30 px-3 py-3', AI_COLOURS.checkReview.badge)}>
             <div className="flex items-start gap-2">
               <div>
-                <p className="text-caption font-semibold text-accent"><AiSparkleIcon size={13} className="inline" />AI Recommendation</p>
+                <p className="text-caption font-semibold text-[rgba(187,77,0,1)]"><AiSparkleIcon size={13} className="inline" />AI Recommendation</p>
                 <ul className="mt-1 space-y-0.5">
                   {descriptionNotes.slice(0, 2).map((note, idx) => (
-                    <li key={idx} className="text-caption leading-snug text-accent">{note}</li>
+                    <li key={idx} className="text-caption leading-snug text-[rgba(187,77,0,1)]">{note}</li>
                   ))}
                 </ul>
               </div>
@@ -418,7 +349,7 @@ function ProjectDetailsSection({ metaItems }: { metaItems: { label: string; valu
   );
 }
 
-function ActivitySection({ activities }: { activities: { date: string; title: string; actor?: string }[] }) {
+function AuditLogSection({ activities }: { activities: { date: string; title: string; actor?: string }[] }) {
   return (
     <div className="rounded-lg border border-border bg-surface p-5 shadow-sm">
       <h2 className="text-body-md font-bold text-fg">Activity</h2>
@@ -440,42 +371,24 @@ function ActivitySection({ activities }: { activities: { date: string; title: st
 
 function BottomActionBar({
   reviewingLabel,
-  onReturn,
-  onReject,
-  onApprove,
-  onEdit,
+  onLock,
+  canLock,
 }: {
   reviewingLabel: string;
-  onReturn: () => void;
-  onReject: () => void;
-  onApprove: () => void;
-  onEdit: () => void;
+  onLock: () => void;
+  canLock: boolean;
 }) {
   const router = useRouter();
   return (
     <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-8 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-gradient-to-b from-surface to-bg px-[clamp(24px,2.6vw,40px)] py-2">
       <p className="text-body-sm text-fg-muted">
-        <Button variant="ghost" size="md" onClick={() => router.back()}>
+        <Button variant="ghost" size="md" onClick={() => router.push('/requests')}>
           Back
         </Button>
       </p>
       <div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
-        <Button variant="outline" size="md" onClick={onEdit}>
-          Edit
-        </Button>
-        <Button
-          variant="outline"
-          size="md"
-          onClick={onReturn}
-          className="bg-[rgba(251,44,54,0.1)] text-[#C10007] hover:bg-[rgba(251,44,54,0.15)]"
-        >
-          Return for Update
-        </Button>
-        <Button variant="danger" size="md" onClick={onReject}>
-          Reject Project
-        </Button>
-        <Button size="md" onClick={onApprove}>
-          Approve Project
+        <Button size="md" disabled={!canLock} onClick={onLock}>
+          Lock for Review
         </Button>
       </div>
     </div>
@@ -491,18 +404,12 @@ export default function RequestReviewDetail() {
   const reviewRef = useRef<HTMLDivElement>(null);
 
   const { role, profile } = useRole();
-  const dceEnabled = loadDceApprovalEnabled();
   const canReviewProjects = role === 'io' || role === 'io-admin';
   const { toast, showToast } = useToast();
 
   const [batches, setBatches] = useState<ProjectSubmissionBatch[]>([]);
   const [editOpen, setEditOpen] = useState(false);
   const [draft, setDraft] = useState<SubmittedProject | null>(null);
-  const [confirmApprove, setConfirmApprove] = useState(false);
-  const [returnDialogOpen, setReturnDialogOpen] = useState(false);
-  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [returnRemarks, setReturnRemarks] = useState('');
-  const [rejectRemarks, setRejectRemarks] = useState('');
   const [activeTab, setActiveTab] = useState('review');
 
   const progMap = Object.fromEntries(DEFAULT_PROGRAMMES.map(p => [p.id, p.title]));
@@ -521,7 +428,6 @@ export default function RequestReviewDetail() {
   const grammarCheck = proj ? checkGrammarTone(proj.title, proj.description) : { result: 'pass' as const, notes: [] };
   const readabilityCheck = proj ? checkReadability(proj.description, proj.educationLevel) : { result: 'pass' as const, notes: [] };
   const scopeCheck = proj ? checkScopeAlignment(proj.description, proj.educationLevel, proj.skills) : null;
-  const titleResult = grammarCheck.notes.filter(note => /title/i.test(note)).length > 0 ? grammarCheck.result : 'pass';
   const descriptionResult =
     readabilityCheck.result === 'fail' || scopeCheck?.result === 'fail'
       ? 'fail'
@@ -603,87 +509,22 @@ export default function RequestReviewDetail() {
   }
   const setD = (patch: Partial<SubmittedProject>) => setDraft(d => d ? { ...d, ...patch } : d);
 
-  function doApprove() {
+  function doLockForReview() {
     if (!canReviewProjects) return;
     if (!proj || !batch) return;
+    if (proj.status !== 'pending') return;
+    const now = new Date().toISOString();
     const updated = batches.map(b => b.id !== batchId ? b : {
       ...b,
-      projects: b.projects.map(p => p.id !== projId ? p : { ...p, status: 'approved' as const }),
-    });
-    setBatches(updated);
-    saveSubmissions(updated);
-
-    const projs = loadProjects();
-    const nums = projs.map(p => parseInt(p.id.replace(/^PROJ-/, ''), 10)).filter(n => !isNaN(n));
-    const newId = `PROJ-${String((nums.length > 0 ? Math.max(...nums) : 0) + 1).padStart(4, '0')}`;
-    const newProj: ProjectEntry = {
-      id: newId, title: proj.title, description: proj.description,
-      mentor: proj.mentor, mentorAppointment: proj.mentorAppointment,
-      mentorUserId: proj.mentorUserId, mentorBio: proj.mentorBio,
-      skills: proj.skills, discipline: proj.discipline,
-      slots: proj.slots, matched: 0, status: 'open',
-      programme: '', techDomain: proj.techDomain,
-      emergingArea: proj.emergingArea, educationLevel: proj.educationLevel,
-      internshipDuration: proj.internshipDuration,
-      internshipPeriodStart: proj.internshipPeriodStart,
-      internshipPeriodEnd: proj.internshipPeriodEnd,
-      workingLocation: proj.workingLocation,
-    };
-    saveProjects([...projs, newProj]);
-    syncProjectsToRequests(updated);
-
-    addNotification({ forRole: 'ad-pnc', title: `Project approved — ${proj.title}`, body: `Your project "${proj.title}" (${batchEducationLevel(batch, eduMap)}) has been approved by the IO.`, href: '/submissions', tier: 'info' });
-    addNotification({ forRole: 'mentor', ...(proj.mentorUserId ? { forMentorId: proj.mentorUserId } : {}), title: `Your project has been approved — ${proj.title}`, body: `"${proj.title}" has been approved by the IO and is now open for applicants.`, href: '/mentor/projects', tier: 'info' });
-    sessionStorage.setItem('dsta_pending_toast', `"${proj.title}" approved and added to Projects.`);
-    sessionStorage.setItem('dsta_requests_target_tab', 'pending');
-    router.push('/requests');
-  }
-
-  function doReturnForUpdate() {
-    if (!canReviewProjects) return;
-    if (!proj || !returnRemarks.trim()) return;
-    const updated = batches.map(b => b.id !== batchId ? b : {
-      ...b,
-      projects: b.projects.map(p => p.id !== projId ? p : { ...p, status: 'draft' as const, remarks: returnRemarks }),
+      projects: b.projects.map(p =>
+        p.id !== projId || p.status !== 'pending' ? p : { ...p, status: 'frozen' as const, frozenAt: now, frozenBy: profile.name }
+      ),
     });
     setBatches(updated);
     saveSubmissions(updated);
     syncProjectsToRequests(updated);
-
-    addNotification({ forRole: 'ad-pnc', title: `Project returned for update — ${proj.title}`, body: `Your project "${proj.title}" has been returned for update. Reason: ${returnRemarks}`, href: '/submissions', tier: 'action' });
-    sessionStorage.setItem('dsta_pending_toast', `"${proj.title}" returned for update.`);
-    sessionStorage.setItem('dsta_requests_target_tab', 'pending');
-    router.push('/requests');
-  }
-
-  function doReject() {
-    if (!canReviewProjects) return;
-    if (!proj || !rejectRemarks.trim()) return;
-    const updated = batches.map(b => b.id !== batchId ? b : {
-      ...b,
-      projects: b.projects.map(p => p.id !== projId ? p : { ...p, status: 'rejected' as const, remarks: rejectRemarks }),
-    });
-    setBatches(updated);
-    saveSubmissions(updated);
-    syncProjectsToRequests(updated);
-
-    addNotification({ forRole: 'ad-pnc', title: `Project rejected — ${proj.title}`, body: `Your project "${proj.title}" has been rejected by the IO. See the rejection remarks for details.`, href: '/submissions', tier: 'action' });
-    sessionStorage.setItem('dsta_pending_toast', `"${proj.title}" rejected.`);
-    sessionStorage.setItem('dsta_requests_target_tab', 'pending');
-    router.push('/requests');
-  }
-
-  function doRouteToDce() {
-    if (!canReviewProjects) return;
-    if (!batch) return;
-    const progLabel = batchEducationLevel(batch, eduMap);
-    const updated = batches.map(b => b.id !== batch.id ? b : { ...b, dceStatus: 'pending' as const, dceReason: undefined, dceBy: undefined, dceDate: undefined });
-    setBatches(updated);
-    saveSubmissions(updated);
-    logAccess({ actor: profile.name, action: 'decision', detail: `Routed project batch (${progLabel}) to DCE for approval`, subjectId: `batch:${batch.id}` });
-    addNotification({ forRole: 'dce', title: `Project batch awaiting approval — ${progLabel}`, body: `The IO has routed a project batch for ${progLabel} (${batch.projects.length} project${batch.projects.length !== 1 ? 's' : ''}) for your approval.`, href: '/dce', tier: 'action' });
-    sessionStorage.setItem('dsta_pending_toast', `Batch for ${progLabel} routed to DCE for approval.`);
-    sessionStorage.setItem('dsta_requests_target_tab', 'pending');
+    showToast(`Project locked for review.`);
+    sessionStorage.setItem('dsta_requests_target_tab', 'pendingDce');
     router.push('/requests');
   }
 
@@ -706,66 +547,61 @@ export default function RequestReviewDetail() {
 
   return (
     <Shell activeRoute="/requests">
-      {/* Breadcrumb */}
-      <nav className="mb-4 flex shrink-0 items-center gap-2 text-label-md">
-        <span
-          className="cursor-pointer text-fg-muted transition-colors hover:text-accent"
-          onClick={() => router.push('/requests')}
-        >
-          Project Requests
-        </span>
-        <ChevronRight size={14} className="text-fg-subtle" />
-        <span
-          className="cursor-pointer text-fg-muted transition-colors hover:text-accent"
-          onClick={() => router.push('/requests?tab=submissions')}
-        >
-          Project Submissions
-        </span>
-        <ChevronRight size={14} className="text-fg-subtle" />
-        <span className="max-w-[420px] truncate font-semibold text-fg">{proj.title}</span>
-      </nav>
+      <div className="flex flex-col">
+        <div className="flex-1 min-h-[calc(100vh-180px)]">
+          {/* Breadcrumb */}
+          <nav className="mb-4 flex shrink-0 items-center gap-2 text-label-md">
+            <span
+              className="cursor-pointer text-fg-muted transition-colors hover:text-accent"
+              onClick={() => router.push('/requests')}
+            >
+              Project request
+            </span>
+            <ChevronRight size={14} className="text-fg-subtle" />
+            <span
+              className="cursor-pointer text-fg-muted transition-colors hover:text-accent"
+              onClick={() => router.push('/requests?tab=submissions')}
+            >
+              Project Submissions
+            </span>
+            <ChevronRight size={14} className="text-fg-subtle" />
+            <span className="max-w-[420px] truncate font-semibold text-fg">{proj.title}</span>
+          </nav>
 
-      {/* Title row */}
-      <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex min-w-0 flex-wrap items-center gap-3">
-          <h1 className="min-w-0 text-headline-lg font-bold text-fg">{proj.title}</h1>
-          <Badge className={STATUS_COLOURS.pending}>Pending</Badge>
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {canReviewProjects && (
-            <Button variant="outline" size="md" onClick={openEdit}>
-              Edit Project
-            </Button>
-          )}
-          <Button variant="outline" size="md" className="px-2.5">
-            More
-          </Button>
-        </div>
-      </div>
+          {/* Title row */}
+          <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 flex-wrap items-center gap-3">
+              <h1 className="min-w-0 text-headline-lg font-bold text-fg">{proj.title}</h1>
+              <Badge className={STATUS_COLOURS.pending}>Pending</Badge>
+            </div>
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {canReviewProjects && (
+                <Button variant="outline" size="md" onClick={() => router.push(`/requests/project/${encodeURIComponent(batchId)}/${encodeURIComponent(projId)}/edit`)}>
+                  Edit Project
+                </Button>
+              )}
+            </div>
+          </div>
 
-      <p className="mb-4 text-body-sm text-fg-muted">
-        Review the submitted project information, resolve any flagged items, and decide whether the project can proceed.
-      </p>
+          <p className="mb-4 text-body-sm text-fg-muted">
+            Review the submitted project information, resolve any flagged items, and decide whether the project can proceed.
+          </p>
 
-      <AiRecommendationBanner onReview={() => reviewRef.current?.scrollIntoView({ behavior: 'smooth' })} />
+          <AiRecommendationBanner onReview={() => reviewRef.current?.scrollIntoView({ behavior: 'smooth' })} />
 
-      <div className="mt-6">
-        <ReviewSummaryCards version={versionLabel} submittedAt={proj.submittedAt || batch.uploadedAt} />
-      </div>
-
-      <div className="mt-6 min-h-[calc(100vh-510px)]">
-        <UnderlineTabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          tabs={[
-            { value: 'review', label: 'Review' },
-            { value: 'activity', label: 'Activity' },
-          ]}
-        />
+          <div className="mt-6">
+            <UnderlineTabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              tabs={[
+                { value: 'review', label: 'Review' },
+                { value: 'activity', label: 'Audit Log' },
+              ]}
+            />
 
         {activeTab === 'review' && (
           <div className="mt-4">
-            <div className="grid items-start gap-6">
+            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
               <div className="space-y-6">
                 {/* Education-level mismatch */}
                 {levelMismatch && (
@@ -790,7 +626,7 @@ export default function RequestReviewDetail() {
                       readabilityCheck={readabilityCheck}
                       scopeCheck={scopeCheck}
                       canReview={canReviewProjects}
-                      onEdit={openEdit}
+                      onEdit={() => router.push(`/requests/project/${encodeURIComponent(batchId)}/${encodeURIComponent(projId)}/edit`)}
                     />
                   </div>
                   <div className="my-5 border-t border-border" />
@@ -799,18 +635,13 @@ export default function RequestReviewDetail() {
               </div>
 
               <aside className="space-y-4">
-                {/*<SubmissionInformationCard
+                <SubmissionInformationCard
                   projectId={proj.id}
                   request={`Request from ${batch.pcHead || 'AD (P&C)'}`}
                   submittedBy={submittedBy}
                   submittedOn={submittedOn}
                   lastUpdated={lastUpdated}
-                />*/}
-                {/*<ReviewChecklistCard
-                  requiredFieldsPass
-                  scopeNeedsJudgement={descriptionResult !== 'pass'}
-                  titleChecked={titleResult === 'pass'}
-                />*/}
+                />
               </aside>
             </div>
           </div>
@@ -819,7 +650,7 @@ export default function RequestReviewDetail() {
         {activeTab === 'activity' && (
           <div className="mt-4">
             <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-              <ActivitySection activities={activities} />
+              <AuditLogSection activities={activities} />
               <aside className="space-y-4">
                 <SubmissionInformationCard
                   projectId={proj.id}
@@ -833,16 +664,16 @@ export default function RequestReviewDetail() {
           </div>
         )}
       </div>
+    </div>
 
-      {canReviewProjects && (
-        <BottomActionBar
-          reviewingLabel={reviewingLabel}
-          onReturn={() => setReturnDialogOpen(true)}
-          onReject={() => setRejectDialogOpen(true)}
-          onApprove={() => setConfirmApprove(true)}
-          onEdit={openEdit}
-        />
-      )}
+    {canReviewProjects && (
+      <BottomActionBar
+        reviewingLabel={reviewingLabel}
+        onLock={doLockForReview}
+        canLock={proj.status === 'pending'}
+      />
+    )}
+  </div>
 
       {/* Edit project details (IO) */}
       {canReviewProjects && editOpen && draft && (() => {
@@ -908,92 +739,6 @@ export default function RequestReviewDetail() {
           </Modal>
         );
       })()}
-
-      {/* Return for Update dialog */}
-      {canReviewProjects && (
-        <Dialog open={returnDialogOpen} onOpenChange={setReturnDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Return Project for Update?</DialogTitle>
-              <DialogDescription>
-                AD (P&C) will need to revise and resubmit this project before it can be reviewed again.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-2">
-              <p className="text-label-sm text-fg">
-                Reason for return <span className="text-danger">*</span>
-              </p>
-              <textarea
-                rows={4}
-                autoFocus
-                className="w-full resize-none rounded-lg border border-border bg-surface px-3 py-2 text-body-sm text-fg outline-none focus:ring-2 focus:ring-warning/30"
-                placeholder="Explain what needs to change..."
-                value={returnRemarks}
-                onChange={e => setReturnRemarks(e.target.value)}
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="ghost" onClick={() => setReturnDialogOpen(false)}>Cancel</Button>
-              <Button disabled={!returnRemarks.trim()} onClick={doReturnForUpdate} className="bg-[rgba(251,44,54,0.1)] text-[#C10007] hover:bg-[rgba(251,44,54,0.15)] border border-[#F8A4A8]">
-                Return for Update
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Reject Project dialog */}
-      {canReviewProjects && (
-        <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Reject Project?</DialogTitle>
-              <DialogDescription>
-                This project will not proceed. Add a specific reason for the decision record.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-2">
-              <p className="text-label-sm text-fg">
-                Reason for rejection <span className="text-danger">*</span>
-              </p>
-              <textarea
-                rows={4}
-                autoFocus
-                className="w-full resize-none rounded-lg border border-border bg-surface px-3 py-2 text-body-sm text-fg outline-none focus:ring-2 focus:ring-danger/30"
-                placeholder="Explain why this project is rejected..."
-                value={rejectRemarks}
-                onChange={e => setRejectRemarks(e.target.value)}
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="ghost" onClick={() => setRejectDialogOpen(false)}>Cancel</Button>
-              <Button variant="danger" disabled={!rejectRemarks.trim()} onClick={doReject}>
-                Reject Project
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Approve confirmation */}
-      {canReviewProjects && (
-        <Dialog open={confirmApprove} onOpenChange={setConfirmApprove}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Approve project?</DialogTitle>
-              <DialogDescription>
-                This adds the project to the approved pool as <span className="font-medium text-fg">unassigned</span>. You can attach it to a programme of its intern category later, when creating or editing a programme.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="ghost" onClick={() => setConfirmApprove(false)}>Cancel</Button>
-              <Button onClick={() => { setConfirmApprove(false); doApprove(); }}>
-                Confirm Approval
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
 
       <Toast message={toast} />
     </Shell>
