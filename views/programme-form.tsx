@@ -35,6 +35,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
@@ -63,7 +71,7 @@ import { REQ_TYPES, REQ_TIER_LABELS, EDUCATION_LEVELS, OPS, loadSubjectTaxonomy,
 import { loadProgrammes, saveProgrammes, loadProjects, saveProjects, loadAttachments, saveAttachments } from '@/lib/storage';
 import { poolFor, attachWarnings } from '@/lib/attachments';
 import { PROGRAMMES_CHANGED_EVENT } from '@/lib/programme-context';
-import { formatDate, formatTimeline, calcDaysLeft, generateProgId, cn, joinOr, ruleToNatural, groupToNatural, generateEligibilitySummary, sgToday } from '@/lib/utils';
+import { formatDate, formatTimeline, calcDaysLeft, generateProgId, cn, joinOr, ruleToNatural, groupToNatural, sgToday } from '@/lib/utils';
 import { monthIndexFromISO, formatMMMYY, mmmyyToISO, mmmyyToISOEnd, isoToMMMYY, periodsOverlap, parseMMMYY, periodLabelToMMMYY, INTAKE_BASE_YEAR, DEFAULT_INTAKE_YEAR, INTAKE_YEARS, shiftMMMYY } from '@/lib/internship-period';
 
 /** Normalise a stored internship-window value to an ISO day; legacy month values
@@ -89,8 +97,6 @@ import {
 import appFormSeed from '@/data/app-form-templates.json';
 import { useUnsavedChanges } from '@/lib/unsaved-changes';
 import { useSystemConfig } from '@/lib/portal-config';
-import { AI_COLOURS } from '@/lib/ai-colours';
-import AiSparkleIcon from '@/components/ui-legacy/ai-sparkle-icon';
 // import PreviewFlagFab from '@/components/dev/preview-flag-fab'; // DEV-ONLY — disabled for now (was: the floating preview-flag toggle on the programme form)
 
 const AFT_KEY      = 'dsta_app_form_templates';
@@ -929,64 +935,17 @@ function ReqBuilder({ groups, onChange, hiddenRuleIds }: { groups: CriteriaGroup
   );
 }
 
-/* ── Eligibility summary panel — plain-English criteria summary ───── */
-function EligibilitySummaryPanel({ groups, onViewDetail }: { groups: CriteriaGroup[]; onViewDetail?: () => void }) {
-  const sentences      = generateEligibilitySummary(groups);
-  const isListFormat   = sentences.length > 1 && /^\d\./.test(sentences[1] ?? '');
-
-  return (
-    <div className="overflow-hidden rounded-lg border border-border bg-surface">
-      <div className="px-4 py-3 space-y-2.5">
-        {/* Prose summary — capped so a long criteria set scrolls within the panel
-            rather than pushing the step off a short (13") screen. */}
-        <div className="max-h-[40vh] max-w-[78ch] space-y-1 overflow-y-auto">
-          {sentences.map((s, i) => (
-            <p
-              key={i}
-              className={cn(
-                'leading-relaxed',
-                i === 0 && isListFormat
-                  ? 'text-body-sm text-fg-muted'
-                  : 'text-body-sm text-fg',
-                isListFormat && i > 0 && 'font-medium',
-              )}
-            >
-              {s}
-            </p>
-          ))}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-3">
-          {groups.length > 0 && onViewDetail && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onViewDetail}
-            >
-              View Eligibility
-            </Button>
-          )}
-          <span className={cn('badge inline-flex items-center gap-1 text-caption font-normal', AI_COLOURS.suggestButton)}>
-            <AiSparkleIcon size={12} />
-            Generated from configured criteria
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ── Review overview ────────────────────────────────────────────── */
 function OverviewSection({
   title, year, description, category, intakes, groups, formTemplate, onPreviewApplicationForm, onPreviewCriteria,
-  attachmentMap, onCancel,
+  attachmentMap, placements, projects, onCancel,
 }: {
   title: string; year: number; description: string; category: string[];
   intakes?: IntakeWindow[];
   groups: CriteriaGroup[]; formTemplate?: string;
   attachmentMap: Record<string, string[]>;
+  placements: Record<string, Record<string, number>>;
+  projects: ProjectEntry[];
   onPreviewApplicationForm?: () => void;
   onPreviewCriteria?: () => void;
   onCancel?: () => void;
@@ -1007,6 +966,15 @@ function OverviewSection({
       };
     });
   }, [attachmentMap, intakes, title]);
+
+  // Projects assigned to the currently-selected intake (kept in assignment order).
+  const activeIntakeWindow = (intakes ?? [])[activeIntake];
+  const activeIntakeId = activeIntakeWindow?.id as string | undefined;
+  const assignedIds = activeIntakeId ? (attachmentMap[activeIntakeId] ?? []) : [];
+  const projectById = useMemo(() => new Map(projects.map(p => [p.id, p])), [projects]);
+  const assignedProjects = assignedIds
+    .map(id => projectById.get(id))
+    .filter((p): p is ProjectEntry => Boolean(p));
 
   return (
     <div className="space-y-5">
@@ -1117,7 +1085,7 @@ function OverviewSection({
         </div>
       </div>
 
-      {/* Intakes + Eligibility Requirements */}
+      {/* Intakes + per-intake assigned projects */}
       <div className="grid grid-cols-1 gap-0 overflow-hidden rounded-lg border border-border bg-surface lg:grid-cols-[360px_minmax(0,1fr)]">
         <aside className="relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-t-lg border-b border-border bg-surface shadow-lg lg:overflow-visible lg:rounded-b-none lg:rounded-l-lg lg:border-b-0 lg:border-r" aria-label="Intakes">
           <div className="flex min-w-0 flex-1 flex-col">
@@ -1172,10 +1140,79 @@ function OverviewSection({
 
         <section className="min-w-0 rounded-b-lg p-5 lg:rounded-b-none lg:rounded-r-lg">
           <div className="mb-3">
-            <p className="text-label-md font-semibold text-fg">Eligibility Requirements</p>
-            <p className="mt-0.5 text-caption text-fg-muted">Generated from configured criteria</p>
+            <p className="text-label-md font-semibold text-fg">Assigned Projects</p>
+            <p className="mt-0.5 text-caption text-fg-muted">
+              {activeIntakeWindow
+                ? `Intake ${activeIntake + 1} · ${activeIntakeWindow.start && activeIntakeWindow.end
+                    ? `${isoToMMMYY(activeIntakeWindow.start)} – ${isoToMMMYY(activeIntakeWindow.end)}`
+                    : 'Dates not set'} · ${assignedProjects.length} project${assignedProjects.length !== 1 ? 's' : ''}`
+                : 'No intake selected'}
+            </p>
           </div>
-          <EligibilitySummaryPanel groups={groups} onViewDetail={onPreviewCriteria} />
+          {assignedProjects.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border bg-bg-subtle/40">
+              <EmptyState
+                icon={Folder}
+                title="No projects assigned yet"
+                description="Assign projects to this intake on the Intakes & Projects step."
+                size="sm"
+              />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <div className="overflow-hidden border-border bg-surface min-w-[1000px]">
+                <Table className="table-fixed">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[250px]">Project Name</TableHead>
+                      <TableHead className="w-[150px]">Programme Centre</TableHead>
+                      <TableHead>Project Duration</TableHead>
+                      <TableHead className="w-[90px]">Placements</TableHead>
+                      <TableHead className="w-[200px]">Match</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {assignedProjects.map(p => {
+                      const periodFits = !!activeIntakeWindow && fitsIntake(p, activeIntakeWindow);
+                      const placementCount = activeIntakeId ? (placements[activeIntakeId]?.[p.id] ?? 1) : 1;
+                      return (
+                        <TableRow key={p.id}>
+                          <TableCell>
+                            <div className="min-w-0">
+                              <TruncatedTooltip className="text-body-sm font-semibold text-fg">{p.title}</TruncatedTooltip>
+                              <p className="text-caption text-fg-muted">{p.id}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-body-sm text-fg">{p.pc || '—'}</span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-body-sm text-fg">{p.internshipDuration ? `${p.internshipDuration} Months` : '—'}</span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-body-sm text-fg">{placementCount}</span>
+                          </TableCell>
+                          <TableCell>
+                            {hasPeriod(p) ? (
+                              <span className={cn(
+                                'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-caption font-medium',
+                                periodFits ? 'border-success/30 bg-success-bg text-success' : 'border-warning/30 bg-warning-bg text-warning'
+                              )}>
+                                <span className={cn('h-1.5 w-1.5 rounded-full', periodFits ? 'bg-success' : 'bg-warning')} />
+                                {periodFits ? 'Matches intake' : 'Date mismatch'}
+                              </span>
+                            ) : (
+                              <span className="text-caption text-fg-muted">—</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
         </section>
       </div>
     </div>
@@ -1533,8 +1570,15 @@ export default function ProgrammeFormPage() {
   const [origReqs, setOrigReqs]         = useState('');
   const [rescreenAffected, setRescreenAffected] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmType, setConfirmType] = useState<'create' | 'edit' | null>(null);
   const { setDirty, safeNavigate } = useUnsavedChanges();
   const sysCfg = useSystemConfig();
+
+  function openSubmitConfirm(type: 'create' | 'edit') {
+    setConfirmType(type);
+    setConfirmOpen(true);
+  }
 
   // Step 2 derived values (kept at top level so they can use hooks without being inside the
   // conditional step-2 IIFE, which would break hook-order rules).
@@ -1850,6 +1894,16 @@ export default function ProgrammeFormPage() {
   const attachTotal = allocatedIds.size;
   const attachPairTotal = Object.values(cpAttach).reduce((n, ids) => n + ids.length, 0);
   const allPoolSelected = availableProjects.length > 0 && selectedProjectIds.length === availableProjects.length;
+
+  // Projects shown in the step-3 review table: the current pool plus any attached
+  // project that fell out of it (e.g. the Intern Category changed in edit mode).
+  const reviewProjects = useMemo(() => {
+    const byId = new Map(availableProjects.map(p => [p.id, p]));
+    if (typeof window !== 'undefined') {
+      for (const p of loadProjects()) if (!byId.has(p.id)) byId.set(p.id, p);
+    }
+    return Array.from(byId.values());
+  }, [availableProjects]);
 
   const toggleAttach = useCallback((intakeId: string, projectId: string) => {
     setCpAttach(prev => {
@@ -3044,6 +3098,8 @@ export default function ProgrammeFormPage() {
                 groups={cpReqs}
                 formTemplate={derivedTemplate}
                 attachmentMap={cpAttach}
+                placements={cpPlacement}
+                projects={reviewProjects}
                 onPreviewApplicationForm={() => setPreviewTemplate(derivedTemplate)}
                 onPreviewCriteria={() => setReqsDrawer('view')}
                 onCancel={() => setStep(2)}
@@ -3115,7 +3171,7 @@ export default function ProgrammeFormPage() {
                 <Button variant="outline" onClick={saveAsDraft}>
                   Save as Draft
                 </Button>
-                <Button onClick={submitWizard}>
+                <Button onClick={() => openSubmitConfirm(isEdit ? 'edit' : 'create')}>
                   {isEdit
                     ? 'Save Changes'
                     : 'Create Programme'}
@@ -3130,6 +3186,35 @@ export default function ProgrammeFormPage() {
       {previewTemplate && (
         <TemplatePreviewModal templateName={previewTemplate} onClose={() => setPreviewTemplate(null)} />
       )}
+
+      {/* Submit confirmation dialog */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {confirmType === 'edit' ? 'Save Changes' : 'Create Programme'}
+            </DialogTitle>
+            <DialogDescription>
+              {confirmType === 'edit'
+                ? 'Are you sure you want to save these changes? This will update the programme immediately.'
+                : 'Are you sure you want to create this programme? This action cannot be undone.'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setConfirmOpen(false);
+                submitWizard();
+              }}
+            >
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Eligibility criteria sheet — keeps Programme Details uncluttered. 'view' shows the
           detailed read-only breakdown (with an Edit affordance); 'edit' shows the builder. */}

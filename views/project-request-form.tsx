@@ -515,7 +515,7 @@ function RequestCard({
                   <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !entry.programmeCentre && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select programme centre" /></SelectTrigger>
                   <SelectContent>
                     {programmeCentreOptions().map(option => (
-                      <SelectItem key={option.value} value={option.value}>{option.value}</SelectItem>
+                      <SelectItem key={option.value} value={option.value} disabled={option.value !== 'PC3'}>{option.value}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

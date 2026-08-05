@@ -327,6 +327,26 @@ export function exportToCSV(filename: string, headers: string[], rows: (string |
   URL.revokeObjectURL(url);
 }
 
+export async function exportToXLSX(filename: string, headers: string[], rows: (string | number)[][]): Promise<void> {
+  const ExcelJS = (await import('exceljs')).default;
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Sheet1');
+  ws.addRow(headers);
+  rows.forEach(r => ws.addRow(r));
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer as ArrayBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 export function generateEligibilitySummary(groups: CriteriaGroup[]): string[] {
   if (groups.length === 0) {
     return ['No eligibility restrictions have been set. All applicants are welcome to apply.'];

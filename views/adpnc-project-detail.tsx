@@ -265,9 +265,11 @@ export default function AdPncProjectDetailPage() {
           <Button variant="outline" onClick={() => router.push(backHref)}>
             Back
           </Button>
-          <Button variant="danger" onClick={handleWithdraw}>
-            Withdraw Project
-          </Button>
+          {project.status !== 'rejected' && (
+            <Button variant="danger" onClick={handleWithdraw}>
+              Withdraw Project
+            </Button>
+          )}
         </div>
       </div>
     </Shell>

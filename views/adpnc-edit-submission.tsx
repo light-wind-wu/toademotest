@@ -4,14 +4,13 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
-import { Badge } from '@/components/ui-legacy/badge';
 import RequestContextTable from '@/components/ui-legacy/request-context-table';
 import AiCheckBlock from '@/components/ui-legacy/ai-check-block';
 import Combobox from '@/components/ui-legacy/combobox';
 import FieldRequired from '@/components/ui-legacy/field-required';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronRight, ChevronLeft, Check, AlertTriangle, Clock, History, Minus, Plus, FileClock } from 'lucide-react';
-import { PROJECT_SUBMISSION_COLUMNS, loadLiveProgrammeOptions, toEducationLevel, type ProjectSubmissionColumn } from '@/lib/data';
+import { PROJECT_SUBMISSION_COLUMNS, loadLiveProgrammeOptions, toEducationLevel, STATUS_COLOURS, type ProjectSubmissionColumn } from '@/lib/data';
 import { DISCIPLINE_OPTIONS, parseDisciplines, toggleDiscipline } from '@/lib/disciplines';
 import { useToast, Toast } from '@/components/ui-legacy/toast';
 import { addNotification } from '@/lib/notifications';
@@ -131,6 +130,15 @@ function deriveTechCompetencies(proj: SubmittedProject): string[] {
 }
 
 /* ── Audit log ─────────────────────────────────────────────────────────────── */
+const STATUS_LABELS: Record<SubmittedProject['status'], string> = {
+  draft: 'Draft',
+  pending: 'Pending Review',
+  frozen: 'Frozen',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  withdrawn: 'Withdrawn',
+};
+
 function buildAuditLog(proj: SubmittedProject, pc: string) {
   const entries: { date: string; label: string; description: string }[] = [];
   if (proj.submittedAt) {
@@ -143,7 +151,7 @@ function buildAuditLog(proj: SubmittedProject, pc: string) {
   if (proj.remarks && proj.status === 'rejected') {
     entries.push({
       date: proj.submittedAt ? fmtDate(proj.submittedAt) : '—',
-      label: 'Returned for Update',
+      label: 'Rejected',
       description: proj.remarks,
     });
   }
@@ -188,6 +196,12 @@ export default function AdPncEditSubmissionPage() {
 
   const batch = batches.find(b => b.id === batchId) ?? null;
   const proj  = batch?.projects.find(p => p.id === projId) ?? null;
+
+  useEffect(() => {
+    if (proj?.status === 'rejected') {
+      router.replace(`/submissions/project/${encodeURIComponent(batchId)}/${encodeURIComponent(projId)}`);
+    }
+  }, [proj, batchId, projId, router]);
 
   const group = useMemo(() => {
     if (!batch) return null;
@@ -326,7 +340,7 @@ export default function AdPncEditSubmissionPage() {
             Project request
           </button>
           <ChevronRight size={14} className="text-fg-subtle" />
-          <span>Update Returned Project</span>
+          <span>Resubmit Project</span>
           <ChevronRight size={14} className="text-fg-subtle" />
           <span className="font-medium text-fg">Edit Project</span>
         </nav>
@@ -334,7 +348,7 @@ export default function AdPncEditSubmissionPage() {
         {/* Header */}
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <h1 className="text-headline-lg text-fg">{proj.title}</h1>
-          <Badge variant="warning">Returned for Update</Badge>
+          <span className={cn('badge text-caption font-normal', STATUS_COLOURS[proj.status])}>{STATUS_LABELS[proj.status]}</span>
         </div>
 
         {group && group.requests.length > 0 && (
@@ -505,7 +519,7 @@ export default function AdPncEditSubmissionPage() {
                   <div className="flex items-center gap-2 text-body-sm text-fg-muted hidden">
                     <Clock size={14} />
                     <span>Current status</span>
-                    <Badge variant="warning">Returned for Update</Badge>
+                    <span className={cn('badge text-caption font-normal', STATUS_COLOURS[proj.status])}>{STATUS_LABELS[proj.status]}</span>
                   </div>
                 </div>
                 <Button

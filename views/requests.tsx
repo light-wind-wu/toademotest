@@ -65,11 +65,12 @@ import { CONTACTS, STATUS_COLOURS, progEducationLevelMap, batchEducationLevel } 
 import { projectMatchesRequest } from '@/lib/request-groups';
 import { parseDisciplines } from '@/lib/disciplines';
 import { downloadRequestTemplateXLSX } from '@/lib/request-template';
+import { MONTHS, parseMMMYY, periodLabelToMMMYY } from '@/lib/internship-period';
 import { Paperclip, Download } from 'lucide-react';
 import { loadRequestAuditLogs, loadRequests, saveRequestAuditLogs, saveRequests, loadProjects, saveProjects, loadSubmissions, saveSubmissions } from '@/lib/storage';
 import { useProgramme } from '@/lib/programme-context';
 import { addNotification } from '@/lib/notifications';
-import { cn, exportToCSV } from '@/lib/utils';
+import { cn, exportToCSV, exportToXLSX } from '@/lib/utils';
 import { Toast, useToast } from '@/components/ui-legacy/toast';
 import { TruncatedTooltip } from '@/components/ui-legacy/truncated-tooltip';
 import type {
@@ -91,6 +92,13 @@ type FlatProj = {
   requestId: string; requestedPlacements: number;
   progId: string; progLabel: string; pc: string; headName: string; submittedBy: string;
   frozenAt?: string; frozenBy?: string;
+  // Extra fields for the "Export Locked Projects" CSV template.
+  internshipPeriodStart?: string;
+  internshipPeriodEnd?: string;
+  internshipDuration?: string;
+  description?: string;
+  skills?: string[];
+  mentorAppointment?: string;
 };
 
 type PendingPCGroup = { pc: string; rows: FlatProj[] };
@@ -102,6 +110,32 @@ type PCGroup = { key?: string; pc: string; headName: string; requests: ProjectRe
 function fmtDate(d: string) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+/* Format a month value (ISO "2026-06-01", MMMYY "Jun26", or MMM YYYY "Jun 2026") → "Jun 2026". */
+function fmtMonthYear(value: string | undefined | null): string {
+  if (!value) return '';
+  // Normalise to canonical MMMYY first — handles "Jun 2026", "Jun26", "January 2026", etc.
+  const mmmyy = periodLabelToMMMYY(value);
+  if (!mmmyy) return '';
+  const idx = parseMMMYY(mmmyy);
+  if (idx === null) return '';
+  const year = Math.floor(idx / 12);
+  const monthIdx = ((idx % 12) + 12) % 12;
+  return `${MONTHS[monthIdx]} ${year}`;
+}
+
+function formatInternshipPeriod(start?: string, end?: string): string {
+  const s = fmtMonthYear(start), e = fmtMonthYear(end);
+  if (!s && !e) return '—';
+  return s && e ? `${s} – ${e}` : s || e;
+}
+
+function formatDuration(value: string | undefined | null): string {
+  if (!value) return '—';
+  const num = parseInt(value.trim(), 10);
+  if (Number.isNaN(num)) return value.trim();
+  return `${num} Month${num === 1 ? '' : 's'}`;
 }
 
 function requestProgrammeCenter(req: ProjectRequest): string {
@@ -125,6 +159,12 @@ function todayISO() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function dceApprovalFilename(): string {
+  const d = new Date();
+  const yyyymmdd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+  return `DCE_Project_Approval_List_${yyyymmdd}.xlsx`;
+}
+
 function groupByPc(rows: FlatProj[]): PendingPCGroup[] {
   const map = new Map<string, { pc: string; rows: FlatProj[] }>();
   for (const r of rows) {
@@ -134,22 +174,43 @@ function groupByPc(rows: FlatProj[]): PendingPCGroup[] {
   return Array.from(map.values());
 }
 
-function exportLockedProjects(selectedKeys: string[], flatRows: FlatProj[]) {
-  const selectedRows = flatRows.filter(r => selectedKeys.includes(r.key) && r.status === 'frozen');
-  exportToCSV(
-    'locked-project-submissions',
-    ['Programme Centre', 'Project', 'Intern Category', 'Discipline of Study', 'Placements', 'Status', 'Locked By', 'Locked At'],
-    selectedRows.map(r => [
+async function exportProjectFreezeXLSX(filename: string, rows: FlatProj[]) {
+  await exportToXLSX(
+    filename,
+    [
+      'Programme Centre',
+      'Intern Category',
+      'Internship Period',
+      'Duration',
+      'Project Title',
+      'Project Scope',
+      'Skillset (up to 3, one per row)',
+      'Discipline (up to 3, one per row)',
+      'Primary Mentor Name',
+      'Primary Mentor Appointment',
+      'Placements',
+      'Review Decision',
+    ],
+    rows.map(r => [
       r.pc,
-      r.title,
       r.educationLevel || r.requestedEducationLevels.join(', ') || '—',
-      parseDisciplines(r.discipline).join(' / '),
+      formatInternshipPeriod(r.internshipPeriodStart, r.internshipPeriodEnd),
+      formatDuration(r.internshipDuration),
+      r.title,
+      r.description || '—',
+      (r.skills ?? []).slice(0, 3).join('\n'),
+      parseDisciplines(r.discipline).slice(0, 3).join('\n'),
+      r.mentor || '—',
+      r.mentorAppointment || '—',
       r.slots,
-      'Pending DCE Approval',
-      r.frozenBy || '—',
-      r.frozenAt ? fmtDate(r.frozenAt) : '—',
+      '',
     ]),
   );
+}
+
+function exportLockedProjects(selectedKeys: string[], flatRows: FlatProj[]) {
+  const selectedRows = flatRows.filter(r => selectedKeys.includes(r.key) && r.status === 'frozen');
+  void exportProjectFreezeXLSX(dceApprovalFilename(), selectedRows);
 }
 
 function dateOnlyTime(value: string) {
@@ -2433,6 +2494,12 @@ export default function RequestsPage() {
         submittedBy: batch.submittedBy ?? batch.pcHead,
         frozenAt:    proj.frozenAt,
         frozenBy:    proj.frozenBy,
+        internshipPeriodStart: proj.internshipPeriodStart,
+        internshipPeriodEnd:   proj.internshipPeriodEnd,
+        internshipDuration:  proj.internshipDuration,
+        description: proj.description,
+        skills:      proj.skills,
+        mentorAppointment: proj.mentorAppointment,
       };
     })
   );
@@ -2698,11 +2765,17 @@ export default function RequestsPage() {
           {...(topTab === 'submissions' ? {
             colDefs: COL_DEFS.map(c => ({ key: c.key, label: c.label, locked: (c as any).locked })),
             visibleCols, onToggleCol: (k: string) => toggleCol(k as ColKey),
-            onExport: tab === 'pendingAll' ? undefined : () => exportToCSV(
-              'project-submissions',
-              ['Programme Centre', 'Project', 'Intern Category', 'Discipline of Study', 'Placements'],
-              tableRows.map(r => [r.pc, r.title, r.educationLevel || r.requestedEducationLevels.join(', '), parseDisciplines(r.discipline).join(' / '), r.slots]),
-            ),
+            onExport: tab === 'pendingAll' ? undefined : () => {
+              if (tab === 'pendingDce') {
+                void exportProjectFreezeXLSX(dceApprovalFilename(), tableRows);
+                return;
+              }
+              exportToCSV(
+                'project-submissions',
+                ['Programme Centre', 'Project', 'Intern Category', 'Discipline of Study', 'Placements'],
+                tableRows.map(r => [r.pc, r.title, r.educationLevel || r.requestedEducationLevels.join(', '), parseDisciplines(r.discipline).join(' / '), r.slots]),
+              );
+            },
             exportLabel: tab === 'pendingDce' ? 'Export Locked Projects' : undefined,
             extraActions: tab === 'pendingAll' ? (
               <Button variant="outline" size="md" onClick={() => exportLockedProjects(flatRows.filter(r => r.status === 'frozen').map(r => r.key), flatRows)}>

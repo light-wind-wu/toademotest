@@ -78,7 +78,7 @@ function requestCategoryTotals(
 
 type RequestBadge = {
   label: string;
-  variant: 'warning' | 'info' | 'success';
+  variant: 'warning' | 'info' | 'success' | 'danger';
 };
 
 function getGroupBadge(
@@ -89,7 +89,7 @@ function getGroupBadge(
   const hasRejected = submitted.some(p => p.status === 'rejected');
   const { uploaded, placements } = groupTotals(group);
 
-  if (hasRejected) return { label: 'Returned for Update', variant: 'warning' };
+  if (hasRejected) return { label: 'Rejected', variant: 'danger' };
   if (placements > 0 && uploaded >= placements) return { label: 'Fulfilled', variant: 'success' };
   if (uploaded > 0) return { label: 'Incomplete', variant: 'warning' };
   return { label: 'Pending', variant: 'info' };
@@ -98,7 +98,7 @@ function getGroupBadge(
 type ProjectStatusCounts = {
   notSubmitted: number;
   pending: number;
-  returnedForUpdate: number;
+  rejected: number;
   approved: number;
   frozen: number;
 };
@@ -123,7 +123,7 @@ function getProjectStatusCounts(
   return {
     notSubmitted: Math.max(0, placements - submittedSlots),
     pending: submitted.filter(p => p.status === 'pending').length,
-    returnedForUpdate: submitted.filter(p => p.status === 'rejected').length,
+    rejected: submitted.filter(p => p.status === 'rejected').length,
     approved: submitted.filter(p => p.status === 'approved').length,
     frozen: submitted.filter(p => p.status === 'frozen').length,
   };
@@ -144,7 +144,7 @@ function getCardAction(
   const hasRejected = submitted.some(p => p.status === 'rejected');
   const { uploaded, placements } = groupTotals(group);
 
-  if (hasRejected) return { label: 'Update Returned Project', mode: 'view' };
+  if (hasRejected) return { label: 'View', mode: 'view' };
   if (uploaded === 0) return { label: 'Start Submission', mode: 'upload' };
   if (uploaded < placements) return { label: 'Continue Submission', mode: 'upload' };
   return { label: 'View Submission', mode: 'view' };
@@ -156,14 +156,11 @@ function getContextMessage(uploaded: number, placements: number): string {
   return 'Placement target met. Waiting for remaining IO review outcomes.';
 }
 
-/* Local colour override: "Returned for Update" uses warning orange rather than rejected red. */
-const RETURNED_FOR_UPDATE_COLOURS = 'bg-[rgba(254,154,0,0.15)] text-[rgba(187,77,0,1)]';
-
 const GROUP_STATUS_COLOURS: Record<string, string> = {
   Pending: STATUS_COLOURS.pending,
   Incomplete: STATUS_COLOURS.incomplete,
   Fulfilled: STATUS_COLOURS.fulfilled,
-  'Returned for Update': RETURNED_FOR_UPDATE_COLOURS,
+  Rejected: STATUS_COLOURS.rejected,
 };
 
 function textOnly(cls: string) {
@@ -415,7 +412,7 @@ function RequestCard({
   const projectStatusItems = [
     counts.notSubmitted > 0 && { key: 'notSubmitted', label: 'Not submitted', count: counts.notSubmitted, cls: textOnly(STATUS_COLOURS.draft) },
     counts.pending > 0 && { key: 'pending', label: 'Pending', count: counts.pending, cls: textOnly(STATUS_COLOURS.pending) },
-    counts.returnedForUpdate > 0 && { key: 'returnedForUpdate', label: 'Returned for update', count: counts.returnedForUpdate, cls: textOnly(RETURNED_FOR_UPDATE_COLOURS) },
+    counts.rejected > 0 && { key: 'rejected', label: 'Rejected', count: counts.rejected, cls: textOnly(STATUS_COLOURS.rejected) },
     counts.approved > 0 && { key: 'approved', label: 'Approved', count: counts.approved, cls: textOnly(STATUS_COLOURS.approved) },
     counts.frozen > 0 && { key: 'frozen', label: 'Pending DCE Approval', count: counts.frozen, cls: textOnly(STATUS_COLOURS.frozen) },
   ].filter(Boolean) as { key: string; label: string; count: number; cls: string }[];
@@ -493,11 +490,11 @@ function RequestCard({
           </p>*/}
         </div>
 
-        {/* Returned for update alert */}
+        {/* Rejected alert */}
         {rejected.length > 0 && (
-          <Alert variant="warning" className={RETURNED_FOR_UPDATE_COLOURS}>
+          <Alert variant="danger">
             <AlertTitle>
-              {rejected.length} project{rejected.length === 1 ? '' : 's'} require{rejected.length === 1 ? 's' : ''} an update
+              {rejected.length} project{rejected.length === 1 ? '' : 's'} rejected
             </AlertTitle>
             <AlertDescription>
               {rejected.map(p => p.remarks || `Please review "${p.title || 'Untitled project'}".`).join(' ')}
@@ -509,6 +506,7 @@ function RequestCard({
         <div className="mt-auto flex flex-col gap-3 sm:flex-row sm:items-center">
           <Button
             size="sm"
+            variant={action.mode === 'view' ? 'outline' : undefined}
             onClick={action.mode === 'upload' ? onUpload : onViewProject}
           >
             {action.label}

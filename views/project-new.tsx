@@ -726,10 +726,7 @@ export default function ProjectNewPage() {
   const techCompetencyOptions = getDropdown("Tech Domain");
 
   if (isSimpleAdRequest) {
-    const hasRejectedProjects = loadSubmissions().some(
-      b => b.uploadToken === requestToken && b.projects.some(p => p.status === 'rejected'),
-    );
-    const respondLabel = hasRejectedProjects ? 'Update Returned Project' : 'Respond to Request';
+    const respondLabel = 'Respond to Request';
 
     return (
       <Shell activeRoute={backRoute} hideNavigation>

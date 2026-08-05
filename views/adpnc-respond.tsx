@@ -117,7 +117,7 @@ const STATUS_LABELS: Record<SubmittedProject['status'], string> = {
   pending: 'Pending',
   frozen: 'Frozen',
   approved: 'Approved',
-  rejected: 'Returned for Update',
+  rejected: 'Rejected',
   withdrawn: 'Withdrawn',
 };
 
@@ -147,13 +147,13 @@ function requestYearLabel(group: RequestGroup): string {
 function requestStatusForGroup(
   group: RequestGroup,
   batches: ProjectSubmissionBatch[],
-): { label: string; variant: 'warning' | 'info' | 'success' } {
+): { label: string; variant: 'warning' | 'info' | 'success' | 'danger' } {
   const submitted = submittedForGroup(group, batches);
   const hasRejected = submitted.some(p => p.status === 'rejected');
   const placements = group.requests.reduce((sum, r) => sum + r.placements, 0);
   const uploaded = group.requests.reduce((sum, r) => sum + (r.uploaded ?? 0), 0);
 
-  if (hasRejected) return { label: 'Returned for Update', variant: 'warning' };
+  if (hasRejected) return { label: 'Rejected', variant: 'danger' };
   if (placements > 0 && uploaded >= placements) return { label: 'Fulfilled', variant: 'success' };
   if (uploaded > 0) return { label: 'Incomplete', variant: 'warning' };
   return { label: 'Pending', variant: 'info' };
@@ -336,7 +336,7 @@ function EditProjectDialog({
           <DialogTitle className="text-headline-sm text-fg">Edit Project</DialogTitle>
           <DialogDescription className="sr-only">
             {requiresResubmitChecks
-              ? 'Edit the returned project and resubmit it for IO review.'
+              ? 'Edit the project and resubmit it for IO review.'
               : 'Edit the draft project before submitting the request response.'}
           </DialogDescription>
         </DialogHeader>
@@ -1033,7 +1033,7 @@ export default function AdPncRespondPage() {
   const breadcrumbLabel = useMemo(() => {
     if (!group) return '';
     if (isUploadMode) return visibleProjects.length === 0 ? 'Update' : 'Continue Submission';
-    return visibleProjects.some(p => p.status === 'rejected') ? 'Update returned project' : 'Request Project';
+    return 'Request Project';
   }, [group, isUploadMode, visibleProjects]);
 
   const allSelectedCount = visibleProjects.filter(p => selectedProjectIds.has(p.id)).length;
@@ -1990,7 +1990,7 @@ function ProjectListRow({
   const statusCls = STATUS_COLOURS[project.status] ?? STATUS_COLOURS.pending;
   const aiMeta = aiCheckMeta(project);
   const showAiMeta = project.status !== 'approved' && project.status !== 'withdrawn';
-  const canEdit = canManage && (project.status === 'draft' || (Boolean(batchId) && (project.status === 'rejected' || project.status === 'withdrawn')));
+  const canEdit = canManage && (project.status === 'draft' || (Boolean(batchId) && project.status === 'withdrawn'));
   const canDelete = canManage && project.status === 'draft';
   const canWithdraw = canManage && project.status === 'pending';
   const [confirmWithdrawOpen, setConfirmWithdrawOpen] = useState(false);
@@ -2049,7 +2049,7 @@ function ProjectListRow({
               <MenuContent className="w-48">
                 {canEdit && (
                   <MenuItem onClick={onEdit}>
-                    {project.status === 'rejected' ? 'Continue Editing' : 'Edit'}
+                    Edit
                   </MenuItem>
                 )}
                 {onViewDetails && (
@@ -2135,7 +2135,7 @@ function ProjectCard({
   const statusCls = STATUS_COLOURS[project.status] ?? STATUS_COLOURS.pending;
   const aiMeta = aiCheckMeta(project);
   const showAiMeta = project.status !== 'approved' && project.status !== 'withdrawn';
-  const canEdit = canManage && (project.status === 'draft' || (Boolean(batchId) && (project.status === 'rejected' || project.status === 'withdrawn')));
+  const canEdit = canManage && (project.status === 'draft' || (Boolean(batchId) && project.status === 'withdrawn'));
   const canDelete = canManage && project.status === 'draft';
   const canWithdraw = canManage && project.status === 'pending';
   const [confirmWithdrawOpen, setConfirmWithdrawOpen] = useState(false);
@@ -2181,11 +2181,7 @@ function ProjectCard({
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
         {canEdit && (
-          project.status === 'rejected' ? (
-            <Button variant="primary" size="sm" onClick={onEdit}>Continue Editing</Button>
-          ) : (
-            <Button variant="outline" size="sm" onClick={onEdit}>Edit</Button>
-          )
+          <Button variant="outline" size="sm" onClick={onEdit}>Edit</Button>
         )}
         {onViewDetails && (
           <Button variant="outline" size="sm" onClick={onViewDetails}>
