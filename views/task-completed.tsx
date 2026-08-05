@@ -32,7 +32,7 @@ export default function TaskCompletedPage() {
         {/* Card + fireworks wrapper */}
         <div className="relative z-10 mx-4 flex w-full max-w-lg items-center justify-center md:mx-0">
           {/* Fireworks overlay */}
-          <div className="pointer-events-none absolute inset-x-0 -top-2.5 -bottom-5 z-20 md:left-1/2 md:right-auto md:top-1/2 md:bottom-auto md:aspect-[523/368] md:w-full md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2">
+          <div className="pointer-events-none absolute inset-x-0 -top-2.5 -bottom-5 z-20 md:left-1/2 md:right-auto md:top-1/2 md:bottom-auto md:aspect-[523/368] md:w-full md:max-w-lg md:-translate-x-1/2 md:-translate-y-[calc(50%+20px)]">
             <Image
               src="/images/fireworks.svg"
               alt=""

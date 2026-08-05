@@ -150,10 +150,11 @@ function requestStatusForGroup(
   batches: ProjectSubmissionBatch[],
 ): { label: string; variant: 'warning' | 'info' | 'success' } {
   const submitted = submittedForGroup(group, batches);
-  const hasReturnedForUpdate = submitted.some(p => p.status === 'returnedForUpdate');
-  const { uploaded, placements } = groupTotals(group);
+  const hasIssue = submitted.some(p => p.status === 'rejected' || p.status === 'returnedForUpdate');
+  const placements = group.requests.reduce((sum, r) => sum + r.placements, 0);
+  const uploaded = group.requests.reduce((sum, r) => sum + (r.uploaded ?? 0), 0);
 
-  if (hasReturnedForUpdate) return { label: 'Incomplete', variant: 'warning' };
+  if (hasIssue) return { label: 'Incomplete', variant: 'warning' };
   if (placements > 0 && uploaded >= placements) return { label: 'Fulfilled', variant: 'success' };
   if (uploaded > 0) return { label: 'Incomplete', variant: 'warning' };
   return { label: 'Pending', variant: 'info' };

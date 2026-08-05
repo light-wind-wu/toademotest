@@ -86,10 +86,10 @@ function getGroupBadge(
   batches: ProjectSubmissionBatch[],
 ): RequestBadge {
   const submitted = submittedForGroup(group, batches);
-  const hasReturnedForUpdate = submitted.some(p => p.status === 'returnedForUpdate');
+  const hasIssue = submitted.some(p => p.status === 'rejected' || p.status === 'returnedForUpdate');
   const { uploaded, placements } = groupTotals(group);
 
-  if (hasReturnedForUpdate) return { label: 'Incomplete', variant: 'warning' };
+  if (hasIssue) return { label: 'Incomplete', variant: 'warning' };
   if (placements > 0 && uploaded >= placements) return { label: 'Fulfilled', variant: 'success' };
   if (uploaded > 0) return { label: 'Incomplete', variant: 'warning' };
   return { label: 'Pending', variant: 'info' };
@@ -143,10 +143,10 @@ function getCardAction(
   batches: ProjectSubmissionBatch[],
 ): { label: string; mode: 'upload' | 'view' } {
   const submitted = submittedForGroup(group, batches);
-  const hasReturnedForUpdate = submitted.some(p => p.status === 'returnedForUpdate');
+  const hasIssue = submitted.some(p => p.status === 'rejected' || p.status === 'returnedForUpdate');
   const { uploaded, placements } = groupTotals(group);
 
-  if (hasReturnedForUpdate) return { label: 'View Submission', mode: 'view' };
+  if (hasIssue) return { label: 'View Submission', mode: 'view' };
   if (uploaded === 0) return { label: 'Start Submission', mode: 'upload' };
   if (uploaded < placements) return { label: 'View Submission', mode: 'upload' };
   return { label: 'View Submission', mode: 'view' };

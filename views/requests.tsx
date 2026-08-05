@@ -103,7 +103,7 @@ type FlatProj = {
 
 type PendingPCGroup = { pc: string; rows: FlatProj[] };
 
-type TabKey = 'sent' | 'pending' | 'pendingDce' | 'pendingAll' | 'returnedForUpdate' | 'rejected' | 'approved' | 'all';
+type TabKey = 'sent' | 'pending' | 'pendingDce' | 'pendingAll' | 'rejected' | 'approved' | 'all';
 type PCGroup = { key?: string; pc: string; headName: string; requests: ProjectRequest[] };
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
@@ -2575,11 +2575,10 @@ export default function RequestsPage() {
 
   /* ── Tab + search + filter + sort (submissions tabs) ─────────────────── */
   const tabRows = flatRows.filter(r => {
-    if (tab === 'pending')           return r.status === 'pending';
-    if (tab === 'pendingDce')        return r.status === 'frozen';
-    if (tab === 'returnedForUpdate') return r.status === 'returnedForUpdate';
-    if (tab === 'rejected')          return r.status === 'rejected';
-    if (tab === 'approved')          return r.status === 'approved';
+    if (tab === 'pending')    return r.status === 'pending';
+    if (tab === 'pendingDce') return r.status === 'frozen';
+    if (tab === 'rejected')   return r.status === 'rejected' || r.status === 'returnedForUpdate';
+    if (tab === 'approved')   return r.status === 'approved';
     return true;
   });
 
@@ -2668,8 +2667,7 @@ export default function RequestsPage() {
     pending:    flatRows.filter(r => r.status === 'pending').length,
     pendingDce: flatRows.filter(r => r.status === 'frozen').length,
     pendingAll: flatRows.filter(r => r.status === 'pending' || r.status === 'frozen').length,
-    rejected:          flatRows.filter(r => r.status === 'rejected').length,
-    returnedForUpdate: flatRows.filter(r => r.status === 'returnedForUpdate').length,
+    rejected:   flatRows.filter(r => r.status === 'rejected' || r.status === 'returnedForUpdate').length,
     approved:   flatRows.filter(r => r.status === 'approved').length,
     all:        flatRows.length,
   };
@@ -2821,9 +2819,6 @@ export default function RequestsPage() {
                 </TabsTrigger>*/}
                 <TabsTrigger value="approved">
                   Approved ({tabCounts.approved})
-                </TabsTrigger>
-                <TabsTrigger value="returnedForUpdate">
-                  Returned for Update ({tabCounts.returnedForUpdate})
                 </TabsTrigger>
                 <TabsTrigger value="rejected">
                   Rejected ({tabCounts.rejected})
@@ -3359,10 +3354,9 @@ export default function RequestsPage() {
         <ColFilterDropdown
           id="cf-req-status"
           options={[
-            { value: 'pending',          label: 'Pending Review' },
-            { value: 'returnedForUpdate', label: 'Returned for Update' },
-            { value: 'rejected',         label: 'Rejected' },
-            { value: 'approved',         label: 'Approved' },
+            { value: 'pending',  label: 'Pending Review' },
+            { value: 'rejected', label: 'Rejected' },
+            { value: 'approved', label: 'Approved' },
           ]}
           selected={statusCF}
           onApply={setStatusCF}
