@@ -350,8 +350,7 @@ export default function ApplyAccountSetup() {
                 </div>
 
                 <TipBanner tall>
-                  These particulars came from your Singpass profile. You can edit them for this
-                  application without changing your Singpass record.
+                    We retrieved your particulars from your Singpass account. Feel free to edit as required; changes will only be saved here
                 </TipBanner>
 
                 <ProfileFields
