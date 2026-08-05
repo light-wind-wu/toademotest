@@ -1205,7 +1205,7 @@ export default function ProjectRequestFormPage() {
     sessionStorage.setItem('dsta_pending_toast', 'The project request has been successfully sent to AD (P&C).');
     sessionStorage.setItem('dsta_pending_toast_title', 'Project request sent');
     setDirty(false);
-    router.push('/requests');
+    router.push('/task-completed');
   }
 
   /* Build ProjectRequest-shaped rows from a request entry so the structured Excel
