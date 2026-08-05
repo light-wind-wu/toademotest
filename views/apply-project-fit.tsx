@@ -3,6 +3,7 @@
 /* Session 2 — Find Your Project Fit:
    chapter intro → interests (+ archetype modal) → ranking | quiz (Q1–3). */
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   DndContext,
@@ -21,15 +22,38 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import {
   ArrowRight,
+  BarChart3,
+  Bot,
+  Bug,
   Check,
+  Crosshair,
+  FileSearch,
+  Filter,
   GripVertical,
+  Info,
+  Layers,
+  Network,
+  Package,
+  PenLine,
+  Radar,
+  RefreshCw,
+  Rocket,
+  Search,
+  Send,
+  Share2,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
   Star,
+  Swords,
   Trash2,
+  Workflow,
+  AppWindow,
+  Zap,
+  type LucideIcon,
 } from 'lucide-react';
 import ApplicationFlowShell from '@/components/apply/application-flow-shell';
 import ChapterIntro from '@/components/apply/chapter-intro';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   clearChapterIntro,
   loadApplyDraft,
@@ -45,6 +69,7 @@ import {
   resolveArchetype,
   type ArchetypeInfo,
   type ProjectMatch,
+  type QuizOption,
 } from '@/lib/apply-project-fit';
 import { loadApplicantProfile } from '@/lib/myinfo';
 import { isSignedIn } from '@/lib/session';
@@ -133,7 +158,7 @@ export default function ApplyProjectFitPage() {
       ? {
           onBack: () => router.push('/apply/availability'),
           onContinue: () => setPhase('ranking'),
-          continueLabel: 'Continue',
+          continueLabel: 'Next',
           continueDisabled: draft.interests.length === 0,
         }
       : phase === 'result'
@@ -142,8 +167,8 @@ export default function ApplyProjectFitPage() {
               setQuizIndex(QUIZ_QUESTIONS.length - 1);
               setPhase('quiz');
             },
-            onContinue: () => setPhase('ranking'),
-            continueLabel: 'Continue',
+            onContinue: () => setPhase('interests'),
+            continueLabel: 'Next',
             continueDisabled: false,
           }
       : phase === 'ranking'
@@ -153,7 +178,7 @@ export default function ApplyProjectFitPage() {
               setSession3Next('additional');
               setShowSession3(true);
             },
-            continueLabel: 'Continue',
+            continueLabel: 'Next',
             continueDisabled: draft.rankedProjectIds.length === 0,
           }
         : {
@@ -178,7 +203,7 @@ export default function ApplyProjectFitPage() {
     <ApplicationFlowShell
       stepId="project-fit"
       hideFooter
-      lockViewport={phase === 'ranking'}
+      lockViewport={phase === 'ranking' || phase === 'result'}
     >
       {phase === 'interests' && (
         <InterestsPhase
@@ -192,6 +217,7 @@ export default function ApplyProjectFitPage() {
       {phase === 'ranking' && (
         <RankingPhase
           displayName={displayName}
+          archetypeName={resolveArchetype(draft.quizAnswers).name}
           rankedIds={draft.rankedProjectIds}
           onChange={(rankedProjectIds) => persist({ ...draft, rankedProjectIds })}
           onBack={footer.onBack}
@@ -231,9 +257,9 @@ export default function ApplyProjectFitPage() {
             setPhase('quiz');
             setQuizIndex(0);
           }}
-          onSkip={() => {
+          onContinueWithInterests={() => {
+            /* Close only — stay on interests so the user can keep selecting */
             setShowArchetype(false);
-            setPhase('ranking');
           }}
         />
       )}
@@ -258,6 +284,11 @@ export default function ApplyProjectFitPage() {
 
 /* ── Interests ───────────────────────────────────────────────────────────── */
 
+const TAG_SELECTED_BG = 'rgba(0, 166, 244, 0.15)';
+const TAG_SELECTED_FG = 'rgba(0, 105, 168, 1)';
+const TAG_IDLE_FG = 'rgba(15, 23, 43, 1)';
+const TAG_IDLE_BORDER = 'rgba(231, 228, 221, 1)';
+
 function InterestsPhase({
   selected,
   onChange,
@@ -280,14 +311,19 @@ function InterestsPhase({
     <>
       <header className="mb-5">
         <h1 className="text-[1.375rem] font-bold leading-snug tracking-tight text-fg md:text-[1.5rem]">
-          What are you into?
+          Choose your interests
         </h1>
       </header>
       <section className="rounded-xl border border-border bg-surface p-4 shadow-sm md:p-6">
-        <p className="text-[13px] text-fg-muted">
-          Tap the areas that excite you — we’ll factor these into your project matches.
+        <p className="text-[13px] text-fg-muted lg:hidden">
+          Tap the areas that interest you. We&apos;ll use them to personalize your project
+          recommendations.
         </p>
-        <div className="mt-4 flex flex-wrap gap-2">
+        <p className="hidden text-[13px] text-fg-muted lg:block">
+          Select the areas that interest you. We&apos;ll use them to personalize your project
+          recommendations.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3 lg:gap-2">
           {INTEREST_OPTIONS.map((tag) => {
             const on = selected.includes(tag);
             return (
@@ -295,92 +331,271 @@ function InterestsPhase({
                 key={tag}
                 type="button"
                 onClick={() => toggle(tag)}
-                className={cn(
-                  'rounded-full border px-3.5 py-2 text-[13px] font-medium transition-colors',
-                  on
-                    ? 'border-accent/30 bg-accent/10 text-accent'
-                    : 'border-border bg-surface text-fg hover:border-border-strong',
-                )}
+                className="inline-flex h-9 cursor-pointer items-center rounded-full border border-solid px-3.5 transition-colors"
+                style={{
+                  background: on ? TAG_SELECTED_BG : 'transparent',
+                  borderColor: on ? 'transparent' : TAG_IDLE_BORDER,
+                  fontWeight: 400,
+                  fontSize: 14,
+                  lineHeight: '20px',
+                  color: on ? TAG_SELECTED_FG : TAG_IDLE_FG,
+                }}
               >
                 {tag}
               </button>
             );
           })}
         </div>
+        <p
+          className="mt-4 flex items-start gap-2"
+          style={{
+            fontWeight: 400,
+            fontSize: 13,
+            lineHeight: '18px',
+            color: 'rgba(74, 85, 104, 1)',
+          }}
+        >
+          <Info size={14} className="mt-0.5 shrink-0" aria-hidden />
+          <span>You can update your interests anytime</span>
+        </p>
       </section>
 
-      <div className="mt-[18px] flex justify-end gap-2 lg:mt-3">
-        <Button
-          type="button"
-          variant="outline"
-          className="rounded-md bg-surface"
-          onClick={onBack}
-          disabled={!onBack}
-        >
-          Back
-        </Button>
-        <Button
-          type="button"
-          className="rounded-md font-semibold"
-          onClick={onContinue}
-          disabled={continueDisabled || !onContinue}
-        >
-          Continue
-        </Button>
+      {/* Spacer so content clears the fixed footer */}
+      <div className="h-[68px] shrink-0" aria-hidden />
+
+      {/* Fixed bottom actions — same pattern as account-setup; PC offset for 220 sidebar */}
+      <div
+        className={cn(
+          'fixed inset-x-0 bottom-0 z-30 flex h-[68px] items-center border-t border-border bg-surface px-4',
+          'lg:left-[220px] lg:px-8',
+        )}
+      >
+        <div className="flex w-full items-center justify-between gap-3">
+          <button
+            type="button"
+            className="cursor-pointer bg-transparent p-0"
+            style={{
+              fontWeight: 500,
+              fontSize: 14,
+              lineHeight: '20px',
+              color: 'rgba(15, 23, 42, 1)',
+            }}
+            onClick={onBack}
+            disabled={!onBack}
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            className="h-9 cursor-pointer rounded-md px-5 disabled:opacity-50 lg:h-10"
+            style={{
+              background: 'rgba(37, 99, 235, 1)',
+              fontWeight: 400,
+              fontSize: 14,
+              lineHeight: '20px',
+              color: 'rgba(255, 255, 255, 1)',
+            }}
+            onClick={onContinue}
+            disabled={continueDisabled || !onContinue}
+          >
+            Next
+          </button>
+        </div>
       </div>
     </>
   );
 }
 
 /* ── Archetype modal ─────────────────────────────────────────────────────── */
-/* TODO: add bottom-right BG art via `bg-[url(/images/defender-archetype-bg.png)] bg-[length:min(72%,340px)] bg-bottom-right bg-no-repeat` */
 
 function ArchetypeModal({
   onTakeQuiz,
-  onSkip,
+  onContinueWithInterests,
 }: {
   onTakeQuiz: () => void;
-  onSkip: () => void;
+  onContinueWithInterests: () => void;
 }) {
+  const shadow =
+    '0px 4px 6px -4px rgba(0, 0, 0, 0.05), 0px 10px 15px -3px rgba(0, 0, 0, 0.1)';
+
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-fg/40 p-4 sm:p-6"
+      className="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-6"
+      style={{
+        background: 'rgba(251, 250, 246, 0.6)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+      }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="archetypeTitle"
     >
-      <div className="relative w-full max-w-[520px] overflow-hidden rounded-2xl bg-surface shadow-xl">
-        <div className="flex flex-col p-6 pb-8 md:p-8">
-          <h2
-            id="archetypeTitle"
-            className="max-w-[18ch] text-[1.35rem] font-bold leading-snug text-fg md:text-[1.5rem]"
-          >
-            Discover Your Defender Archetype
-          </h2>
-          <p className="mt-5 max-w-[28ch] text-[14px] leading-relaxed text-fg-muted md:mt-6 md:max-w-[32ch]">
-            Take a short quiz to discover your defender archetype and explore projects that may
-            suit you. This step is optional—you can skip it and continue with your selected
-            interests.
-          </p>
+      <div
+        className={cn(
+          'flex w-full flex-col items-stretch',
+          'max-lg:max-w-[360px]',
+          'lg:w-[672px] lg:max-w-[672px]',
+        )}
+      >
+        <div
+          className="relative w-full overflow-hidden rounded-2xl bg-surface"
+          style={{ boxShadow: shadow }}
+        >
+          {/* PC — copy left, art right; height hugs content */}
+          <div className="relative hidden lg:flex">
+            <div className="relative z-[1] flex min-w-0 flex-1 flex-col py-8 pl-8 pr-4">
+              <h2
+                id="archetypeTitle"
+                style={{
+                  fontWeight: 600,
+                  fontSize: 28,
+                  lineHeight: '40px',
+                  letterSpacing: '-0.48px',
+                  color: 'rgba(10, 22, 40, 1)',
+                }}
+              >
+                Take a 3-minute quiz
+              </h2>
+              <p
+                style={{
+                  marginTop: 24,
+                  fontWeight: 400,
+                  fontSize: 16,
+                  lineHeight: '24px',
+                  color: 'rgba(69, 85, 108, 1)',
+                  maxWidth: '34ch',
+                }}
+              >
+                Learn more about your working style and archetype. You can retake the quiz anytime
+              </p>
+              <div className="flex items-center gap-4" style={{ marginTop: 48 }}>
+                <button
+                  type="button"
+                  onClick={onTakeQuiz}
+                  className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md px-4"
+                  style={{
+                    background: 'rgba(26, 101, 248, 1)',
+                    fontWeight: 400,
+                    fontSize: 14,
+                    lineHeight: '20px',
+                    color: 'rgba(255, 255, 255, 1)',
+                  }}
+                >
+                  Take a Short Quiz
+                  <ArrowRight className="size-4 shrink-0" strokeWidth={1.5} />
+                </button>
+                <button
+                  type="button"
+                  onClick={onContinueWithInterests}
+                  className="cursor-pointer bg-transparent p-0"
+                  style={{
+                    fontWeight: 400,
+                    fontSize: 14,
+                    lineHeight: '20px',
+                    color: 'rgba(15, 23, 43, 1)',
+                  }}
+                >
+                  Continue with Interests
+                </button>
+              </div>
+            </div>
+            <div className="relative min-h-[200px] w-[280px] shrink-0 self-stretch">
+              <Image
+                src="/images/quiz-pc.png"
+                alt=""
+                fill
+                className="object-contain object-right-bottom"
+                sizes="280px"
+                priority
+              />
+            </div>
+          </div>
 
-          <div className="mt-12 flex w-fit flex-col items-stretch gap-3 md:mt-14">
-            <Button
-              type="button"
-              className="h-11 rounded-md px-5 font-semibold"
-              onClick={onTakeQuiz}
+          {/* Mobile — left copy + buttons, right art (comps) */}
+          <div className="relative flex min-h-[220px] flex-col p-5 lg:hidden">
+            <h2
+              id="archetypeTitleMobile"
+              style={{
+                fontWeight: 600,
+                fontSize: 22,
+                lineHeight: '30px',
+                letterSpacing: '-0.48px',
+                color: 'rgba(10, 22, 40, 1)',
+              }}
             >
-              Let’s Go
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-            <button
-              type="button"
-              onClick={onSkip}
-              className="px-1 text-left text-[14px] font-semibold text-fg hover:underline"
+              Take a 3-minute quiz
+            </h2>
+            <p
+              style={{
+                marginTop: 12,
+                fontWeight: 400,
+                fontSize: 14,
+                lineHeight: '20px',
+                color: 'rgba(69, 85, 108, 1)',
+                whiteSpace: 'nowrap',
+              }}
             >
-              Skip for Now
-            </button>
+              Learn more about your working
+              <br />
+              style and archetype. You can
+              <br />
+              retake the quiz anytime
+            </p>
+            <div className="relative z-[1] flex w-[168px] flex-col items-stretch gap-3" style={{ marginTop: 40 }}>
+              <button
+                type="button"
+                onClick={onTakeQuiz}
+                className="inline-flex h-9 w-[168px] cursor-pointer items-center justify-center gap-2 rounded-md"
+                style={{
+                  background: 'rgba(26, 101, 248, 1)',
+                  fontWeight: 400,
+                  fontSize: 14,
+                  lineHeight: '20px',
+                  color: 'rgba(255, 255, 255, 1)',
+                }}
+              >
+                Take a Short Quiz
+                <ArrowRight className="size-4 shrink-0" strokeWidth={1.5} />
+              </button>
+              <button
+                type="button"
+                onClick={onContinueWithInterests}
+                className="cursor-pointer bg-transparent py-1 text-left"
+                style={{
+                  fontWeight: 400,
+                  fontSize: 14,
+                  lineHeight: '20px',
+                  color: 'rgba(15, 23, 43, 1)',
+                }}
+              >
+                Continue with Interests
+              </button>
+            </div>
+            <div className="pointer-events-none absolute bottom-0 right-0 h-[160px] w-[160px]">
+              <Image
+                src="/images/quiz-m.png"
+                alt=""
+                fill
+                className="object-contain object-right-bottom"
+                sizes="160px"
+              />
+            </div>
           </div>
         </div>
+
+        {/* Tip sits below the card, not inside it */}
+        <p
+          className="mt-4 flex items-center gap-2"
+          style={{
+            fontWeight: 400,
+            fontSize: 14,
+            lineHeight: '20px',
+            color: 'rgba(69, 85, 108, 1)',
+          }}
+        >
+          <Info size={14} className="shrink-0" strokeWidth={1.5} aria-hidden />
+          <span>You can update your interests anytime.</span>
+        </p>
       </div>
     </div>
   );
@@ -390,6 +605,7 @@ function ArchetypeModal({
 
 function RankingPhase({
   displayName,
+  archetypeName,
   rankedIds,
   onChange,
   onBack,
@@ -397,6 +613,7 @@ function RankingPhase({
   continueDisabled,
 }: {
   displayName: string;
+  archetypeName: string;
   rankedIds: string[];
   onChange: (ids: string[]) => void;
   onBack?: () => void;
@@ -405,6 +622,7 @@ function RankingPhase({
 }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const rankedSet = useMemo(() => new Set(rankedIds), [rankedIds]);
+  const highlight = { color: 'rgba(26, 101, 248, 1)', fontWeight: 600 as const };
 
   function add(id: string) {
     if (rankedSet.has(id) || rankedIds.length >= MAX_RANKED) return;
@@ -424,16 +642,19 @@ function RankingPhase({
     onChange(arrayMove(rankedIds, oldIndex, newIndex));
   }
 
+  const isEmpty = rankedIds.length === 0;
+
   return (
     /* Fills shell lockViewport area — page itself must not scroll */
     <div className="flex h-full min-h-0 flex-col">
-      <header className="mb-3 shrink-0">
+      <header className="mb-6 shrink-0 lg:mb-3">
         <h1 className="text-[1.375rem] font-bold leading-snug tracking-tight text-fg md:text-[1.5rem]">
           Rank your projects, {displayName}.
         </h1>
         <p className="mt-1 text-[13px] text-fg-muted">
-          Based on your interests, we’ve flagged your best matches. Select up to {MAX_RANKED} in
-          order of preference.
+          Based on your{' '}
+          <span style={highlight}>{archetypeName}</span> profile and interests, we&apos;ve flagged
+          your best matches. Pick up to {MAX_RANKED} in order of preference
         </p>
       </header>
 
@@ -441,12 +662,16 @@ function RankingPhase({
       <section
         className={cn(
           'min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-surface shadow-sm',
-          'grid max-lg:grid-rows-[minmax(0,1fr)_180px] lg:grid-cols-[minmax(0,1fr)_260px]',
+          'grid lg:grid-cols-[minmax(0,1fr)_369px]',
+          /* Mobile: empty ranking hugs content; with items keep fixed height + scroll */
+          isEmpty
+            ? 'max-lg:grid-rows-[minmax(0,1fr)_auto]'
+            : 'max-lg:grid-rows-[minmax(0,1fr)_180px]',
         )}
       >
         <div
           className={cn(
-            'min-h-0 space-y-3 overflow-y-auto p-4 md:p-5',
+            'min-h-0 space-y-4 overflow-y-auto p-4 md:p-5',
             '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
           )}
         >
@@ -460,14 +685,44 @@ function RankingPhase({
           ))}
         </div>
 
-        <aside className="flex min-h-0 flex-col border-t border-border p-4 md:p-5 lg:border-l lg:border-t-0">
-          <h2 className="shrink-0 text-[14px] font-bold text-fg">
+        <aside
+          className={cn(
+            'flex flex-col border-t border-border px-4 pt-4 md:px-5 md:pt-5 lg:border-l lg:border-t-0 lg:pb-5',
+            /* Mobile empty: hug tip + 16px below; with items fill fixed row and scroll */
+            isEmpty ? 'max-lg:pb-4' : 'min-h-0 max-lg:pb-4',
+            'lg:min-h-0',
+          )}
+        >
+          <h2
+            className="shrink-0"
+            style={{
+              fontWeight: 500,
+              fontSize: 12,
+              lineHeight: '16px',
+              color: 'rgba(15, 23, 43, 1)',
+            }}
+          >
             Your project ranking · {rankedIds.length} / {MAX_RANKED}
           </h2>
-          <div className="mt-3 min-h-0 flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-            {rankedIds.length === 0 ? (
-              <div className="rounded-lg bg-bg px-3 py-4 text-[13px] leading-relaxed text-fg-muted">
-                Tap Add to ranking to build your list. 1st is your top choice.
+          <div
+            className={cn(
+              'mt-3',
+              !isEmpty &&
+                'min-h-0 flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+              isEmpty &&
+                'lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:[scrollbar-width:none] lg:[-ms-overflow-style:none] lg:[&::-webkit-scrollbar]:hidden',
+            )}
+          >
+            {isEmpty ? (
+              <div
+                className="rounded-lg px-3 py-4 text-[13px] leading-relaxed text-fg-muted"
+                style={{
+                  background: 'rgba(247, 247, 247, 1)',
+                  border: '1px solid rgba(231, 228, 221, 1)',
+                }}
+              >
+                Tap <span style={highlight}>Add to ranking</span> to build your list. 1st is your top
+                choice.
               </div>
             ) : (
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
@@ -494,25 +749,46 @@ function RankingPhase({
         </aside>
       </section>
 
-      {/* Below the card, flush with its right edge */}
-      <div className="mt-[18px] flex shrink-0 justify-end gap-2 lg:mt-3">
-        <Button
-          type="button"
-          variant="outline"
-          className="rounded-md bg-surface"
-          onClick={onBack}
-          disabled={!onBack}
-        >
-          Back
-        </Button>
-        <Button
-          type="button"
-          className="rounded-md font-semibold"
-          onClick={onContinue}
-          disabled={continueDisabled || !onContinue}
-        >
-          Continue
-        </Button>
+      {/* Spacer for fixed footer */}
+      <div className="h-[68px] shrink-0" aria-hidden />
+
+      <div
+        className={cn(
+          'fixed inset-x-0 bottom-0 z-30 flex h-[68px] items-center border-t border-border bg-surface px-4',
+          'lg:left-[220px] lg:px-8',
+        )}
+      >
+        <div className="flex w-full items-center justify-between gap-3">
+          <button
+            type="button"
+            className="cursor-pointer bg-transparent p-0"
+            style={{
+              fontWeight: 500,
+              fontSize: 14,
+              lineHeight: '20px',
+              color: 'rgba(15, 23, 42, 1)',
+            }}
+            onClick={onBack}
+            disabled={!onBack}
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            className="h-9 cursor-pointer rounded-md px-5 disabled:opacity-50 lg:h-10"
+            style={{
+              background: 'rgba(37, 99, 235, 1)',
+              fontWeight: 400,
+              fontSize: 14,
+              lineHeight: '20px',
+              color: 'rgba(255, 255, 255, 1)',
+            }}
+            onClick={onContinue}
+            disabled={continueDisabled || !onContinue}
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -537,22 +813,70 @@ function ProjectCard({
           </p>
         </div>
         {project.greatMatch && (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-accent/10 px-2.5 py-1 text-[11px] font-semibold text-accent">
-            <Star className="h-3 w-3 fill-accent" strokeWidth={0} />
+          <span
+            className="inline-flex h-[22px] shrink-0 items-center gap-1 rounded-full px-2"
+            style={{
+              background: 'rgba(0, 166, 244, 0.15)',
+              fontWeight: 600,
+              fontSize: 12,
+              lineHeight: '16px',
+              color: 'rgba(0, 105, 168, 1)',
+            }}
+          >
+            <Star
+              className="h-3 w-3"
+              style={{ fill: 'rgba(0, 105, 168, 1)', color: 'rgba(0, 105, 168, 1)' }}
+              strokeWidth={0}
+            />
             Great match
           </span>
         )}
       </div>
-      <p className="mt-2 text-[13px] text-fg">{project.description}</p>
+      <p
+        className="mt-2"
+        style={{
+          fontWeight: 400,
+          fontSize: 14,
+          lineHeight: '20px',
+          color: 'rgba(69, 85, 108, 1)',
+        }}
+      >
+        {project.description}
+      </p>
       <div className="mt-3">
         {added ? (
-          <span className="inline-flex items-center gap-1.5 rounded-md bg-bg-muted px-3 py-1.5 text-[13px] font-medium text-fg-muted">
+          <span
+            className="inline-flex items-center gap-1.5"
+            style={{
+              height: 32,
+              borderRadius: 6,
+              padding: '6.5px 12px',
+              background: 'rgba(247, 247, 247, 1)',
+              border: '1px solid rgba(231, 228, 221, 1)',
+              fontWeight: 500,
+              fontSize: 12,
+              lineHeight: '16px',
+              color: 'rgba(15, 23, 43, 1)',
+            }}
+          >
             <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> Added
           </span>
         ) : (
-          <Button type="button" variant="outline" size="sm" className="rounded-md" onClick={onAdd}>
+          <button
+            type="button"
+            onClick={onAdd}
+            className="inline-flex h-8 cursor-pointer items-center border border-border px-3"
+            style={{
+              borderRadius: 6,
+              background: 'rgba(251, 250, 246, 1)',
+              fontWeight: 400,
+              fontSize: 14,
+              lineHeight: '20px',
+              color: 'rgba(15, 23, 43, 1)',
+            }}
+          >
             + Add To Ranking
-          </Button>
+          </button>
         )}
       </div>
     </article>
@@ -585,21 +909,33 @@ function SortableRankItem({
     >
       <button
         type="button"
-        className="cursor-grab touch-none p-1 text-fg-subtle hover:text-fg active:cursor-grabbing"
+        className="cursor-grab touch-none p-1 active:cursor-grabbing"
+        style={{ color: 'rgba(0, 0, 0, 1)' }}
         aria-label="Drag to reorder"
         {...listeners}
         {...attributes}
       >
         <GripVertical className="h-4 w-4" />
       </button>
-      <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-bg text-[12px] font-semibold text-fg">
+      <span
+        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+        style={{
+          background: 'rgba(243, 239, 229, 1)',
+          border: '1px solid rgba(231, 228, 221, 1)',
+          fontWeight: 600,
+          fontSize: 14,
+          lineHeight: '18px',
+          color: 'rgba(15, 23, 43, 1)',
+        }}
+      >
         {rank}
       </span>
       <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-fg">{title}</span>
       <button
         type="button"
         onClick={onRemove}
-        className="p-1 text-fg-muted hover:text-danger"
+        className="p-1 hover:opacity-70"
+        style={{ color: 'rgba(15, 23, 43, 1)' }}
         aria-label={`Remove ${title}`}
       >
         <Trash2 className="h-4 w-4" />
@@ -608,7 +944,34 @@ function SortableRankItem({
   );
 }
 
-/* ── Quiz (Q1–Q3) ────────────────────────────────────────────────────────── */
+/* ── Quiz (Q1–Q6) ────────────────────────────────────────────────────────── */
+
+const QUIZ_ICONS: Record<QuizOption['icon'], LucideIcon> = {
+  radar: Radar,
+  logs: RefreshCw,
+  window: AppWindow,
+  'shield-check': ShieldCheck,
+  'shield-alert': ShieldAlert,
+  chart: BarChart3,
+  layers: Layers,
+  bot: Bot,
+  shield: Shield,
+  search: Search,
+  network: Network,
+  rocket: Rocket,
+  crosshair: Crosshair,
+  'bar-chart': BarChart3,
+  pen: PenLine,
+  package: Package,
+  swords: Swords,
+  'file-search': FileSearch,
+  share: Share2,
+  zap: Zap,
+  bug: Bug,
+  filter: Filter,
+  workflow: Workflow,
+  send: Send,
+};
 
 function QuizPhase({
   quizIndex,
@@ -639,60 +1002,114 @@ function QuizPhase({
         <p className="mt-1 text-[13px] text-fg-muted">Discover your archetype.</p>
       </header>
 
+      {/* Progress — PC: bar + “1 of 6”; mobile: “Question 1 of 6” above bar */}
       <div className="mb-4">
-        <p className="text-[12px] font-medium text-fg-muted">
+        <p className="mb-2 text-[12px] font-medium text-fg-muted lg:hidden">
           Question {quizIndex + 1} of {total}
         </p>
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-border">
-          <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${progress}%` }} />
+        <div className="flex items-center gap-3">
+          <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-border">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{ width: `${progress}%`, background: 'rgba(26, 101, 248, 1)' }}
+            />
+          </div>
+          <p
+            className="hidden shrink-0 text-[12px] font-medium lg:block"
+            style={{ color: 'rgba(69, 85, 108, 1)' }}
+          >
+            {quizIndex + 1} of {total}
+          </p>
         </div>
       </div>
 
       <section className="rounded-xl border border-border bg-surface p-4 shadow-sm md:p-6">
-        <h2 className="text-[15px] font-bold leading-snug text-fg md:text-[1.05rem]">{q.question}</h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <h2 className="text-[15px] font-bold leading-snug text-fg md:text-[1.05rem]">
+          Q{quizIndex + 1}. {q.question}
+        </h2>
+        {/* Mobile: 1 col · PC: 2×2 */}
+        <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
           {q.options.map((opt, i) => {
             const on = selected === i;
+            const Icon = QUIZ_ICONS[opt.icon];
             return (
               <button
                 key={opt.title + i}
                 type="button"
                 onClick={() => onSelect(i)}
                 className={cn(
-                  'relative rounded-xl border p-4 text-left transition-colors',
-                  on ? 'border-accent bg-accent/5' : 'border-border bg-surface hover:border-border-strong',
+                  'flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-colors',
+                  on
+                    ? 'border-[rgba(74,164,129,1)] bg-[rgba(74,164,129,0.07)]'
+                    : 'border-border bg-surface hover:border-border-strong',
                 )}
               >
-                <span className="absolute right-3 top-3">
-                  <Checkbox checked={on} tabIndex={-1} aria-hidden className="pointer-events-none" />
+                <span
+                  className={cn(
+                    'inline-flex size-10 shrink-0 items-center justify-center rounded-lg',
+                    on
+                      ? 'bg-[rgba(74,164,129,0.15)] text-[rgba(74,164,129,1)]'
+                      : 'bg-bg text-fg-muted',
+                  )}
+                >
+                  <Icon className="size-5" strokeWidth={1.5} aria-hidden />
                 </span>
-                <p className="pr-8 text-[14px] font-bold text-fg">{opt.title}</p>
-                <p className="mt-1 pr-6 text-[12px] leading-relaxed text-fg-muted">{opt.detail}</p>
+                <span
+                  className="min-w-0 flex-1"
+                  style={{
+                    fontWeight: 500,
+                    fontSize: 14,
+                    lineHeight: '20px',
+                    color: 'rgba(15, 23, 43, 1)',
+                  }}
+                >
+                  {opt.title}
+                </span>
               </button>
             );
           })}
         </div>
       </section>
 
-      {/* Below the card, flush with its right edge — same as ranking */}
-      <div className="mt-[18px] flex justify-end gap-2 lg:mt-3">
-        <Button
-          type="button"
-          variant="outline"
-          className="rounded-md bg-surface"
-          onClick={onBack}
-          disabled={!onBack}
-        >
-          Back
-        </Button>
-        <Button
-          type="button"
-          className="rounded-md font-semibold"
-          onClick={onContinue}
-          disabled={continueDisabled || !onContinue}
-        >
-          Continue
-        </Button>
+      <div className="h-[68px] shrink-0" aria-hidden />
+
+      <div
+        className={cn(
+          'fixed inset-x-0 bottom-0 z-30 flex h-[68px] items-center border-t border-border bg-surface px-4',
+          'lg:left-[220px] lg:px-8',
+        )}
+      >
+        <div className="flex w-full items-center justify-between gap-3">
+          <button
+            type="button"
+            className="cursor-pointer bg-transparent p-0"
+            style={{
+              fontWeight: 500,
+              fontSize: 14,
+              lineHeight: '20px',
+              color: 'rgba(15, 23, 42, 1)',
+            }}
+            onClick={onBack}
+            disabled={!onBack}
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            className="h-9 cursor-pointer rounded-md px-5 disabled:opacity-50 lg:h-10"
+            style={{
+              background: 'rgba(37, 99, 235, 1)',
+              fontWeight: 400,
+              fontSize: 14,
+              lineHeight: '20px',
+              color: 'rgba(255, 255, 255, 1)',
+            }}
+            onClick={onContinue}
+            disabled={continueDisabled || !onContinue}
+          >
+            Next
+          </button>
+        </div>
       </div>
     </>
   );
@@ -710,62 +1127,227 @@ function ArchetypeResultPhase({
   onContinue?: () => void;
 }) {
   return (
-    <>
-      <p className="mb-3 text-[15px] font-semibold text-fg-muted">Your defender archetype</p>
-
-      <section className="rounded-xl border border-border bg-surface px-5 py-6 shadow-sm md:px-7 md:py-7">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/pioneer-archetype-illustration.png"
-          alt=""
-          className="mx-auto mb-2 h-[200px] w-full max-w-[360px] object-contain md:h-[240px]"
-          aria-hidden
-        />
-        <h1 className="text-[clamp(1.875rem,4.5vw,2.625rem)] font-bold tracking-[-0.03em] text-accent">
-          {archetype.name}
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col justify-start overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:justify-center">
+      <div className="mx-auto w-full lg:w-[740px] lg:max-w-[740px]">
+        <h1
+          className="mb-5 w-full break-words max-lg:text-[20px] max-lg:leading-8 lg:text-[24px] lg:leading-8"
+          style={{
+            fontWeight: 600,
+            color: 'rgba(15, 23, 43, 1)',
+            textAlign: 'left',
+            overflowWrap: 'break-word',
+            wordBreak: 'normal',
+          }}
+        >
+          You will discover your Defender archetype
         </h1>
-        <p className="mt-1 text-[16px] leading-snug text-fg-muted md:text-[17px]">
-          {archetype.tagline}
-        </p>
-        <p className="mt-6 max-w-[36rem] text-[15px] leading-relaxed text-fg-muted">
-          {archetype.description}
-        </p>
-        <div className="mt-6 flex flex-wrap gap-2">
-          {archetype.fits.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full bg-accent/10 px-3.5 py-1.5 text-[13px] font-medium text-accent"
-            >
-              {tag}
-            </span>
-          ))}
+
+        <section className="relative w-full overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
+          {/* Art sits on the card background — flush to edges, no inset gap */}
+          <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[48%] lg:block">
+            <Image
+              src="/images/pioneer-pc.png"
+              alt=""
+              fill
+              className="object-contain object-right-bottom"
+              sizes="360px"
+              priority
+            />
+          </div>
+          <div className="pointer-events-none absolute bottom-0 right-0 h-[180px] w-[160px] lg:hidden">
+            <Image
+              src="/images/pioneer-m.png"
+              alt=""
+              fill
+              className="object-contain object-right-bottom"
+              sizes="160px"
+            />
+          </div>
+
+          <div
+            className="relative z-[1] p-6 lg:p-8"
+          >
+            {/* PC copy */}
+            <div className="hidden max-w-[52%] lg:block">
+              <h2
+                style={{
+                  fontWeight: 600,
+                  fontSize: 36,
+                  lineHeight: '40px',
+                  letterSpacing: '-0.9px',
+                  color: 'rgba(246, 104, 14, 1)',
+                }}
+              >
+                {archetype.name}
+              </h2>
+              <p
+                style={{
+                  marginTop: 4,
+                  fontWeight: 400,
+                  fontSize: 14,
+                  lineHeight: '100%',
+                  color: 'rgba(74, 85, 104, 1)',
+                }}
+              >
+                {archetype.tagline}
+              </p>
+              <p
+                style={{
+                  marginTop: 24,
+                  fontWeight: 400,
+                  fontSize: 16,
+                  lineHeight: '24px',
+                  color: 'rgba(69, 85, 108, 1)',
+                }}
+              >
+                {archetype.description}
+              </p>
+              <div className="mt-6 flex flex-wrap gap-2">
+                {archetype.fits.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center"
+                    style={{
+                      height: 22,
+                      padding: '2px 8px',
+                      background: 'rgba(0, 166, 244, 0.15)',
+                      borderRadius: 4,
+                      fontWeight: 400,
+                      fontSize: 12,
+                      lineHeight: '16px',
+                      color: 'rgba(0, 105, 168, 1)',
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Mobile copy — full width, wrap naturally */}
+            <div className="w-full lg:hidden">
+              <h2
+                className="w-full break-words"
+                style={{
+                  fontWeight: 600,
+                  fontSize: 24,
+                  lineHeight: '32px',
+                  letterSpacing: '-0.48px',
+                  color: 'rgba(246, 104, 14, 1)',
+                  overflowWrap: 'break-word',
+                  wordBreak: 'normal',
+                }}
+              >
+                {archetype.name}
+              </h2>
+              <p
+                className="w-full break-words"
+                style={{
+                  marginTop: 4,
+                  fontWeight: 400,
+                  fontSize: 14,
+                  lineHeight: '100%',
+                  color: 'rgba(74, 85, 104, 1)',
+                  overflowWrap: 'break-word',
+                  wordBreak: 'normal',
+                }}
+              >
+                {archetype.tagline}
+              </p>
+              <p
+                className="w-full break-words"
+                style={{
+                  marginTop: 24,
+                  fontWeight: 400,
+                  fontSize: 14,
+                  lineHeight: '22px',
+                  color: 'rgba(69, 85, 108, 1)',
+                  overflowWrap: 'break-word',
+                  wordBreak: 'normal',
+                }}
+              >
+                {archetype.description}
+              </p>
+              <div className="mt-6 flex w-full flex-col items-start gap-2">
+                {archetype.fits.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center"
+                    style={{
+                      height: 22,
+                      padding: '2px 8px',
+                      background: 'rgba(0, 166, 244, 0.15)',
+                      borderRadius: 4,
+                      fontWeight: 400,
+                      fontSize: 12,
+                      lineHeight: '16px',
+                      color: 'rgba(0, 105, 168, 1)',
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+      <p
+        className="mt-4 flex items-center gap-2"
+        style={{
+          fontWeight: 400,
+          fontSize: 14,
+          lineHeight: '20px',
+          color: 'rgba(69, 85, 108, 1)',
+        }}
+      >
+        <Info size={14} className="shrink-0" strokeWidth={1.5} aria-hidden />
+        <span>You can update your interests anytime.</span>
+      </p>
+      </div>
+      </div>
+
+      <div className="h-[68px] shrink-0" aria-hidden />
+
+      <div
+        className={cn(
+          'fixed inset-x-0 bottom-0 z-30 flex h-[68px] items-center border-t border-border bg-surface px-4',
+          'lg:left-[220px] lg:px-8',
+        )}
+      >
+        <div className="flex w-full items-center justify-between gap-3">
+          <button
+            type="button"
+            className="cursor-pointer bg-transparent p-0"
+            style={{
+              fontWeight: 500,
+              fontSize: 14,
+              lineHeight: '20px',
+              color: 'rgba(15, 23, 42, 1)',
+            }}
+            onClick={onBack}
+            disabled={!onBack}
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            className="h-9 cursor-pointer rounded-md px-5 disabled:opacity-50 lg:h-10"
+            style={{
+              background: 'rgba(37, 99, 235, 1)',
+              fontWeight: 400,
+              fontSize: 14,
+              lineHeight: '20px',
+              color: 'rgba(255, 255, 255, 1)',
+            }}
+            onClick={onContinue}
+            disabled={!onContinue}
+          >
+            Next
+          </button>
         </div>
-      </section>
-
-      <div className="mt-4 text-[13px] leading-relaxed text-fg-muted">
-        <p>Next:</p>
-        <p>We’ll use this to recommend projects that fit how you think.</p>
       </div>
-
-      <div className="mt-[18px] flex justify-end gap-2 lg:mt-3">
-        <Button
-          type="button"
-          variant="outline"
-          className="rounded-md bg-surface"
-          onClick={onBack}
-          disabled={!onBack}
-        >
-          Back
-        </Button>
-        <Button
-          type="button"
-          className="rounded-md font-semibold"
-          onClick={onContinue}
-          disabled={!onContinue}
-        >
-          Continue
-        </Button>
-      </div>
-    </>
+    </div>
   );
 }

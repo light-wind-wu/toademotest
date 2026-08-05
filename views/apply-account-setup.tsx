@@ -234,7 +234,7 @@ export default function ApplyAccountSetup() {
   );
 
   return (
-    <ApplicantChrome className="max-lg:bg-[rgba(251,251,253,1)] lg:bg-bg">
+    <ApplicantChrome hideProfile className="max-lg:bg-[rgba(251,251,253,1)] lg:bg-bg">
       {/* Mobile keeps page padding; PC is edge-flush (sidebar + banner) */}
       <div className="w-full max-lg:bg-[rgba(251,251,253,1)] max-lg:px-4 max-lg:pb-[68px] max-lg:pt-0">
         <div className="grid items-stretch lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-0">

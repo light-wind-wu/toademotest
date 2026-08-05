@@ -4,7 +4,6 @@
    “Back to HOME” → /apply/dashboard; Track shows an inline prompt (no jump). */
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, PartyPopper } from 'lucide-react';
 import ApplicantChrome from '@/components/apply/applicant-chrome';
 import { Button } from '@/components/ui/button';
 import { Toast, useToast } from '@/components/ui-legacy/toast';
@@ -58,17 +57,7 @@ export default function ApplySuccessPage() {
     <ApplicantChrome className="bg-bg">
       <div className="mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-[640px] flex-col justify-center px-4 py-10 lg:px-8">
         <section className="relative rounded-2xl border border-border bg-surface p-6 pt-8 shadow-sm md:p-8">
-          <div
-            className="absolute -top-6 right-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10 text-accent md:h-20 md:w-20"
-            aria-hidden
-          >
-            <div className="relative">
-              <Check className="h-8 w-8 md:h-10 md:w-10" strokeWidth={2} />
-              <PartyPopper className="absolute -right-3 -top-2 h-5 w-5 text-fg" strokeWidth={1.5} />
-            </div>
-          </div>
-
-          <h1 className="pr-16 text-[1.5rem] font-bold tracking-tight text-fg md:text-[1.75rem]">
+          <h1 className="text-[1.5rem] font-bold tracking-tight text-fg md:text-[1.75rem]">
             Submission successful
           </h1>
           <p className="mt-3 text-[14px] leading-relaxed text-fg-muted">

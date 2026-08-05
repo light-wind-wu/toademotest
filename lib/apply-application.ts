@@ -23,20 +23,17 @@ export const APPLICATION_STEPS: ApplicationNavStep[] = [
   {
     id: 'education',
     label: 'Education Level',
-    labelLines: ['Education', 'Level'],
     mobileLabel: 'Education Level',
   },
   { id: 'availability', label: 'Availability', mobileLabel: 'Availability' },
   {
     id: 'project-fit',
     label: 'Find Your Project Fit',
-    labelLines: ['Find Your', 'Project Fit'],
     mobileLabel: 'Find Your Project Fit',
   },
   {
     id: 'additional',
     label: 'Additional Details',
-    labelLines: ['Additional', 'Details'],
     mobileLabel: 'Additional Details',
   },
   { id: 'review', label: 'Review', mobileLabel: 'Review' },

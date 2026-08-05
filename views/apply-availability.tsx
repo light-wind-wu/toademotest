@@ -76,22 +76,17 @@ export default function ApplyAvailabilityPage() {
       }}
       continueDisabled={!canContinue}
     >
-      <header className="relative mb-5 pr-14 lg:mb-6 lg:pr-24">
+      <header className="mb-8 md:mb-5">
         <h1 className="text-[1.375rem] font-bold leading-snug tracking-tight text-fg md:text-[1.5rem]">
           When would you like to start?
         </h1>
         <p className="mt-1 max-w-xl text-[13px] text-fg-muted">
           Let us know your availability – we’ll match you with relevant projects.
         </p>
-        <CalendarDays
-          className="absolute right-0 top-0 hidden h-12 w-12 text-accent/70 sm:block md:h-14 md:w-14"
-          strokeWidth={1.25}
-          aria-hidden
-        />
       </header>
 
       <section className="rounded-xl border border-border bg-surface p-4 shadow-sm md:p-5">
-        <div className="grid gap-5 md:grid-cols-2 md:gap-0">
+        <div className="flex flex-col md:grid md:grid-cols-2">
           <InlineDateColumn
             label="Preferred Start Date of Internship"
             required
@@ -103,6 +98,17 @@ export default function ApplyAvailabilityPage() {
             onToggle={() => setOpenStart((v) => !v)}
             onSelect={(d) => persist({ ...draft, startDate: format(d, 'yyyy-MM-dd') })}
             className="md:pr-5"
+          />
+
+          {/* Mobile-only divider between the two date fields */}
+          <div
+            className="h-px shrink-0 md:hidden"
+            style={{
+              background: 'rgba(231, 228, 221, 1)',
+              marginTop: 24,
+              marginBottom: 24,
+            }}
+            aria-hidden
           />
 
           <InlineDateColumn
@@ -153,7 +159,15 @@ function InlineDateColumn({
 }) {
   return (
     <div className={cn('min-w-0', className)}>
-      <p className="mb-1.5 text-[13px] font-semibold text-fg">
+      <p
+        className="mb-1.5"
+        style={{
+          fontWeight: 500,
+          fontSize: 14,
+          lineHeight: '18px',
+          color: 'rgba(15, 23, 43, 1)',
+        }}
+      >
         {label}
         {required && <span className="text-danger"> *</span>}
       </p>
@@ -163,14 +177,23 @@ function InlineDateColumn({
         aria-expanded={open}
         aria-label={label}
         className={cn(
-          'flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 text-[14px] shadow-sm',
+          'flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 shadow-sm',
           'outline-none transition-colors hover:border-border-strong',
           'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
-          display ? 'text-fg' : 'text-fg-subtle',
           open && 'border-accent',
         )}
+        style={{
+          fontWeight: 400,
+          fontSize: 14,
+          lineHeight: '20px',
+          color: display ? 'rgba(15, 23, 43, 1)' : undefined,
+        }}
       >
-        <span className="min-w-0 truncate text-left">{display || 'Select date'}</span>
+        <span
+          className={cn('min-w-0 truncate text-left', !display && 'text-fg-subtle')}
+        >
+          {display || 'Select date'}
+        </span>
         <CalendarDays size={16} className="shrink-0 text-fg-muted" />
       </button>
 

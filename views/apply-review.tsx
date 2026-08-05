@@ -7,12 +7,14 @@
    4 Additional Details (scholarship / credit split by rule) */
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ClipboardCheck } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import ApplicationFlowShell from '@/components/apply/application-flow-shell';
 import { loadApplyDraft, type ApplySessionDraft } from '@/lib/apply-application';
 import { loadApplicantProfile, type ApplicantProfile } from '@/lib/myinfo';
 import { isSignedIn } from '@/lib/session';
 import { cn } from '@/lib/utils';
+
+const DIVIDER = 'rgba(231, 228, 221, 1)';
 
 function formatDisplayDate(iso: string) {
   if (!iso) return '—';
@@ -62,18 +64,13 @@ export default function ApplyReviewPage() {
       onContinue={() => router.push('/apply/success')}
       continueLabel="Submit Application"
     >
-      <header className="relative mb-5 pr-16">
+      <header className="mb-5">
         <h1 className="text-[1.375rem] font-bold leading-snug tracking-tight text-fg md:text-[1.5rem]">
           Review
         </h1>
         <p className="mt-1 text-[13px] text-fg-muted">
           Almost there! One final check before submitting.
         </p>
-        <ClipboardCheck
-          className="absolute right-0 top-0 hidden h-12 w-12 text-accent/50 sm:block"
-          strokeWidth={1.25}
-          aria-hidden
-        />
       </header>
 
       <div className="space-y-3">
@@ -83,23 +80,35 @@ export default function ApplyReviewPage() {
           open={open.personal}
           onToggle={() => toggle('personal')}
         >
-          <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <Field label="Name" value={profile?.name ?? '—'} />
-            <Field label="NRIC" value={profile?.nric ?? '—'} />
-            <Field label="Nationality" value={profile?.nationality ?? '—'} />
-            <Field label="Sex" value={profile?.sex ?? '—'} />
-            <Field label="Date of Birth" value={profile?.dateOfBirth ?? '—'} />
-            <Field label="Race" value={profile?.race ?? '—'} />
-          </dl>
+          <FieldGrid
+            columns={3}
+            fields={[
+              { label: 'Name', value: profile?.name ?? '—' },
+              { label: 'NRIC', value: profile?.nric ?? '—' },
+              { label: 'Nationality', value: profile?.nationality ?? '—' },
+              { label: 'Sex', value: profile?.sex ?? '—' },
+              { label: 'Date of Birth', value: profile?.dateOfBirth ?? '—' },
+              { label: 'Race', value: profile?.race ?? '—' },
+              { label: 'Photo', value: 'No photo uploaded.', fullWidth: true },
+            ]}
+          />
 
           <div className="my-4 border-t border-border" />
 
           <h3 className="mb-3 text-[14px] font-bold text-fg">Contact details</h3>
-          <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <Field label="Mobile Number" value={profile?.mobile ?? '—'} />
-            <Field label="Email" value={profile?.email ?? '—'} />
-            <Field label="Registered Address" value={profile?.registeredAddress ?? '—'} />
-          </dl>
+          <FieldGrid
+            columns={3}
+            fields={[
+              { label: 'Mobile Number', value: profile?.mobile ?? '—' },
+              { label: 'Email', value: profile?.email ?? '—' },
+              {
+                label: 'Registered Address',
+                value: profile?.registeredAddress ?? '—',
+                /* Mobile: full row under the pair; PC: third column */
+                fullWidthMobile: true,
+              },
+            ]}
+          />
         </ReviewSection>
 
         {/* 2 — Transcript + CV (below rule) */}
@@ -119,11 +128,25 @@ export default function ApplyReviewPage() {
           {draft.transcriptName && (
             <div className="mt-3 rounded-lg bg-bg p-3">
               <p className="mb-2 text-[13px] font-bold text-fg">Education details</p>
-              <dl className="grid gap-3 sm:grid-cols-2">
-                <Field label="Institution" value={draft.education.institution} />
-                <Field label="Course of study" value={draft.education.course} />
-                <Field label="Year of study" value={draft.education.yearOfStudy} />
-                <Field label="GPA" value={draft.education.gpa} />
+              <dl className="grid gap-y-3 sm:grid-cols-2">
+                <div className="sm:pr-3">
+                  <Field label="Institution" value={draft.education.institution} />
+                </div>
+                <div
+                  className="sm:border-l sm:pl-3"
+                  style={{ borderColor: DIVIDER }}
+                >
+                  <Field label="Course of study" value={draft.education.course} />
+                </div>
+                <div className="sm:pr-3">
+                  <Field label="Year of study" value={draft.education.yearOfStudy} />
+                </div>
+                <div
+                  className="sm:border-l sm:pl-3"
+                  style={{ borderColor: DIVIDER }}
+                >
+                  <Field label="GPA" value={draft.education.gpa} />
+                </div>
               </dl>
             </div>
           )}
@@ -146,15 +169,22 @@ export default function ApplyReviewPage() {
           open={open.availability}
           onToggle={() => toggle('availability')}
         >
-          <dl className="grid gap-3 sm:grid-cols-2">
-            <Field
-              label="Preferred Start Date of Internship"
-              value={formatDisplayDate(draft.startDate)}
-            />
-            <Field
-              label="Preferred End Date of Internship"
-              value={formatDisplayDate(draft.endDate)}
-            />
+          <dl className="grid grid-cols-1 sm:grid-cols-2">
+            <div className="pb-3 sm:pb-0 sm:pr-3">
+              <Field
+                label="Preferred Start Date of Internship"
+                value={formatDisplayDate(draft.startDate)}
+              />
+            </div>
+            <div
+              className="border-t pt-3 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0"
+              style={{ borderColor: DIVIDER }}
+            >
+              <Field
+                label="Preferred End Date of Internship"
+                value={formatDisplayDate(draft.endDate)}
+              />
+            </div>
           </dl>
         </ReviewSection>
 
@@ -172,7 +202,10 @@ export default function ApplyReviewPage() {
               }
             />
             {draft.bondedScholarship && (
-              <div className="mt-3 rounded-lg bg-bg p-3">
+              <div
+                className="mt-3 rounded-lg bg-transparent p-3"
+                style={{ border: `1px solid ${DIVIDER}` }}
+              >
                 <Field label="Name of scholarship" value={draft.scholarshipName || '—'} />
               </div>
             )}
@@ -226,6 +259,88 @@ function ReviewSection({
       </button>
       {open && <div className="border-t border-border px-4 py-4 md:px-5">{children}</div>}
     </section>
+  );
+}
+
+type GridField = {
+  label: string;
+  value: string;
+  /** Span full width on all breakpoints */
+  fullWidth?: boolean;
+  /** Span full width on mobile only (e.g. address under a 2-col pair) */
+  fullWidthMobile?: boolean;
+};
+
+/** Mobile always 2 cols; `columns` on lg+. Vertical rules between cells in a row. */
+function FieldGrid({
+  fields,
+  columns,
+}: {
+  fields: GridField[];
+  /** Desktop column count (2 or 3). Mobile is always 2. */
+  columns: 2 | 3;
+}) {
+  let mobileSlot = 0;
+  let desktopSlot = 0;
+
+  return (
+    <dl
+      className={cn(
+        'grid grid-cols-2 gap-y-4',
+        columns === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-2',
+      )}
+    >
+      {fields.map((f, index) => {
+        const full = Boolean(f.fullWidth);
+        const fullMobile = Boolean(f.fullWidthMobile);
+
+        let showMobileRule = false;
+        let showDesktopRule = false;
+        let isDesktopRowStart = true;
+        let isMobileRowStart = true;
+
+        if (full) {
+          mobileSlot = 0;
+          desktopSlot = 0;
+        } else if (fullMobile) {
+          /* Mobile: own row; desktop: normal cell in columns grid */
+          showMobileRule = false;
+          isMobileRowStart = true;
+          mobileSlot = 0;
+          isDesktopRowStart = desktopSlot % columns === 0;
+          showDesktopRule = !isDesktopRowStart;
+          desktopSlot += 1;
+        } else {
+          isMobileRowStart = mobileSlot % 2 === 0;
+          showMobileRule = !isMobileRowStart;
+          mobileSlot += 1;
+
+          isDesktopRowStart = desktopSlot % columns === 0;
+          showDesktopRule = !isDesktopRowStart;
+          desktopSlot += 1;
+        }
+
+        return (
+          <div
+            key={`${f.label}-${index}`}
+            className={cn(
+              'min-w-0',
+              full && 'col-span-2 pl-0 lg:col-span-full',
+              fullMobile && 'col-span-2 lg:col-span-1',
+              /* Mobile vertical rule + padding */
+              !full && showMobileRule && 'border-l pl-3',
+              !full && isMobileRowStart && 'max-lg:border-l-0 max-lg:pl-0',
+              /* Desktop vertical rule + padding */
+              !full && showDesktopRule && 'lg:border-l lg:pl-3',
+              !full && isDesktopRowStart && 'lg:border-l-0 lg:pl-0',
+            )}
+            style={{ borderColor: DIVIDER }}
+          >
+            <Field label={f.label} value={f.value} />
+          </div>
+        );
+      })}
+    </dl>
   );
 }
 

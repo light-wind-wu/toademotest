@@ -1,7 +1,8 @@
 'use client';
 
 /* Applicant chrome for pre-Shell C-end screens (welcome, account-setup, flow).
-   After Singpass/Myinfo the role is set — show the same Topbar with profile. */
+   Post-account pages show Topbar with profile; welcome / account-setup hide it
+   (still registering — no personal console yet). */
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import Topbar from '@/components/layout/topbar';
@@ -9,9 +10,12 @@ import Topbar from '@/components/layout/topbar';
 export default function ApplicantChrome({
   children,
   className,
+  hideProfile = false,
 }: {
   children: ReactNode;
   className?: string;
+  /** Logo-only header (welcome / account-setup before account exists). */
+  hideProfile?: boolean;
 }) {
   return (
     <div
@@ -23,7 +27,7 @@ export default function ApplicantChrome({
       data-zone="enterprise"
       data-mode="light"
     >
-      <Topbar navigationHidden />
+      <Topbar navigationHidden hideProfile={hideProfile} />
       <div className="flex min-h-0 flex-1 flex-col pt-16">{children}</div>
     </div>
   );

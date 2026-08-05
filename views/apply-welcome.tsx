@@ -84,7 +84,7 @@ export default function ApplyWelcome() {
   }
 
   return (
-    <ApplicantChrome className="!bg-[rgba(248,247,242,1)]">
+    <ApplicantChrome hideProfile className="!bg-[rgba(248,247,242,1)]">
       <style>{`
         @keyframes welcomeLineIn {
           from { opacity: 0; filter: blur(2px); transform: translateY(12px); }

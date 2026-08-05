@@ -3,10 +3,11 @@
 /* Step 4 — Additional Details (bonded scholarship + credit-bearing). */
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { HelpCircle } from 'lucide-react';
 import ApplicationFlowShell from '@/components/apply/application-flow-shell';
 import ChapterIntro from '@/components/apply/chapter-intro';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   clearChapterIntro,
   loadApplyDraft,
@@ -17,10 +18,18 @@ import {
 import { isSignedIn } from '@/lib/session';
 import { cn } from '@/lib/utils';
 
+const NEST_BORDER = 'rgba(231, 228, 221, 1)';
+
 function shouldShowSession3Intro(): boolean {
   if (typeof window === 'undefined') return false;
   const fromQuery = new URLSearchParams(window.location.search).get('intro');
   return fromQuery === 'session-3' || peekChapterIntro() === 'session-3';
+}
+
+function ynValue(v: boolean | null): string {
+  if (v === true) return 'yes';
+  if (v === false) return 'no';
+  return '';
 }
 
 export default function ApplyAdditionalDetailsPage() {
@@ -85,41 +94,34 @@ export default function ApplyAdditionalDetailsPage() {
       }}
       continueDisabled={!canContinue}
     >
-      <header className="relative mb-5 pr-16">
+      <header className="mb-5">
         <h1 className="text-[1.375rem] font-bold leading-snug tracking-tight text-fg md:text-[1.5rem]">
           Just a couple more questions
         </h1>
-        <HelpCircle
-          className="absolute right-0 top-0 hidden h-12 w-12 text-accent/50 sm:block"
-          strokeWidth={1.25}
-          aria-hidden
-        />
       </header>
 
-      <section className="rounded-xl border border-border bg-surface p-4 shadow-sm md:p-6">
+      <section className="rounded-xl border border-border bg-surface p-5 shadow-sm md:p-6">
         <fieldset>
-          <legend className="text-[14px] font-semibold text-fg">
+          <legend className="text-[14px] font-semibold leading-snug text-fg">
             Are you a bonded scholarship recipient?<span className="text-danger">*</span>
           </legend>
-          <div className="mt-3 flex gap-6">
-            <RadioOption
-              name="bonded"
-              label="Yes"
-              checked={draft.bondedScholarship === true}
-              onChange={() => persist({ ...draft, bondedScholarship: true })}
-            />
-            <RadioOption
-              name="bonded"
-              label="No"
-              checked={draft.bondedScholarship === false}
-              onChange={() =>
-                persist({ ...draft, bondedScholarship: false, scholarshipName: '' })
-              }
-            />
-          </div>
+          <RadioGroup
+            value={ynValue(draft.bondedScholarship)}
+            onValueChange={(v) => {
+              if (v === 'yes') persist({ ...draft, bondedScholarship: true });
+              else persist({ ...draft, bondedScholarship: false, scholarshipName: '' });
+            }}
+            className="mt-3 grid grid-cols-2 gap-3 lg:flex lg:gap-0"
+          >
+            <YesNoOption id="bonded-yes" value="yes" label="Yes" />
+            <YesNoOption id="bonded-no" value="no" label="No" />
+          </RadioGroup>
           {draft.bondedScholarship === true && (
-            <div className="mt-3 max-w-md">
-              <label className="mb-1.5 block text-[13px] font-semibold text-fg">
+            <div
+              className="mt-4 max-w-md rounded-lg bg-transparent p-4 lg:mt-3"
+              style={{ border: `1px solid ${NEST_BORDER}` }}
+            >
+              <label className="mb-2 block text-[13px] font-semibold text-fg lg:mb-1.5">
                 If yes, please provide the name of the scholarship.
               </label>
               <Input
@@ -132,30 +134,25 @@ export default function ApplyAdditionalDetailsPage() {
           )}
         </fieldset>
 
-        <div className="my-5 border-t border-border" />
+        <div className="my-6 border-t lg:my-5" style={{ borderColor: NEST_BORDER }} />
 
         <fieldset>
-          <legend className="text-[14px] font-semibold text-fg">
+          <legend className="text-[14px] font-semibold leading-snug text-fg">
             Will this internship be credit-bearing?<span className="text-danger">*</span>
           </legend>
-          <div className="mt-3 flex gap-6">
-            <RadioOption
-              name="credit"
-              label="Yes"
-              checked={draft.creditBearing === true}
-              onChange={() => persist({ ...draft, creditBearing: true })}
-            />
-            <RadioOption
-              name="credit"
-              label="No"
-              checked={draft.creditBearing === false}
-              onChange={() =>
-                persist({ ...draft, creditBearing: false, creditModuleCode: '' })
-              }
-            />
-          </div>
+          <RadioGroup
+            value={ynValue(draft.creditBearing)}
+            onValueChange={(v) => {
+              if (v === 'yes') persist({ ...draft, creditBearing: true });
+              else persist({ ...draft, creditBearing: false, creditModuleCode: '' });
+            }}
+            className="mt-3 grid grid-cols-2 gap-3 lg:flex lg:gap-0"
+          >
+            <YesNoOption id="credit-yes" value="yes" label="Yes" />
+            <YesNoOption id="credit-no" value="no" label="No" />
+          </RadioGroup>
           {draft.creditBearing === true && (
-            <div className="mt-3 max-w-md">
+            <div className="mt-4 max-w-md lg:mt-3">
               <Input
                 value={draft.creditModuleCode}
                 onChange={(e) => persist({ ...draft, creditModuleCode: e.target.value })}
@@ -170,27 +167,23 @@ export default function ApplyAdditionalDetailsPage() {
   );
 }
 
-function RadioOption({
-  name,
+function YesNoOption({
+  id,
+  value,
   label,
-  checked,
-  onChange,
 }: {
-  name: string;
+  id: string;
+  value: string;
   label: string;
-  checked: boolean;
-  onChange: () => void;
 }) {
   return (
-    <label className="inline-flex cursor-pointer items-center gap-2 text-[14px] text-fg">
-      <input
-        type="radio"
-        name={name}
-        checked={checked}
-        onChange={onChange}
-        className="h-4 w-4 accent-[var(--prizm-color-accent)]"
-      />
-      <span className={cn(checked && 'font-semibold')}>{label}</span>
-    </label>
+    <div
+      className={cn('flex items-center gap-2', 'max-lg:min-w-0', 'lg:w-[188px] lg:shrink-0')}
+    >
+      <RadioGroupItem id={id} value={value} />
+      <Label htmlFor={id} className="cursor-pointer text-[14px] font-normal text-fg">
+        {label}
+      </Label>
+    </div>
   );
 }

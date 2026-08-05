@@ -74,8 +74,35 @@ export type ArchetypeId = 'pioneer' | 'pathfinder' | 'sentinel' | 'architect';
 
 export interface QuizOption {
   title: string;
-  detail: string;
+  /** Optional supporting line — comps cards show title + icon only. */
+  detail?: string;
   archetype: ArchetypeId;
+  /** Lucide icon key resolved in the quiz UI. */
+  icon:
+    | 'radar'
+    | 'logs'
+    | 'window'
+    | 'shield-check'
+    | 'shield-alert'
+    | 'chart'
+    | 'layers'
+    | 'bot'
+    | 'shield'
+    | 'search'
+    | 'network'
+    | 'rocket'
+    | 'crosshair'
+    | 'bar-chart'
+    | 'pen'
+    | 'package'
+    | 'swords'
+    | 'file-search'
+    | 'share'
+    | 'zap'
+    | 'bug'
+    | 'filter'
+    | 'workflow'
+    | 'send';
 }
 
 export interface QuizQuestion {
@@ -128,155 +155,60 @@ export const ARCHETYPES: Record<ArchetypeId, ArchetypeInfo> = {
   },
 };
 
+/** Six questions × four options (Sentinel → Pathfinder → Architect → Pioneer). */
 export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     question: 'New intel arrives about a critical security gap. Your first move?',
     options: [
-      {
-        title: 'Threat simulator',
-        detail: 'A tool that stress-tests how systems hold up under attack.',
-        archetype: 'pioneer',
-      },
-      {
-        title: 'Anomaly predictor',
-        detail: 'An AI trained on past events to catch the next one early.',
-        archetype: 'pathfinder',
-      },
-      {
-        title: 'Redesign the system',
-        detail: 'Fix the root structural weakness, not just the gap.',
-        archetype: 'architect',
-      },
-      {
-        title: 'Deploy a monitor',
-        detail: 'Deploy a monitoring agent before someone exploits it.',
-        archetype: 'sentinel',
-      },
+      { title: 'Map the exposure', archetype: 'sentinel', icon: 'radar' },
+      { title: 'Mine the logs', archetype: 'pathfinder', icon: 'logs' },
+      { title: 'Redesign the system', archetype: 'architect', icon: 'window' },
+      { title: 'Automate detection', archetype: 'pioneer', icon: 'shield-check' },
     ],
   },
   {
     question: 'You have a free week to build anything you want. What do you ship?',
     options: [
-      {
-        title: 'Threat simulator',
-        detail: 'A tool that stress-tests how systems hold up under attack.',
-        archetype: 'pioneer',
-      },
-      {
-        title: 'Anomaly predictor',
-        detail: 'An AI trained on past events to catch the next one early.',
-        archetype: 'pathfinder',
-      },
-      {
-        title: 'Unified platform',
-        detail: 'A single layer that ties five disconnected systems into one.',
-        archetype: 'architect',
-      },
-      {
-        title: 'Autonomous robot',
-        detail: "Something that operates where people can't safely go.",
-        archetype: 'pioneer',
-      },
+      { title: 'Threat simulator', archetype: 'sentinel', icon: 'shield-alert' },
+      { title: 'Anomaly predictor', archetype: 'pathfinder', icon: 'chart' },
+      { title: 'Unified platform', archetype: 'architect', icon: 'layers' },
+      { title: 'Autonomous robot', archetype: 'pioneer', icon: 'bot' },
     ],
   },
   {
     question: 'Which mission gets you out of bed in the morning?',
     options: [
-      {
-        title: 'Cyber defence',
-        detail: 'Guarding critical infrastructure from digital threats.',
-        archetype: 'sentinel',
-      },
-      {
-        title: 'Intelligence analysis',
-        detail: 'Turning raw data into decisions that matter.',
-        archetype: 'pathfinder',
-      },
-      {
-        title: 'Systems integration',
-        detail: 'Making complex platforms seamlessly talk to each other.',
-        archetype: 'architect',
-      },
-      {
-        title: 'Frontier tech',
-        detail: 'Building unmanned systems or next-gen sensors from scratch.',
-        archetype: 'pioneer',
-      },
+      { title: 'Cyber defence', archetype: 'sentinel', icon: 'shield' },
+      { title: 'Intelligence analysis', archetype: 'pathfinder', icon: 'search' },
+      { title: 'Systems integration', archetype: 'architect', icon: 'network' },
+      { title: 'Frontier tech', archetype: 'pioneer', icon: 'rocket' },
     ],
   },
   {
-    question: "Your team hits a critical failure at 2AM. You're the one who...",
+    question: 'Your team hits a critical failure at 2AM. You’re the one who…',
     options: [
-      {
-        title: 'Traces the source',
-        detail: "You've seen this pattern — you find the exact attack vector.",
-        archetype: 'pioneer',
-      },
-      {
-        title: 'Pulls the metrics',
-        detail: 'You correlate logs and surface the real root cause in minutes.',
-        archetype: 'pathfinder',
-      },
-      {
-        title: 'Sketches the fix',
-        detail: 'You redesign the failing component on the whiteboard in real-time.',
-        archetype: 'architect',
-      },
-      {
-        title: 'Ships a patch',
-        detail: 'You code and push a working fix before sunrise.',
-        archetype: 'pioneer',
-      },
+      { title: 'Traces the source', archetype: 'sentinel', icon: 'crosshair' },
+      { title: 'Pulls the metrics', archetype: 'pathfinder', icon: 'bar-chart' },
+      { title: 'Sketches the fix', archetype: 'architect', icon: 'pen' },
+      { title: 'Ships a patch', archetype: 'pioneer', icon: 'package' },
     ],
   },
   {
     question: 'How do you naturally approach a big, complex decision?',
     options: [
-      {
-        title: 'Think adversarially',
-        detail: 'Imagine every way it could go wrong, then build defences.',
-        archetype: 'sentinel',
-      },
-      {
-        title: 'Follow the evidence',
-        detail: 'Data first, intuition second — trust what the numbers say.',
-        archetype: 'pathfinder',
-      },
-      {
-        title: 'Map the whole system',
-        detail: "Can't decide without seeing how all the parts connect.",
-        archetype: 'architect',
-      },
-      {
-        title: 'Try and learn fast',
-        detail: 'Move, prototype, discover what works — iteration is your edge.',
-        archetype: 'pioneer',
-      },
+      { title: 'Think adversarially', archetype: 'sentinel', icon: 'swords' },
+      { title: 'Follow the evidence', archetype: 'pathfinder', icon: 'file-search' },
+      { title: 'Map the whole system', archetype: 'architect', icon: 'share' },
+      { title: 'Try and learn fast', archetype: 'pioneer', icon: 'zap' },
     ],
   },
   {
-    question: 'At a hackathon, your signature contribution is...',
+    question: 'At a hackathon, your signature contribution is…',
     options: [
-      {
-        title: 'Red-teaming the room',
-        detail: 'You poke holes until the idea is battle-ready.',
-        archetype: 'sentinel',
-      },
-      {
-        title: 'Building the working demo',
-        detail: 'You ship something people can click before the deadline.',
-        archetype: 'pioneer',
-      },
-      {
-        title: 'Connecting the APIs',
-        detail: 'You stitch the pieces so the whole thing actually runs.',
-        archetype: 'architect',
-      },
-      {
-        title: 'Spotting the insight',
-        detail: 'You find the pattern in the data that changes the pitch.',
-        archetype: 'pathfinder',
-      },
+      { title: 'Red-teaming the room', archetype: 'sentinel', icon: 'bug' },
+      { title: 'Cleaning the data', archetype: 'pathfinder', icon: 'filter' },
+      { title: 'The system diagram', archetype: 'architect', icon: 'workflow' },
+      { title: 'Shipping first', archetype: 'pioneer', icon: 'send' },
     ],
   },
 ];

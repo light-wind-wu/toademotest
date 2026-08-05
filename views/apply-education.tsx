@@ -3,7 +3,7 @@
 /* Education step — upload transcript + CV; transcript unlocks editable details. */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CloudUpload, Upload } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import ApplicationFlowShell from '@/components/apply/application-flow-shell';
 import ChapterIntro from '@/components/apply/chapter-intro';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,6 @@ import {
   type EducationDetails,
 } from '@/lib/apply-application';
 import { isSignedIn } from '@/lib/session';
-import { cn } from '@/lib/utils';
 
 const MOCK_TRANSCRIPT = 'Chen_academic transcript.pdf';
 const MOCK_CV = 'Chen1230_CV2026.pdf';
@@ -126,20 +125,51 @@ export default function ApplyEducationPage() {
       }}
       continueDisabled={!draft.transcriptName}
     >
-      <header className="relative mb-5 pr-14 lg:mb-6 lg:pr-24">
-        <h1 className="text-[1.375rem] font-bold leading-snug tracking-tight text-fg md:text-[1.5rem]">
+      <header style={{ marginBottom: 24 }}>
+        <h1
+          style={{
+            fontWeight: 600,
+            fontSize: 24,
+            lineHeight: '28.8px',
+            letterSpacing: -0.48,
+            color: 'rgba(10, 22, 40, 1)',
+          }}
+        >
           Tell us about your education
         </h1>
-        <p className="mt-1 text-[13px] text-fg-muted">
+        <p
+          style={{
+            marginTop: 4,
+            fontWeight: 400,
+            fontSize: 14,
+            lineHeight: '100%',
+            color: 'rgba(74, 85, 104, 1)',
+          }}
+        >
           Upload your academic transcript and CV
         </p>
-        <UploadHeroIcon className="absolute right-0 top-0 hidden sm:block" />
       </header>
 
-      <div className="space-y-5">
+      <div className="flex flex-col" style={{ gap: 24 }}>
         {/* Academic Transcript */}
-        <section className="rounded-xl border border-border bg-surface p-4 shadow-sm md:p-5">
-          <h2 className="mb-3 text-[13px] font-bold text-fg">
+        <section
+          className="bg-white"
+          style={{
+            padding: 24,
+            borderRadius: 8,
+            border: '1px solid rgba(231, 228, 221, 1)',
+          }}
+        >
+          <h2
+            className="mb-4"
+            style={{
+              fontWeight: 600,
+              fontSize: 18,
+              lineHeight: '18px',
+              letterSpacing: -0.45,
+              color: 'rgba(15, 23, 43, 1)',
+            }}
+          >
             Academic Transcript <span className="text-danger">*</span>
           </h2>
 
@@ -160,11 +190,25 @@ export default function ApplyEducationPage() {
           </UploadZone>
 
           {hasTranscript && (
-            <div className="mt-4 rounded-xl border border-border bg-bg p-4 md:p-5">
-              <h3 className="mb-3 text-[13px] font-bold text-fg">
+            <div
+              className="mt-4 p-4 max-sm:p-6"
+              style={{
+                borderRadius: 8,
+                background: 'rgba(249, 248, 244, 1)',
+              }}
+            >
+              <h3
+                className="mb-3 max-sm:mb-6"
+                style={{
+                  fontWeight: 600,
+                  fontSize: 16,
+                  lineHeight: '16px',
+                  color: 'rgba(10, 22, 40, 1)',
+                }}
+              >
                 Check your education details
               </h3>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-x-3 gap-y-4 sm:grid-cols-2">
                 <Field
                   label="Institution"
                   value={draft.education.institution}
@@ -191,8 +235,26 @@ export default function ApplyEducationPage() {
         </section>
 
         {/* CV */}
-        <section className="rounded-xl border border-border bg-surface p-4 shadow-sm md:p-5">
-          <h2 className="mb-3 text-[13px] font-bold text-fg">Curriculum Vitae</h2>
+        <section
+          className="bg-white"
+          style={{
+            padding: 24,
+            borderRadius: 8,
+            border: '1px solid rgba(231, 228, 221, 1)',
+          }}
+        >
+          <h2
+            className="mb-4"
+            style={{
+              fontWeight: 600,
+              fontSize: 18,
+              lineHeight: '18px',
+              letterSpacing: -0.45,
+              color: 'rgba(15, 23, 43, 1)',
+            }}
+          >
+            Curriculum Vitae
+          </h2>
           <input
             ref={cvRef}
             type="file"
@@ -224,13 +286,28 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[13px] font-semibold text-fg">
+      <label
+        className="block"
+        style={{
+          marginBottom: 6,
+          fontWeight: 500,
+          fontSize: 14,
+          lineHeight: '14px',
+          color: 'rgba(15, 23, 43, 1)',
+        }}
+      >
         {label}
       </label>
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-10 rounded-lg bg-surface"
+        className="h-9 rounded-md bg-white"
+        style={{
+          fontWeight: 400,
+          fontSize: 14,
+          lineHeight: '14px',
+          color: 'rgba(15, 23, 42, 1)',
+        }}
       />
     </div>
   );
@@ -244,26 +321,39 @@ function UploadZone({
   onActivate: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onActivate}
-      className={cn(
-        'flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border-strong',
-        'bg-bg/40 px-4 py-8 text-center transition-colors hover:bg-bg-subtle',
-      )}
+    <div
+      className="w-full"
+      style={{
+        borderRadius: 8,
+        borderWidth: 1,
+        borderStyle: 'dashed',
+        borderColor: 'rgba(231, 228, 221, 1)',
+      }}
     >
-      {children}
-    </button>
+      <button
+        type="button"
+        onClick={onActivate}
+        className="flex min-h-[156px] w-full flex-col items-center justify-center px-4 py-6 text-center transition-colors hover:bg-[rgba(249,248,244,0.8)]"
+        style={{ borderRadius: 8 }}
+      >
+        {children}
+      </button>
+    </div>
   );
 }
 
 function EmptyUpload({ hint }: { hint: string }) {
   return (
     <>
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-bg-muted text-fg-muted">
-        <Upload className="h-5 w-5" strokeWidth={1.5} />
+      <span className="inline-flex size-12 items-center justify-center rounded-full bg-bg-muted text-fg-muted">
+        <Upload className="h-6 w-6" strokeWidth={1.5} />
       </span>
-      <span className="text-[14px] font-semibold text-fg">{hint}</span>
+      <span
+        className="text-[14px] font-semibold text-fg"
+        style={{ marginTop: 16 }}
+      >
+        {hint}
+      </span>
       <span className="text-[12px] text-fg-muted">PDF, DOC or DOCX · up to 10MB</span>
     </>
   );
@@ -278,25 +368,24 @@ function UploadedFile({
 }) {
   return (
     <>
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-bg-muted text-fg-muted">
-        <Upload className="h-5 w-5" strokeWidth={1.5} />
+      <span className="inline-flex size-12 items-center justify-center rounded-full bg-bg-muted text-fg-muted">
+        <Upload className="h-6 w-6" strokeWidth={1.5} />
       </span>
-      <span className="flex flex-col items-center gap-0.5">
-        <span className="text-[14px] font-semibold text-accent underline underline-offset-2">
+      <span
+        className="flex max-w-full flex-col items-center gap-0.5 sm:inline-flex sm:flex-row sm:items-baseline sm:gap-x-1.5"
+        style={{
+          marginTop: 16,
+          fontWeight: 600,
+          fontSize: 14,
+          lineHeight: '20px',
+          color: 'rgba(26, 101, 248, 1)',
+        }}
+      >
+        <span className="max-w-full break-all text-center underline underline-offset-2 sm:truncate">
           {name}
         </span>
-        {showUploadedLabel && (
-          <span className="text-[12px] font-medium text-accent">uploaded</span>
-        )}
+        {showUploadedLabel && <span>uploaded</span>}
       </span>
     </>
-  );
-}
-
-function UploadHeroIcon({ className }: { className?: string }) {
-  return (
-    <div className={cn('text-accent/80', className)} aria-hidden>
-      <CloudUpload className="h-12 w-12 md:h-14 md:w-14" strokeWidth={1.25} />
-    </div>
   );
 }

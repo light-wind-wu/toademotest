@@ -105,26 +105,17 @@ export default function Catlog() {
               width: ART_W,
               height: ART_H,
               transform: `scale(${scale})`,
+              position: 'absolute',
             }}
           >
-            {/* Décor — fixed coords inside 1440×900 */}
+            {/* Background — catlog-bg fills 1440×900 artboard */}
             <Image
-              src="/images/left-top.png"
+              src="/images/catlog-bg.png"
               alt=""
-              width={467}
-              height={314}
+              fill
               priority
-              className="pointer-events-none absolute object-contain"
-              style={{ left: 41, top: 155, width: 467, height: 314, zIndex: 0 }}
-            />
-            <Image
-              src="/images/right-bottom.png"
-              alt=""
-              width={651}
-              height={326}
-              priority
-              className="pointer-events-none absolute object-contain"
-              style={{ right: 19, bottom: 8, width: 651, height: 326, zIndex: 0 }}
+              className="pointer-events-none object-cover"
+              sizes="1440px"
             />
 
             <nav

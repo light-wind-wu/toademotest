@@ -1,9 +1,9 @@
 'use client';
 
 /* Shared C-end application chrome: topbar + PC vertical stepper + mobile
-   step chip + sticky footer actions. */
+   horizontal 5-node stepper + sticky footer actions. */
 import { type ReactNode } from 'react';
-import { Check } from 'lucide-react';
+import Image from 'next/image';
 import ApplicantChrome from '@/components/apply/applicant-chrome';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,12 +12,74 @@ import {
 } from '@/lib/apply-application';
 import { cn } from '@/lib/utils';
 
+const SIDEBAR_BORDER = 'rgba(230, 225, 216, 1)';
+const ACTIVE_BG = 'rgba(27, 101, 248, 1)';
+const PENDING_BG = 'rgba(231, 228, 221, 1)';
+const PENDING_BORDER = 'rgba(231, 228, 221, 1)';
+const PENDING_NUM = 'rgba(98, 116, 142, 1)';
+const LABEL_DONE = 'rgba(0, 0, 0, 0.87)';
+const LABEL_PENDING = 'rgba(74, 85, 104, 1)';
+const LINE_DONE = 'rgba(69, 85, 108, 1)';
+const LINE_PENDING = 'rgba(163, 163, 163, 1)';
+
+function StepBadge({
+  index,
+  done,
+  active,
+}: {
+  index: number;
+  done: boolean;
+  active: boolean;
+}) {
+  if (done) {
+    return (
+      <Image
+        src="/images/step-complete.svg"
+        alt=""
+        width={24}
+        height={24}
+        className="size-6 shrink-0"
+      />
+    );
+  }
+  if (active) {
+    return (
+      <span
+        className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-white"
+        style={{
+          background: ACTIVE_BG,
+          fontWeight: 400,
+          fontSize: 14,
+          lineHeight: '140%',
+        }}
+      >
+        {index + 1}
+      </span>
+    );
+  }
+  return (
+    <span
+      className="inline-flex size-6 shrink-0 items-center justify-center rounded-full"
+      style={{
+        background: PENDING_BG,
+        border: `1px solid ${PENDING_BORDER}`,
+        color: PENDING_NUM,
+        fontWeight: 400,
+        fontSize: 14,
+        lineHeight: '140%',
+      }}
+    >
+      {index + 1}
+    </span>
+  );
+}
+
 export default function ApplicationFlowShell({
   stepId,
   children,
   onBack,
   onContinue,
-  continueLabel = 'Continue',
+  continueLabel = 'Next',
   continueDisabled,
   hideFooter,
   chapterMode,
@@ -40,119 +102,178 @@ export default function ApplicationFlowShell({
 
   return (
     <ApplicantChrome
-      className={cn('bg-bg', lockViewport && 'h-dvh max-h-dvh min-h-0 overflow-hidden')}
+      className={cn(
+        'bg-[rgba(248,247,242,1)]',
+        lockViewport && 'h-dvh max-h-dvh min-h-0 overflow-hidden',
+      )}
     >
       <div
         className={cn(
-          'mx-auto flex w-full max-w-[1200px] flex-1 flex-col px-4 lg:px-8',
-          lockViewport ? 'min-h-0 overflow-hidden pt-4 pb-4 lg:pt-5 lg:pb-5' : 'pt-6 lg:pt-10',
-          !lockViewport && 'pb-10',
+          'flex min-h-0 flex-1',
+          lockViewport ? 'overflow-hidden' : '',
+          chapterMode ? 'flex-col' : 'flex-col lg:flex-row',
         )}
       >
+        {/* PC stepper — 220 wide */}
+        {!chapterMode && (
+          <aside
+            className={cn(
+              'hidden shrink-0 flex-col lg:flex',
+              lockViewport && 'min-h-0 overflow-y-auto',
+            )}
+            style={{
+              width: 220,
+              padding: '60px 24px 24px',
+              borderRight: `1px solid ${SIDEBAR_BORDER}`,
+            }}
+          >
+            <ol className="flex flex-col" aria-label="Application steps">
+              {APPLICATION_STEPS.map((step, i) => {
+                const done = i < activeIndex;
+                const active = i === activeIndex;
+                const isLast = i === APPLICATION_STEPS.length - 1;
+                const lineDone = done;
+                return (
+                  <li key={step.id} className="flex gap-3">
+                    <div className="flex w-6 shrink-0 flex-col items-center">
+                      <StepBadge index={i} done={done} active={active} />
+                      {!isLast && (
+                        <>
+                          <span className="block w-px shrink-0" style={{ height: 8 }} aria-hidden />
+                          <span
+                            className="block w-px shrink-0"
+                            style={{
+                              height: 62,
+                              background: lineDone ? LINE_DONE : LINE_PENDING,
+                            }}
+                            aria-hidden
+                          />
+                          <span className="block w-px shrink-0" style={{ height: 8 }} aria-hidden />
+                        </>
+                      )}
+                    </div>
+                    <p
+                      className="min-w-0 pt-0.5"
+                      style={{
+                        fontWeight: 400,
+                        fontSize: 14,
+                        lineHeight: '140%',
+                        color: done || active ? LABEL_DONE : LABEL_PENDING,
+                      }}
+                    >
+                      {step.labelLines ? (
+                        <>
+                          {step.labelLines[0]}
+                          <br />
+                          {step.labelLines[1]}
+                        </>
+                      ) : (
+                        step.label
+                      )}
+                    </p>
+                  </li>
+                );
+              })}
+            </ol>
+          </aside>
+        )}
+
+        {/* Main column */}
         <div
           className={cn(
-            'grid min-h-0 flex-1 gap-6',
-            lockViewport ? 'items-stretch overflow-hidden' : 'items-start',
-            !chapterMode && 'lg:grid-cols-[168px_minmax(0,1fr)] lg:gap-12',
+            'flex min-w-0 flex-1 flex-col',
+            lockViewport
+              ? 'min-h-0 overflow-hidden px-4 pb-4 pt-0 lg:px-8 lg:pb-5 lg:pt-[60px]'
+              : 'px-4 pb-10 pt-0 lg:px-8 lg:pt-[60px]',
           )}
         >
+          {/* Mobile — full-bleed white stepper strip (h 106) */}
           {!chapterMode && (
-            <aside className={cn('hidden lg:block', lockViewport && 'min-h-0 overflow-hidden')}>
+            <div
+              className={cn(
+                '-mx-4 mb-6 flex flex-col justify-end bg-white px-4 lg:hidden',
+                lockViewport ? 'shrink-0' : '',
+              )}
+              style={{ height: 106, paddingBottom: 16 }}
+            >
               <ol
-                className={cn(
-                  'flex flex-col',
-                  lockViewport ? 'h-full max-h-full' : 'min-h-[28rem]',
-                )}
+                className="flex w-full items-center"
                 aria-label="Application steps"
               >
                 {APPLICATION_STEPS.map((step, i) => {
                   const done = i < activeIndex;
                   const active = i === activeIndex;
                   const isLast = i === APPLICATION_STEPS.length - 1;
+                  const lineDone = done;
                   return (
-                    <li key={step.id} className={cn('flex flex-col', !isLast && 'min-h-0 flex-1')}>
-                      <div className="flex items-center gap-2.5">
-                        <span
-                          className={cn(
-                            'relative z-[1] inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold',
-                            (done || active) && 'bg-accent text-accent-fg',
-                            !done && !active && 'border border-border-strong bg-surface text-fg-muted',
-                          )}
-                        >
-                          {done ? <Check className="h-3 w-3" strokeWidth={2.5} /> : i + 1}
-                        </span>
-                        <p
-                          className={cn(
-                            'max-w-[7.25rem] text-[13px] font-normal leading-snug',
-                            active || done ? 'text-fg' : 'text-fg-muted',
-                          )}
-                        >
-                          {step.labelLines ? (
-                            <>
-                              {step.labelLines[0]}
-                              <br />
-                              {step.labelLines[1]}
-                            </>
-                          ) : (
-                            step.label
-                          )}
-                        </p>
-                      </div>
+                    <li
+                      key={step.id}
+                      className={cn('flex items-center', !isLast && 'min-w-0 flex-1')}
+                    >
+                      <StepBadge index={i} done={done} active={active} />
                       {!isLast && (
-                        <span
-                          className={cn(
-                            'ml-[11px] mt-1.5 mb-1.5 w-[2px] min-h-[1.5rem] flex-1 rounded-full',
-                            done ? 'bg-accent' : 'bg-border-strong',
-                          )}
-                          aria-hidden
-                        />
+                        <>
+                          <span className="block w-2 shrink-0" aria-hidden />
+                          <span
+                            className="block h-px min-w-0 flex-1"
+                            style={{
+                              background: lineDone ? LINE_DONE : LINE_PENDING,
+                            }}
+                            aria-hidden
+                          />
+                          <span className="block w-2 shrink-0" aria-hidden />
+                        </>
                       )}
                     </li>
                   );
                 })}
               </ol>
-            </aside>
+              <p
+                className="text-left"
+                style={{
+                  marginTop: 12,
+                  fontWeight: 400,
+                  fontSize: 14,
+                  lineHeight: '140%',
+                  color: 'rgba(0, 0, 0, 0.87)',
+                }}
+              >
+                {mobile.mobileLabel}
+              </p>
+            </div>
           )}
 
-          <div className={cn('min-w-0', lockViewport && 'flex min-h-0 flex-col overflow-hidden')}>
-            {!chapterMode && (
-              <div
-                className={cn(
-                  'flex items-center gap-2.5 lg:hidden',
-                  lockViewport ? 'mb-3 shrink-0' : 'mb-5',
-                )}
-              >
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-accent text-[13px] font-bold text-accent-fg">
-                  {activeIndex + 1}
-                </span>
-                <span className="text-[14px] font-normal text-fg">{mobile.mobileLabel}</span>
-              </div>
+          <div
+            className={cn(
+              'min-w-0',
+              lockViewport && 'min-h-0 flex-1 overflow-hidden',
+              !chapterMode && 'max-lg:pt-0 lg:pt-0',
             )}
-
-            <div className={cn(lockViewport && 'min-h-0 flex-1 overflow-hidden')}>{children}</div>
-
-            {!hideFooter && (
-              <div className="mt-[18px] flex justify-end gap-2 lg:mt-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-md bg-surface"
-                  onClick={onBack}
-                  disabled={!onBack}
-                >
-                  Back
-                </Button>
-                <Button
-                  type="button"
-                  className="rounded-md font-semibold"
-                  onClick={onContinue}
-                  disabled={continueDisabled || !onContinue}
-                >
-                  {continueLabel}
-                </Button>
-              </div>
-            )}
+          >
+            {children}
           </div>
+
+          {!hideFooter && (
+            <div className="mt-[18px] flex items-center justify-between gap-2 lg:mt-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-9 rounded-md bg-surface px-4"
+                onClick={onBack}
+                disabled={!onBack}
+              >
+                Back
+              </Button>
+              <Button
+                type="button"
+                className="h-9 rounded-md px-4 font-semibold"
+                onClick={onContinue}
+                disabled={continueDisabled || !onContinue}
+              >
+                {continueLabel}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </ApplicantChrome>
