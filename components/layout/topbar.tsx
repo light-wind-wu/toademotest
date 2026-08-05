@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Search, Bell, Settings, HelpCircle, LogOut, ChevronDown, ShieldCheck, UserCircle2, Briefcase, ClipboardList, GraduationCap, Award, User, CheckCheck, Gavel, LayoutGrid, ListTodo } from 'lucide-react';
+import { Search, Bell, Settings, HelpCircle, LogOut, ChevronDown, ShieldCheck, UserCircle2, Briefcase, ClipboardList, GraduationCap, Award, User, CheckCheck, Gavel, LayoutGrid, ListTodo, PanelsTopLeft } from 'lucide-react';
 import { useRole, ROLE_LABELS, ROLE_PROFILES } from '@/lib/role';
 import type { UserRole } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,11 @@ import {
   getNotificationsForRole, markRead, markAllRead,
   timeAgo, NOTIF_CHANGED_EVENT, type AppNotification,
 } from '@/lib/notifications';
+import {
+  loadApplyDashboardVersion,
+  saveApplyDashboardVersion,
+  type ApplyDashboardVersion,
+} from '@/lib/apply-dashboard-version';
 
 const ROLE_DEFAULT_ROUTE: Record<UserRole, string> = {
   'io-admin':                   '/dashboard',
@@ -59,12 +64,18 @@ export default function Topbar({
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchHi,   setSearchHi]   = useState(0);
   const [flags,      setFlags]      = useState({ hasApplied: false, hasInternship: false });
+  const [dashVersion, setDashVersion] = useState<ApplyDashboardVersion>('v1');
   const ref       = useRef<HTMLDivElement>(null);
   const bellRef   = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const mentorId = profile.email;
+  const isApplicant = role === 'new-applicant' || role === 'existing-scholar-applicant';
+
+  useEffect(() => {
+    setDashVersion(loadApplyDashboardVersion());
+  }, [open]);
 
   /* Applicant flags so the search index spans the right applicant sections. */
   useEffect(() => {
@@ -362,6 +373,45 @@ export default function Topbar({
                     <User size={18} className="text-fg-muted shrink-0" />
                     My Profile
                   </Link>
+                )}
+                {isApplicant && (
+                  <div className="px-3 py-2">
+                    <p className="mb-1.5 flex items-center gap-2 text-[12px] font-semibold text-fg-muted">
+                      <PanelsTopLeft size={14} className="shrink-0" />
+                      Dashboard layout
+                    </p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {(
+                        [
+                          ['v1', 'V1'],
+                          ['v2', 'V2 (classic)'],
+                        ] as const
+                      ).map(([value, label]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => {
+                            saveApplyDashboardVersion(value);
+                            setDashVersion(value);
+                            setOpen(false);
+                            if (pathname === '/apply/dashboard' || pathname === '/apply') {
+                              router.refresh();
+                            } else {
+                              router.push('/apply/dashboard');
+                            }
+                          }}
+                          className={cn(
+                            'cursor-pointer rounded-md border px-2 py-1.5 text-[12px] font-semibold transition-colors',
+                            dashVersion === value
+                              ? 'border-accent bg-accent/10 text-accent'
+                              : 'border-border bg-surface text-fg hover:bg-bg-subtle',
+                          )}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )}
                 {!onApplyRoute && !onStartTasks && (
                   <button

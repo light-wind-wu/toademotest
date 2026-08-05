@@ -25,7 +25,13 @@ const BODY_FG = 'rgba(69, 85, 108, 1)';
 const CTA_BG = 'rgba(26, 101, 248, 1)';
 const CARD_BORDER = 'rgba(231, 228, 221, 1)';
 
-const PROGRAMME_LABEL = 'Polytechnic Internship 2027';
+const PROGRAMME_LABEL = 'Applying for - Polytechnic Internship 2027';
+
+const READY_ITEMS = [
+  'Your latest CV',
+  'A recent profile photo',
+  'Your latest academic transcript',
+] as const;
 
 export default function ApplyWelcome() {
   const router = useRouter();
@@ -223,12 +229,12 @@ function WelcomeCard({
         className="relative z-[1] flex h-full flex-col"
         style={
           isPc
-            ? { maxWidth: 400, justifyContent: 'center', padding: '32px 16px 32px 32px' }
+            ? { maxWidth: 520, justifyContent: 'center', padding: '32px 16px 32px 32px' }
             : { padding: '26px 24px 24px 24px' }
         }
       >
         <p
-          className="welcome-line"
+          className={cn('welcome-line', isPc && 'whitespace-nowrap')}
           style={{
             color: EYEBROW,
             fontWeight: 400,
@@ -252,11 +258,11 @@ function WelcomeCard({
           <span className="welcome-line block whitespace-nowrap" style={{ animationDelay: '300ms' }}>
             Hi {name},
           </span>
-          <span className="welcome-line block whitespace-nowrap" style={{ animationDelay: '400ms' }}>
-            Let&apos;s get started on your
-          </span>
-          <span className="welcome-line block whitespace-nowrap" style={{ animationDelay: '480ms' }}>
-            application!
+          <span
+            className={cn('welcome-line block', isPc && 'whitespace-nowrap')}
+            style={{ animationDelay: '400ms' }}
+          >
+            Let&apos;s get started on your application!
           </span>
         </h1>
 
@@ -269,34 +275,27 @@ function WelcomeCard({
             lineHeight: '24px',
           }}
         >
-          {isPc ? (
-            <>
-              <span className="welcome-line block whitespace-nowrap" style={{ animationDelay: '560ms' }}>
-                Introduce yourself to us in a few questions. Along the
-              </span>
-              <span className="welcome-line block whitespace-nowrap" style={{ animationDelay: '620ms' }}>
-                way, you will discover your Defender archetype which
-              </span>
-              <span className="welcome-line block whitespace-nowrap" style={{ animationDelay: '680ms' }}>
-                will influence the projects we recommend for you.
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="welcome-line block" style={{ animationDelay: '560ms' }}>
-                Introduce yourself to us in a few questions.
-              </span>
-              <span className="welcome-line block" style={{ animationDelay: '620ms' }}>
-                Along the way, you will discover your
-              </span>
-              <span className="welcome-line block" style={{ animationDelay: '680ms' }}>
-                Defender archetype which will influence the
-              </span>
-              <span className="welcome-line block" style={{ animationDelay: '740ms' }}>
-                projects we recommend for you.
-              </span>
-            </>
-          )}
+          <span
+            className={cn('welcome-line block', isPc && 'whitespace-nowrap')}
+            style={{ animationDelay: '560ms' }}
+          >
+            Before you begin, please have the following ready:
+          </span>
+          <ul className="mt-2 space-y-1">
+            {READY_ITEMS.map((item, i) => (
+              <li
+                key={item}
+                className="welcome-line flex items-start gap-2"
+                style={{
+                  animationDelay: `${620 + i * 60}ms`,
+                  color: BODY_FG,
+                }}
+              >
+                <span className="mt-[0.55em] size-1 shrink-0 rounded-full bg-current" aria-hidden />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
         </div>
 
         {/* Mobile: push button to card bottom-left (padding already 24) */}
@@ -317,17 +316,15 @@ function StartButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex cursor-pointer items-center justify-center gap-1 rounded-md text-white transition-opacity hover:opacity-90"
+      className="inline-flex h-9 cursor-pointer items-center justify-center gap-1 rounded-md px-4 text-white transition-opacity hover:opacity-90"
       style={{
-        width: 90,
-        height: 36,
         background: CTA_BG,
         fontWeight: 500,
         fontSize: 14,
         lineHeight: '20px',
       }}
     >
-      Start
+      Start Application
       <ArrowRight className="size-3.5 shrink-0" strokeWidth={1.5} />
     </button>
   );

@@ -385,7 +385,7 @@ export default function ApplyAccountSetup() {
 
               {/* Card 2 */}
               <section className={CARD_BOX_CLASS}>
-                <h3 className={CARD_TITLE_CLASS}>Contact details</h3>
+                <h3 className={CARD_TITLE_CLASS}>Personal and Contact Details</h3>
                 <TipBanner>Please provide the following information</TipBanner>
                 <div className="grid gap-4 md:grid-cols-3">
                   <Field label="NRIC / FIN" required>
