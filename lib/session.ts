@@ -30,7 +30,7 @@ export function isApplicantRole(role: UserRole): boolean {
 export const SESSION_KEY = 'dsta_session';
 export const SESSION_CHANGED = 'dsta_session_changed';
 
-export type SignInMethod = 'singpass' | 'corppass' | 'sso';
+export type SignInMethod = 'singpass' | 'corppass' | 'sso' | 'email';
 
 export interface Session {
   signedIn: boolean;

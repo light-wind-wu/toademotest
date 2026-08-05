@@ -26,7 +26,19 @@ export default function LoginStaff() {
   }
 
   return (
-    <LoginShell tagline="Run talent outreach, selection and internships — in one console.">
+    <LoginShell
+      tagline={
+        <>
+          Run talent outreach,
+          <br />
+          selection and
+          <br />
+          internships — in one
+          <br />
+          console.
+        </>
+      }
+    >
       <LoginBrand kicker="Internal Console" heading="Staff sign-in" />
       <p className="text-body-sm text-fg-muted -mt-4 mb-6">
         Sign in with your government credentials to pick up where you left off.
