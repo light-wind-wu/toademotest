@@ -1,13 +1,15 @@
 'use client';
 
 /* Demo catalog — 1440×900 artboard (same scale model as start-tasks).
-   Internal roles → /start-tasks; Applicant → /login. Route: /catlog */
+   All roles → /start-tasks first; Applicant then continues to /login from a task.
+   Route: /catlog */
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { useRole } from '@/lib/role';
 import { signIn } from '@/lib/session';
+import { saveUtTrack } from '@/lib/ut-track';
 import type { UserRole } from '@/lib/types';
 import Topbar from '@/components/layout/topbar';
 
@@ -67,9 +69,12 @@ export default function Catlog() {
 
   function pick(item: CatalogItem) {
     if (item.kind === 'applicant') {
-      router.push('/login');
+      saveUtTrack('applicant');
+      setRole('new-applicant');
+      router.push('/start-tasks');
       return;
     }
+    saveUtTrack('staff');
     setRole(item.role);
     signIn('corppass', new Date().toISOString());
     router.push('/start-tasks');

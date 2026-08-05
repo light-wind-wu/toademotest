@@ -2,9 +2,9 @@
 
 /* Availability — one card, two date fields split by a vertical rule; calendar
    panels expand inline inside the card. Each field toggles independently. */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { format, isValid, parse } from 'date-fns';
+import { addDays, format, isValid, parse, startOfDay } from 'date-fns';
 import { CalendarDays } from 'lucide-react';
 import ApplicationFlowShell from '@/components/apply/application-flow-shell';
 import { Calendar } from '@/components/calendar';
@@ -28,6 +28,15 @@ function displayDate(value: string) {
   return parsed ? format(parsed, 'dd MMM yyyy') : '';
 }
 
+/** Earliest selectable start date — tomorrow (day after today). */
+function earliestStartDate() {
+  return startOfDay(addDays(new Date(), 1));
+}
+
+function isBeforeDay(date: Date, min: Date) {
+  return startOfDay(date) < startOfDay(min);
+}
+
 export default function ApplyAvailabilityPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
@@ -36,14 +45,34 @@ export default function ApplyAvailabilityPage() {
   const [openStart, setOpenStart] = useState(false);
   const [openEnd, setOpenEnd] = useState(false);
 
+  const minStart = useMemo(() => earliestStartDate(), []);
+
   useEffect(() => {
     if (!isSignedIn()) {
       router.replace('/login');
       return;
     }
-    setDraft(loadApplyDraft());
+    const loaded = loadApplyDraft();
+    const start = parseDate(loaded.startDate);
+    /* Clamp seeded / stale start dates that fall before tomorrow */
+    if (!start || isBeforeDay(start, minStart)) {
+      const startIso = format(minStart, 'yyyy-MM-dd');
+      const next: ApplySessionDraft = {
+        ...loaded,
+        startDate: startIso,
+        endDate:
+          loaded.endDate && loaded.endDate >= startIso ? loaded.endDate : loaded.endDate,
+      };
+      if (next.endDate && next.endDate < next.startDate) {
+        next.endDate = '';
+      }
+      saveApplyDraft(next);
+      setDraft(next);
+    } else {
+      setDraft(loaded);
+    }
     setReady(true);
-  }, [router]);
+  }, [router, minStart]);
 
   const persist = useCallback((next: ApplySessionDraft) => {
     setDraft(next);
@@ -93,10 +122,17 @@ export default function ApplyAvailabilityPage() {
             value={draft.startDate}
             display={displayDate(draft.startDate)}
             selected={start}
-            defaultMonth={start ?? new Date(2026, 6, 1)}
+            defaultMonth={start ?? minStart}
+            minDate={minStart}
             open={openStart}
             onToggle={() => setOpenStart((v) => !v)}
-            onSelect={(d) => persist({ ...draft, startDate: format(d, 'yyyy-MM-dd') })}
+            onSelect={(d) => {
+              if (isBeforeDay(d, minStart)) return;
+              const startIso = format(d, 'yyyy-MM-dd');
+              const next = { ...draft, startDate: startIso };
+              if (draft.endDate && draft.endDate < startIso) next.endDate = '';
+              persist(next);
+            }}
             className="md:pr-5"
           />
 
@@ -117,8 +153,8 @@ export default function ApplyAvailabilityPage() {
             value={draft.endDate}
             display={displayDate(draft.endDate)}
             selected={end}
-            defaultMonth={end ?? new Date(2026, 9, 1)}
-            minDate={start}
+            defaultMonth={end ?? start ?? minStart}
+            minDate={start ?? minStart}
             open={openEnd}
             onToggle={() => setOpenEnd((v) => !v)}
             onSelect={(d) => persist({ ...draft, endDate: format(d, 'yyyy-MM-dd') })}
@@ -208,7 +244,7 @@ function InlineDateColumn({
           <Calendar
             selected={selected}
             defaultMonth={defaultMonth}
-            disabled={minDate ? (date) => date < minDate : undefined}
+            disabled={minDate ? (date) => isBeforeDay(date, minDate) : undefined}
             onSelect={onSelect}
             captionLayout="dropdown"
             className="w-full max-w-none"

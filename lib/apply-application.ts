@@ -22,8 +22,8 @@ export interface ApplicationNavStep {
 export const APPLICATION_STEPS: ApplicationNavStep[] = [
   {
     id: 'education',
-    label: 'Education Level',
-    mobileLabel: 'Education Level',
+    label: 'Education',
+    mobileLabel: 'Education',
   },
   { id: 'availability', label: 'Availability', mobileLabel: 'Availability' },
   {

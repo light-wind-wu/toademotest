@@ -116,42 +116,48 @@ export interface ArchetypeInfo {
   tagline: string;
   description: string;
   fits: string[];
+  /** Title + tagline colour from C-end comps */
+  color: string;
 }
 
-/** Display copy from C-end comps / screenshots — not the HTML concept demo. */
+/** Display copy / colours / tags from C-end result comps. */
 export const ARCHETYPES: Record<ArchetypeId, ArchetypeInfo> = {
-  /* Title / tagline / body / tags — exact copy from C-end comps screenshot */
   pioneer: {
     id: 'pioneer',
     name: 'The Pioneer',
-    tagline: 'You build things that have never existed.',
+    tagline: 'You turn bold ideas into real-world possibilities.',
     description:
-      "Specs don't stop you — you prototype, learn, and ship. Robotics, unmanned systems, IoT, and emerging tech are your playground. If it's never been built before at DSTA, you want to be the one doing it.",
+      'You enjoy experimenting, prototyping, and exploring emerging technologies. By combining robotics, embedded systems, and hands-on problem-solving, you create solutions that push boundaries.',
     fits: ['Robotics & UAV', 'Rapid Prototyping', 'IoT & Embedded', 'Emerging Tech'],
-  },
-  pathfinder: {
-    id: 'pathfinder',
-    name: 'The Pathfinder',
-    tagline: 'You find the signal in the noise.',
-    description:
-      'Evidence is your compass. You turn raw data into clarity that others act on — finding patterns where others see chaos. Whether training AI models or building intelligence pipelines, you thrive when the problem is complex and the data is messy.',
-    fits: ['AI & Machine Learning', 'Data Pipelines', 'Pattern Recognition', 'Decision Intelligence'],
-  },
-  sentinel: {
-    id: 'sentinel',
-    name: 'The Sentinel',
-    tagline: 'You protect what others overlook.',
-    description:
-      "You don't just defend — you think like the attacker. Methodical, adversarial-minded, and always one step ahead. You thrive in cybersecurity, threat modelling, and hardening systems before the breach happens.",
-    fits: ['Threat Intelligence', 'Red Teaming', 'Zero-Trust Mindset', 'Cyber Resilience'],
+    color: 'rgba(193, 0, 7, 1)',
   },
   architect: {
     id: 'architect',
     name: 'The Architect',
-    tagline: 'You design the scaffolding others build on.',
+    tagline:
+      'You design the systems that bring intelligence, connectivity, and devices into one coherent whole.',
     description:
-      "You see the whole before the parts. While others jump to solutions, you're drawing the system diagram that makes everything else possible. You gravitate toward systems integration, command platforms, and multi-layer engineering challenges.",
-    fits: ['Systems Design', 'C2 Platforms', 'Integration Engineering', 'Scalability'],
+      'You think in structures, platforms, and possibilities. By shaping communications, connected devices, and AI-enabled systems together, you create the foundations that others build on. If you enjoy turning complexity into elegant solutions, this is where you belong.',
+    fits: ['Robotics & UAV', 'Rapid Prototyping', 'IoT & Embedded'],
+    color: 'rgba(0, 130, 54, 1)',
+  },
+  pathfinder: {
+    id: 'pathfinder',
+    name: 'The Pathfinder',
+    tagline: 'You discover new possibilities by connecting intelligence with the world around you.',
+    description:
+      'You explore data to uncover insights others miss. You connect smart systems and the physical world to solve real problems. You thrive on curiosity, experimentation, and learning by doing—turning possibilities into progress.',
+    fits: ['Artificial Intelligence 1.0', 'Internet of Things 0.4'],
+    color: 'rgba(0, 105, 168, 1)',
+  },
+  sentinel: {
+    id: 'sentinel',
+    name: 'The Sentinel',
+    tagline: 'You protect what matters with intelligence and precision.',
+    description:
+      'You leverage AI-enabled monitoring and resilient communications to detect threats, analyze signals and act with confidence. From the edge to the cloud, you ensure critical systems stay secure, connected, and mission-ready.',
+    fits: ['Artificial Intelligence 0.4', 'Cellular Networks 0.3'],
+    color: 'rgba(187, 77, 0, 1)',
   },
 };
 
