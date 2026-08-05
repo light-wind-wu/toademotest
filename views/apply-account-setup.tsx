@@ -93,11 +93,23 @@ export default function ApplyAccountSetup() {
     promptRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [prompt]);
 
+  function validatePersonal(profile: MyinfoProfile | null = personal): string {
+    if (!profile || isSingpassPersonalIncomplete(profile)) {
+      return 'Complete all details retrieved via Singpass to continue.';
+    }
+    return '';
+  }
+
   function validateWith(overrides: {
     nric?: string;
     dataUseConsent?: boolean;
     declarationConsent?: boolean;
+    personal?: MyinfoProfile;
   } = {}): string {
+    const nextPersonal = overrides.personal ?? personal;
+    const personalMsg = validatePersonal(nextPersonal);
+    if (personalMsg) return personalMsg;
+
     const nextNric = overrides.nric ?? nric;
     const nextData = overrides.dataUseConsent ?? dataUseConsent;
     const nextDecl = overrides.declarationConsent ?? declarationConsent;
@@ -108,11 +120,26 @@ export default function ApplyAccountSetup() {
     return '';
   }
 
+  function handleEditDone() {
+    if (!editing) {
+      setEditing(true);
+      return;
+    }
+    setAttempted(true);
+    const msg = validatePersonal();
+    setPrompt(msg);
+    if (msg) return;
+    setEditing(false);
+  }
+
   function handleContinue() {
     setAttempted(true);
     const msg = validateWith();
     setPrompt(msg);
-    if (msg) return;
+    if (msg) {
+      if (msg.startsWith('Complete all details retrieved via Singpass')) setEditing(true);
+      return;
+    }
     setConfirmOpen(true);
   }
 
@@ -356,12 +383,17 @@ export default function ApplyAccountSetup() {
                 <ProfileFields
                   personal={personal}
                   editing={editing}
-                  onChange={(patch) => setPersonal({ ...personal, ...patch })}
+                  showErrors={attempted}
+                  onChange={(patch) => {
+                    const next = { ...personal, ...patch };
+                    setPersonal(next);
+                    if (attempted) setPrompt(validateWith({ personal: next }));
+                  }}
                 />
 
                 <button
                   type="button"
-                  onClick={() => setEditing((v) => !v)}
+                  onClick={handleEditDone}
                   className="box-border h-8 cursor-pointer"
                   style={{
                     marginTop: 24,
@@ -385,8 +417,7 @@ export default function ApplyAccountSetup() {
               {/* Card 2 */}
               <section className={CARD_BOX_CLASS}>
                 <h3 className={CARD_TITLE_CLASS}>Personal and Contact Details</h3>
-                <TipBanner>Please provide the following information</TipBanner>
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="mt-6 grid gap-4 md:grid-cols-3">
                   <Field label="NRIC / FIN" required>
                     <Input
                       value={nric}
@@ -570,13 +601,25 @@ function MobileStepper() {
   );
 }
 
+function isSingpassPersonalIncomplete(profile: MyinfoProfile): boolean {
+  return (
+    !profile.name.trim() ||
+    !profile.dateOfBirth.trim() ||
+    !profile.nationality.trim() ||
+    !profile.residentialStatus.trim() ||
+    !profile.registeredAddress.trim()
+  );
+}
+
 function ProfileFields({
   personal,
   editing,
+  showErrors,
   onChange,
 }: {
   personal: MyinfoProfile;
   editing: boolean;
+  showErrors?: boolean;
   onChange: (patch: Partial<MyinfoProfile>) => void;
 }) {
   const divider = (
@@ -589,60 +632,56 @@ function ProfileFields({
     </div>
   );
 
+  const field = (
+    label: string,
+    key: keyof Pick<
+      MyinfoProfile,
+      'name' | 'dateOfBirth' | 'nationality' | 'residentialStatus' | 'registeredAddress'
+    >,
+  ) => (
+    <VerifiedField
+      label={label}
+      value={personal[key]}
+      editing={editing}
+      invalid={showErrors && !personal[key].trim()}
+      onChange={(v) => onChange({ [key]: v })}
+    />
+  );
+
   return (
     <>
       {/* Mobile — 2 columns + vertical rule */}
       <div className="grid grid-cols-2 gap-y-6 lg:hidden" style={{ rowGap: 24 }}>
         <div className="border-r pr-4" style={{ borderColor: 'rgba(231, 228, 221, 1)' }}>
-          <VerifiedField label="Name" value={personal.name} editing={editing}
-            onChange={(v) => onChange({ name: v })} />
+          {field('Name', 'name')}
         </div>
         <div className="pl-4">
-          <VerifiedField label="Date of birth" value={personal.dateOfBirth} editing={editing}
-            onChange={(v) => onChange({ dateOfBirth: v })} />
+          {field('Date of birth', 'dateOfBirth')}
         </div>
         <div className="border-r pr-4" style={{ borderColor: 'rgba(231, 228, 221, 1)' }}>
-          <VerifiedField label="Nationality" value={personal.nationality} editing={editing}
-            onChange={(v) => onChange({ nationality: v })} />
+          {field('Nationality', 'nationality')}
         </div>
         <div className="pl-4">
-          <VerifiedField label="Residential status" value={personal.residentialStatus} editing={editing}
-            onChange={(v) => onChange({ residentialStatus: v })} />
+          {field('Residential status', 'residentialStatus')}
         </div>
         <div className="col-span-2">
-          <VerifiedField label="Requested address" value={personal.registeredAddress} editing={editing}
-            onChange={(v) => onChange({ registeredAddress: v })} />
+          {field('Requested address', 'registeredAddress')}
         </div>
       </div>
 
       {/* PC — 3 columns; 1×40 divider + 16px gap to the right; 24px row gap */}
       <div className="hidden lg:flex lg:flex-col" style={{ gap: 24 }}>
         <div className="flex items-start">
-          <div className="min-w-0 flex-1">
-            <VerifiedField label="Name" value={personal.name} editing={editing}
-              onChange={(v) => onChange({ name: v })} />
-          </div>
+          <div className="min-w-0 flex-1">{field('Name', 'name')}</div>
           {divider}
-          <div className="min-w-0 flex-1">
-            <VerifiedField label="Date of birth" value={personal.dateOfBirth} editing={editing}
-              onChange={(v) => onChange({ dateOfBirth: v })} />
-          </div>
+          <div className="min-w-0 flex-1">{field('Date of birth', 'dateOfBirth')}</div>
           {divider}
-          <div className="min-w-0 flex-1">
-            <VerifiedField label="Nationality" value={personal.nationality} editing={editing}
-              onChange={(v) => onChange({ nationality: v })} />
-          </div>
+          <div className="min-w-0 flex-1">{field('Nationality', 'nationality')}</div>
         </div>
         <div className="flex items-start">
-          <div className="min-w-0 flex-1">
-            <VerifiedField label="Residential status" value={personal.residentialStatus} editing={editing}
-              onChange={(v) => onChange({ residentialStatus: v })} />
-          </div>
+          <div className="min-w-0 flex-1">{field('Residential status', 'residentialStatus')}</div>
           {divider}
-          <div className="min-w-0 flex-1">
-            <VerifiedField label="Requested address" value={personal.registeredAddress} editing={editing}
-              onChange={(v) => onChange({ registeredAddress: v })} />
-          </div>
+          <div className="min-w-0 flex-1">{field('Requested address', 'registeredAddress')}</div>
           <div className="flex shrink-0 items-center" aria-hidden>
             <span className="block w-px opacity-0" style={{ height: 40 }} />
             <span className="block w-4" />
@@ -846,11 +885,13 @@ function VerifiedField({
   label,
   value,
   editing,
+  invalid,
   onChange,
 }: {
   label: string;
   value: string;
   editing: boolean;
+  invalid?: boolean;
   onChange: (v: string) => void;
 }) {
   return (
@@ -866,12 +907,22 @@ function VerifiedField({
         {label}
       </p>
       {editing ? (
-        <Input value={value} onChange={(e) => onChange(e.target.value)} className="mt-1 h-9 rounded-md" />
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={cn(
+            'mt-1 h-9 rounded-md',
+            invalid && 'border-warning focus-visible:outline-warning',
+          )}
+        />
       ) : (
         <p
-          className="mt-0.5 text-[14px] leading-5 text-[rgba(15,23,43,1)] font-semibold lg:font-medium"
+          className={cn(
+            'mt-0.5 text-[14px] leading-5 font-semibold lg:font-medium',
+            invalid ? 'text-warning' : 'text-[rgba(15,23,43,1)]',
+          )}
         >
-          {value}
+          {value.trim() || '—'}
         </p>
       )}
     </div>

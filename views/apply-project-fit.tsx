@@ -1,7 +1,7 @@
 'use client';
 
 /* Session 2 — Find Your Project Fit:
-   chapter intro → interests (+ archetype modal) → ranking | quiz (Q1–3). */
+   chapter intro → interests → Next opens archetype modal → ranking | quiz. */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -130,7 +130,6 @@ export default function ApplyProjectFitPage() {
   const onIntroDone = useCallback(() => {
     clearChapterIntro();
     setShowIntro(false);
-    setShowArchetype(true);
     router.replace('/apply/project-fit', { scroll: false });
   }, [router]);
 
@@ -157,7 +156,7 @@ export default function ApplyProjectFitPage() {
     phase === 'interests'
       ? {
           onBack: () => router.push('/apply/availability'),
-          onContinue: () => setPhase('ranking'),
+          onContinue: () => setShowArchetype(true),
           continueLabel: 'Next',
           continueDisabled: draft.interests.length === 0,
         }
@@ -217,7 +216,6 @@ export default function ApplyProjectFitPage() {
       {phase === 'ranking' && (
         <RankingPhase
           displayName={displayName}
-          archetypeName={resolveArchetype(draft.quizAnswers).name}
           rankedIds={draft.rankedProjectIds}
           onChange={(rankedProjectIds) => persist({ ...draft, rankedProjectIds })}
           onBack={footer.onBack}
@@ -258,8 +256,8 @@ export default function ApplyProjectFitPage() {
             setQuizIndex(0);
           }}
           onContinueWithInterests={() => {
-            /* Close only — stay on interests so the user can keep selecting */
             setShowArchetype(false);
+            setPhase('ranking');
           }}
         />
       )}
@@ -605,7 +603,6 @@ function ArchetypeModal({
 
 function RankingPhase({
   displayName,
-  archetypeName,
   rankedIds,
   onChange,
   onBack,
@@ -613,7 +610,6 @@ function RankingPhase({
   continueDisabled,
 }: {
   displayName: string;
-  archetypeName: string;
   rankedIds: string[];
   onChange: (ids: string[]) => void;
   onBack?: () => void;
@@ -647,15 +643,10 @@ function RankingPhase({
   return (
     /* Fills shell lockViewport area — page itself must not scroll */
     <div className="flex h-full min-h-0 flex-col">
-      <header className="mb-6 shrink-0 lg:mb-3">
+      <header className="mb-10 shrink-0 lg:mb-8">
         <h1 className="text-[1.375rem] font-bold leading-snug tracking-tight text-fg md:text-[1.5rem]">
           Rank your projects, {displayName}.
         </h1>
-        <p className="mt-1 text-[13px] text-fg-muted">
-          Based on your{' '}
-          <span style={highlight}>{archetypeName}</span> profile and interests, we&apos;ve flagged
-          your best matches. Pick up to {MAX_RANKED} in order of preference
-        </p>
       </header>
 
       {/* One white panel: left scroll (no scrollbar) · divider · right ranking */}
@@ -1126,6 +1117,20 @@ function ArchetypeResultPhase({
   onBack?: () => void;
   onContinue?: () => void;
 }) {
+  const accent = archetype.color;
+  const pcImg = `/images/${archetype.id}-pc.png`;
+  const mobileImg = `/images/${archetype.id}-m.png`;
+  const tagStyle = {
+    height: 22,
+    padding: '2px 10px',
+    background: 'rgba(0, 166, 244, 0.15)',
+    borderRadius: 9999,
+    fontWeight: 400 as const,
+    fontSize: 12,
+    lineHeight: '16px',
+    color: 'rgba(0, 105, 168, 1)',
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex min-h-0 flex-1 flex-col justify-start overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:justify-center">
@@ -1147,7 +1152,7 @@ function ArchetypeResultPhase({
           {/* Art sits on the card background — flush to edges, no inset gap */}
           <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[48%] lg:block">
             <Image
-              src="/images/pioneer-pc.png"
+              src={pcImg}
               alt=""
               fill
               className="object-contain object-right-bottom"
@@ -1157,7 +1162,7 @@ function ArchetypeResultPhase({
           </div>
           <div className="pointer-events-none absolute bottom-0 right-0 h-[180px] w-[160px] lg:hidden">
             <Image
-              src="/images/pioneer-m.png"
+              src={mobileImg}
               alt=""
               fill
               className="object-contain object-right-bottom"
@@ -1176,7 +1181,7 @@ function ArchetypeResultPhase({
                   fontSize: 36,
                   lineHeight: '40px',
                   letterSpacing: '-0.9px',
-                  color: 'rgba(246, 104, 14, 1)',
+                  color: accent,
                 }}
               >
                 {archetype.name}
@@ -1187,7 +1192,7 @@ function ArchetypeResultPhase({
                   fontWeight: 400,
                   fontSize: 14,
                   lineHeight: '100%',
-                  color: 'rgba(74, 85, 104, 1)',
+                  color: accent,
                 }}
               >
                 {archetype.tagline}
@@ -1205,20 +1210,7 @@ function ArchetypeResultPhase({
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
                 {archetype.fits.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center"
-                    style={{
-                      height: 22,
-                      padding: '2px 8px',
-                      background: 'rgba(0, 166, 244, 0.15)',
-                      borderRadius: 4,
-                      fontWeight: 400,
-                      fontSize: 12,
-                      lineHeight: '16px',
-                      color: 'rgba(0, 105, 168, 1)',
-                    }}
-                  >
+                  <span key={tag} className="inline-flex items-center" style={tagStyle}>
                     {tag}
                   </span>
                 ))}
@@ -1234,7 +1226,7 @@ function ArchetypeResultPhase({
                   fontSize: 24,
                   lineHeight: '32px',
                   letterSpacing: '-0.48px',
-                  color: 'rgba(246, 104, 14, 1)',
+                  color: accent,
                   overflowWrap: 'break-word',
                   wordBreak: 'normal',
                 }}
@@ -1248,7 +1240,7 @@ function ArchetypeResultPhase({
                   fontWeight: 400,
                   fontSize: 14,
                   lineHeight: '100%',
-                  color: 'rgba(74, 85, 104, 1)',
+                  color: accent,
                   overflowWrap: 'break-word',
                   wordBreak: 'normal',
                 }}
@@ -1271,20 +1263,7 @@ function ArchetypeResultPhase({
               </p>
               <div className="mt-6 flex w-full flex-col items-start gap-2">
                 {archetype.fits.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center"
-                    style={{
-                      height: 22,
-                      padding: '2px 8px',
-                      background: 'rgba(0, 166, 244, 0.15)',
-                      borderRadius: 4,
-                      fontWeight: 400,
-                      fontSize: 12,
-                      lineHeight: '16px',
-                      color: 'rgba(0, 105, 168, 1)',
-                    }}
-                  >
+                  <span key={tag} className="inline-flex items-center" style={tagStyle}>
                     {tag}
                   </span>
                 ))}

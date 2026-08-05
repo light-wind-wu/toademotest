@@ -32,6 +32,7 @@ export default function ApplyEducationPage() {
   const [ready, setReady] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [draft, setDraft] = useState<ApplySessionDraft | null>(null);
+  const [manualEntry, setManualEntry] = useState(false);
   const transcriptRef = useRef<HTMLInputElement>(null);
   const cvRef = useRef<HTMLInputElement>(null);
   const introStarted = useRef(false);
@@ -83,11 +84,13 @@ export default function ApplyEducationPage() {
   }
 
   const hasTranscript = Boolean(draft.transcriptName);
+  const showEducationDetails = hasTranscript || manualEntry;
 
   function mockUpload(kind: 'transcript' | 'cv', file?: File | null) {
     const name =
       file?.name || (kind === 'transcript' ? MOCK_TRANSCRIPT : MOCK_CV);
     if (kind === 'transcript') {
+      setManualEntry(false);
       persist({
         ...draft!,
         transcriptName: name,
@@ -95,6 +98,16 @@ export default function ApplyEducationPage() {
       });
     } else {
       persist({ ...draft!, cvName: name });
+    }
+  }
+
+  function enterDetailsManually() {
+    setManualEntry(true);
+    if (!draft!.education.institution) {
+      persist({
+        ...draft!,
+        education: defaultEducationDetails(),
+      });
     }
   }
 
@@ -120,10 +133,10 @@ export default function ApplyEducationPage() {
       stepId="education"
       onBack={() => router.push('/apply/dashboard')}
       onContinue={() => {
-        if (!draft.transcriptName) return;
+        if (!hasTranscript && !manualEntry) return;
         router.push('/apply/availability');
       }}
-      continueDisabled={!draft.transcriptName}
+      continueDisabled={!hasTranscript && !manualEntry}
     >
       <header style={{ marginBottom: 24 }}>
         <h1
@@ -189,7 +202,18 @@ export default function ApplyEducationPage() {
             )}
           </UploadZone>
 
-          {hasTranscript && (
+          {!hasTranscript && (
+            <button
+              type="button"
+              onClick={enterDetailsManually}
+              className="mt-3 w-full cursor-pointer text-center text-[14px] font-medium leading-5 hover:underline"
+              style={{ color: 'rgba(26, 101, 248, 1)' }}
+            >
+              Don&apos;t Want To Upload? Enter Details Manually
+            </button>
+          )}
+
+          {showEducationDetails && (
             <div
               className="mt-4 p-4 max-sm:p-6"
               style={{

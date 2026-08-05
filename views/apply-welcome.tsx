@@ -29,7 +29,6 @@ const PROGRAMME_LABEL = 'Applying for - Polytechnic Internship 2027';
 
 const READY_ITEMS = [
   'Your latest CV',
-  'A recent profile photo',
   'Your latest academic transcript',
 ] as const;
 
