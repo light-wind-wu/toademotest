@@ -248,7 +248,7 @@ function InlineDateColumn({
         <div
           className={cn(
             'mt-3 box-border overflow-hidden rounded-lg border border-border bg-surface shadow-sm',
-            'h-[266px] w-[271px]',
+            'h-[266px] w-full lg:w-[271px]',
             /* Selected day — blue outline (matches comps), not solid fill */
             '[&_button[aria-selected=true]]:bg-transparent [&_button[aria-selected=true]]:font-semibold',
             '[&_button[aria-selected=true]]:text-accent [&_button[aria-selected=true]]:ring-2',
