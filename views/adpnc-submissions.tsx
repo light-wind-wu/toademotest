@@ -89,7 +89,7 @@ function getGroupBadge(
   const hasRejected = submitted.some(p => p.status === 'rejected');
   const { uploaded, placements } = groupTotals(group);
 
-  if (hasRejected) return { label: 'Returned for Update', variant: 'warning' };
+  if (hasRejected) return { label: 'Incomplete', variant: 'warning' };
   if (placements > 0 && uploaded >= placements) return { label: 'Fulfilled', variant: 'success' };
   if (uploaded > 0) return { label: 'Incomplete', variant: 'warning' };
   return { label: 'Pending', variant: 'info' };
@@ -144,9 +144,9 @@ function getCardAction(
   const hasRejected = submitted.some(p => p.status === 'rejected');
   const { uploaded, placements } = groupTotals(group);
 
-  if (hasRejected) return { label: 'Update Returned Project', mode: 'view' };
+  if (hasRejected) return { label: 'View Submission', mode: 'view' };
   if (uploaded === 0) return { label: 'Start Submission', mode: 'upload' };
-  if (uploaded < placements) return { label: 'Continue Submission', mode: 'upload' };
+  if (uploaded < placements) return { label: 'View Submission', mode: 'upload' };
   return { label: 'View Submission', mode: 'view' };
 }
 
@@ -156,15 +156,14 @@ function getContextMessage(uploaded: number, placements: number): string {
   return 'Placement target met. Waiting for remaining IO review outcomes.';
 }
 
-/* Local colour override: "Returned for Update" uses warning orange rather than rejected red. */
-const RETURNED_FOR_UPDATE_COLOURS = 'bg-[rgba(254,154,0,0.15)] text-[rgba(187,77,0,1)]';
-
 const GROUP_STATUS_COLOURS: Record<string, string> = {
   Pending: STATUS_COLOURS.pending,
   Incomplete: STATUS_COLOURS.incomplete,
   Fulfilled: STATUS_COLOURS.fulfilled,
-  'Returned for Update': RETURNED_FOR_UPDATE_COLOURS,
 };
+
+/* Rejected alert uses the shared rejected status colours plus a red border override. */
+const REJECTED_ALERT_STYLE = cn('border-[rgba(251,44,54,0.3)]', STATUS_COLOURS.rejected);
 
 function textOnly(cls: string) {
   return cls.split(' ').filter(c => c.startsWith('text-')).join(' ') || cls;
@@ -415,7 +414,7 @@ function RequestCard({
   const projectStatusItems = [
     counts.notSubmitted > 0 && { key: 'notSubmitted', label: 'Not submitted', count: counts.notSubmitted, cls: textOnly(STATUS_COLOURS.draft) },
     counts.pending > 0 && { key: 'pending', label: 'Pending', count: counts.pending, cls: textOnly(STATUS_COLOURS.pending) },
-    counts.returnedForUpdate > 0 && { key: 'returnedForUpdate', label: 'Returned for update', count: counts.returnedForUpdate, cls: textOnly(RETURNED_FOR_UPDATE_COLOURS) },
+    counts.returnedForUpdate > 0 && { key: 'returnedForUpdate', label: 'Returned for update', count: counts.returnedForUpdate, cls: textOnly(STATUS_COLOURS.rejected) },
     counts.approved > 0 && { key: 'approved', label: 'Approved', count: counts.approved, cls: textOnly(STATUS_COLOURS.approved) },
     counts.frozen > 0 && { key: 'frozen', label: 'Pending DCE Approval', count: counts.frozen, cls: textOnly(STATUS_COLOURS.frozen) },
   ].filter(Boolean) as { key: string; label: string; count: number; cls: string }[];
@@ -493,14 +492,18 @@ function RequestCard({
           </p>*/}
         </div>
 
-        {/* Returned for update alert */}
+        {/* Rejected project alert */}
         {rejected.length > 0 && (
-          <Alert variant="warning" className={RETURNED_FOR_UPDATE_COLOURS}>
+          <Alert variant="danger" className={REJECTED_ALERT_STYLE}>
             <AlertTitle>
-              {rejected.length} project{rejected.length === 1 ? '' : 's'} require{rejected.length === 1 ? 's' : ''} an update
+              {rejected.length === 1
+                ? '1 project requires clarification'
+                : `${rejected.length} projects require clarification`}
             </AlertTitle>
             <AlertDescription>
-              {rejected.map(p => p.remarks || `Please review "${p.title || 'Untitled project'}".`).join(' ')}
+              {rejected.length === 1
+                ? `Please clarify the placement duration for “${rejected[0].remarks || rejected[0].title || 'Untitled project'}”.`
+                : rejected.map(p => p.remarks || `Please review "${p.title || 'Untitled project'}".`).join(' ')}
             </AlertDescription>
           </Alert>
         )}
