@@ -26,18 +26,20 @@ export function PopoverContent({
   className,
   children,
   sideOffset = 8,
+  align = "center",
   variant = "solid",
   showCloseButton = false,
   ...props
 }: ComponentPropsWithoutRef<typeof BasePopover.Popup> & {
   sideOffset?: number;
+  align?: "start" | "center" | "end";
   variant?: "solid" | "glass";
   showCloseButton?: boolean;
   children?: ReactNode;
 }) {
   return (
     <BasePopover.Portal>
-      <BasePopover.Positioner sideOffset={sideOffset} collisionAvoidance={{ side: 'flip' }}>
+      <BasePopover.Positioner sideOffset={sideOffset} align={align} collisionAvoidance={{ side: 'flip' }}>
         <BasePopover.Popup
           className={cn(
             "z-50 w-72 rounded-lg border border-border p-4 shadow-md",
