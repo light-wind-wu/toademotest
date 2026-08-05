@@ -896,37 +896,34 @@ export default function RequestsPage() {
     );
   }
 
-  function frozenGroupActionMenu(group: PendingPCGroup, currentRow?: FlatProj) {
-    const groupKeys = group.rows.filter(r => r.status === 'frozen').map(r => r.key);
-    if (groupKeys.length === 0) return null;
-    const groupKeysSet = new Set(groupKeys);
+  function frozenRowActionMenu(currentRow: FlatProj) {
+    if (currentRow.status !== 'frozen') return null;
+    const targetKeys = new Set([currentRow.key]);
     return (
       <Menu>
         <MenuTrigger
-          aria-label={`Actions for ${group.pc}`}
+          aria-label={`Actions for ${currentRow.title}`}
           className="inline-flex h-8 w-8 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-bg-muted hover:text-fg focus-visible:outline-1 focus-visible:outline-accent"
           onClick={e => e.stopPropagation()}
         >
           <MoreVertical size={16} />
         </MenuTrigger>
         <MenuContent className="w-48" sideOffset={6}>
-          {currentRow && (
-            <MenuItem onClick={() => router.push(`/requests/project/${encodeURIComponent(currentRow.batchId)}/${encodeURIComponent(currentRow.projId)}`)}>
-              View
-            </MenuItem>
-          )}
-          {currentRow && <MenuSeparator />}
-          <MenuItem onClick={() => { setSelectedKeys(groupKeysSet); setUnlockReason(''); setUnlockOpen(true); }}>
+          <MenuItem onClick={() => router.push(`/requests/project/${encodeURIComponent(currentRow.batchId)}/${encodeURIComponent(currentRow.projId)}`)}>
+            View
+          </MenuItem>
+          <MenuSeparator />
+          <MenuItem onClick={() => { setSelectedKeys(targetKeys); setUnlockReason(''); setUnlockOpen(true); }}>
             Unlock
           </MenuItem>
-          <MenuItem onClick={() => { setSelectedKeys(groupKeysSet); setDceReturnRemarks(''); setDceReturnOpen(true); }}>
+          <MenuItem onClick={() => { setSelectedKeys(targetKeys); setDceReturnRemarks(''); setDceReturnOpen(true); }}>
             Return for Update
           </MenuItem>
           <MenuSeparator />
-          <MenuItem onClick={() => doDceApprove(groupKeysSet)}>
+          <MenuItem onClick={() => doDceApprove(targetKeys)}>
             Approve
           </MenuItem>
-          <MenuItem onClick={() => { setSelectedKeys(groupKeysSet); setDceRejectRemarks(''); setDceRejectOpen(true); }} className="text-danger">
+          <MenuItem onClick={() => { setSelectedKeys(targetKeys); setDceRejectRemarks(''); setDceRejectOpen(true); }} className="text-danger">
             Reject
           </MenuItem>
         </MenuContent>
@@ -1829,7 +1826,7 @@ export default function RequestsPage() {
                 onClick={e => e.stopPropagation()}
               >
                 <div className="flex items-center justify-end">
-                  {frozenGroupActionMenu(group, r)}
+                  {frozenRowActionMenu(r)}
                 </div>
               </TableCell>
             </TableRow>
