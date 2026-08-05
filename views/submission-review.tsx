@@ -239,10 +239,11 @@ function SectionDivider({ label }: { label: string }) {
 
 /* ── Status meta ──────────────────────────────────────────────────────────── */
 const REVIEW_STATUS_META: Record<string, { label: string; cls: string }> = {
-  pending:  { label: 'Pending Review',       cls: 'bg-warning-bg text-warning'  },
-  approved: { label: 'Approved',             cls: 'bg-success-bg text-success'  },
-  rejected: { label: 'Rejected',             cls: 'bg-danger-bg text-danger'    },
-  withdrawn: { label: 'Withdrawn',           cls: 'bg-bg-muted text-fg-muted'   },
+  pending:           { label: 'Pending Review',       cls: 'bg-warning-bg text-warning'  },
+  approved:          { label: 'Approved',             cls: 'bg-success-bg text-success'  },
+  returnedForUpdate: { label: 'Returned for Update',  cls: 'bg-danger-bg text-danger'    },
+  rejected:          { label: 'Rejected',             cls: 'bg-danger-bg text-danger'    },
+  withdrawn:         { label: 'Withdrawn',           cls: 'bg-bg-muted text-fg-muted'   },
 };
 
 /* ── Page ─────────────────────────────────────────────────────────────────── */
@@ -687,7 +688,7 @@ export default function SubmissionReviewPage() {
             <span className={cn('inline-flex text-caption-bold px-3 py-1.5 rounded-full', meta.cls)}>
               {meta.label}
             </span>
-            {project.status === 'rejected' && project.remarks && (
+            {(project.status === 'rejected' || project.status === 'returnedForUpdate') && project.remarks && (
               <div className="mt-3 p-3 rounded-lg bg-danger-bg border border-danger/20">
                 <p className="text-caption text-danger font-semibold mb-1">Rejection Remarks</p>
                 <p className="text-body-sm text-fg">{project.remarks}</p>

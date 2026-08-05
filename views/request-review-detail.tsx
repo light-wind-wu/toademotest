@@ -486,8 +486,8 @@ export default function RequestReviewDetail() {
     const currentReqs = loadRequests();
     const updated = currentReqs.map((r) => {
       const allProjs = updatedBatches.flatMap(b => b.projects).filter(project => projectMatchesRequest(project, r));
-      const submitted = allProjs.filter(p => p.status !== 'rejected' && p.status !== 'withdrawn').reduce((s, p) => s + p.slots, 0);
-      const created = allProjs.filter(p => p.status !== 'rejected' && p.status !== 'withdrawn').length;
+      const submitted = allProjs.filter(p => p.status !== 'rejected' && p.status !== 'returnedForUpdate' && p.status !== 'withdrawn').reduce((s, p) => s + p.slots, 0);
+      const created = allProjs.filter(p => p.status !== 'rejected' && p.status !== 'returnedForUpdate' && p.status !== 'withdrawn').length;
       return { ...r, uploaded: submitted, created };
     });
     saveRequests(updated);

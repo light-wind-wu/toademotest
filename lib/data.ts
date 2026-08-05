@@ -51,9 +51,10 @@ export const STATUS_COLOURS = {
   withdrawn:  'bg-[rgba(251,44,54,0.15)] text-[rgba(193,0,7,1)]',
   expired:    'bg-[rgba(251,44,54,0.15)] text-[rgba(193,0,7,1)]',
   // Project-only statuses that map to the same semantic colours
-  approved:   'bg-[rgba(0,201,80,0.15)] text-[rgba(0,130,54,1)]',
-  rejected:   'bg-[rgba(251,44,54,0.15)] text-[rgba(193,0,7,1)]',
-  frozen:     'bg-[rgba(254,154,0,0.15)] text-[rgba(187,77,0,1)]',
+  approved:        'bg-[rgba(0,201,80,0.15)] text-[rgba(0,130,54,1)]',
+  rejected:        'bg-[rgba(251,44,54,0.15)] text-[rgba(193,0,7,1)]',
+  returnedForUpdate: 'bg-[rgba(251,44,54,0.15)] text-[rgba(193,0,7,1)]',
+  frozen:          'bg-[rgba(254,154,0,0.15)] text-[rgba(187,77,0,1)]',
 } as const;
 
 /* Competency Domains (from SDP) — the approved Tech Competency list used by the

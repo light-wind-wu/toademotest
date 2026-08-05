@@ -83,7 +83,7 @@ import { useRole } from '@/lib/role';
 type FlatProj = {
   key: string; batchId: string; projId: string;
   title: string; mentor: string; discipline: string; slots: number;
-  status: 'pending' | 'frozen' | 'approved' | 'rejected';
+  status: 'pending' | 'frozen' | 'approved' | 'rejected' | 'returnedForUpdate';
   aiCheck: { grammar: 'pass'|'warn'|'fail'; level: 'pass'|'warn'|'fail'; notes: string[] };
   remarks?: string;
   educationLevel: string; requestedEducationLevels: string[];
@@ -103,7 +103,7 @@ type FlatProj = {
 
 type PendingPCGroup = { pc: string; rows: FlatProj[] };
 
-type TabKey = 'sent' | 'pending' | 'pendingDce' | 'pendingAll' | 'rejected' | 'approved' | 'all';
+type TabKey = 'sent' | 'pending' | 'pendingDce' | 'pendingAll' | 'returnedForUpdate' | 'rejected' | 'approved' | 'all';
 type PCGroup = { key?: string; pc: string; headName: string; requests: ProjectRequest[] };
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
@@ -436,28 +436,13 @@ const LINE_STATUS_META = {
 };
 
 const PROJ_REVIEW_TIPS: Record<string, string> = {
-  approved:  'Approved by IO and added to Projects.',
-  rejected:  'Rejected by IO and will not proceed.',
-  pending:   'Submitted and awaiting IO review.',
+  approved:         'Approved by IO and added to Projects.',
+  rejected:         'Rejected by IO and will not proceed.',
+  returnedForUpdate: 'Returned for update by IO. AD (P&C) must revise and resubmit.',
+  pending:          'Submitted and awaiting IO review.',
 };
 
-function StatusTooltip({ tip, children }: { tip: string; children: React.ReactNode }) {
-  return (
-    <span className="relative inline-block group/tip">
-      {children}
-      <span className={cn(
-        'pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50',
-        'w-max max-w-64 rounded-md border border-border bg-surface-elevated px-2.5 py-1.5',
-        'text-xs font-normal leading-relaxed text-fg shadow-md text-left',
-        'opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150',
-      )}>
-        {tip}
-      </span>
-    </span>
-  );
-}
-
-const PROJ_STATUS_SORT: Record<string, number>        = { pending: 0, rejected: 2, approved: 3 };
+const PROJ_STATUS_SORT: Record<string, number> = { pending: 0, returnedForUpdate: 1, rejected: 2, approved: 3 };
 const REQ_STATUS_ORDER: Record<DisplayRequestStatus, number> = { draft: 0, pending: 1, incomplete: 2, fulfilled: 3, closed: 4, withdrawn: 5, expired: 6 };
 
 function sentGroupMetrics(group: PCGroup) {
@@ -487,6 +472,21 @@ function StatusBadge({ meta }: { meta: { label: string; cls: string } }) {
   );
 }
 
+function StatusTooltip({ tip, children }: { tip: string; children: React.ReactNode }) {
+  return (
+    <span className="relative inline-block group/tip">
+      {children}
+      <span className={cn(
+        'pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50',
+        'w-max max-w-64 rounded-md border border-border bg-surface-elevated px-2.5 py-1.5',
+        'text-xs font-normal leading-relaxed text-fg shadow-md text-left',
+        'opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150',
+      )}>
+        {tip}
+      </span>
+    </span>
+  );
+}
 function LineStatusFlag({ meta }: { meta: { label: string; cls: string; tip: string } }) {
   return (
     <StatusTooltip tip={meta.label}>
@@ -1375,7 +1375,7 @@ export default function RequestsPage() {
         meta: { size: 'fill', truncate: true },
         cell: ({ row }) => {
           const rowData = row.original;
-          const isRejected = rowData.status === 'rejected';
+          const isRejected = rowData.status === 'rejected' || rowData.status === 'returnedForUpdate';
           return (
             <div>
               <p className="text-body-sm font-medium truncate text-fg">
@@ -1565,7 +1565,7 @@ export default function RequestsPage() {
     return group.rows.map(r => {
       const category = r.educationLevel || r.requestedEducationLevels.join(', ') || '—';
       const disciplines = parseDisciplines(r.discipline);
-      const isRejected = r.status === 'rejected';
+      const isRejected = r.status === 'rejected' || r.status === 'returnedForUpdate';
       return (
         <TableRow
           key={r.key}
@@ -2172,8 +2172,8 @@ export default function RequestsPage() {
     const currentReqs: ProjectRequest[] = loadRequests();
     const updated = currentReqs.map(r => {
       const allProjs  = updatedBatches.flatMap(b => b.projects).filter(project => projectMatchesRequest(project, r));
-      const submitted = allProjs.filter(p => p.status !== 'rejected' && p.status !== 'withdrawn').reduce((s, p) => s + p.slots, 0);
-      const created   = allProjs.filter(p => p.status !== 'rejected' && p.status !== 'withdrawn').length;
+      const submitted = allProjs.filter(p => p.status !== 'rejected' && p.status !== 'returnedForUpdate' && p.status !== 'withdrawn').reduce((s, p) => s + p.slots, 0);
+      const created   = allProjs.filter(p => p.status !== 'rejected' && p.status !== 'returnedForUpdate' && p.status !== 'withdrawn').length;
       return { ...r, uploaded: submitted, created };
     });
     saveRequests(updated);
@@ -2389,7 +2389,7 @@ export default function RequestsPage() {
       updated = updated.map(b => b.id !== batchId ? b : {
         ...b,
         projects: b.projects.map(p =>
-          p.id !== projId || p.status !== 'frozen' ? p : { ...p, status: 'pending' as const, remarks: dceReturnRemarks }
+          p.id !== projId || p.status !== 'frozen' ? p : { ...p, status: 'returnedForUpdate' as const, remarks: dceReturnRemarks }
         ),
       });
     });
@@ -2575,10 +2575,11 @@ export default function RequestsPage() {
 
   /* ── Tab + search + filter + sort (submissions tabs) ─────────────────── */
   const tabRows = flatRows.filter(r => {
-    if (tab === 'pending')    return r.status === 'pending';
-    if (tab === 'pendingDce') return r.status === 'frozen';
-    if (tab === 'rejected')   return r.status === 'rejected';
-    if (tab === 'approved')   return r.status === 'approved';
+    if (tab === 'pending')           return r.status === 'pending';
+    if (tab === 'pendingDce')        return r.status === 'frozen';
+    if (tab === 'returnedForUpdate') return r.status === 'returnedForUpdate';
+    if (tab === 'rejected')          return r.status === 'rejected';
+    if (tab === 'approved')          return r.status === 'approved';
     return true;
   });
 
@@ -2667,7 +2668,8 @@ export default function RequestsPage() {
     pending:    flatRows.filter(r => r.status === 'pending').length,
     pendingDce: flatRows.filter(r => r.status === 'frozen').length,
     pendingAll: flatRows.filter(r => r.status === 'pending' || r.status === 'frozen').length,
-    rejected:   flatRows.filter(r => r.status === 'rejected').length,
+    rejected:          flatRows.filter(r => r.status === 'rejected').length,
+    returnedForUpdate: flatRows.filter(r => r.status === 'returnedForUpdate').length,
     approved:   flatRows.filter(r => r.status === 'approved').length,
     all:        flatRows.length,
   };
@@ -2819,6 +2821,9 @@ export default function RequestsPage() {
                 </TabsTrigger>*/}
                 <TabsTrigger value="approved">
                   Approved ({tabCounts.approved})
+                </TabsTrigger>
+                <TabsTrigger value="returnedForUpdate">
+                  Returned for Update ({tabCounts.returnedForUpdate})
                 </TabsTrigger>
                 <TabsTrigger value="rejected">
                   Rejected ({tabCounts.rejected})
@@ -3354,9 +3359,10 @@ export default function RequestsPage() {
         <ColFilterDropdown
           id="cf-req-status"
           options={[
-            { value: 'pending',  label: 'Pending Review' },
-            { value: 'rejected', label: 'Rejected' },
-            { value: 'approved', label: 'Approved' },
+            { value: 'pending',          label: 'Pending Review' },
+            { value: 'returnedForUpdate', label: 'Returned for Update' },
+            { value: 'rejected',         label: 'Rejected' },
+            { value: 'approved',         label: 'Approved' },
           ]}
           selected={statusCF}
           onApply={setStatusCF}

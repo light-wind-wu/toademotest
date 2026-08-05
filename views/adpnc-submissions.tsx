@@ -86,10 +86,10 @@ function getGroupBadge(
   batches: ProjectSubmissionBatch[],
 ): RequestBadge {
   const submitted = submittedForGroup(group, batches);
-  const hasRejected = submitted.some(p => p.status === 'rejected');
+  const hasReturnedForUpdate = submitted.some(p => p.status === 'returnedForUpdate');
   const { uploaded, placements } = groupTotals(group);
 
-  if (hasRejected) return { label: 'Incomplete', variant: 'warning' };
+  if (hasReturnedForUpdate) return { label: 'Incomplete', variant: 'warning' };
   if (placements > 0 && uploaded >= placements) return { label: 'Fulfilled', variant: 'success' };
   if (uploaded > 0) return { label: 'Incomplete', variant: 'warning' };
   return { label: 'Pending', variant: 'info' };
@@ -99,6 +99,7 @@ type ProjectStatusCounts = {
   notSubmitted: number;
   pending: number;
   returnedForUpdate: number;
+  rejected: number;
   approved: number;
   frozen: number;
 };
@@ -123,17 +124,18 @@ function getProjectStatusCounts(
   return {
     notSubmitted: Math.max(0, placements - submittedSlots),
     pending: submitted.filter(p => p.status === 'pending').length,
-    returnedForUpdate: submitted.filter(p => p.status === 'rejected').length,
+    returnedForUpdate: submitted.filter(p => p.status === 'returnedForUpdate').length,
+    rejected: submitted.filter(p => p.status === 'rejected').length,
     approved: submitted.filter(p => p.status === 'approved').length,
     frozen: submitted.filter(p => p.status === 'frozen').length,
   };
 }
 
-function getRejectedProjects(
+function getReturnedForUpdateProjects(
   group: RequestGroup,
   batches: ProjectSubmissionBatch[],
 ) {
-  return submittedForGroup(group, batches).filter(p => p.status === 'rejected');
+  return submittedForGroup(group, batches).filter(p => p.status === 'returnedForUpdate');
 }
 
 function getCardAction(
@@ -141,10 +143,10 @@ function getCardAction(
   batches: ProjectSubmissionBatch[],
 ): { label: string; mode: 'upload' | 'view' } {
   const submitted = submittedForGroup(group, batches);
-  const hasRejected = submitted.some(p => p.status === 'rejected');
+  const hasReturnedForUpdate = submitted.some(p => p.status === 'returnedForUpdate');
   const { uploaded, placements } = groupTotals(group);
 
-  if (hasRejected) return { label: 'View Submission', mode: 'view' };
+  if (hasReturnedForUpdate) return { label: 'View Submission', mode: 'view' };
   if (uploaded === 0) return { label: 'Start Submission', mode: 'upload' };
   if (uploaded < placements) return { label: 'View Submission', mode: 'upload' };
   return { label: 'View Submission', mode: 'view' };
@@ -407,14 +409,15 @@ function RequestCard({
   const categoryTotals = requestCategoryTotals(group, batches, progMap);
   const badge = getGroupBadge(group, batches);
   const counts = getProjectStatusCounts(group, batches);
-  const rejected = getRejectedProjects(group, batches);
+  const returnedForUpdate = getReturnedForUpdateProjects(group, batches);
   const action = getCardAction(group, batches);
   const pc = group.requests[0]?.programmeCenter ?? '—';
 
   const projectStatusItems = [
     counts.notSubmitted > 0 && { key: 'notSubmitted', label: 'Not submitted', count: counts.notSubmitted, cls: textOnly(STATUS_COLOURS.draft) },
     counts.pending > 0 && { key: 'pending', label: 'Pending', count: counts.pending, cls: textOnly(STATUS_COLOURS.pending) },
-    counts.returnedForUpdate > 0 && { key: 'returnedForUpdate', label: 'Returned for update', count: counts.returnedForUpdate, cls: textOnly(STATUS_COLOURS.rejected) },
+    counts.returnedForUpdate > 0 && { key: 'returnedForUpdate', label: 'Returned for update', count: counts.returnedForUpdate, cls: textOnly(STATUS_COLOURS.returnedForUpdate) },
+    counts.rejected > 0 && { key: 'rejected', label: 'Rejected', count: counts.rejected, cls: textOnly(STATUS_COLOURS.rejected) },
     counts.approved > 0 && { key: 'approved', label: 'Approved', count: counts.approved, cls: textOnly(STATUS_COLOURS.approved) },
     counts.frozen > 0 && { key: 'frozen', label: 'Pending DCE Approval', count: counts.frozen, cls: textOnly(STATUS_COLOURS.frozen) },
   ].filter(Boolean) as { key: string; label: string; count: number; cls: string }[];
@@ -492,18 +495,18 @@ function RequestCard({
           </p>*/}
         </div>
 
-        {/* Rejected project alert */}
-        {rejected.length > 0 && (
+        {/* Returned for update alert */}
+        {returnedForUpdate.length > 0 && (
           <Alert variant="danger" className={REJECTED_ALERT_STYLE}>
             <AlertTitle>
-              {rejected.length === 1
+              {returnedForUpdate.length === 1
                 ? '1 project requires clarification'
-                : `${rejected.length} projects require clarification`}
+                : `${returnedForUpdate.length} projects require clarification`}
             </AlertTitle>
             <AlertDescription>
-              {rejected.length === 1
-                ? `Please clarify the placement duration for “${rejected[0].remarks || rejected[0].title || 'Untitled project'}”.`
-                : rejected.map(p => p.remarks || `Please review "${p.title || 'Untitled project'}".`).join(' ')}
+              {returnedForUpdate.length === 1
+                ? `Please clarify the placement duration for “${returnedForUpdate[0].remarks || returnedForUpdate[0].title || 'Untitled project'}”.`
+                : returnedForUpdate.map(p => p.remarks || `Please review "${p.title || 'Untitled project'}".`).join(' ')}
             </AlertDescription>
           </Alert>
         )}

@@ -140,7 +140,7 @@ function buildAuditLog(proj: SubmittedProject, pc: string) {
       description: `Project submitted to IO for review under ${pc || 'PC'}.`,
     });
   }
-  if (proj.remarks && proj.status === 'rejected') {
+  if (proj.remarks && (proj.status === 'rejected' || proj.status === 'returnedForUpdate')) {
     entries.push({
       date: proj.submittedAt ? fmtDate(proj.submittedAt) : '—',
       label: 'Returned for Update',

@@ -19,6 +19,7 @@ const STATUS_LABELS: Record<SubmittedProject['status'], string> = {
   frozen: 'Frozen',
   approved: 'Approved',
   rejected: 'Rejected',
+  returnedForUpdate: 'Returned for Update',
   withdrawn: 'Withdrawn',
 };
 

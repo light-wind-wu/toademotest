@@ -500,9 +500,9 @@ export default function ProjectsPage() {
     const updated = currentReqs.map((r) => {
       const allProjs = updatedBatches.flatMap((b) => b.projects).filter((project) => projectMatchesRequest(project, r));
       const submitted = allProjs
-        .filter((p) => p.status !== "rejected" && p.status !== "withdrawn")
+        .filter((p) => p.status !== "rejected" && p.status !== "returnedForUpdate" && p.status !== "withdrawn")
         .reduce((s, p) => s + p.slots, 0);
-      const created = allProjs.filter((p) => p.status !== "rejected" && p.status !== "withdrawn").length;
+      const created = allProjs.filter((p) => p.status !== "rejected" && p.status !== "returnedForUpdate" && p.status !== "withdrawn").length;
       return { ...r, uploaded: submitted, created };
     });
     saveRequests(updated);
@@ -667,7 +667,7 @@ export default function ProjectsPage() {
 
   const submissionRows: ProjectSubmissionRow[] = submissions.flatMap((batch) =>
     batch.projects
-      .filter((p) => p.status === "pending" || p.status === "rejected")
+      .filter((p) => p.status === "pending" || p.status === "returnedForUpdate" || p.status === "rejected")
       .map((p) => {
         const programmeId = batch.programme || "";
         return {

@@ -63,10 +63,11 @@ const PROJ_STATUS_META: Record<string, { label: string; cls: string }> = {
 };
 
 const REVIEW_STATUS_META: Record<string, { label: string; cls: string }> = {
-  pending:  { label: 'Pending Review', cls: 'bg-bg-muted text-fg-muted border-border'         },
-  approved: { label: 'Approved',       cls: 'bg-success-bg text-success border-success/20'    },
-  rejected: { label: 'Rejected',       cls: 'bg-danger-bg text-danger border-danger/20'       },
-  withdrawn: { label: 'Withdrawn',     cls: 'bg-bg-muted text-fg-muted border-border'         },
+  pending:         { label: 'Pending Review',       cls: 'bg-bg-muted text-fg-muted border-border'         },
+  approved:        { label: 'Approved',             cls: 'bg-success-bg text-success border-success/20'    },
+  returnedForUpdate: { label: 'Returned for Update',  cls: 'bg-danger-bg text-danger border-danger/20'       },
+  rejected:        { label: 'Rejected',             cls: 'bg-danger-bg text-danger border-danger/20'       },
+  withdrawn:       { label: 'Withdrawn',            cls: 'bg-bg-muted text-fg-muted border-border'         },
 };
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
@@ -231,11 +232,12 @@ export default function AdPncPortalView() {
               const batch      = submissions.find(b => b.uploadToken === req.uploadToken);
               const isExpanded = expanded === req.id;
 
-              const approvedCount  = batch?.projects.filter(p => p.status === 'approved').length  ?? 0;
-              const rejectedCount  = batch?.projects.filter(p => p.status === 'rejected').length  ?? 0;
-              const pendingCount   = batch?.projects.filter(p => p.status === 'pending').length   ?? 0;
-              const withdrawnCount = batch?.projects.filter(p => p.status === 'withdrawn').length ?? 0;
-              const anyReviewed    = batch && (approvedCount + rejectedCount + withdrawnCount > 0);
+              const approvedCount             = batch?.projects.filter(p => p.status === 'approved').length  ?? 0;
+              const returnedForUpdateCount    = batch?.projects.filter(p => p.status === 'returnedForUpdate').length  ?? 0;
+              const rejectedCount             = batch?.projects.filter(p => p.status === 'rejected').length  ?? 0;
+              const pendingCount              = batch?.projects.filter(p => p.status === 'pending').length   ?? 0;
+              const withdrawnCount            = batch?.projects.filter(p => p.status === 'withdrawn').length ?? 0;
+              const anyReviewed               = batch && (approvedCount + returnedForUpdateCount + rejectedCount + withdrawnCount > 0);
 
               return (
                 <div key={req.id} className="bg-surface rounded-xl border border-border overflow-hidden shadow-sm">
@@ -261,6 +263,11 @@ export default function AdPncPortalView() {
                           {rejectedCount > 0 && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] font-semibold bg-danger-bg text-danger border border-danger/20">
                               {rejectedCount} rejected
+                            </span>
+                          )}
+                          {returnedForUpdateCount > 0 && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] font-semibold bg-danger-bg text-danger border border-danger/20">
+                              {returnedForUpdateCount} returned for update
                             </span>
                           )}
                           {pendingCount > 0 && (
@@ -333,12 +340,12 @@ export default function AdPncPortalView() {
                             return (
                               <tr key={proj.id} className={cn(
                                 'hover:bg-bg-subtle/50 transition-colors',
-                                proj.status === 'approved' && 'bg-success-bg/30',
-                                proj.status === 'rejected' && 'bg-danger-bg/20',
+                              proj.status === 'approved' && 'bg-success-bg/30',
+                              (proj.status === 'rejected' || proj.status === 'returnedForUpdate') && 'bg-danger-bg/20',
                               )}>
                                 <td className="px-5 py-3">
                                   <p className="text-body-sm font-medium text-fg">{proj.title}</p>
-                                  {proj.status === 'rejected' && proj.remarks && (
+                                  {(proj.status === 'rejected' || proj.status === 'returnedForUpdate') && proj.remarks && (
                                     <p className="text-[13px] text-danger mt-0.5 leading-snug">Reason: {proj.remarks}</p>
                                   )}
                                 </td>
