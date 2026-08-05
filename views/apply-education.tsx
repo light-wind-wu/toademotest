@@ -27,10 +27,16 @@ function shouldShowSession1Intro(): boolean {
   return fromQuery === 'session-1' || peekChapterIntro() === 'session-1';
 }
 
+function isFromReview(): boolean {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get('from') === 'review';
+}
+
 export default function ApplyEducationPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
+  const [fromReview, setFromReview] = useState(false);
   const [draft, setDraft] = useState<ApplySessionDraft | null>(null);
   const [manualEntry, setManualEntry] = useState(false);
   const transcriptRef = useRef<HTMLInputElement>(null);
@@ -42,8 +48,9 @@ export default function ApplyEducationPage() {
       router.replace('/login');
       return;
     }
+    setFromReview(isFromReview());
     /* Peek only — do not clear here (Strict Mode remount would skip the card). */
-    if (!introStarted.current) {
+    if (!introStarted.current && !isFromReview()) {
       introStarted.current = shouldShowSession1Intro();
       setShowIntro(introStarted.current);
     }
@@ -131,12 +138,15 @@ export default function ApplyEducationPage() {
   return (
     <ApplicationFlowShell
       stepId="education"
-      onBack={() => router.push('/apply/dashboard')}
+      onBack={() =>
+        router.push(fromReview ? '/apply/review' : '/apply/personal-details')
+      }
       onContinue={() => {
         if (!hasTranscript && !manualEntry) return;
-        router.push('/apply/availability');
+        router.push(fromReview ? '/apply/review' : '/apply/availability');
       }}
       continueDisabled={!hasTranscript && !manualEntry}
+      continueLabel={fromReview ? 'Save' : 'Next'}
     >
       <header style={{ marginBottom: 24 }}>
         <h1

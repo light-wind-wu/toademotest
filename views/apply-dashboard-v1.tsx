@@ -34,7 +34,7 @@ const ACTIVITY = [
   },
   {
     title: 'Application received',
-    body: 'Your Polytechnic Internship 2027 submission is complete.',
+    body: 'Your Undergraduate Internship 2027 submission is complete.',
     date: '24 Jul 2026',
     tone: 'accent' as const,
   },
@@ -215,7 +215,7 @@ export default function ApplyDashboardV1() {
                 className="mt-2 text-[24px] font-semibold tracking-[-0.48px] leading-[28.8px]"
                 style={{ color: 'rgba(10, 22, 40, 1)' }}
               >
-                Polytechnic Internship 2027
+                Undergraduate Internship 2027
               </h2>
               <p
                 className="mt-2 text-[14px] font-normal leading-[100%]"

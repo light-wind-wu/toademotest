@@ -5,6 +5,7 @@ export const APPLY_DRAFT_KEY = 'dsta_apply_session_draft';
 export const CHAPTER_INTRO_KEY = 'dsta_apply_chapter_intro';
 
 export type ApplicationStepId =
+  | 'personal'
   | 'education'
   | 'availability'
   | 'project-fit'
@@ -20,6 +21,11 @@ export interface ApplicationNavStep {
 }
 
 export const APPLICATION_STEPS: ApplicationNavStep[] = [
+  {
+    id: 'personal',
+    label: 'Personal Detail',
+    mobileLabel: 'Personal Detail',
+  },
   {
     id: 'education',
     label: 'Education',
@@ -77,7 +83,7 @@ const EMPTY_DRAFT: ApplySessionDraft = {
   education: { ...DEFAULT_EDUCATION },
   startDate: '2026-07-13',
   endDate: '2026-10-31',
-  interests: ['AI & Data Analytics', 'Cybersecurity', 'Software Development'],
+  interests: ['Advanced Systems', 'Air Systems', 'Simulation & Training Systems'],
   rankedProjectIds: [],
   quizAnswers: [null, null, null, null, null, null],
   quizTaken: false,
@@ -85,7 +91,7 @@ const EMPTY_DRAFT: ApplySessionDraft = {
   scholarshipName: '',
   creditBearing: null,
   creditModuleCode: '',
-  programmeTitle: 'Polytechnic Internship 2027',
+  programmeTitle: 'Undergraduate Internship 2027',
 };
 
 export function defaultEducationDetails(): EducationDetails {

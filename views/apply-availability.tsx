@@ -37,9 +37,15 @@ function isBeforeDay(date: Date, min: Date) {
   return startOfDay(date) < startOfDay(min);
 }
 
+function isFromReview(): boolean {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get('from') === 'review';
+}
+
 export default function ApplyAvailabilityPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  const [fromReview, setFromReview] = useState(false);
   const [draft, setDraft] = useState<ApplySessionDraft | null>(null);
   /* Independent — opening one must not close the other */
   const [openStart, setOpenStart] = useState(false);
@@ -52,6 +58,7 @@ export default function ApplyAvailabilityPage() {
       router.replace('/login');
       return;
     }
+    setFromReview(isFromReview());
     const loaded = loadApplyDraft();
     const start = parseDate(loaded.startDate);
     /* Clamp seeded / stale start dates that fall before tomorrow */
@@ -97,13 +104,20 @@ export default function ApplyAvailabilityPage() {
   return (
     <ApplicationFlowShell
       stepId="availability"
-      onBack={() => router.push('/apply/education')}
+      onBack={() =>
+        router.push(fromReview ? '/apply/review' : '/apply/education')
+      }
       onContinue={() => {
         if (!canContinue) return;
+        if (fromReview) {
+          router.push('/apply/review');
+          return;
+        }
         markChapterIntro('session-2');
         router.push('/apply/project-fit?intro=session-2');
       }}
       continueDisabled={!canContinue}
+      continueLabel={fromReview ? 'Save' : 'Next'}
     >
       <header className="mb-8 md:mb-5">
         <h1 className="text-[1.375rem] font-bold leading-snug tracking-tight text-fg md:text-[1.5rem]">
@@ -159,7 +173,6 @@ export default function ApplyAvailabilityPage() {
             onToggle={() => setOpenEnd((v) => !v)}
             onSelect={(d) => persist({ ...draft, endDate: format(d, 'yyyy-MM-dd') })}
             className="md:border-l md:border-border md:pl-5"
-            outlineSelected
           />
         </div>
       </section>
@@ -178,7 +191,6 @@ function InlineDateColumn({
   onToggle,
   onSelect,
   className,
-  outlineSelected,
 }: {
   label: string;
   required?: boolean;
@@ -191,7 +203,6 @@ function InlineDateColumn({
   onToggle: () => void;
   onSelect: (d: Date) => void;
   className?: string;
-  outlineSelected?: boolean;
 }) {
   return (
     <div className={cn('min-w-0', className)}>
@@ -236,9 +247,12 @@ function InlineDateColumn({
       {open && (
         <div
           className={cn(
-            'mt-3 w-full rounded-lg border border-border bg-surface p-2 shadow-sm sm:p-3',
-            outlineSelected &&
-              '[&_button[aria-selected=true]]:bg-transparent [&_button[aria-selected=true]]:font-semibold [&_button[aria-selected=true]]:text-accent [&_button[aria-selected=true]]:ring-2 [&_button[aria-selected=true]]:ring-accent',
+            'mt-3 box-border overflow-hidden rounded-lg border border-border bg-surface shadow-sm',
+            'h-[266px] w-[271px]',
+            /* Selected day — blue outline (matches comps), not solid fill */
+            '[&_button[aria-selected=true]]:bg-transparent [&_button[aria-selected=true]]:font-semibold',
+            '[&_button[aria-selected=true]]:text-accent [&_button[aria-selected=true]]:ring-2',
+            '[&_button[aria-selected=true]]:ring-accent [&_button[aria-selected=true]]:ring-inset',
           )}
         >
           <Calendar
@@ -247,7 +261,8 @@ function InlineDateColumn({
             disabled={minDate ? (date) => isBeforeDay(date, minDate) : undefined}
             onSelect={onSelect}
             captionLayout="dropdown"
-            className="w-full max-w-none"
+            compact
+            className="h-full w-full max-w-none"
           />
         </div>
       )}

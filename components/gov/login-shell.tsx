@@ -20,14 +20,14 @@ export default function LoginShell({
       data-zone="enterprise"
       data-mode="light"
       className={cn(
-        'min-h-screen grid lg:grid-cols-[minmax(280px,32vw)_1fr]',
+        'min-h-screen grid lg:grid-cols-[460px_1fr]',
         className,
       )}
     >
       {/* ── Brand hero ───────────────────────────────────────────────────── */}
       <aside
         className="relative hidden lg:flex flex-col justify-between overflow-hidden px-10 py-12 text-white xl:px-12"
-        style={{ background: 'rgba(15, 45, 110, 1)' }}
+        style={{ background: 'rgba(10, 22, 40, 1)' }}
       >
         <svg
           aria-hidden="true"

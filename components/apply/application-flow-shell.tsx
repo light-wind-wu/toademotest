@@ -1,7 +1,7 @@
 'use client';
 
 /* Shared C-end application chrome: topbar + PC vertical stepper + mobile
-   horizontal 5-node stepper + sticky footer actions. */
+   horizontal stepper + sticky footer actions. */
 import { type ReactNode } from 'react';
 import Image from 'next/image';
 import ApplicantChrome from '@/components/apply/applicant-chrome';
@@ -212,17 +212,14 @@ export default function ApplicationFlowShell({
                     >
                       <StepBadge index={i} done={done} active={active} />
                       {!isLast && (
-                        <>
-                          <span className="block w-2 shrink-0" aria-hidden />
+                        <span className="flex min-w-0 flex-1 items-center justify-center" aria-hidden>
                           <span
-                            className="block h-px min-w-0 flex-1"
+                            className="block h-px w-[23px] shrink-0"
                             style={{
                               background: lineDone ? LINE_DONE : LINE_PENDING,
                             }}
-                            aria-hidden
                           />
-                          <span className="block w-2 shrink-0" aria-hidden />
-                        </>
+                        </span>
                       )}
                     </li>
                   );

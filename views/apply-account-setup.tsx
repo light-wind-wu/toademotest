@@ -4,8 +4,13 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Check, Info } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import ApplicantChrome from '@/components/apply/applicant-chrome';
+import {
+  ProfileFields,
+  TipBanner,
+  isSingpassPersonalIncomplete,
+} from '@/components/apply/singpass-profile-fields';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -16,7 +21,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { useRole } from '@/lib/role';
 import { signIn } from '@/lib/session';
 import {
@@ -46,9 +50,6 @@ const CARD_SUBTITLE = {
   color: 'rgba(69, 85, 108, 1)',
 } as const;
 
-const CONTACT_INPUT =
-  'text-[14px] font-normal leading-none text-[rgba(15,23,42,1)] placeholder:text-[rgba(15,23,42,0.45)]';
-
 const CONSENT_TEXT_CLASS =
   'font-normal text-[12px] leading-[18px] text-[rgba(22,33,51,1)] lg:text-[14px] lg:leading-[20.3px]';
 
@@ -65,7 +66,7 @@ export default function ApplyAccountSetup() {
   const [pending, setPending] = useState<MyinfoPending | null>(null);
   const [personal, setPersonal] = useState<MyinfoProfile | null>(null);
   const [editing, setEditing] = useState(false);
-  const [nric, setNric] = useState('');
+  const [nric, setNric] = useState('S1234567A');
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
   const [dataUseConsent, setDataUseConsent] = useState(false);
@@ -73,6 +74,7 @@ export default function ApplyAccountSetup() {
   const [prompt, setPrompt] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [attempted, setAttempted] = useState(false);
+  const [ready, setReady] = useState(false);
   const promptRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
@@ -86,6 +88,34 @@ export default function ApplyAccountSetup() {
     setMobile(p.profile.mobile);
     setEmail(p.profile.email);
     setRole(p.role);
+
+    let cancelled = false;
+    const started = Date.now();
+    const minMs = 480;
+
+    function preload(src: string) {
+      return new Promise<void>((resolve) => {
+        const img = new window.Image();
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+        img.src = src;
+      });
+    }
+
+    void Promise.all([
+      preload('/images/setup-banner-pc.png'),
+      preload('/images/setup-banner-m.png'),
+    ]).then(() => {
+      if (cancelled) return;
+      const wait = Math.max(0, minMs - (Date.now() - started));
+      window.setTimeout(() => {
+        if (!cancelled) setReady(true);
+      }, wait);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [router, setRole]);
 
   useEffect(() => {
@@ -100,22 +130,33 @@ export default function ApplyAccountSetup() {
     return '';
   }
 
+  function validateContact(overrides: { nric?: string; mobile?: string; email?: string } = {}): string {
+    const nextNric = overrides.nric ?? nric;
+    const nextMobile = overrides.mobile ?? mobile;
+    const nextEmail = overrides.email ?? email;
+    if (!nextNric.trim()) return 'Enter your NRIC / FIN to continue.';
+    if (!isValidNric(nextNric)) return 'Enter a valid NRIC / FIN, for example S1234567A.';
+    if (!nextMobile.trim() || !nextEmail.trim()) {
+      return 'Confirm your mobile number and email to continue.';
+    }
+    return '';
+  }
+
   function validateWith(overrides: {
     nric?: string;
+    mobile?: string;
+    email?: string;
     dataUseConsent?: boolean;
     declarationConsent?: boolean;
     personal?: MyinfoProfile;
   } = {}): string {
-    const nextPersonal = overrides.personal ?? personal;
-    const personalMsg = validatePersonal(nextPersonal);
+    const personalMsg = validatePersonal(overrides.personal ?? personal);
     if (personalMsg) return personalMsg;
+    const contactMsg = validateContact(overrides);
+    if (contactMsg) return contactMsg;
 
-    const nextNric = overrides.nric ?? nric;
     const nextData = overrides.dataUseConsent ?? dataUseConsent;
     const nextDecl = overrides.declarationConsent ?? declarationConsent;
-    if (!nextNric.trim()) return 'Enter your NRIC / FIN to continue.';
-    if (!isValidNric(nextNric)) return 'Enter a valid NRIC / FIN, for example S1234567A.';
-    if (!mobile.trim() || !email.trim()) return 'Confirm your mobile number and email to continue.';
     if (!nextData || !nextDecl) return 'Confirm both consent and declaration clauses to continue.';
     return '';
   }
@@ -126,7 +167,7 @@ export default function ApplyAccountSetup() {
       return;
     }
     setAttempted(true);
-    const msg = validatePersonal();
+    const msg = validatePersonal() || validateContact();
     setPrompt(msg);
     if (msg) return;
     setEditing(false);
@@ -137,7 +178,13 @@ export default function ApplyAccountSetup() {
     const msg = validateWith();
     setPrompt(msg);
     if (msg) {
-      if (msg.startsWith('Complete all details retrieved via Singpass')) setEditing(true);
+      if (
+        msg.startsWith('Complete all details retrieved via Singpass') ||
+        msg.startsWith('Enter your NRIC') ||
+        msg.startsWith('Confirm your mobile')
+      ) {
+        setEditing(true);
+      }
       return;
     }
     setConfirmOpen(true);
@@ -165,11 +212,18 @@ export default function ApplyAccountSetup() {
     router.push('/apply/education?intro=session-1');
   }
 
-  if (!pending || !personal) {
+  if (!ready || !pending || !personal) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-bg text-body-sm text-fg-muted">
-        Loading…
-      </div>
+      <ApplicantChrome hideProfile className="max-lg:bg-[rgba(251,251,253,1)] lg:bg-bg">
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-16">
+          <Loader2
+            className="size-8 animate-spin text-accent"
+            strokeWidth={1.5}
+            aria-hidden
+          />
+          <p className="text-body-sm text-fg-muted">Loading your Singpass details…</p>
+        </div>
+      </ApplicantChrome>
     );
   }
 
@@ -382,12 +436,27 @@ export default function ApplyAccountSetup() {
 
                 <ProfileFields
                   personal={personal}
+                  nric={nric}
+                  mobile={mobile}
+                  email={email}
                   editing={editing}
                   showErrors={attempted}
                   onChange={(patch) => {
                     const next = { ...personal, ...patch };
                     setPersonal(next);
                     if (attempted) setPrompt(validateWith({ personal: next }));
+                  }}
+                  onNricChange={(v) => {
+                    setNric(v);
+                    if (attempted) setPrompt(validateWith({ nric: v }));
+                  }}
+                  onMobileChange={(v) => {
+                    setMobile(v);
+                    if (attempted) setPrompt(validateWith({ mobile: v }));
+                  }}
+                  onEmailChange={(v) => {
+                    setEmail(v);
+                    if (attempted) setPrompt(validateWith({ email: v }));
                   }}
                 />
 
@@ -414,47 +483,7 @@ export default function ApplyAccountSetup() {
                 </button>
               </section>
 
-              {/* Card 2 */}
-              <section className={CARD_BOX_CLASS}>
-                <h3 className={CARD_TITLE_CLASS}>Personal and Contact Details</h3>
-                <div className="mt-6 grid gap-4 md:grid-cols-3">
-                  <Field label="NRIC / FIN" required>
-                    <Input
-                      value={nric}
-                      onChange={(e) => {
-                        const v = e.target.value.toUpperCase();
-                        setNric(v);
-                        if (attempted) setPrompt(validateWith({ nric: v }));
-                      }}
-                      placeholder="e.g. S1234567A"
-                      maxLength={9}
-                      autoComplete="off"
-                      className={cn(
-                        'h-10 rounded-md',
-                        CONTACT_INPUT,
-                        attempted && !nric.trim() && 'border-warning focus-visible:outline-warning',
-                      )}
-                    />
-                  </Field>
-                  <Field label="Mobile Number" required>
-                    <Input
-                      value={mobile}
-                      onChange={(e) => setMobile(e.target.value)}
-                      className={cn('h-10 rounded-md', CONTACT_INPUT)}
-                    />
-                  </Field>
-                  <Field label="Email" required>
-                    <Input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className={cn('h-10 rounded-md', CONTACT_INPUT)}
-                    />
-                  </Field>
-                </div>
-              </section>
-
-              {/* Card 3 */}
+              {/* Consent */}
               <section className={CARD_BOX_CLASS}>
                 <h3 className={CARD_TITLE_CLASS}>Consent and declaration</h3>
                 <div className="mt-3 space-y-4">
@@ -601,98 +630,6 @@ function MobileStepper() {
   );
 }
 
-function isSingpassPersonalIncomplete(profile: MyinfoProfile): boolean {
-  return (
-    !profile.name.trim() ||
-    !profile.dateOfBirth.trim() ||
-    !profile.nationality.trim() ||
-    !profile.residentialStatus.trim() ||
-    !profile.registeredAddress.trim()
-  );
-}
-
-function ProfileFields({
-  personal,
-  editing,
-  showErrors,
-  onChange,
-}: {
-  personal: MyinfoProfile;
-  editing: boolean;
-  showErrors?: boolean;
-  onChange: (patch: Partial<MyinfoProfile>) => void;
-}) {
-  const divider = (
-    <div className="flex shrink-0 items-center" aria-hidden>
-      <span
-        className="block w-px"
-        style={{ height: 40, background: 'rgba(231, 228, 221, 1)' }}
-      />
-      <span className="block w-4" />
-    </div>
-  );
-
-  const field = (
-    label: string,
-    key: keyof Pick<
-      MyinfoProfile,
-      'name' | 'dateOfBirth' | 'nationality' | 'residentialStatus' | 'registeredAddress'
-    >,
-  ) => (
-    <VerifiedField
-      label={label}
-      value={personal[key]}
-      editing={editing}
-      invalid={showErrors && !personal[key].trim()}
-      onChange={(v) => onChange({ [key]: v })}
-    />
-  );
-
-  return (
-    <>
-      {/* Mobile — 2 columns + vertical rule */}
-      <div className="grid grid-cols-2 gap-y-6 lg:hidden" style={{ rowGap: 24 }}>
-        <div className="border-r pr-4" style={{ borderColor: 'rgba(231, 228, 221, 1)' }}>
-          {field('Name', 'name')}
-        </div>
-        <div className="pl-4">
-          {field('Date of birth', 'dateOfBirth')}
-        </div>
-        <div className="border-r pr-4" style={{ borderColor: 'rgba(231, 228, 221, 1)' }}>
-          {field('Nationality', 'nationality')}
-        </div>
-        <div className="pl-4">
-          {field('Residential status', 'residentialStatus')}
-        </div>
-        <div className="col-span-2">
-          {field('Requested address', 'registeredAddress')}
-        </div>
-      </div>
-
-      {/* PC — 3 columns; 1×40 divider + 16px gap to the right; 24px row gap */}
-      <div className="hidden lg:flex lg:flex-col" style={{ gap: 24 }}>
-        <div className="flex items-start">
-          <div className="min-w-0 flex-1">{field('Name', 'name')}</div>
-          {divider}
-          <div className="min-w-0 flex-1">{field('Date of birth', 'dateOfBirth')}</div>
-          {divider}
-          <div className="min-w-0 flex-1">{field('Nationality', 'nationality')}</div>
-        </div>
-        <div className="flex items-start">
-          <div className="min-w-0 flex-1">{field('Residential status', 'residentialStatus')}</div>
-          {divider}
-          <div className="min-w-0 flex-1">{field('Requested address', 'registeredAddress')}</div>
-          <div className="flex shrink-0 items-center" aria-hidden>
-            <span className="block w-px opacity-0" style={{ height: 40 }} />
-            <span className="block w-4" />
-          </div>
-          <div className="min-w-0 flex-1" />
-        </div>
-      </div>
-    </>
-  );
-}
-
 function SidebarStep({
   title,
   detail,
@@ -814,117 +751,5 @@ function SidebarDecoration() {
         <path d="M54 40h26M100 32l20 12M142 48h20" strokeDasharray="3 4" />
       </g>
     </svg>
-  );
-}
-
-function TipBanner({ children, tall }: { children: ReactNode; tall?: boolean }) {
-  return (
-    <div
-      className={cn(
-        'flex gap-2.5 rounded-md border border-[rgba(230,225,216,1)] px-3',
-        tall
-          ? 'items-center py-3 max-lg:h-[109px] lg:h-12 lg:py-0'
-          : 'h-12 items-center',
-      )}
-      style={{
-        marginTop: 24,
-        marginBottom: 16,
-        background:
-          'linear-gradient(0deg, #F3EFE5, #F3EFE5), linear-gradient(0deg, #F9F8F4, #F9F8F4)',
-      }}
-    >
-      <Info
-        className="size-4 shrink-0"
-        strokeWidth={1.5}
-        style={{ color: 'rgba(22, 33, 51, 1)' }}
-        aria-hidden
-      />
-      <p
-        style={{
-          fontWeight: 400,
-          fontSize: 14,
-          lineHeight: '20.3px',
-          color: 'rgba(22, 33, 51, 1)',
-        }}
-      >
-        {children}
-      </p>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  required,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <div>
-      <label
-        className="mb-1.5 block"
-        style={{
-          fontWeight: 500,
-          fontSize: 14,
-          lineHeight: '14px',
-          color: 'rgba(15, 23, 43, 1)',
-        }}
-      >
-        {label}
-        {required && <span className="text-danger"> *</span>}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-function VerifiedField({
-  label,
-  value,
-  editing,
-  invalid,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  editing: boolean;
-  invalid?: boolean;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div>
-      <p
-        style={{
-          fontWeight: 400,
-          fontSize: 14,
-          lineHeight: '20px',
-          color: 'rgba(69, 85, 108, 1)',
-        }}
-      >
-        {label}
-      </p>
-      {editing ? (
-        <Input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={cn(
-            'mt-1 h-9 rounded-md',
-            invalid && 'border-warning focus-visible:outline-warning',
-          )}
-        />
-      ) : (
-        <p
-          className={cn(
-            'mt-0.5 text-[14px] leading-5 font-semibold lg:font-medium',
-            invalid ? 'text-warning' : 'text-[rgba(15,23,43,1)]',
-          )}
-        >
-          {value.trim() || '—'}
-        </p>
-      )}
-    </div>
   );
 }

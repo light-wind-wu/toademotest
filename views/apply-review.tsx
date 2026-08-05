@@ -5,7 +5,7 @@
    2 Academic Transcript (+ CV below rule)
    3 Availability
    4 Additional Details (scholarship / credit split by rule) */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
 import ApplicationFlowShell from '@/components/apply/application-flow-shell';
@@ -15,6 +15,21 @@ import { isSignedIn } from '@/lib/session';
 import { cn } from '@/lib/utils';
 
 const DIVIDER = 'rgba(231, 228, 221, 1)';
+
+const EDIT_BTN_STYLE: CSSProperties = {
+  marginTop: 24,
+  borderRadius: 6,
+  border: '1px solid rgba(231, 228, 221, 1)',
+  background: 'rgba(251, 250, 246, 1)',
+  paddingTop: 6.5,
+  paddingRight: 12,
+  paddingBottom: 7.5,
+  paddingLeft: 12,
+  fontWeight: 500,
+  fontSize: 12,
+  lineHeight: '16px',
+  color: 'rgba(15, 23, 43, 1)',
+};
 
 function formatDisplayDate(iso: string) {
   if (!iso) return '—';
@@ -79,6 +94,7 @@ export default function ApplyReviewPage() {
           title="Personal details"
           open={open.personal}
           onToggle={() => toggle('personal')}
+          onEdit={() => router.push('/apply/personal-details?from=review')}
         >
           <FieldGrid
             columns={3}
@@ -116,6 +132,7 @@ export default function ApplyReviewPage() {
           title="Academic Transcript"
           open={open.transcript}
           onToggle={() => toggle('transcript')}
+          onEdit={() => router.push('/apply/education?from=review')}
         >
           {draft.transcriptName ? (
             <p className="text-[14px] font-semibold text-accent underline underline-offset-2">
@@ -168,6 +185,7 @@ export default function ApplyReviewPage() {
           title="Availability"
           open={open.availability}
           onToggle={() => toggle('availability')}
+          onEdit={() => router.push('/apply/availability?from=review')}
         >
           <dl className="grid grid-cols-1 sm:grid-cols-2">
             <div className="pb-3 sm:pb-0 sm:pr-3">
@@ -193,6 +211,7 @@ export default function ApplyReviewPage() {
           title="Additional Details"
           open={open.additional}
           onToggle={() => toggle('additional')}
+          onEdit={() => router.push('/apply/additional-details?from=review')}
         >
           <div>
             <Field
@@ -234,12 +253,14 @@ function ReviewSection({
   title,
   open,
   onToggle,
+  onEdit,
   children,
 }: {
   title: string;
   open: boolean;
   onToggle: () => void;
-  children: React.ReactNode;
+  onEdit: () => void;
+  children: ReactNode;
 }) {
   return (
     <section className="rounded-xl border border-border bg-surface shadow-sm">
@@ -257,7 +278,19 @@ function ReviewSection({
           )}
         />
       </button>
-      {open && <div className="border-t border-border px-4 py-4 md:px-5">{children}</div>}
+      {open && (
+        <div className="border-t border-border px-4 py-4 md:px-5">
+          {children}
+          <button
+            type="button"
+            onClick={onEdit}
+            className="box-border h-8 cursor-pointer"
+            style={EDIT_BTN_STYLE}
+          >
+            Edit
+          </button>
+        </div>
+      )}
     </section>
   );
 }

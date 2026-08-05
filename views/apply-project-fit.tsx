@@ -57,6 +57,7 @@ import ChapterIntro from '@/components/apply/chapter-intro';
 import {
   clearChapterIntro,
   loadApplyDraft,
+  markChapterIntro,
   peekChapterIntro,
   saveApplyDraft,
   type ApplySessionDraft,
@@ -90,8 +91,6 @@ export default function ApplyProjectFitPage() {
   const [draft, setDraft] = useState<ApplySessionDraft | null>(null);
   const [phase, setPhase] = useState<Phase>('interests');
   const [showArchetype, setShowArchetype] = useState(false);
-  const [showSession3, setShowSession3] = useState(false);
-  const [session3Next, setSession3Next] = useState<'ranking' | 'additional'>('ranking');
   const [quizIndex, setQuizIndex] = useState(0);
   const [displayName, setDisplayName] = useState('there');
 
@@ -166,7 +165,7 @@ export default function ApplyProjectFitPage() {
               setQuizIndex(QUIZ_QUESTIONS.length - 1);
               setPhase('quiz');
             },
-            onContinue: () => setPhase('interests'),
+            onContinue: () => setPhase('ranking'),
             continueLabel: 'Next',
             continueDisabled: false,
           }
@@ -174,8 +173,8 @@ export default function ApplyProjectFitPage() {
         ? {
             onBack: () => setPhase(draft.quizTaken ? 'result' : 'interests'),
             onContinue: () => {
-              setSession3Next('additional');
-              setShowSession3(true);
+              markChapterIntro('session-3');
+              router.push('/apply/additional-details?intro=session-3');
             },
             continueLabel: 'Next',
             continueDisabled: draft.rankedProjectIds.length === 0,
@@ -261,21 +260,6 @@ export default function ApplyProjectFitPage() {
           }}
         />
       )}
-
-      {showSession3 && (
-        <ChapterIntro
-          session="session-3"
-          onDone={() => {
-            setShowSession3(false);
-            if (session3Next === 'ranking') {
-              setPhase('ranking');
-              return;
-            }
-            /* Intro already played here (fig 7) — land on Additional Details */
-            router.push('/apply/additional-details');
-          }}
-        />
-      )}
     </ApplicationFlowShell>
   );
 }
@@ -313,11 +297,7 @@ function InterestsPhase({
         </h1>
       </header>
       <section className="rounded-xl border border-border bg-surface p-4 shadow-sm md:p-6">
-        <p className="text-[13px] text-fg-muted lg:hidden">
-          Tap the areas that interest you. We&apos;ll use them to personalize your project
-          recommendations.
-        </p>
-        <p className="hidden text-[13px] text-fg-muted lg:block">
+        <p className="text-[13px] text-fg-muted">
           Select the areas that interest you. We&apos;ll use them to personalize your project
           recommendations.
         </p>
@@ -344,18 +324,6 @@ function InterestsPhase({
             );
           })}
         </div>
-        <p
-          className="mt-4 flex items-start gap-2"
-          style={{
-            fontWeight: 400,
-            fontSize: 13,
-            lineHeight: '18px',
-            color: 'rgba(74, 85, 104, 1)',
-          }}
-        >
-          <Info size={14} className="mt-0.5 shrink-0" aria-hidden />
-          <span>You can update your interests anytime</span>
-        </p>
       </section>
 
       {/* Spacer so content clears the fixed footer */}
@@ -619,13 +587,19 @@ function RankingPhase({
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const rankedSet = useMemo(() => new Set(rankedIds), [rankedIds]);
   const highlight = { color: 'rgba(26, 101, 248, 1)', fontWeight: 600 as const };
+  const [showMaxReached, setShowMaxReached] = useState(false);
 
   function add(id: string) {
-    if (rankedSet.has(id) || rankedIds.length >= MAX_RANKED) return;
+    if (rankedSet.has(id)) return;
+    if (rankedIds.length >= MAX_RANKED) {
+      setShowMaxReached(true);
+      return;
+    }
     onChange([...rankedIds, id]);
   }
 
   function remove(id: string) {
+    setShowMaxReached(false);
     onChange(rankedIds.filter((x) => x !== id));
   }
 
@@ -737,6 +711,12 @@ function RankingPhase({
               </DndContext>
             )}
           </div>
+          {showMaxReached && (
+            <div className="mt-3 flex shrink-0 items-center gap-2 text-body-sm text-warning">
+              <Info size={14} className="shrink-0" strokeWidth={1.5} aria-hidden />
+              Maximum of 5 projects reached. Remove one to add another.
+            </div>
+          )}
         </aside>
       </section>
 

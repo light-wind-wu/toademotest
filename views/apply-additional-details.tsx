@@ -26,6 +26,11 @@ function shouldShowSession3Intro(): boolean {
   return fromQuery === 'session-3' || peekChapterIntro() === 'session-3';
 }
 
+function isFromReview(): boolean {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get('from') === 'review';
+}
+
 function ynValue(v: boolean | null): string {
   if (v === true) return 'yes';
   if (v === false) return 'no';
@@ -36,6 +41,7 @@ export default function ApplyAdditionalDetailsPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
+  const [fromReview, setFromReview] = useState(false);
   const [draft, setDraft] = useState<ApplySessionDraft | null>(null);
 
   useEffect(() => {
@@ -43,7 +49,11 @@ export default function ApplyAdditionalDetailsPage() {
       router.replace('/login');
       return;
     }
-    setShowIntro(shouldShowSession3Intro());
+    setFromReview(isFromReview());
+    /* Skip chapter intro when returning from Review edit */
+    if (!isFromReview()) {
+      setShowIntro(shouldShowSession3Intro());
+    }
     setDraft(loadApplyDraft());
     setReady(true);
   }, [router]);
@@ -87,12 +97,15 @@ export default function ApplyAdditionalDetailsPage() {
   return (
     <ApplicationFlowShell
       stepId="additional"
-      onBack={() => router.push('/apply/project-fit')}
+      onBack={() =>
+        router.push(fromReview ? '/apply/review' : '/apply/project-fit')
+      }
       onContinue={() => {
         if (!canContinue) return;
         router.push('/apply/review');
       }}
       continueDisabled={!canContinue}
+      continueLabel={fromReview ? 'Save' : 'Next'}
     >
       <header className="mb-5">
         <h1 className="text-[1.375rem] font-bold leading-snug tracking-tight text-fg md:text-[1.5rem]">

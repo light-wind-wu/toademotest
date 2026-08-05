@@ -1,17 +1,15 @@
 'use client';
 
 /* Post-Myinfo welcome — 1440×840 artboard (welcome-bg) + 672×368 card.
-   PC illus 314×298 / mobile 217×230 bottom-right. Line anim + auto-advance kept. */
+   PC illus 314×298 / mobile 217×230 bottom-right. Advances only on CTA click. */
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import ApplicantChrome from '@/components/apply/applicant-chrome';
 import { firstName, loadMyinfoPending } from '@/lib/myinfo';
 import { useRole } from '@/lib/role';
 import { cn } from '@/lib/utils';
-
-const AUTO_MS = 10000; // temporary — revert to 3000 when reviewing done
 
 const ART_W = 1440;
 const ART_H = 840;
@@ -25,7 +23,7 @@ const BODY_FG = 'rgba(69, 85, 108, 1)';
 const CTA_BG = 'rgba(26, 101, 248, 1)';
 const CARD_BORDER = 'rgba(231, 228, 221, 1)';
 
-const PROGRAMME_LABEL = 'Applying for - Polytechnic Internship 2027';
+const PROGRAMME_LABEL = 'Applying for - Undergraduate Internship 2027';
 
 const READY_ITEMS = [
   'Your latest CV',
@@ -37,6 +35,7 @@ export default function ApplyWelcome() {
   const { setRole } = useRole();
   const [name, setName] = useState('');
   const [leaving, setLeaving] = useState(false);
+  const [navigating, setNavigating] = useState(false);
   const [scale, setScale] = useState(1);
   const leftRef = useRef(false);
 
@@ -49,15 +48,6 @@ export default function ApplyWelcome() {
     setRole(pending.role);
     setName(firstName(pending.profile.name));
   }, [router, setRole]);
-
-  useEffect(() => {
-    if (!name) return;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const delay = reduced ? 800 : AUTO_MS;
-    const t = window.setTimeout(() => goNext(), delay);
-    return () => window.clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name]);
 
   useEffect(() => {
     function update() {
@@ -74,17 +64,26 @@ export default function ApplyWelcome() {
     if (leftRef.current) return;
     leftRef.current = true;
     setLeaving(true);
-    window.setTimeout(() => router.replace('/apply/account-setup'), 280);
+    window.setTimeout(() => {
+      setNavigating(true);
+      router.replace('/apply/account-setup');
+    }, 280);
   }
 
-  if (!name) {
+  if (!name || navigating) {
     return (
-      <div
-        className="flex min-h-screen items-center justify-center text-body-sm text-fg-muted"
-        style={{ background: PAGE_BG }}
-      >
-        Loading…
-      </div>
+      <ApplicantChrome hideProfile className="!bg-[rgba(248,247,242,1)]">
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-16">
+          <Loader2
+            className="size-8 animate-spin text-accent"
+            strokeWidth={1.5}
+            aria-hidden
+          />
+          <p className="text-body-sm text-fg-muted">
+            {navigating ? 'Opening account setup…' : 'Loading…'}
+          </p>
+        </div>
+      </ApplicantChrome>
     );
   }
 

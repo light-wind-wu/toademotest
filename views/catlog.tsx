@@ -1,9 +1,10 @@
 'use client';
 
-/* Demo catalog — 1440×900 artboard (same scale model as start-tasks).
+/* Demo catalog — PC: 1440×900 artboard + catlog-bg.
+   Mobile: fluid list (no scale-down, no background).
    All roles → /start-tasks first; Applicant then continues to /login from a task.
    Route: /catlog */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
@@ -12,6 +13,7 @@ import { signIn } from '@/lib/session';
 import { saveUtTrack } from '@/lib/ut-track';
 import type { UserRole } from '@/lib/types';
 import Topbar from '@/components/layout/topbar';
+import { cn } from '@/lib/utils';
 
 const ART_W = 1440;
 const ART_H = 900;
@@ -22,7 +24,7 @@ const CARD_SHADOW =
   '0px 4px 6px -4px rgba(0, 0, 0, 0.05), 0px 10px 15px -3px rgba(0, 0, 0, 0.1)';
 const LABEL = 'rgba(15, 23, 43, 1)';
 
-/** Catalog column — centered in the artboard */
+/** Catalog column — centered in the artboard (PC) */
 const LIST_W = 420;
 const LIST_LEFT = (ART_W - LIST_W) / 2;
 const BTN_H = 56;
@@ -43,6 +45,40 @@ const CATALOG: CatalogItem[] = [
 const LIST_H = CATALOG.length * BTN_H + (CATALOG.length - 1) * BTN_GAP;
 const LIST_TOP = (ART_H - LIST_H) / 2;
 
+function CatalogButtons({
+  onPick,
+  className,
+  style,
+}: {
+  onPick: (item: CatalogItem) => void;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <nav className={cn('flex flex-col', className)} style={style} aria-label="Demo catalog">
+      {CATALOG.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          onClick={() => onPick(item)}
+          className="flex w-full cursor-pointer items-center justify-between rounded-xl bg-white px-5"
+          style={{
+            height: BTN_H,
+            boxShadow: CARD_SHADOW,
+            color: LABEL,
+            fontWeight: 500,
+            fontSize: 15,
+            lineHeight: '22px',
+          }}
+        >
+          <span className="truncate text-left">{item.label}</span>
+          <ArrowRight className="size-5 shrink-0" strokeWidth={1.5} aria-hidden />
+        </button>
+      ))}
+    </nav>
+  );
+}
+
 export default function Catlog() {
   const router = useRouter();
   const { setRole } = useRole();
@@ -55,6 +91,8 @@ export default function Catlog() {
 
   useEffect(() => {
     function update() {
+      /* PC artboard only — mobile uses fluid layout */
+      if (window.innerWidth < 768) return;
       const next = Math.min(
         window.innerWidth / ART_W,
         (window.innerHeight - HEADER_H) / ART_H,
@@ -99,7 +137,18 @@ export default function Catlog() {
       data-mode="light"
     >
       <Topbar navigationHidden hideProfile />
-      <div className="flex flex-1 items-center justify-center pt-16">
+
+      {/* Mobile — full-width list, no bg, no artboard scale */}
+      <div className="flex flex-1 flex-col justify-center px-4 pb-10 pt-16 md:hidden">
+        <CatalogButtons
+          onPick={pick}
+          className="mx-auto w-full max-w-[420px]"
+          style={{ gap: BTN_GAP }}
+        />
+      </div>
+
+      {/* PC — 1440×900 artboard + catlog-bg */}
+      <div className="hidden flex-1 items-center justify-center pt-16 md:flex">
         <div
           className="relative shrink-0"
           style={{ width: ART_W * scale, height: ART_H * scale }}
@@ -113,7 +162,6 @@ export default function Catlog() {
               position: 'absolute',
             }}
           >
-            {/* Background — catlog-bg fills 1440×900 artboard */}
             <Image
               src="/images/catlog-bg.png"
               alt=""
@@ -123,8 +171,9 @@ export default function Catlog() {
               sizes="1440px"
             />
 
-            <nav
-              className="absolute flex flex-col"
+            <CatalogButtons
+              onPick={pick}
+              className="absolute"
               style={{
                 left: LIST_LEFT,
                 top: LIST_TOP,
@@ -132,28 +181,7 @@ export default function Catlog() {
                 gap: BTN_GAP,
                 zIndex: 1,
               }}
-              aria-label="Demo catalog"
-            >
-              {CATALOG.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => pick(item)}
-                  className="flex w-full cursor-pointer items-center justify-between rounded-xl bg-white px-5"
-                  style={{
-                    height: BTN_H,
-                    boxShadow: CARD_SHADOW,
-                    color: LABEL,
-                    fontWeight: 500,
-                    fontSize: 15,
-                    lineHeight: '22px',
-                  }}
-                >
-                  <span className="truncate text-left">{item.label}</span>
-                  <ArrowRight className="size-5 shrink-0" strokeWidth={1.5} aria-hidden />
-                </button>
-              ))}
-            </nav>
+            />
           </div>
         </div>
       </div>

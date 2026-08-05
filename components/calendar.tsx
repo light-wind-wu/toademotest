@@ -82,6 +82,8 @@ export interface CalendarProps {
    * centred on the current year. Default 10.
    */
   yearRange?: number;
+  /** Tighter layout for fixed panels (e.g. apply availability 271×266). */
+  compact?: boolean;
 }
 
 export function Calendar({
@@ -95,6 +97,7 @@ export function Calendar({
   fromYear,
   toYear,
   yearRange = 10,
+  compact = false,
 }: CalendarProps) {
   const today = new Date();
   const isControlled = selected !== undefined;
@@ -124,19 +127,25 @@ export function Calendar({
   while (cells.length % 7 !== 0) cells.push(null);
 
   return (
-    <div className={cn("p-3 w-fit select-none", className)}>
+    <div
+      className={cn(
+        "select-none",
+        compact ? "box-border flex h-full w-full flex-col p-2.5" : "w-fit p-3",
+        className,
+      )}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between mb-2">
+      <div className={cn("flex items-center justify-between", compact ? "mb-1.5" : "mb-2")}>
         <button
           type="button"
           onClick={prevMonth}
-          className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-7 w-7")}
+          className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-7 w-7 shrink-0")}
           aria-label="Previous month"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
         {captionLayout === "dropdown" ? (
-          <div className="flex items-center gap-1">
+          <div className="flex min-w-0 items-center gap-1">
             <Select
               value={MONTHS[month]}
               onValueChange={(value) =>
@@ -145,7 +154,12 @@ export function Calendar({
             >
               <SelectTrigger
                 aria-label="Month"
-                className="h-7 w-auto justify-start gap-1 border-0 bg-transparent px-2 py-0 text-sm font-medium shadow-none hover:bg-bg-muted"
+                className={cn(
+                  "h-7 justify-start gap-1 px-2 py-0 text-sm font-medium shadow-none",
+                  compact
+                    ? "w-auto rounded-md border border-border bg-surface hover:bg-bg-muted"
+                    : "w-auto border-0 bg-transparent hover:bg-bg-muted",
+                )}
               >
                 <SelectValue />
               </SelectTrigger>
@@ -165,7 +179,12 @@ export function Calendar({
             >
               <SelectTrigger
                 aria-label="Year"
-                className="h-7 w-auto justify-start gap-1 border-0 bg-transparent px-2 py-0 text-sm font-medium shadow-none hover:bg-bg-muted"
+                className={cn(
+                  "h-7 justify-start gap-1 px-2 py-0 text-sm font-medium shadow-none",
+                  compact
+                    ? "w-auto rounded-md border border-border bg-surface hover:bg-bg-muted"
+                    : "w-auto border-0 bg-transparent hover:bg-bg-muted",
+                )}
               >
                 <SelectValue />
               </SelectTrigger>
@@ -186,7 +205,7 @@ export function Calendar({
         <button
           type="button"
           onClick={nextMonth}
-          className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-7 w-7")}
+          className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-7 w-7 shrink-0")}
           aria-label="Next month"
         >
           <ChevronRight className="h-4 w-4" />
@@ -194,11 +213,14 @@ export function Calendar({
       </div>
 
       {/* Day names */}
-      <div className="grid grid-cols-7 mb-1">
+      <div className={cn("grid grid-cols-7", compact ? "mb-0.5" : "mb-1")}>
         {DAYS.map((d) => (
           <div
             key={d}
-            className="flex h-8 items-center justify-center text-xs font-medium text-fg-muted"
+            className={cn(
+              "flex items-center justify-center text-xs font-medium text-fg-muted",
+              compact ? "h-7" : "h-8",
+            )}
           >
             {d}
           </div>
@@ -206,7 +228,7 @@ export function Calendar({
       </div>
 
       {/* Day cells */}
-      <div className="grid grid-cols-7 gap-y-0.5">
+      <div className={cn("grid flex-1 grid-cols-7", compact ? "gap-y-0" : "gap-y-0.5")}>
         {cells.map((day, idx) => {
           if (day === null) return <div key={`empty-${idx}`} />;
           const date = new Date(year, month, day);
@@ -228,7 +250,8 @@ export function Calendar({
               aria-selected={isSelected}
               aria-label={date.toLocaleDateString()}
               className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-md text-sm transition-colors",
+                "mx-auto flex items-center justify-center rounded-md text-sm transition-colors",
+                compact ? "h-7 w-7" : "h-8 w-8",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
                 "disabled:pointer-events-none disabled:opacity-30",
                 isSelected && "bg-accent text-accent-fg font-semibold",

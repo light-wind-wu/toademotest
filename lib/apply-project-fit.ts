@@ -1,14 +1,22 @@
 /* Session 2 mock data — interests, project matches, archetype quiz (6 Qs). */
 
 export const INTEREST_OPTIONS = [
-  'AI & Data Analytics',
-  'Cybersecurity',
-  'Robotics & Autonomous',
-  'Sensors & Guided Weapons',
-  'C3 Systems',
+  'Advanced Systems',
+  'Air Systems',
+  'Building & Infrastructure',
+  'Land Systems',
+  'Naval Systems',
+  'Simulation & Training Systems',
   'Software Development',
-  'Simulation & Immersive Tech',
+  'Artificial Intelligence',
+  'Cloud',
+  'Command & Control Systems',
+  'Cybersecurity',
+  'Data Science/Data Analytics',
+  'Infosecurity',
   'Networks & Infrastructure',
+  'UI/UX',
+  'Others',
 ] as const;
 
 export interface ProjectMatch {

@@ -1,7 +1,7 @@
 'use client';
 
 /* B-end usability-test briefing.
-   Desktop: fixed 1440×900 artboard, scales as one unit.
+   Desktop: fixed 1680×900 artboard, scales as one unit.
    Mobile: natural scroll layout (artboard shrink made type unreadably small).
    Staff track requires signed-in session; applicant track is reached from /catlog
    before Singpass and routes Task 1 → /login. */
@@ -14,7 +14,7 @@ import { loadUtTrack, type UtTrack } from '@/lib/ut-track';
 import Topbar from '@/components/layout/topbar';
 import { cn } from '@/lib/utils';
 
-const ART_W = 1440;
+const ART_W = 1680;
 const ART_H = 900;
 const HEADER_H = 64;
 
@@ -60,10 +60,20 @@ const STAFF_TASKS = [
 const APPLICANT_TASKS = [
   {
     id: 1,
-    title: 'Sign in and start your application',
+    title: 'B1.1 — Submit an Application',
     description:
-      'Sign in with Singpass (or email) to begin the Polytechnic Internship 2027 application. Complete the flow through account setup, application form, and submission.',
+      'You are interested in applying for an internship programme. Review the programme and project information, complete the required application details, select your areas of interest, and submit your application.',
     href: '/login',
+    enabled: true,
+  },
+  {
+    id: 2,
+    title: 'B3.2 — Schedule an Interview with a Mentor',
+    description:
+      'You have been shortlisted for an interview and invited by the Mentor to select an interview time. Review the available timeslots, choose a suitable slot, and confirm your interview schedule.',
+    href: '/apply/dashboard',
+    /** Locked until Task 1 is done — button greyed out for now. */
+    enabled: false,
   },
 ] as const;
 
@@ -74,9 +84,9 @@ const STAFF_COPY = {
 } as const;
 
 const APPLICANT_COPY = {
-  heading: 'Apply for the Polytechnic Internship',
-  body: 'You are an applicant exploring DSTA internship opportunities. Start by signing in, then complete your application from personal details through to submission.',
-  note: 'During this exercise, you will complete the following task.',
+  heading: '',
+  body: '',
+  note: 'During this exercise, you will complete the following two tasks.',
 } as const;
 
 type TaskItem = (typeof STAFF_TASKS)[number] | (typeof APPLICANT_TASKS)[number];
@@ -88,7 +98,7 @@ export default function StartTasks() {
   const [mounted, setMounted] = useState(false);
   const [track, setTrack] = useState<UtTrack>('staff');
   const [scale, setScale] = useState(1);
-  /** Desktop artboard + décor images only — mobile uses plain scroll layout. */
+  /** Desktop artboard + start-task-bg only — mobile uses plain scroll layout. */
   const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
@@ -159,7 +169,7 @@ export default function StartTasks() {
         </div>
       )}
 
-      {/* Desktop — scaled 1440 artboard with décor */}
+      {/* Desktop — scaled 1440 artboard with start-task-bg */}
       {isDesktop && (
       <div className="flex flex-1 items-center justify-center overflow-hidden pt-16">
         <div
@@ -174,23 +184,14 @@ export default function StartTasks() {
               transform: `scale(${scale})`,
             }}
           >
+            {/* Full 1680×900 bg — locked to artboard so décor stays in place when scaled */}
             <Image
-              src="/images/left-top.png"
+              src="/images/start-task-bg.jpg"
               alt=""
-              width={467}
-              height={314}
+              fill
               priority
-              className="pointer-events-none absolute object-contain"
-              style={{ left: -60, top: 40, width: 467, height: 314, zIndex: 0 }}
-            />
-            <Image
-              src="/images/right-bottom.png"
-              alt=""
-              width={651}
-              height={326}
-              priority
-              className="pointer-events-none absolute object-contain"
-              style={{ right: -80, bottom: -40, width: 651, height: 326, zIndex: 0 }}
+              className="pointer-events-none object-cover object-center"
+              sizes="1680px"
             />
 
             <div
@@ -209,11 +210,10 @@ export default function StartTasks() {
             >
               <BriefingHeader copy={copy} />
               <div
-                className={isApplicant ? 'grid grid-cols-1' : 'grid grid-cols-2'}
+                className="grid grid-cols-2"
                 style={{
                   marginTop: 11,
                   gap: 16,
-                  maxWidth: isApplicant ? 560 : undefined,
                 }}
               >
                 {tasks.map((task) => (
@@ -223,6 +223,7 @@ export default function StartTasks() {
                     title={task.title}
                     description={task.description}
                     cta={`Start Task ${task.id}`}
+                    disabled={'enabled' in task ? !task.enabled : false}
                     onClick={() => router.push(task.href)}
                   />
                 ))}
@@ -251,33 +252,37 @@ function BriefingHeader({ copy }: { copy: Copy }) {
       >
         Usability Test Scenario
       </p>
-      <h1
-        style={{
-          marginTop: 13,
-          color: TITLE,
-          fontWeight: 600,
-          fontSize: 20,
-          lineHeight: '30px',
-          letterSpacing: -0.41,
-        }}
-      >
-        {copy.heading}
-      </h1>
+      {copy.heading ? (
+        <h1
+          style={{
+            marginTop: 13,
+            color: TITLE,
+            fontWeight: 600,
+            fontSize: 20,
+            lineHeight: '30px',
+            letterSpacing: -0.41,
+          }}
+        >
+          {copy.heading}
+        </h1>
+      ) : null}
+      {copy.body ? (
+        <p
+          style={{
+            marginTop: copy.heading ? 0 : 13,
+            color: TITLE,
+            fontWeight: 400,
+            fontSize: 20,
+            lineHeight: '30px',
+            letterSpacing: -0.41,
+          }}
+        >
+          {copy.body}
+        </p>
+      ) : null}
       <p
         style={{
-          marginTop: 0,
-          color: TITLE,
-          fontWeight: 400,
-          fontSize: 20,
-          lineHeight: '30px',
-          letterSpacing: -0.41,
-        }}
-      >
-        {copy.body}
-      </p>
-      <p
-        style={{
-          marginTop: 20,
+          marginTop: copy.heading || copy.body ? 20 : 8,
           color: MUTED,
           fontWeight: 400,
           fontSize: 14,
@@ -311,16 +316,23 @@ function MobileBriefing({
         >
           Usability Test Scenario
         </p>
-        <h1
-          className="mt-3 text-[18px] font-semibold leading-snug tracking-tight"
-          style={{ color: TITLE }}
+        {copy.heading ? (
+          <h1
+            className="mt-3 text-[18px] font-semibold leading-snug tracking-tight"
+            style={{ color: TITLE }}
+          >
+            {copy.heading}
+          </h1>
+        ) : null}
+        {copy.body ? (
+          <p className="mt-2 text-[15px] leading-relaxed" style={{ color: TITLE }}>
+            {copy.body}
+          </p>
+        ) : null}
+        <p
+          className={cn('text-[13px] leading-5', copy.heading || copy.body ? 'mt-4' : 'mt-2')}
+          style={{ color: MUTED }}
         >
-          {copy.heading}
-        </h1>
-        <p className="mt-2 text-[15px] leading-relaxed" style={{ color: TITLE }}>
-          {copy.body}
-        </p>
-        <p className="mt-4 text-[13px] leading-5" style={{ color: MUTED }}>
           {copy.note}
         </p>
 
@@ -332,6 +344,7 @@ function MobileBriefing({
               title={task.title}
               description={task.description}
               cta={`Start Task ${task.id}`}
+              disabled={'enabled' in task ? !task.enabled : false}
               onClick={() => onStart(task.href)}
               compact
             />
@@ -349,6 +362,7 @@ function TaskCard({
   cta,
   onClick,
   compact = false,
+  disabled = false,
 }: {
   label: string;
   title: string;
@@ -356,6 +370,7 @@ function TaskCard({
   cta: string;
   onClick: () => void;
   compact?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <div
@@ -404,14 +419,18 @@ function TaskCard({
       <button
         type="button"
         onClick={onClick}
+        disabled={disabled}
         className={cn(
-          'mt-4 inline-flex cursor-pointer items-center justify-center gap-1 rounded-md text-white transition-opacity hover:opacity-90',
+          'mt-4 inline-flex items-center justify-center gap-1 rounded-md text-white',
           compact ? 'h-9 w-full px-3 text-[13px]' : 'w-fit px-3 text-[12px]',
+          disabled
+            ? 'cursor-not-allowed opacity-45'
+            : 'cursor-pointer transition-opacity hover:opacity-90',
         )}
         style={{
           height: compact ? 36 : 30,
-          padding: compact ? '0 12px' : '0 12px',
-          background: ACCENT,
+          padding: '0 12px',
+          background: disabled ? 'rgba(148, 163, 184, 1)' : ACCENT,
           fontWeight: 600,
           lineHeight: '16px',
         }}
