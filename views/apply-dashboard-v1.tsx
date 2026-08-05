@@ -12,12 +12,18 @@ import { cn } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import InterviewTimeslotSheet from '@/components/apply/interview-timeslot-sheet';
 
-const STEPS = [
+const STEPS: {
+  id: number;
+  label: string;
+  done: boolean;
+  current?: boolean;
+  hint?: string;
+}[] = [
   { id: 1, label: 'Submitted', done: true },
   { id: 2, label: 'Under Review', done: true },
   { id: 3, label: 'Interview', done: false, current: true, hint: 'Choose a timeslot' },
   { id: 4, label: 'Outcome', done: false },
-] as const;
+];
 
 const ACTIVITY = [
   {
@@ -385,7 +391,7 @@ export default function ApplyDashboardV1() {
                             >
                               {step.label}
                             </p>
-                            {'hint' in step && step.hint && (
+                            {step.hint && (
                               <p
                                 className="mt-0.5 text-[12px] font-normal leading-[140%]"
                                 style={{ color: 'rgba(74, 85, 104, 0.87)' }}
