@@ -116,6 +116,37 @@ export function loadApplicantProfile(): ApplicantProfile | null {
   }
 }
 
+/** Align Myinfo contact fields to catalog applicant path (demo seed). */
+export function seedApplicantProfileForVariant(
+  variant: 'polytechnic' | 'tech-up' | 'undergraduate',
+) {
+  const existing = loadApplicantProfile();
+  const base = getMyinfoProfile('new-applicant');
+  const email =
+    variant === 'polytechnic'
+      ? 'jenny.aw@nyp.edu.sg'
+      : variant === 'tech-up'
+        ? 'jenny.aw@techup.edu.sg'
+        : 'jenny.aw@u.nus.edu';
+  const dateOfBirth =
+    variant === 'polytechnic' ? '22 Aug 2007' : base.dateOfBirth;
+  const profile: ApplicantProfile = {
+    ...(existing ?? {
+      nric: 'T0123456A',
+      role: 'new-applicant',
+      dataUseConsent: true,
+      declarationConsent: true,
+      createdAt: new Date().toISOString(),
+    }),
+    ...base,
+    email,
+    dateOfBirth,
+    role: 'new-applicant',
+  };
+  saveApplicantProfile(profile);
+  return profile;
+}
+
 /** Singapore NRIC / FIN shape used by the concept demo. */
 export function isValidNric(value: string): boolean {
   return /^[STFGM]\d{7}[A-Z]$/i.test(value.replace(/\s/g, ''));

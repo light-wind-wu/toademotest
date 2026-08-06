@@ -17,6 +17,8 @@ import {
   type UtApplicantVariant,
   type UtCatalogPath,
 } from '@/lib/ut-track';
+import { seedApplyDraftForVariant } from '@/lib/apply-application';
+import { seedApplicantProfileForVariant } from '@/lib/myinfo';
 import { saveApplyDashboardVersion, type ApplyDashboardVersion } from '@/lib/apply-dashboard-version';
 import type { UserRole } from '@/lib/types';
 import Topbar from '@/components/layout/topbar';
@@ -276,6 +278,8 @@ export default function Catlog() {
     saveUtTrack('applicant');
     saveUtCatalogPath('applicant');
     saveUtApplicantVariant(variant);
+    seedApplyDraftForVariant(variant);
+    seedApplicantProfileForVariant(variant);
     setRole('new-applicant');
     router.push('/start-tasks');
   }

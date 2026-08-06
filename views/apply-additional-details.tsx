@@ -1,6 +1,8 @@
 'use client';
 
-/* Step 4 — Additional Details (bonded scholarship + credit-bearing). */
+/* Step 5 — Additional Details.
+   Polytechnic: credit-bearing only.
+   Tech Up / Undergraduate: bonded scholarship + credit-bearing. */
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ApplicationFlowShell from '@/components/apply/application-flow-shell';
@@ -13,8 +15,10 @@ import {
   loadApplyDraft,
   peekChapterIntro,
   saveApplyDraft,
+  syncApplyDraftToVariant,
   type ApplySessionDraft,
 } from '@/lib/apply-application';
+import { loadUtApplicantVariant } from '@/lib/ut-track';
 import { isSignedIn } from '@/lib/session';
 import { cn } from '@/lib/utils';
 
@@ -42,6 +46,7 @@ export default function ApplyAdditionalDetailsPage() {
   const [ready, setReady] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [fromReview, setFromReview] = useState(false);
+  const [isPolyPath, setIsPolyPath] = useState(false);
   const [draft, setDraft] = useState<ApplySessionDraft | null>(null);
 
   useEffect(() => {
@@ -50,11 +55,20 @@ export default function ApplyAdditionalDetailsPage() {
       return;
     }
     setFromReview(isFromReview());
+    const poly = loadUtApplicantVariant() === 'polytechnic';
+    setIsPolyPath(poly);
     /* Skip chapter intro when returning from Review edit */
     if (!isFromReview()) {
       setShowIntro(shouldShowSession3Intro());
     }
-    setDraft(loadApplyDraft());
+    const variant = loadUtApplicantVariant();
+    const loaded = syncApplyDraftToVariant(loadApplyDraft(), variant);
+    if (poly && loaded.bondedScholarship === null) {
+      loaded.bondedScholarship = false;
+      loaded.scholarshipName = '';
+    }
+    saveApplyDraft(loaded);
+    setDraft(loaded);
     setReady(true);
   }, [router]);
 
@@ -88,11 +102,14 @@ export default function ApplyAdditionalDetailsPage() {
     );
   }
 
-  const canContinue =
-    draft.bondedScholarship !== null &&
+  const creditOk =
     draft.creditBearing !== null &&
-    (draft.bondedScholarship !== true || draft.scholarshipName.trim().length > 0) &&
     (draft.creditBearing !== true || draft.creditModuleCode.trim().length > 0);
+  const bondedOk =
+    isPolyPath ||
+    (draft.bondedScholarship !== null &&
+      (draft.bondedScholarship !== true || draft.scholarshipName.trim().length > 0));
+  const canContinue = creditOk && bondedOk;
 
   return (
     <ApplicationFlowShell
@@ -114,40 +131,44 @@ export default function ApplyAdditionalDetailsPage() {
       </header>
 
       <section className="rounded-xl border border-border bg-surface p-5 shadow-sm md:p-6">
-        <fieldset>
-          <legend className="text-[14px] font-semibold leading-snug text-fg">
-            Are you a bonded scholarship recipient?<span className="text-danger">*</span>
-          </legend>
-          <RadioGroup
-            value={ynValue(draft.bondedScholarship)}
-            onValueChange={(v) => {
-              if (v === 'yes') persist({ ...draft, bondedScholarship: true });
-              else persist({ ...draft, bondedScholarship: false, scholarshipName: '' });
-            }}
-            className="mt-3 grid grid-cols-2 gap-3 lg:flex lg:gap-0"
-          >
-            <YesNoOption id="bonded-yes" value="yes" label="Yes" />
-            <YesNoOption id="bonded-no" value="no" label="No" />
-          </RadioGroup>
-          {draft.bondedScholarship === true && (
-            <div
-              className="mt-4 max-w-md rounded-lg bg-transparent p-4 lg:mt-3"
-              style={{ border: `1px solid ${NEST_BORDER}` }}
-            >
-              <label className="mb-2 block text-[13px] font-semibold text-fg lg:mb-1.5">
-                If yes, please provide the name of the scholarship.
-              </label>
-              <Input
-                value={draft.scholarshipName}
-                onChange={(e) => persist({ ...draft, scholarshipName: e.target.value })}
-                placeholder="Name of the scholarship"
-                className="h-10 rounded-md"
-              />
-            </div>
-          )}
-        </fieldset>
+        {!isPolyPath && (
+          <>
+            <fieldset>
+              <legend className="text-[14px] font-semibold leading-snug text-fg">
+                Are you a bonded scholarship recipient?<span className="text-danger">*</span>
+              </legend>
+              <RadioGroup
+                value={ynValue(draft.bondedScholarship)}
+                onValueChange={(v) => {
+                  if (v === 'yes') persist({ ...draft, bondedScholarship: true });
+                  else persist({ ...draft, bondedScholarship: false, scholarshipName: '' });
+                }}
+                className="mt-3 grid grid-cols-2 gap-3 lg:flex lg:gap-0"
+              >
+                <YesNoOption id="bonded-yes" value="yes" label="Yes" />
+                <YesNoOption id="bonded-no" value="no" label="No" />
+              </RadioGroup>
+              {draft.bondedScholarship === true && (
+                <div
+                  className="mt-4 max-w-md rounded-lg bg-transparent p-4 lg:mt-3"
+                  style={{ border: `1px solid ${NEST_BORDER}` }}
+                >
+                  <label className="mb-2 block text-[13px] font-semibold text-fg lg:mb-1.5">
+                    If yes, please provide the name of the scholarship.
+                  </label>
+                  <Input
+                    value={draft.scholarshipName}
+                    onChange={(e) => persist({ ...draft, scholarshipName: e.target.value })}
+                    placeholder="Name of the scholarship"
+                    className="h-10 rounded-md"
+                  />
+                </div>
+              )}
+            </fieldset>
 
-        <div className="my-6 border-t lg:my-5" style={{ borderColor: NEST_BORDER }} />
+            <div className="my-6 border-t lg:my-5" style={{ borderColor: NEST_BORDER }} />
+          </>
+        )}
 
         <fieldset>
           <legend className="text-[14px] font-semibold leading-snug text-fg">

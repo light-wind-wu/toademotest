@@ -14,6 +14,7 @@ import { loadApplyDraft, type ApplySessionDraft } from '@/lib/apply-application'
 import { PROJECT_MATCHES } from '@/lib/apply-project-fit';
 import { loadApplicantProfile, type ApplicantProfile } from '@/lib/myinfo';
 import { isSignedIn } from '@/lib/session';
+import { loadUtApplicantVariant } from '@/lib/ut-track';
 import { cn } from '@/lib/utils';
 
 const DIVIDER = 'rgba(231, 228, 221, 1)';
@@ -45,6 +46,7 @@ export default function ApplyReviewPage() {
   const [ready, setReady] = useState(false);
   const [draft, setDraft] = useState<ApplySessionDraft | null>(null);
   const [profile, setProfile] = useState<ApplicantProfile | null>(null);
+  const [isPolyPath, setIsPolyPath] = useState(false);
   const [open, setOpen] = useState({
     personal: true,
     transcript: true,
@@ -60,6 +62,7 @@ export default function ApplyReviewPage() {
     }
     setDraft(loadApplyDraft());
     setProfile(loadApplicantProfile());
+    setIsPolyPath(loadUtApplicantVariant() === 'polytechnic');
     setReady(true);
   }, [router]);
 
@@ -170,6 +173,14 @@ export default function ApplyReviewPage() {
                 >
                   <Field label="GPA" value={draft.education.gpa || '—'} />
                 </div>
+                {draft.education.expectedGraduation && (
+                  <div className="sm:pr-3">
+                    <Field
+                      label="Expected Graduation"
+                      value={formatDisplayDate(draft.education.expectedGraduation)}
+                    />
+                  </div>
+                )}
               </dl>
             </div>
           )}
@@ -257,24 +268,28 @@ export default function ApplyReviewPage() {
           onToggle={() => toggle('additional')}
           onEdit={() => router.push('/apply/additional-details?from=review')}
         >
-          <div>
-            <Field
-              label="Are you a bonded scholarship recipient?"
-              value={
-                draft.bondedScholarship == null ? '—' : draft.bondedScholarship ? 'Yes' : 'No'
-              }
-            />
-            {draft.bondedScholarship && (
-              <div
-                className="mt-3 rounded-lg bg-transparent p-3"
-                style={{ border: `1px solid ${DIVIDER}` }}
-              >
-                <Field label="Name of scholarship" value={draft.scholarshipName || '—'} />
+          {!isPolyPath && (
+            <>
+              <div>
+                <Field
+                  label="Are you a bonded scholarship recipient?"
+                  value={
+                    draft.bondedScholarship == null ? '—' : draft.bondedScholarship ? 'Yes' : 'No'
+                  }
+                />
+                {draft.bondedScholarship && (
+                  <div
+                    className="mt-3 rounded-lg bg-transparent p-3"
+                    style={{ border: `1px solid ${DIVIDER}` }}
+                  >
+                    <Field label="Name of scholarship" value={draft.scholarshipName || '—'} />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          <div className="my-4 border-t border-border" />
+              <div className="my-4 border-t border-border" />
+            </>
+          )}
 
           <div>
             <Field

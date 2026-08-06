@@ -50,6 +50,8 @@ export interface EducationDetails {
   course: string;
   yearOfStudy: string;
   gpa: string;
+  /** Shown for Tech Up / Undergraduate paths (not Polytechnic). */
+  expectedGraduation?: string;
 }
 
 export interface ApplySessionDraft {
@@ -70,12 +72,27 @@ export interface ApplySessionDraft {
   programmeTitle: string;
 }
 
-const DEFAULT_EDUCATION: EducationDetails = {
+/** Polytechnic Intern (catalog option 1). */
+export const POLY_EDUCATION: EducationDetails = {
+  institution: 'Nanyang Polytechnic',
+  course: 'Infocomm & Security',
+  yearOfStudy: 'Year 1',
+  gpa: '4.6',
+};
+
+/** Tech Up / Undergraduate Intern (catalog options 2–3). */
+export const UNI_EDUCATION: EducationDetails = {
   institution: 'National University of Singapore',
   course: 'Computer Science',
   yearOfStudy: 'Year 3',
   gpa: '4.6',
+  expectedGraduation: '2027-05-31',
 };
+
+const MOCK_TRANSCRIPT = 'Chen_academic transcript.pdf';
+const MOCK_CV = 'Chen1230_CV2026.pdf';
+
+const DEFAULT_EDUCATION: EducationDetails = { ...UNI_EDUCATION };
 
 const EMPTY_DRAFT: ApplySessionDraft = {
   transcriptName: '',
@@ -94,16 +111,79 @@ const EMPTY_DRAFT: ApplySessionDraft = {
   programmeTitle: 'Undergraduate Internship 2027',
 };
 
-export function defaultEducationDetails(): EducationDetails {
-  return { ...DEFAULT_EDUCATION };
+export function defaultEducationDetails(
+  variant?: 'polytechnic' | 'tech-up' | 'undergraduate' | null,
+): EducationDetails {
+  if (variant === 'polytechnic') return { ...POLY_EDUCATION };
+  return { ...UNI_EDUCATION };
+}
+
+export function programmeTitleForVariant(
+  variant: 'polytechnic' | 'tech-up' | 'undergraduate',
+): string {
+  if (variant === 'polytechnic') return 'Polytechnic Internship 2027';
+  if (variant === 'tech-up') return 'Tech Up Internship 2027';
+  return 'Undergraduate Internship 2027';
+}
+
+/** Align draft education / programme fields to the catalog applicant path. */
+export function syncApplyDraftToVariant(
+  draft: ApplySessionDraft,
+  variant: 'polytechnic' | 'tech-up' | 'undergraduate' | null,
+): ApplySessionDraft {
+  if (!variant) return draft;
+  const education = defaultEducationDetails(variant);
+  return {
+    ...draft,
+    education,
+    programmeTitle: programmeTitleForVariant(variant),
+    bondedScholarship: variant === 'polytechnic' ? false : draft.bondedScholarship,
+    scholarshipName: variant === 'polytechnic' ? '' : draft.scholarshipName,
+  };
+}
+
+/** Seed a fresh draft when picking an applicant path on /catlog. */
+export function seedApplyDraftForVariant(
+  variant: 'polytechnic' | 'tech-up' | 'undergraduate',
+): ApplySessionDraft {
+  const draft: ApplySessionDraft = syncApplyDraftToVariant(
+    {
+      ...EMPTY_DRAFT,
+      /* Pre-fill uploads so education details match comps immediately. */
+      transcriptName: MOCK_TRANSCRIPT,
+      cvName: MOCK_CV,
+      creditBearing: null,
+      creditModuleCode: '',
+      bondedScholarship: variant === 'polytechnic' ? false : null,
+      scholarshipName: '',
+    },
+    variant,
+  );
+  saveApplyDraft(draft);
+  return draft;
 }
 
 export function loadApplyDraft(): ApplySessionDraft {
-  if (typeof window === 'undefined') return { ...EMPTY_DRAFT, education: { ...DEFAULT_EDUCATION } };
+  if (typeof window === 'undefined') {
+    return { ...EMPTY_DRAFT, education: { ...DEFAULT_EDUCATION } };
+  }
   try {
     const raw = localStorage.getItem(APPLY_DRAFT_KEY);
     if (!raw) return { ...EMPTY_DRAFT, education: { ...DEFAULT_EDUCATION } };
-    return { ...EMPTY_DRAFT, education: { ...DEFAULT_EDUCATION }, ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw) as Partial<ApplySessionDraft>;
+    const education = {
+      ...DEFAULT_EDUCATION,
+      ...(parsed.education ?? {}),
+    };
+    /* Drop stale graduation when poly draft has empty/undefined graduation. */
+    if (!parsed.education?.expectedGraduation) {
+      delete education.expectedGraduation;
+    }
+    return {
+      ...EMPTY_DRAFT,
+      ...parsed,
+      education,
+    };
   } catch {
     return { ...EMPTY_DRAFT, education: { ...DEFAULT_EDUCATION } };
   }

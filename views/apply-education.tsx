@@ -13,9 +13,11 @@ import {
   loadApplyDraft,
   peekChapterIntro,
   saveApplyDraft,
+  syncApplyDraftToVariant,
   type ApplySessionDraft,
   type EducationDetails,
 } from '@/lib/apply-application';
+import { loadUtApplicantVariant } from '@/lib/ut-track';
 import { isSignedIn } from '@/lib/session';
 
 const MOCK_TRANSCRIPT = 'Chen_academic transcript.pdf';
@@ -39,6 +41,7 @@ export default function ApplyEducationPage() {
   const [fromReview, setFromReview] = useState(false);
   const [draft, setDraft] = useState<ApplySessionDraft | null>(null);
   const [manualEntry, setManualEntry] = useState(false);
+  const [isPolyPath, setIsPolyPath] = useState(false);
   const transcriptRef = useRef<HTMLInputElement>(null);
   const cvRef = useRef<HTMLInputElement>(null);
   const introStarted = useRef(false);
@@ -49,12 +52,17 @@ export default function ApplyEducationPage() {
       return;
     }
     setFromReview(isFromReview());
+    const variant = loadUtApplicantVariant();
+    setIsPolyPath(variant === 'polytechnic');
     /* Peek only — do not clear here (Strict Mode remount would skip the card). */
     if (!introStarted.current && !isFromReview()) {
       introStarted.current = shouldShowSession1Intro();
       setShowIntro(introStarted.current);
     }
-    setDraft(loadApplyDraft());
+    /* Keep form values aligned with catalog applicant path. */
+    const synced = syncApplyDraftToVariant(loadApplyDraft(), variant);
+    saveApplyDraft(synced);
+    setDraft(synced);
     setReady(true);
   }, [router]);
 
@@ -101,7 +109,7 @@ export default function ApplyEducationPage() {
       persist({
         ...draft!,
         transcriptName: name,
-        education: defaultEducationDetails(),
+        education: defaultEducationDetails(loadUtApplicantVariant()),
       });
     } else {
       persist({ ...draft!, cvName: name });
@@ -113,7 +121,7 @@ export default function ApplyEducationPage() {
     if (!draft!.education.institution) {
       persist({
         ...draft!,
-        education: defaultEducationDetails(),
+        education: defaultEducationDetails(loadUtApplicantVariant()),
       });
     }
   }
@@ -263,6 +271,14 @@ export default function ApplyEducationPage() {
                   value={draft.education.gpa}
                   onChange={(v) => updateEducation({ gpa: v })}
                 />
+                {!isPolyPath && (
+                  <Field
+                    label="Expected Graduation"
+                    value={draft.education.expectedGraduation || ''}
+                    onChange={(v) => updateEducation({ expectedGraduation: v })}
+                    type="date"
+                  />
+                )}
               </div>
             </div>
           )}
@@ -313,10 +329,12 @@ function Field({
   label,
   value,
   onChange,
+  type = 'text',
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  type?: string;
 }) {
   return (
     <div>
@@ -333,6 +351,7 @@ function Field({
         {label}
       </label>
       <Input
+        type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="h-9 rounded-md bg-white"

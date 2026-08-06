@@ -98,20 +98,22 @@ const IO_ADMIN_TASKS: TaskDef[] = [
   },
   {
     id: 2,
-    title: 'Review and Route a Project for Approval',
-    description:
-      'The following project has been submitted by AD (P&C). Review the project details and, if everything is in order, route it for DCE approval.\n' +
-      'Project title: AI-Enabled Defence Logistics Forecasting\n' +
-      'Project scope: Develop a prototype that uses historical logistics data to forecast equipment demand and identify potential supply shortages. The intern will clean and analyse data, compare forecasting approaches, and evaluate model performance. Deliverables include a working prototype, an evaluation report, and a dashboard presenting key forecasts.\n' +
-      'Skillsets: Python; Data Analysis; Machine Learning\n' +
-      'Disciplines of study: Computer Science; Data Science; Operations Research\n' +
-      'Primary mentor: Wei Jian Lim\n' +
-      'Primary mentor appointment: Senior Engineer\n' +
-      'Primary mentor email: weijian.lim@dsta.gov.sg\n' +
-      'Secondary mentor: Wei Ming\n' +
-      'Secondary mentor appointment: Senior Engineer\n' +
-      'Secondary mentor email: wei.ming@dsta.gov.sg\n' +
+    title: 'Review a project and approve it',
+    description: [
+      'The following project has been submitted by AD (P&C) and approved by DCE through offline email communication. You can now review the project details and, if everything is in order, approve this project.',
+      '',
+      'Project title: AI-Enabled Defence Logistics Forecasting',
+      'Project scope: Develop a prototype that uses historical logistics data to forecast equipment demand and identify potential supply shortages. The intern will clean and analyse data, compare forecasting approaches, and evaluate model performance. Deliverables include a working prototype, an evaluation report, and a dashboard presenting key forecasts.',
+      'Skillsets: Python; Data Analysis; Machine Learning',
+      'Disciplines of study: Computer Science; Data Science; Operations Research',
+      'Primary mentor: Wei Jian Lim',
+      'Primary mentor appointment: Senior Engineer',
+      'Primary mentor email: weijian.lim@dsta.gov.sg',
+      'Secondary mentor: Wei Ming',
+      'Secondary mentor appointment: Senior Engineer',
+      'Secondary mentor email: wei.ming@dsta.gov.sg',
       'Number of placements: 4',
+    ].join('\n'),
     href: '/dashboard',
   },
 ];
