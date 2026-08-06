@@ -1,9 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { X } from 'lucide-react';
 import {
   Sheet,
   SheetBody,
+  SheetClose,
   SheetContent,
   SheetFooter,
   SheetHeader,
@@ -30,6 +32,31 @@ const SLOTS: TimeSlot[] = [
   { id: '4', dateLabel: 'Fri, 7 Aug', timeLabel: '11:00 – 11:30', status: 'open' },
 ];
 
+const META = [
+  ['Format', 'Microsoft Teams'],
+  ['Duration', '30 minutes'],
+  ['Responded by', '30 Jul 2026'],
+] as const;
+
+function MetaField({ label, value }: { label: string; value: string }) {
+  return (
+    <>
+      <p
+        className="text-[14px] font-normal leading-5"
+        style={{ color: 'rgba(69, 85, 108, 1)' }}
+      >
+        {label}
+      </p>
+      <p
+        className="mt-1 whitespace-nowrap text-[14px] font-medium leading-5"
+        style={{ color: 'rgba(15, 23, 43, 1)' }}
+      >
+        {value}
+      </p>
+    </>
+  );
+}
+
 export default function InterviewTimeslotSheet({
   open,
   onOpenChange,
@@ -53,18 +80,29 @@ export default function InterviewTimeslotSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-[586px]"
+        showCloseButton={false}
+        className="flex h-full max-h-[100dvh] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-[586px]"
         style={{ maxWidth: 586 }}
       >
-        <SheetHeader className="shrink-0 space-y-0 border-b-0 px-6 pb-0 pt-5">
+        <SheetClose
+          className={cn(
+            'absolute right-4 top-4 inline-flex size-6 items-center justify-center rounded-sm text-fg-muted opacity-70 transition-opacity',
+            'hover:opacity-100 focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-accent',
+          )}
+          aria-label="Close"
+        >
+          <X className="size-6" strokeWidth={1.5} />
+        </SheetClose>
+
+        <SheetHeader className="shrink-0 space-y-0 border-b-0 px-4 pb-0 pt-5 sm:px-6">
           <p
-            className="pr-8 text-[14px] font-normal leading-5"
+            className="pr-8 text-[12px] font-normal leading-5"
             style={{ color: 'rgba(69, 85, 108, 1)' }}
           >
             Invitation from Aisha Rahman
           </p>
           <SheetTitle
-            className="mt-2 text-left text-[18px] font-semibold tracking-[-0.45px] leading-6"
+            className="mt-1.5 text-left text-[16px] font-semibold leading-[22px]"
             style={{ color: 'rgba(15, 23, 43, 1)' }}
           >
             Please confirm your availability for the interview by selecting a day/time slot.
@@ -72,67 +110,73 @@ export default function InterviewTimeslotSheet({
           </SheetTitle>
         </SheetHeader>
 
-        <SheetBody className="flex flex-col gap-6 px-6 py-5">
-          {/* Meta row — equal cols; short vertical ticks before col 2 & 3 */}
+        <SheetBody className="flex flex-col gap-0 px-4 pb-5 pt-4 sm:px-6">
+          {/* Mobile: Format | Duration, then Responded by. Desktop: 3 equal cols */}
           <div
-            className="grid grid-cols-3"
             style={{
               borderTop: '1px solid rgba(231, 228, 221, 1)',
               borderBottom: '1px solid rgba(231, 228, 221, 1)',
             }}
           >
-            {(
-              [
-                ['Format', 'Microsoft Teams'],
-                ['Duration', '30 minutes'],
-                ['Responded by', '30 Jul 2026'],
-              ] as const
-            ).map(([label, value], i) => (
-              <div
-                key={label}
-                className={cn(
-                  'relative flex min-w-0 flex-col justify-center py-6',
-                  i === 0 ? 'pr-4' : 'pl-5 pr-4',
-                )}
-              >
-                {i > 0 && (
+            <div className="hidden grid-cols-3 sm:grid">
+              {META.map(([label, value], i) => (
+                <div
+                  key={label}
+                  className={cn(
+                    'relative flex min-w-0 flex-col justify-center py-6',
+                    i === 0 ? 'pr-4' : 'pl-5 pr-4',
+                  )}
+                >
+                  {i > 0 && (
+                    <span
+                      className="pointer-events-none absolute left-0 top-1/2 w-px -translate-y-1/2"
+                      style={{
+                        height: 48,
+                        background: 'rgba(231, 228, 221, 1)',
+                      }}
+                      aria-hidden
+                    />
+                  )}
+                  <MetaField label={label} value={value} />
+                </div>
+              ))}
+            </div>
+
+            <div className="sm:hidden">
+              <div className="grid grid-cols-2 py-5">
+                <div className="relative min-w-0 pr-4">
+                  <MetaField label={META[0][0]} value={META[0][1]} />
+                </div>
+                <div className="relative min-w-0 pl-4">
                   <span
                     className="pointer-events-none absolute left-0 top-1/2 w-px -translate-y-1/2"
                     style={{
-                      height: 48,
+                      height: 40,
                       background: 'rgba(231, 228, 221, 1)',
                     }}
                     aria-hidden
                   />
-                )}
-                <p
-                  className="text-[12px] font-normal leading-4"
-                  style={{ color: 'rgba(69, 85, 108, 1)' }}
-                >
-                  {label}
-                </p>
-                <p
-                  className="mt-0.5 whitespace-nowrap text-[14px] font-medium leading-5"
-                  style={{ color: 'rgba(15, 23, 43, 1)' }}
-                >
-                  {value}
-                </p>
+                  <MetaField label={META[1][0]} value={META[1][1]} />
+                </div>
               </div>
-            ))}
+              <div className="pb-5">
+                <MetaField label={META[2][0]} value={META[2][1]} />
+              </div>
+            </div>
           </div>
 
-          {/* Language */}
-          <div>
+          {/* Language — 16px below meta, 16px above Available time */}
+          <div className="mt-4 mb-4">
             <p
-              className="mb-2 text-[14px] font-medium leading-5"
-              style={{ color: 'rgba(15, 23, 43, 1)' }}
+              className="mb-3 text-[14px] font-normal leading-5"
+              style={{ color: 'rgba(69, 85, 108, 1)' }}
             >
               Interview language
             </p>
             <RadioGroup
               value={language}
               onValueChange={(v) => setLanguage(String(v))}
-              className="flex flex-row flex-wrap gap-6"
+              className="grid grid-cols-2 gap-4"
             >
               {(
                 [
@@ -142,7 +186,7 @@ export default function InterviewTimeslotSheet({
               ).map(([value, label]) => (
                 <label
                   key={value}
-                  className="inline-flex cursor-pointer items-center gap-2 text-[14px]"
+                  className="inline-flex min-w-0 cursor-pointer items-center gap-2 text-[14px] font-normal leading-5"
                   style={{ color: 'rgba(15, 23, 43, 1)' }}
                 >
                   <RadioGroupItem value={value} />
@@ -155,8 +199,8 @@ export default function InterviewTimeslotSheet({
           {/* Slots */}
           <div>
             <p
-              className="mb-2 text-[14px] font-medium leading-5"
-              style={{ color: 'rgba(15, 23, 43, 1)' }}
+              className="mb-3 text-[14px] font-normal leading-5"
+              style={{ color: 'rgba(69, 85, 108, 1)' }}
             >
               Available time
             </p>
@@ -173,32 +217,42 @@ export default function InterviewTimeslotSheet({
                         if (!disabled) setSelectedId(slot.id);
                       }}
                       className={cn(
-                        'flex w-full cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors',
-                        disabled && 'cursor-not-allowed opacity-70',
+                        'flex w-full cursor-pointer items-start gap-3 rounded-lg border p-6 text-left transition-colors max-sm:h-[132px]',
+                        'sm:h-auto sm:items-center sm:px-4 sm:py-3',
+                        disabled && 'cursor-not-allowed',
                         checked
                           ? 'border-[rgba(26,101,248,1)] bg-[rgba(26,101,248,0.04)]'
-                          : 'border-border bg-white hover:bg-bg-subtle',
+                          : 'border-[rgba(231,228,221,1)] bg-white',
+                        checked && 'max-sm:border-[rgba(231,228,221,1)] max-sm:bg-white',
                       )}
                     >
                       <div className="min-w-0 flex-1">
                         <p
-                          className="text-[14px] font-semibold leading-5"
-                          style={{ color: 'rgba(15, 23, 43, 1)' }}
+                          className="text-[16px] font-semibold leading-[18px] max-sm:text-[16px] sm:text-[14px] sm:leading-5"
+                          style={{
+                            color: disabled
+                              ? 'rgba(163, 174, 191, 1)'
+                              : 'rgba(15, 23, 43, 1)',
+                          }}
                         >
                           {slot.dateLabel}
                         </p>
                         <p
-                          className="text-[13px] font-normal leading-5"
-                          style={{ color: 'rgba(69, 85, 108, 1)' }}
+                          className="mt-1.5 text-[14px] font-normal leading-5"
+                          style={{
+                            color: disabled
+                              ? 'rgba(163, 174, 191, 1)'
+                              : 'rgba(69, 85, 108, 1)',
+                          }}
                         >
                           {slot.timeLabel}
                         </p>
                         {slot.status === 'full' && (
                           <span
-                            className="mt-4 inline-flex rounded-full px-2 py-0.5 text-[12px] font-medium leading-4"
+                            className="mt-4 inline-flex h-[22px] items-center rounded-full px-2 text-[12px] font-normal leading-4"
                             style={{
-                              background: 'rgba(246, 104, 14, 0.12)',
-                              color: 'rgba(196, 52, 39, 1)',
+                              background: 'rgba(251, 44, 54, 0.15)',
+                              color: 'rgba(193, 0, 7, 1)',
                             }}
                           >
                             Full
@@ -206,10 +260,10 @@ export default function InterviewTimeslotSheet({
                         )}
                         {slot.status === 'spots' && slot.spotsLeft != null && (
                           <span
-                            className="mt-4 inline-flex rounded-full px-2 py-0.5 text-[12px] font-medium leading-4"
+                            className="mt-4 inline-flex h-[22px] items-center rounded-full px-2 text-[12px] font-normal leading-4"
                             style={{
-                              background: 'rgba(26, 101, 248, 0.1)',
-                              color: 'rgba(26, 101, 248, 1)',
+                              background: 'rgba(0, 166, 244, 0.15)',
+                              color: 'rgba(0, 105, 168, 1)',
                             }}
                           >
                             {slot.spotsLeft} spots left
@@ -224,7 +278,7 @@ export default function InterviewTimeslotSheet({
                           if (disabled) return;
                           setSelectedId(v ? slot.id : null);
                         }}
-                        className="pointer-events-none shrink-0"
+                        className="pointer-events-none size-5 shrink-0 [&_svg]:size-3.5"
                       />
                     </button>
                   </li>
@@ -234,11 +288,12 @@ export default function InterviewTimeslotSheet({
           </div>
         </SheetBody>
 
-        <SheetFooter className="shrink-0 sm:justify-end">
+        <SheetFooter className="shrink-0 gap-3 px-4 sm:justify-end sm:px-6">
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="h-9 cursor-pointer rounded-md border border-border bg-white px-4 text-[14px] text-fg"
+            className="w-auto shrink-0 cursor-pointer rounded-md border border-border bg-white text-[14px] text-fg"
+            style={{ padding: '6.5px 13px' }}
           >
             Cancel
           </button>
@@ -246,10 +301,10 @@ export default function InterviewTimeslotSheet({
             type="button"
             disabled={!selected}
             onClick={() => onOpenChange(false)}
-            className="h-9 cursor-pointer rounded-md px-4 text-[14px] text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-9 min-w-0 flex-1 cursor-pointer rounded-md px-4 text-[14px] text-white disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
             style={{ background: 'rgba(26, 101, 248, 1)' }}
           >
-            {confirmLabel}
+            <span className="block truncate">{confirmLabel}</span>
           </button>
         </SheetFooter>
       </SheetContent>
