@@ -1910,9 +1910,6 @@ function UploadSummaryDialog({
         </div>
         <DialogFooter className="border-t border-border px-6 py-4">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button variant="outline" onClick={onImportDemo} disabled={!canImportDemo}>
-            Demo data
-          </Button>
           <Button onClick={onImport} disabled={!canImport}>
             Import as drafts
           </Button>
