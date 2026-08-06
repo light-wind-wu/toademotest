@@ -1423,7 +1423,7 @@ export default function AdPncRespondPage() {
 
           {/* Request Context */}
           <div className="rounded-lg border border-border bg-surface p-5">
-            <RequestContextTable requests={group.requests} title="Placement requirements" />
+            <RequestContextTable requests={group.requests} title="Placement requirements" batches={batches} />
           </div>
 
           {visibleProjects.length === 0 ? (

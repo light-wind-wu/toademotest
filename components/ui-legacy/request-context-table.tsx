@@ -2,7 +2,7 @@
 
 import { ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { requestRawCategory } from '@/lib/request-groups';
+import { requestRawCategory, projectMatchesRequest } from '@/lib/request-groups';
 import {
   Table,
   TableBody,
@@ -11,13 +11,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { ProjectRequest } from '@/lib/types';
+import type { ProjectRequest, ProjectSubmissionBatch } from '@/lib/types';
 
 interface RequestContextTableProps {
   requests: ProjectRequest[];
   title?: string;
   className?: string;
   highlightedCategory?: string;
+  batches?: ProjectSubmissionBatch[];
 }
 
 function formatPeriodLabel(req: ProjectRequest): string {
@@ -33,6 +34,7 @@ export default function RequestContextTable({
   title = 'Request Context',
   className,
   highlightedCategory,
+  batches,
 }: RequestContextTableProps) {
   if (requests.length === 0) return null;
 
@@ -66,13 +68,19 @@ export default function RequestContextTable({
         <TableBody>
           {requests.map((req, index) => {
             const isHighlighted = highlightedCategory && highlightedCategory === requestRawCategory(req);
+            const uploadedSlots = (batches ?? [])
+              .flatMap(b => b.projects)
+              .filter(p => p.status !== 'withdrawn')
+              .filter(p => (req.id && p.requestLineId === req.id) || projectMatchesRequest(p, req))
+              .reduce((sum, p) => sum + p.slots, 0);
+            const uploaded = batches ? uploadedSlots : (req.uploaded ?? 0);
             return (
               <TableRow key={req.id || index} className={cn(isHighlighted && 'bg-[rgba(249,248,244,1)]')}>
                 <TableCell>{requestRawCategory(req)}</TableCell>
                 <TableCell>{formatPeriodLabel(req)}</TableCell>
                 <TableCell>{formatDurationLabel(req)}</TableCell>
                 <TableCell>
-                  {req.uploaded ?? 0} of {req.placements} submitted
+                  {uploaded} of {req.placements} submitted
                 </TableCell>
               </TableRow>
             );

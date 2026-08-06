@@ -180,6 +180,24 @@ function pc3UgReturnedBatch(): ProjectSubmissionBatch {
       techDomain: 'Digital',
       emergingArea: 'Data Analytics',
     },
+    {
+      ...base,
+      id: 'sub-pc3-ug-approved-007',
+      title: 'Autonomous Threat Detection for Perimeter Security',
+      description:
+        'Prototype a low-latency detection pipeline that classifies acoustic and motion sensor events along secure perimeters, reducing false alarms for operators.',
+      mentor: 'Linda Ong',
+      mentorAppointment: 'Principal Engineer',
+      mentorEmail: 'linda_ong@dsta.gov.sg',
+      mentorUserId: 'mentor-linda',
+      mentorBio: 'Leads applied AI projects for situational awareness and sensor fusion.',
+      skills: ['Python', 'Machine Learning', 'Signal Processing'],
+      status: 'approved',
+      reviewedAt: '2026-07-10',
+      reviewedBy: 'Davina Tan',
+      techDomain: 'Sensors',
+      emergingArea: 'AI/ML',
+    },
   ];
 
   return {
@@ -191,7 +209,7 @@ function pc3UgReturnedBatch(): ProjectSubmissionBatch {
     programme: '',
     educationLevel: 'Undergraduate Student',
     requestedEducationLevels: ['Undergraduate Student'],
-    placements: 6,
+    placements: 7,
     uploadedAt: '2026-07-08',
     projects,
   };
@@ -200,12 +218,25 @@ function pc3UgReturnedBatch(): ProjectSubmissionBatch {
 /** Write the PC3 UG returned-for-update state to localStorage (idempotent). */
 function seedTask2Scenario(): void {
   try {
+    const returned = pc3UgReturnedBatch();
+    const nextUploaded = returned.projects
+      .filter(p => p.status !== 'withdrawn')
+      .reduce((sum, p) => sum + p.slots, 0);
+    const nextStatus: import('@/lib/types').RequestStatus =
+      nextUploaded > AD_PNC_PC3_PLACEMENTS
+        ? 'excess'
+        : nextUploaded === AD_PNC_PC3_PLACEMENTS
+          ? 'matched'
+          : nextUploaded > 0
+            ? 'partial'
+            : 'pending';
     saveRequests(
       loadRequests().map(r =>
-        r.id === 'seed-req-pc3-10' ? { ...r, placements: AD_PNC_PC3_PLACEMENTS } : r,
+        r.id === 'seed-req-pc3-10'
+          ? { ...r, placements: AD_PNC_PC3_PLACEMENTS, uploaded: nextUploaded, status: nextStatus }
+          : r,
       ),
     );
-    const returned = pc3UgReturnedBatch();
     saveSubmissions([
       ...loadSubmissions().filter(b => b.uploadToken !== 'seed-pc3-ug-2027'),
       returned,

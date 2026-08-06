@@ -148,11 +148,12 @@ function getCardAction(
 ): { label: string; mode: 'upload' | 'view' } {
   const submitted = submittedForGroup(group, batches);
   const hasIssue = submitted.some(p => p.status === 'rejected' || p.status === 'returnedForUpdate');
-  const { uploaded, placements } = groupTotals(group);
+  const placements = groupTotals(group).placements;
+  const uploaded = groupSubmittedSlots(group, batches);
 
   if (hasIssue) return { label: 'View Submission', mode: 'view' };
   if (uploaded === 0) return { label: 'Start Submission', mode: 'upload' };
-  if (uploaded < placements) return { label: 'View Submission', mode: 'upload' };
+  if (uploaded < placements) return { label: 'Continue Submission', mode: 'upload' };
   return { label: 'View Submission', mode: 'view' };
 }
 
