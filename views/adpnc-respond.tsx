@@ -169,6 +169,7 @@ function requestPeriodForProject(request: ProjectRequest | undefined): { start: 
 }
 
 function projectPeriod(project: SubmittedProject, request?: ProjectRequest) {
+  if (project.calendarPeriod) return project.calendarPeriod;
   const requestPeriod = requestPeriodForProject(request);
   const start = project.internshipPeriodStart || requestPeriod.start || 'Start month';
   const end = project.internshipPeriodEnd || requestPeriod.end || 'End month';
@@ -627,6 +628,7 @@ function projectFromUploadRow(
     .filter(Boolean);
   const startMonth = pickValue(values, 'Internship Start Month', 'internshipStartMonth') || periodParts[0] || '';
   const endMonth = pickValue(values, 'Internship End Month', 'internshipEndMonth') || periodParts[1] || periodParts[0] || '';
+  const calendarPeriod = pickValue(values, 'Calendar Period', 'calendarPeriod', 'internshipPeriod') || (startMonth && endMonth ? `${startMonth} – ${endMonth}` : undefined);
 
   return {
     id: `sub-inline-${Date.now()}-${index}`,
@@ -661,6 +663,7 @@ function projectFromUploadRow(
     internshipDuration: pickValue(values, 'Project Duration', 'Internship Duration', 'Duration', 'duration') || undefined,
     internshipPeriodStart: periodLabelToMMMYY(startMonth),
     internshipPeriodEnd: periodLabelToMMMYY(endMonth),
+    calendarPeriod,
     workingLocation: pickValue(values, 'Working Location', 'workingLocation') || undefined,
   };
 }
@@ -1391,9 +1394,6 @@ export default function AdPncRespondPage() {
               <div>
                 <div className="flex flex-wrap items-center gap-3">
                   <h1 className="text-headline-lg text-fg mb-1">Request for {requestYear} Projects</h1>
-                  {requestStatus && (
-                    <Badge variant={requestStatus.variant}>{requestStatus.label}</Badge>
-                  )}
                 </div>
                 <p className="text-body-sm text-fg-muted">
                   {visibleProjects.length} project{visibleProjects.length !== 1 ? 's' : ''} · {selectedProjectIds.size} selected across tabs
@@ -1648,21 +1648,11 @@ export default function AdPncRespondPage() {
           )}
 
           <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-gradient-to-b from-surface to-bg px-[clamp(24px,2.6vw,40px)] py-2">
-            <p className="text-body-sm text-fg">
-              {isUploadMode
-                ? visibleProjects.length > 0
-                  ? `Submitting ${selectedProjectIds.size} of ${activeVisibleProjects.length} project${activeVisibleProjects.length !== 1 ? 's' : ''}`
-                  : 'No projects added yet'
-                : visibleProjects.length > 0
-                  ? `${visibleProjects.length} project${visibleProjects.length !== 1 ? 's' : ''}`
-                  : 'No projects submitted'}
-            </p>
+            <p className="text-body-sm text-fg"></p>
             <div className="flex items-center gap-3">
-              {!isUploadMode && (
-                <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>
-                  Back
-                </Button>
-              )}
+              <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>
+                Cancel
+              </Button>
               {isUploadMode && visibleProjects.length >= 0 && (
                 <>
                   <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>Save and Exit</Button>
