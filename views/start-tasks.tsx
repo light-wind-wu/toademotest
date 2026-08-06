@@ -12,6 +12,7 @@ import { useSession } from '@/lib/session';
 import { loadRequests } from '@/lib/storage';
 import { loadUtCatalogPath, loadUtTrack, type UtCatalogPath, type UtTrack } from '@/lib/ut-track';
 import Topbar from '@/components/layout/topbar';
+import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
 import {
   Tooltip,
   TooltipContent,
@@ -71,6 +72,10 @@ type TaskDef = {
   href: string;
   /** Optional live resolve (e.g. token from submissions list data). */
   resolveHref?: () => string;
+  /**
+   * When false, Start Task stays clickable but opens the out-of-scope dialog
+   * instead of navigating (feature not in this UT).
+   */
   enabled?: boolean;
 };
 
@@ -273,6 +278,7 @@ export default function StartTasks() {
   const [path, setPath] = useState<UtCatalogPath>('io-admin');
   const [scale, setScale] = useState(1);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [outOfScopeOpen, setOutOfScopeOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -312,6 +318,14 @@ export default function StartTasks() {
   const isApplicant = track === 'applicant';
   const taskCols = tasks.length === 1 ? 'grid-cols-1' : 'grid-cols-2';
 
+  function startTask(task: TaskDef) {
+    if (task.enabled === false) {
+      setOutOfScopeOpen(true);
+      return;
+    }
+    router.push(task.resolveHref?.() ?? task.href);
+  }
+
   if (!mounted || (track === 'staff' && !signedIn)) {
     return (
       <div
@@ -337,7 +351,7 @@ export default function StartTasks() {
           <MobileBriefing
             copy={copy}
             tasks={tasks}
-            onStart={(href) => router.push(href)}
+            onStart={startTask}
           />
         </div>
       )}
@@ -398,8 +412,7 @@ export default function StartTasks() {
                         title={task.title}
                         description={task.description}
                         cta={`Start Task ${task.id}`}
-                        disabled={task.enabled === false}
-                        onClick={() => router.push(task.resolveHref?.() ?? task.href)}
+                        onClick={() => startTask(task)}
                       />
                     ))}
                   </TooltipProvider>
@@ -409,6 +422,8 @@ export default function StartTasks() {
           </div>
         </div>
       )}
+
+      <OutOfScopeDialog open={outOfScopeOpen} onOpenChange={setOutOfScopeOpen} />
     </div>
   );
 }
@@ -478,7 +493,7 @@ function MobileBriefing({
 }: {
   copy: Copy;
   tasks: readonly TaskDef[];
-  onStart: (href: string) => void;
+  onStart: (task: TaskDef) => void;
 }) {
   return (
     <div className="mx-auto w-full max-w-lg flex-1 px-4 py-6">
@@ -521,8 +536,7 @@ function MobileBriefing({
                 title={task.title}
                 description={task.description}
                 cta={`Start Task ${task.id}`}
-                disabled={task.enabled === false}
-                onClick={() => onStart(task.resolveHref?.() ?? task.href)}
+                onClick={() => onStart(task)}
                 compact
               />
             ))}
@@ -540,7 +554,6 @@ function TaskCard({
   cta,
   onClick,
   compact = false,
-  disabled = false,
 }: {
   label: string;
   title: string;
@@ -548,7 +561,6 @@ function TaskCard({
   cta: string;
   onClick: () => void;
   compact?: boolean;
-  disabled?: boolean;
 }) {
   return (
     <div
@@ -613,18 +625,14 @@ function TaskCard({
       <button
         type="button"
         onClick={onClick}
-        disabled={disabled}
         className={cn(
-          'mt-4 inline-flex items-center justify-center gap-1 rounded-md text-white',
+          'mt-4 inline-flex cursor-pointer items-center justify-center gap-1 rounded-md text-white transition-opacity hover:opacity-90',
           compact ? 'h-9 w-full px-3 text-[13px]' : 'w-fit px-3 text-[12px]',
-          disabled
-            ? 'cursor-not-allowed opacity-45'
-            : 'cursor-pointer transition-opacity hover:opacity-90',
         )}
         style={{
           height: compact ? 36 : 30,
           padding: '0 12px',
-          background: disabled ? 'rgba(148, 163, 184, 1)' : ACCENT,
+          background: ACCENT,
           fontWeight: 600,
           lineHeight: '16px',
         }}

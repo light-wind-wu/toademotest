@@ -117,7 +117,7 @@ export function GovAuthButton({
       type="button"
       onClick={onClick}
       style={{ backgroundColor: SINGPASS_RED }}
-      className="flex w-full items-center justify-center gap-1.5 rounded-lg py-3.5 text-body-md text-white shadow-sm transition-[filter] hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F4333D]/50 focus-visible:ring-offset-2"
+      className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg py-3.5 text-body-md text-white shadow-sm transition-[filter] hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F4333D]/50 focus-visible:ring-offset-2"
     >
       <span className="font-normal">Log in with</span>
       <span className={`font-extrabold tracking-tight ${lowercase ? 'lowercase' : ''}`}>

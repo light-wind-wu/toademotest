@@ -15,6 +15,7 @@ import { loadApplyDraft } from '@/lib/apply-application';
 import { cn } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import InterviewTimeslotSheet from '@/components/apply/interview-timeslot-sheet';
+import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
 
 const STEPS: {
   id: number;
@@ -57,6 +58,7 @@ export default function ApplyDashboardV1() {
   const [quizTaken, setQuizTaken] = useState(false);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
   const [timeslotOpen, setTimeslotOpen] = useState(false);
+  const [outOfScopeOpen, setOutOfScopeOpen] = useState(false);
 
   useEffect(() => {
     const d = loadApplyDraft();
@@ -254,11 +256,11 @@ export default function ApplyDashboardV1() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => router.push('/apply/applications')}
+                      onClick={() => setOutOfScopeOpen(true)}
                       className="h-9 min-w-0 flex-1 cursor-pointer rounded-md border border-border bg-bg px-3 text-[14px] text-fg lg:flex-none lg:px-4"
                       style={{ height: 36 }}
                     >
-                      See Next Tasks
+                      View Application
                     </button>
                   </div>
                 </div>
@@ -614,6 +616,7 @@ export default function ApplyDashboardV1() {
       </div>
 
       <InterviewTimeslotSheet open={timeslotOpen} onOpenChange={setTimeslotOpen} />
+      <OutOfScopeDialog open={outOfScopeOpen} onOpenChange={setOutOfScopeOpen} />
     </Shell>
   );
 }

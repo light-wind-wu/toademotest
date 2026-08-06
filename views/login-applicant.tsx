@@ -8,6 +8,7 @@ import { useRole } from '@/lib/role';
 import { getMyinfoProfile, saveMyinfoPending } from '@/lib/myinfo';
 import LoginShell, { LoginBrand, GovAuthButton } from '@/components/gov/login-shell';
 import MyinfoFlow from '@/components/gov/myinfo-flow';
+import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
 import { Input } from '@/components/ui-legacy/input';
 
 const BODY = 'rgba(69, 85, 108, 1)';
@@ -21,6 +22,7 @@ export default function LoginApplicant() {
   const router = useRouter();
   const { setRole } = useRole();
   const [myinfoOpen, setMyinfoOpen] = useState(false);
+  const [outOfScopeOpen, setOutOfScopeOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -114,7 +116,7 @@ export default function LoginApplicant() {
             type="button"
             className="flex h-11 w-full cursor-pointer items-center justify-center rounded-lg text-[14px] font-semibold text-white"
             style={{ background: CTA_BG }}
-            onClick={(e) => e.preventDefault()}
+            onClick={() => setOutOfScopeOpen(true)}
           >
             Login
           </button>
@@ -139,6 +141,7 @@ export default function LoginApplicant() {
         onCancel={() => setMyinfoOpen(false)}
         onContinue={handleMyinfoContinue}
       />
+      <OutOfScopeDialog open={outOfScopeOpen} onOpenChange={setOutOfScopeOpen} />
     </>
   );
 }
