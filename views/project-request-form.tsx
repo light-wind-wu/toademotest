@@ -287,12 +287,12 @@ function PlacementsTable({ intakeYear, rows }: { intakeYear: number; rows: Array
 }
 
 /* ── Placement stepper ───────────────────────────────────────────── */
-function Stepper({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+function Stepper({ value, onChange, onInteract }: { value: number; onChange: (n: number) => void; onInteract?: () => void }) {
   return (
     <div className="flex h-9 w-32 items-center overflow-hidden rounded-md border border-border bg-surface">
       <button
         type="button"
-        onClick={() => onChange(Math.max(1, value - 1))}
+        onClick={() => { onChange(Math.max(1, value - 1)); onInteract?.(); }}
         className="flex h-full w-9 shrink-0 items-center justify-center text-fg-muted transition-colors hover:bg-bg-subtle hover:text-fg"
         aria-label="Decrease placements"
       >
@@ -303,12 +303,12 @@ function Stepper({ value, onChange }: { value: number; onChange: (n: number) => 
         min={1}
         value={value === 0 ? '' : value}
         onChange={e => { const n = parseInt(e.target.value, 10); onChange(isNaN(n) ? 0 : n); }}
-        onBlur={e => { const n = parseInt(e.target.value, 10); if (isNaN(n) || n < 1) onChange(1); }}
+        onBlur={e => { const n = parseInt(e.target.value, 10); if (isNaN(n) || n < 1) onChange(1); onInteract?.(); }}
         className="h-full w-full min-w-0 border-x border-border bg-transparent text-center text-body-md text-fg outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
       <button
         type="button"
-        onClick={() => onChange(value + 1)}
+        onClick={() => { onChange(value + 1); onInteract?.(); }}
         className="flex h-full w-9 shrink-0 items-center justify-center text-fg-muted transition-colors hover:bg-bg-subtle hover:text-fg"
         aria-label="Increase placements"
       >
@@ -417,20 +417,21 @@ function DerivedRecipients({ pcHead, adpnc, hasProgrammeCentre, ccEmails, toEmai
 
 /* ── Request card ────────────────────────────────────────────────── */
 function RequestCard({
-  entry, number, showErrors, onChange, onRemove, onTouchRequest, canRemove = true, guided = false, hideAddInternCategory = false, highlightedSection = null, ccEdit, toEdit,
+  entry, number, onChange, onRemove, canRemove = true, guided = false, hideAddInternCategory = false, highlightedSection = null, ccEdit, toEdit, isFieldTouched, touchField, onLevelRemoved,
 }: {
   entry: ReqEntry;
   number: number;
-  showErrors: boolean;
   onChange: (patch: Partial<ReqEntry>) => void;
   onRemove: () => void;
-  onTouchRequest: () => void;
   canRemove?: boolean;
   guided?: boolean;
   hideAddInternCategory?: boolean;
   highlightedSection?: ReadinessKey | null;
   ccEdit?: string;
   toEdit?: string;
+  isFieldTouched: (key: string) => boolean;
+  touchField: (key: string) => void;
+  onLevelRemoved: (removedIndex: number) => void;
 }) {
   const filledLevels = entry.levels.filter(l => l.level).length;
   const totalPlacements = entry.levels.reduce((sum, level) => sum + Math.max(0, level.placements || 0), 0);
@@ -441,10 +442,17 @@ function RequestCard({
     `${totalPlacements} placement${totalPlacements === 1 ? '' : 's'}`,
   ].filter(Boolean) as string[];
 
+  /* Per-field touched keys, scoped to this request (level fields are index-based). */
+  const reqKey = (suffix: string) => `${entry.id}:${suffix}`;
+  const levelKey = (idx: number, field: string) => reqKey(`level:${idx}:${field}`);
+
   function updateLevel(idx: number, patch: Partial<ReqLevel>) {
     onChange({ levels: entry.levels.map((l, i) => i === idx ? { ...l, ...patch } : l) });
   }
-  function removeLevel(idx: number) { onChange({ levels: entry.levels.filter((_, i) => i !== idx) }); }
+  function removeLevel(idx: number) {
+    onChange({ levels: entry.levels.filter((_, i) => i !== idx) });
+    onLevelRemoved(idx);
+  }
   function addLevel() { onChange({ levels: [...entry.levels, emptyLevel()] }); }
   const highlightShellClass = 'rounded-md -m-2 border p-2 transition-colors';
   const highlightActiveClass = 'border-accent bg-bg';
@@ -458,7 +466,7 @@ function RequestCard({
   }
 
   return (
-    <div className={cn('border-t border-border first:border-t-0', guided && 'border-t-0')} onFocusCapture={onTouchRequest}>
+    <div className={cn('border-t border-border first:border-t-0', guided && 'border-t-0')}>
       {/* Collapsed header bar */}
       {!guided && <div className="flex items-center gap-3 px-5 py-3.5">
         <button
@@ -510,23 +518,24 @@ function RequestCard({
                       pcHead,
                       adpnc: adPncForProgrammeCentre(programmeCentre),
                     });
+                    touchField(reqKey('programmeCentre'));
                   }}
                 >
-                  <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !entry.programmeCentre && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select programme centre" /></SelectTrigger>
+                  <SelectTrigger className={cn('min-w-0 overflow-hidden', isFieldTouched(reqKey('programmeCentre')) && !entry.programmeCentre && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select programme centre" /></SelectTrigger>
                   <SelectContent>
                     {programmeCentreOptions().map(option => (
                       <SelectItem key={option.value} value={option.value} disabled={option.value !== 'PC3'}>{option.value}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <FieldRequired show={showErrors && !entry.programmeCentre} />
+                <FieldRequired show={isFieldTouched(reqKey('programmeCentre')) && !entry.programmeCentre} />
               </Field>
               <Field className={highlightClassFor('deadline')}>
                 <FieldLabel>
                   Response deadline <span className="text-danger">*</span>
                 </FieldLabel>
-                <DatePicker value={entry.deadline} onChange={d => onChange({ deadline: d })} placeholder="Pick a date" align="right" minDate={sgTomorrow()} error={showErrors && !entry.deadline} />
-                <FieldRequired show={showErrors && !entry.deadline} />
+                <DatePicker value={entry.deadline} onChange={d => { onChange({ deadline: d }); touchField(reqKey('deadline')); }} placeholder="Pick a date" align="right" minDate={sgTomorrow()} error={isFieldTouched(reqKey('deadline')) && !entry.deadline} />
+                <FieldRequired show={isFieldTouched(reqKey('deadline')) && !entry.deadline} />
               </Field>
             </div>
             <div className={cn('mt-3 grid grid-cols-1 gap-3', (entry.pcHead || entry.adpnc) ? '' : 'lg:grid-cols-2')}>
@@ -611,8 +620,8 @@ function RequestCard({
                         Intern category <span className="text-danger">*</span>
                         <FieldHelpTooltip label="Intern category">The type of intern the project is for</FieldHelpTooltip>
                       </FieldLabel>
-                      <Select value={lvl.level} onValueChange={v => updateLevel(idx, { level: v ?? '', calendarStart: '', calendarEnd: '', calendarPeriod: '', customWindow: false })}>
-                        <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !lvl.level && 'border-danger')}>
+                      <Select value={lvl.level} onValueChange={v => { updateLevel(idx, { level: v ?? '', calendarStart: '', calendarEnd: '', calendarPeriod: '', customWindow: false }); touchField(levelKey(idx, 'level')); }}>
+                        <SelectTrigger className={cn('min-w-0 overflow-hidden', isFieldTouched(levelKey(idx, 'level')) && !lvl.level && 'border-danger')}>
                           <SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select intern category" />
                         </SelectTrigger>
                         <SelectContent className="max-w-[min(28rem,var(--available-width))]">
@@ -621,7 +630,7 @@ function RequestCard({
                           ))}
                         </SelectContent>
                       </Select>
-                      <FieldRequired show={showErrors && !lvl.level} />
+                      <FieldRequired show={isFieldTouched(levelKey(idx, 'level')) && !lvl.level} />
                     </Field>
                     <Field>
                       <FieldLabel className="flex items-center gap-1.5 lg:hidden">
@@ -630,7 +639,7 @@ function RequestCard({
                       </FieldLabel>
                       {!lvl.level ? (
                         <Select disabled>
-                          <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !lvl.calendarStart && 'border-danger disabled:opacity-100')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select intern category first" /></SelectTrigger>
+                          <SelectTrigger className={cn('min-w-0 overflow-hidden', isFieldTouched(levelKey(idx, 'calendarStart')) && !lvl.calendarStart && 'border-danger disabled:opacity-100')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select intern category first" /></SelectTrigger>
                         </Select>
                       ) : winCustom ? (
                         <div className="space-y-1">
@@ -647,21 +656,23 @@ function RequestCard({
                               const patch: Partial<ReqLevel> = { calendarStart, calendarEnd, calendarPeriod: monthRangeLabel(calendarStart, calendarEnd) };
                               if (wm && lvl.duration && parseInt(lvl.duration, 10) > wm) patch.duration = '';
                               updateLevel(idx, patch);
+                              touchField(levelKey(idx, 'calendarStart'));
+                              touchField(levelKey(idx, 'calendarEnd'));
                             }}
                             placeholder="Select start and end date"
                             hideLabels
                             hideFooter
-                            className={cn('w-full min-w-0', showErrors && !!lvl.level && (!lvl.calendarStart || !lvl.calendarEnd) && 'border-danger')}
+                            className={cn('w-full min-w-0', isFieldTouched(levelKey(idx, 'calendarStart')) && !!lvl.level && (!lvl.calendarStart || !lvl.calendarEnd) && 'border-danger')}
                           />
                           {winPresets.length > 0 && (
-                            <button type="button" className="text-label-sm text-accent hover:underline hidden" onClick={() => updateLevel(idx, { customWindow: false, calendarStart: '', calendarEnd: '', calendarPeriod: '' })}>Use a preset window</button>
+                            <button type="button" className="text-label-sm text-accent hover:underline hidden" onClick={() => { updateLevel(idx, { customWindow: false, calendarStart: '', calendarEnd: '', calendarPeriod: '' }); touchField(levelKey(idx, 'calendarStart')); touchField(levelKey(idx, 'calendarEnd')); }}>Use a preset window</button>
                           )}
                         </div>
                       ) : (
                         <Select
                           value={winSelected}
                           onValueChange={v => {
-                            if (v === '__custom__') { updateLevel(idx, { customWindow: true, calendarStart: '', calendarEnd: '', calendarPeriod: '' }); return; }
+                            if (v === '__custom__') { updateLevel(idx, { customWindow: true, calendarStart: '', calendarEnd: '', calendarPeriod: '' }); touchField(levelKey(idx, 'calendarStart')); touchField(levelKey(idx, 'calendarEnd')); return; }
                             const p = winPresets.find(x => x.label === v);
                             if (!p) return;
                             const ps = toMonthIndex(p.start), pe = toMonthIndex(p.end);
@@ -669,35 +680,37 @@ function RequestCard({
                             const patch: Partial<ReqLevel> = { calendarStart: p.start, calendarEnd: p.end, calendarPeriod: monthRangeLabel(p.start, p.end), customWindow: false };
                             if (wm && lvl.duration && parseInt(lvl.duration, 10) > wm) patch.duration = '';
                             updateLevel(idx, patch);
+                            touchField(levelKey(idx, 'calendarStart'));
+                            touchField(levelKey(idx, 'calendarEnd'));
                           }}
                         >
-                          <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !lvl.calendarStart && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select internship window" /></SelectTrigger>
+                          <SelectTrigger className={cn('min-w-0 overflow-hidden', isFieldTouched(levelKey(idx, 'calendarStart')) && !lvl.calendarStart && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select internship window" /></SelectTrigger>
                           <SelectContent>
                             {winPresets.map(p => <SelectItem key={p.label} value={p.label}>{p.label}</SelectItem>)}
                             <SelectItem value="__custom__">Customise…</SelectItem>
                           </SelectContent>
                         </Select>
                       )}
-                      <FieldRequired show={showErrors && (!lvl.calendarStart || !lvl.calendarEnd)} />
+                      <FieldRequired show={isFieldTouched(levelKey(idx, 'calendarStart')) && (!lvl.calendarStart || !lvl.calendarEnd)} />
                     </Field>
                     <Field>
                       <FieldLabel className="flex items-center gap-1.5 lg:hidden">
                         Project duration <span className="text-danger">*</span>
                         <FieldHelpTooltip label="Project duration">Proposed projects should last around this length of time</FieldHelpTooltip>
                       </FieldLabel>
-                      <Select value={lvl.duration} onValueChange={v => updateLevel(idx, { duration: v ?? '' })}>
-                        <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !lvl.duration && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Project duration" /></SelectTrigger>
+                      <Select value={lvl.duration} onValueChange={v => { updateLevel(idx, { duration: v ?? '' }); touchField(levelKey(idx, 'duration')); }}>
+                        <SelectTrigger className={cn('min-w-0 overflow-hidden', isFieldTouched(levelKey(idx, 'duration')) && !lvl.duration && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Project duration" /></SelectTrigger>
                         <SelectContent>
                           {durOptions.map(duration => <SelectItem key={duration} value={duration}>{duration}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                    <FieldRequired show={showErrors && !lvl.duration} />
+                    <FieldRequired show={isFieldTouched(levelKey(idx, 'duration')) && !lvl.duration} />
                   </Field>
                     <div className="flex flex-col gap-1.5">
                       <div className="flex items-center gap-2">
                         <Field>
                           <FieldLabel className="lg:hidden">Placements <span className="text-danger">*</span></FieldLabel>
-                          <Stepper value={lvl.placements} onChange={n => updateLevel(idx, { placements: n })} />
+                          <Stepper value={lvl.placements} onChange={n => updateLevel(idx, { placements: n })} onInteract={() => touchField(levelKey(idx, 'placements'))} />
                         </Field>
                         <button
                           type="button"
@@ -709,7 +722,7 @@ function RequestCard({
                           <Trash2 size={15} />
                         </button>
                       </div>
-                      <FieldRequired show={showErrors && lvl.placements < 1} />
+                      <FieldRequired show={isFieldTouched(levelKey(idx, 'placements')) && lvl.placements < 1} />
                     </div>
                   </div>
                 );
@@ -989,11 +1002,13 @@ export default function ProjectRequestFormPage() {
   const [previewId,   setPreviewId]   = useState<number | null>(null);
   const [emailEdits,  setEmailEdits]  = useState<Record<number, EmailEdit>>({});
   const [tokens,      setTokens]      = useState<Record<number, string>>({});
-  // Per-request touched state. A request only shows its field-level errors once it has
-  // been interacted with, or the form explicitly requests all errors (Next click /
-  // return from Review). This avoids newly-added requests appearing red before the
-  // user has interacted with them.
-  const [touched,     setTouched]     = useState<Record<number, boolean>>({});
+  // Per-field touched state. A field only shows its error once that single field's
+  // interaction has ended (a Select/date picker on change, a number input on blur),
+  // or the form explicitly requests all errors (Next click / return from Review).
+  // Field keys are `${reqId}:programmeCentre`, `${reqId}:deadline`,
+  // `${reqId}:level:${idx}:level` etc.; a request's aggregate "touched" state is
+  // derived from any of its fields being touched.
+  const [touched,     setTouched]     = useState<Record<string, boolean>>({});
   const [buildLayout, setBuildLayout] = useState<BuildLayout>('Layout 1');
   const [confirmSendOpen, setConfirmSendOpen] = useState(false);
   const [deleteReqId, setDeleteReqId] = useState<number | null>(null);
@@ -1026,21 +1041,57 @@ export default function ProjectRequestFormPage() {
     setReqs(prev => prev.filter(r => r.id !== id));
     setTouched(prev => {
       const next = { ...prev };
-      delete next[id];
+      for (const key of Object.keys(next)) {
+        if (key.startsWith(`${id}:`)) delete next[key];
+      }
       return next;
     });
   }
-  function touchRequest(id: number) {
-    setTouched(prev => (prev[id] ? prev : { ...prev, [id]: true }));
+  function touchField(key: string) {
+    setTouched(prev => (prev[key] ? prev : { ...prev, [key]: true }));
+  }
+  /** All field keys for one request entry. */
+  function requestFieldKeys(r: ReqEntry): string[] {
+    const keys = [`${r.id}:programmeCentre`, `${r.id}:deadline`];
+    r.levels.forEach((_, idx) => {
+      keys.push(
+        `${r.id}:level:${idx}:level`,
+        `${r.id}:level:${idx}:calendarStart`,
+        `${r.id}:level:${idx}:calendarEnd`,
+        `${r.id}:level:${idx}:duration`,
+        `${r.id}:level:${idx}:placements`,
+      );
+    });
+    return keys;
   }
   function touchAllRequests() {
     setTouched(prev => {
       const next = { ...prev };
-      for (const r of reqs) next[r.id] = true;
+      for (const r of reqs) for (const key of requestFieldKeys(r)) next[key] = true;
       return next;
     });
   }
-  const isRequestTouched = (id: number) => touched[id] ?? false;
+  /* When a level row is removed, indices shift. Re-index that request's level-field
+     touched keys so remaining rows keep their per-field visibility aligned. */
+  function handleLevelRemoved(id: number, removedIndex: number) {
+    setTouched(prev => {
+      const next: Record<string, boolean> = {};
+      const prefix = `${id}:level:`;
+      for (const [key, value] of Object.entries(prev)) {
+        if (!key.startsWith(prefix)) { next[key] = value; continue; }
+        const rest = key.slice(prefix.length);
+        const m = rest.match(/^(\d+):(.+)$/);
+        if (!m) { next[key] = value; continue; }
+        const idx = parseInt(m[1], 10);
+        const field = m[2];
+        if (idx < removedIndex) next[key] = value;
+        else if (idx > removedIndex) next[`${prefix}${idx - 1}:${field}`] = value;
+      }
+      return next;
+    });
+  }
+  const isFieldTouched = (key: string) => touched[key] ?? false;
+  const isRequestTouched = (id: number) => Object.keys(touched).some(key => key.startsWith(`${id}:`));
 
   function focusFirstError() {
     requestAnimationFrame(() => {
@@ -1453,14 +1504,15 @@ export default function ProjectRequestFormPage() {
                       key={activeReq.id}
                       entry={activeReq}
                       number={numberById.get(activeReq.id) ?? 0}
-                      showErrors={isRequestTouched(activeReq.id)}
                       onChange={patch => updateReq(activeReq.id, patch)}
                       onRemove={() => setDeleteReqId(activeReq.id)}
-                      onTouchRequest={() => touchRequest(activeReq.id)}
                       guided
                       highlightedSection={highlightedReadiness}
                       ccEdit={emailEdits[activeReq.id]?.cc}
                       toEdit={emailEdits[activeReq.id]?.to}
+                      isFieldTouched={isFieldTouched}
+                      touchField={touchField}
+                      onLevelRemoved={removedIndex => handleLevelRemoved(activeReq.id, removedIndex)}
                     />
                   ) : (
                     <div className="flex min-h-72 items-center justify-center p-6 text-body-sm text-fg-muted">
@@ -1498,14 +1550,15 @@ export default function ProjectRequestFormPage() {
                       key={r.id}
                       entry={r}
                       number={numberById.get(r.id) ?? 0}
-                      showErrors={isRequestTouched(r.id)}
                       onChange={patch => updateReq(r.id, patch)}
                       onRemove={() => setDeleteReqId(r.id)}
-                      onTouchRequest={() => touchRequest(r.id)}
                       canRemove={reqs.length > 1}
                       highlightedSection={highlightedReadiness}
                       ccEdit={emailEdits[r.id]?.cc}
                       toEdit={emailEdits[r.id]?.to}
+                      isFieldTouched={isFieldTouched}
+                      touchField={touchField}
+                      onLevelRemoved={removedIndex => handleLevelRemoved(r.id, removedIndex)}
                     />
                   ))}
                 </section>

@@ -66,7 +66,7 @@ function ioNav(role: UserRole): IaSection[] {
     { id: 'programmes', label: 'Programmes',  icon: BookOpen,        route: '/programmes' },
     // Project Requests is its own rail shortcut for io-admin (was a tab under Projects).
     ...(isAdmin ? [{ id: 'requests', label: 'Project Requests', icon: Send, route: '/requests', badge: 'ioRequests' as BadgeKey } as IaSection] : []),
-    { id: 'projects', label: 'Projects', icon: Folder, route: '/projects' },
+    { id: 'projects', label: 'Projects', icon: Folder, route: '/shortlisting-review', match: (r) => r === '/shortlisting-review' || r.startsWith('/shortlisting-review?') },
     { id: 'applications', label: 'Applications', icon: ClipboardList, route: '/applications', badge: 'ioApplications' },
     { id: 'internships',  label: 'Internships',  icon: GraduationCap, route: '/interns',      badge: 'ioInterns' },
     { id: 'analytics',    label: 'Analytics',    icon: BarChart3,     route: '/analytics' },

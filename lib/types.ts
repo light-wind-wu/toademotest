@@ -273,6 +273,10 @@ export interface Application {
   status:          ApplicationStatus;
   appliedDate:     string;
   shortlistedFor?: string;  // projectId if shortlisted/interview
+  /** Optional human-readable / AI-generated summary surfaced in shortlisting review. */
+  summary?:        string;
+  /** Optional internal notes surfaced in shortlisting review when summary is absent. */
+  notes?:          string;
   // Personal
   name:            string;
   email:           string;

@@ -59,7 +59,7 @@ export function DropdownItem({
   onClick,
   danger = false,
 }: {
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   label: string;
   onClick: () => void;
   danger?: boolean;
@@ -68,7 +68,8 @@ export function DropdownItem({
     <button
       onClick={onClick}
       className={cn(
-        'w-full flex items-center gap-3 px-4 py-2.5 text-body-sm transition-colors text-left',
+        'w-full flex items-center px-4 py-2.5 text-body-sm transition-colors text-left',
+        icon && 'gap-3',
         danger
           ? 'text-danger hover:bg-danger-bg'
           : 'text-fg hover:bg-bg-subtle',

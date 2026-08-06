@@ -17,7 +17,7 @@ import {
   ChevronRight, Info, AlertTriangle, Award,
   History, Briefcase, Check, X, CalendarClock, CalendarCheck, Mail,
   FileText, Star, Users, ExternalLink, User, SlidersHorizontal,
-  Filter, ArrowUp, ArrowDown, ArrowUpDown,
+  Filter, ArrowUp, ArrowDown, ArrowUpDown, Send,
 } from 'lucide-react';
 import { cn, exportToCSV } from '@/lib/utils';
 import { addNotification } from '@/lib/notifications';
@@ -1090,8 +1090,13 @@ export default function ApplicationsPage() {
   return (
     <Shell activeRoute="/applications">
       {/* Header */}
-      <div className="mb-4">
-        <h1 className="text-headline-lg text-fg">Applications</h1>
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-headline-lg text-fg">Applications</h1>
+        </div>
+        <Button variant="outline" onClick={() => router.push('/shortlisting-review')}>
+          <Send size={14} /> Shortlisting Review
+        </Button>
       </div>
 
       {/* Programme selector */}
