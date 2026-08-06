@@ -153,7 +153,7 @@ function getCardAction(
 
   if (hasIssue) return { label: 'View Submission', mode: 'view' };
   if (uploaded === 0) return { label: 'Start Submission', mode: 'upload' };
-  if (uploaded < placements) return { label: 'Continue Submission', mode: 'upload' };
+  // if (uploaded < placements) return { label: 'Continue Submission', mode: 'upload' };
   return { label: 'View Submission', mode: 'view' };
 }
 
