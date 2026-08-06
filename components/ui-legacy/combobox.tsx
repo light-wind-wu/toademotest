@@ -16,10 +16,11 @@ interface ComboboxProps {
   className?:    string;
   chipClassName?: string;
   chips?:        'inline' | 'below' | 'inline-text';
+  error?:        boolean;
 }
 
 export default function Combobox({
-  selected, onToggle, options = [], groups, placeholder = 'Select…', searchOnly = false, hideSearch = false, className, chipClassName, chips = 'below',
+  selected, onToggle, options = [], groups, placeholder = 'Select…', searchOnly = false, hideSearch = false, className, chipClassName, chips = 'below', error = false,
 }: ComboboxProps) {
   const [open, setOpen]     = useState(false);
   const [query, setQuery]   = useState('');
@@ -100,7 +101,7 @@ export default function Combobox({
         onClick={() => setOpen(v => !v)}
         className={cn(
           'w-full max-w-full flex items-center gap-2 px-3 py-1.5 border rounded-lg text-body-sm bg-surface transition-colors text-left',
-          open ? 'border-accent ring-1 ring-accent/30' : 'border-border hover:border-fg-muted',
+          error ? 'border-danger ring-1 ring-danger/30' : open ? 'border-accent ring-1 ring-accent/30' : 'border-border hover:border-fg-muted',
           chips === 'inline' && 'min-h-[38px]',
         )}
       >

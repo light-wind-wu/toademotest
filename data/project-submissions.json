@@ -319,52 +319,5 @@
         "workingLocation": "DSTA"
       }
     ]
-  },
-  {
-    "id": "batch-pc3-ug-2027-demo",
-    "uploadToken": "seed-pc3-ug-2027",
-    "pc": "james.tan@dsta.gov.sg",
-    "pcHead": "James Tan",
-    "submittedBy": "James Tan",
-    "programme": "",
-    "educationLevel": "University",
-    "requestedEducationLevels": ["Undergraduate Student"],
-    "placements": 4,
-    "uploadedAt": "2026-07-09",
-    "projects": [
-      {
-        "id": "sub-pc3-ug-2027-001",
-        "title": "Cyber Threat Intelligence Correlation Engine",
-        "description": "Build a lightweight correlation engine that ingests security event feeds, deduplicates alerts and surfaces probable multi-stage attack chains for SOC triage.",
-        "mentor": "Mr. Kelvin Goh",
-        "mentorAppointment": "Principal Engineer",
-        "mentorEmail": "kelvin_goh@dsta.gov.sg",
-        "mentorUserId": "mentor-kelvin",
-        "mentorDept": "Cyber Defence",
-        "mentorBio": "Specialises in threat intelligence, SIEM analytics and incident response automation.",
-        "skills": ["Python", "Threat Intelligence", "SIEM", "Data Analytics"],
-        "discipline": "Computer Science / Cyber Security / Data Analytics",
-        "slots": 4,
-        "preferredEducation": "Undergraduate Student",
-        "minGpa": "",
-        "projectType": "Technical",
-        "additionalRequirements": "Basic Python and an interest in cyber security; prior security exposure is a plus.",
-        "aiCheck": {
-          "grammar": "pass",
-          "level": "pass",
-          "notes": []
-        },
-        "status": "pending",
-        "pc": "PC3",
-        "techDomain": "Cyber",
-        "emergingArea": "Cyber Security",
-        "educationLevel": "Undergraduate Student",
-        "requestLineId": "seed-req-pc3-10",
-        "internshipDuration": "1",
-        "internshipPeriodStart": "Jan 2027",
-        "internshipPeriodEnd": "Jun 2027",
-        "workingLocation": "DSTA"
-      }
-    ]
   }
 ]

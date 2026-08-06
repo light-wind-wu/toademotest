@@ -40,10 +40,10 @@ export function DialogContent({
         {...props}
       >
         {children}
-        {showCloseButton && (
+          {showCloseButton && (
           <BaseDialog.Close
             className={cn(
-              "absolute right-4 top-4 cursor-pointer rounded-sm text-fg-muted opacity-70 transition-opacity",
+              "absolute right-4 top-4 z-10 cursor-pointer rounded-sm text-fg-muted opacity-70 transition-opacity",
               "hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
             )}
             aria-label="Close"

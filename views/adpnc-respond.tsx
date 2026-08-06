@@ -72,6 +72,7 @@ import {
   requestRawCategory,
   submittedForGroup,
   groupTotals,
+  requestYearLabel,
   type RequestGroup,
 } from '@/lib/request-groups';
 import type { ProjectRequest, ProjectResponseDraft, ProjectSubmissionBatch, RequestStatus, SubmittedProject } from '@/lib/types';
@@ -136,13 +137,6 @@ function requestCategoryLabel(req: ProjectRequest) {
 
 function requestLineKey(req: ProjectRequest, index: number) {
   return req.id || `${req.uploadToken || 'request'}-${requestRawCategory(req)}-${index}`;
-}
-
-function requestYearLabel(group: RequestGroup): string {
-  const start = group.requests[0]?.periodStart || group.requests[0]?.calendarPeriod;
-  if (!start) return new Date().getFullYear().toString();
-  const year = new Date(start).getFullYear();
-  return isNaN(year) ? new Date().getFullYear().toString() : year.toString();
 }
 
 function requestStatusForGroup(
@@ -1236,6 +1230,7 @@ export default function AdPncRespondPage() {
         message: `${submitProjects.length} project${submitProjects.length !== 1 ? 's' : ''} submitted for review.`,
         tone: 'success',
       }));
+      sessionStorage.setItem('dsta_submissions_success_dialog', '1');
     } catch {}
     router.push('/submissions');
   }

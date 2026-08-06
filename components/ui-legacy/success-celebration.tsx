@@ -31,7 +31,7 @@ export function SuccessCelebration({
       </div>
 
       {/* Card */}
-      <section className="relative z-10 flex w-full min-h-0 flex-col items-center justify-center gap-4 rounded-xl border border-border bg-surface px-6 py-8 text-center shadow-sm md:min-h-64 md:py-5 md:px-10">
+      <section className="relative z-10 flex w-full min-h-0 flex-col items-center justify-center gap-4 rounded-xl border-border bg-surface px-6 py-8 text-center shadow-sm md:min-h-64 md:py-5 md:px-10">
         <Image
           src="/images/step-complete.svg"
           alt={title}

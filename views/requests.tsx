@@ -3390,7 +3390,7 @@ export default function RequestsPage() {
           if (!open) router.replace('/requests');
         }}
       >
-        <DialogContent className="border-none bg-transparent p-0 shadow-none" showCloseButton={false}>
+        <DialogContent className="border-none bg-transparent p-0 shadow-none">
           <SuccessCelebration
             title="Task Completed"
             message="You have successfully completed this test task. Your responses have been recorded."

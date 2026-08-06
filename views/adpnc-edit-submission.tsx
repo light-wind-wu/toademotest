@@ -289,6 +289,7 @@ export default function AdPncEditSubmissionPage() {
     saveSubmissions(updated);
     addNotification({ forRole: 'io', title: `Project resubmitted — ${edit.title}`, body: `AD (P&C) has resubmitted "${edit.title}" for ${progMap[batch.programme] ?? batch.programme} after revision. Ready for IO review.`, href: '/projects', tier: 'action' });
     sessionStorage.setItem('dsta_pending_toast', `"${edit.title}" resubmitted for IO review.`);
+    sessionStorage.setItem('dsta_submissions_success_dialog', '1');
     router.push('/submissions');
   }
 
@@ -425,6 +426,7 @@ export default function AdPncEditSubmissionPage() {
                   placeholder="Select tech competencies…"
                   chipClassName="bg-bg-muted text-[rgba(69,85,108,1)]"
                   chips="inline"
+                  error={!!errors.skillsRaw}
                 />
               </Field>
 
@@ -438,6 +440,7 @@ export default function AdPncEditSubmissionPage() {
                   placeholder="Select disciplines…"
                   chipClassName="bg-bg-muted text-[rgba(69,85,108,1)]"
                   chips="inline"
+                  error={!!errors.discipline}
                 />
               </Field>
 
@@ -556,7 +559,7 @@ export default function AdPncEditSubmissionPage() {
             setErrors(validationErrors);
             if (Object.keys(validationErrors).length === 0) setConfirmSaveOpen(true);
           }}>
-            {saving ? 'Saving…' : 'Save Changes'}
+            {saving ? 'Saving…' : 'Submit'}
           </Button>
         </div>
       </div>
@@ -564,9 +567,9 @@ export default function AdPncEditSubmissionPage() {
       <Dialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Save changes?</DialogTitle>
+            <DialogTitle>Send project?</DialogTitle>
             <DialogDescription>
-              This will resubmit the updated project for IO review.
+              Your projects will be sent to the IO review.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -574,7 +577,7 @@ export default function AdPncEditSubmissionPage() {
               Cancel
             </Button>
             <Button onClick={() => { setConfirmSaveOpen(false); handleSave(); }}>
-              Save Changes
+              Confirm
             </Button>
           </DialogFooter>
         </DialogContent>
