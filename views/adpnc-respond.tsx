@@ -1663,23 +1663,8 @@ export default function AdPncRespondPage() {
                   Back
                 </Button>
               )}
-              {isUploadMode && visibleProjects.length === 0 && (
+              {isUploadMode && visibleProjects.length >= 0 && (
                 <>
-                  <Button variant="outline" size="md" onClick={triggerUpload}>
-                    <Upload size={15} />
-                    Upload Excel
-                  </Button>
-                  <Button size="md" onClick={handleCreateProject}>
-                    <Plus size={15} />
-                    Create a New Project
-                  </Button>
-                </>
-              )}
-              {isUploadMode && visibleProjects.length > 0 && (
-                <>
-                  <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>
-                    Back
-                  </Button>
                   <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>Save and Exit</Button>
                   <Button size="md" disabled={!canSubmit} onClick={() => setConfirmSubmitOpen(true)}>
                     Submit

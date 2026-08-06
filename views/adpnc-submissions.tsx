@@ -33,7 +33,7 @@ const REQUEST_CATEGORY_LABELS: Record<string, string> = {
   'Post Junior College/Post Polytechnic Student': 'Post Junior College / Post Polytechnic',
   'Integrated Programme (IP)': 'Integrated Programme (IP)',
   'Undergraduate Scholar/Merit Scholar': 'University',
-  'Undergraduate Student': 'University Student',
+  'Undergraduate Student': 'Undergraduate Student',
   'Junior College Scholar/Junior College Student': 'Junior College',
   'Polytechnic Scholar/Polytechnic Student': 'Polytechnic',
   'Young Defence Scientist Programme': 'Integrated Programme (IP)',
