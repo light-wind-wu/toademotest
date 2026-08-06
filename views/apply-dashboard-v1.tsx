@@ -581,13 +581,14 @@ export default function ApplyDashboardV1() {
                     Your defender archetype
                   </p>
                   <h3
-                    className="mt-0.5 text-[24px] font-semibold leading-[44px] text-[rgba(10,22,40,1)] lg:text-[28px] lg:text-[rgba(52,146,145,1)]"
+                    className="mt-0.5 text-[24px] font-semibold leading-[44px] lg:text-[28px]"
+                    style={{ color: archetype.color }}
                   >
                     {archetype.name}
                   </h3>
                   <p
                     className="mt-2 text-[14px] font-normal leading-6 lg:text-[16px]"
-                    style={{ color: 'rgba(69, 85, 108, 1)' }}
+                    style={{ color: archetype.color }}
                   >
                     {archetype.tagline}
                   </p>
