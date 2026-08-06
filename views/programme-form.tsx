@@ -1572,7 +1572,7 @@ export default function ProgrammeFormPage() {
   const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmType, setConfirmType] = useState<'create' | 'edit' | null>(null);
-  const { setDirty, safeNavigate } = useUnsavedChanges();
+  const { setDirty, safeNavigate, requestLeave } = useUnsavedChanges();
   const sysCfg = useSystemConfig();
 
   function openSubmitConfirm(type: 'create' | 'edit') {
@@ -3136,12 +3136,17 @@ export default function ProgrammeFormPage() {
 
         {/* Footer — full-bleed sticky action bar (matches the project-request wizard) */}
         <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-surface/95 px-[clamp(24px,2.6vw,40px)] py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] backdrop-blur">
-          <Button variant="ghost" onClick={() => safeNavigate('/programmes')}>
-            Back
-          </Button>
-          <div className="flex items-center gap-3">
+          {step > 1 && (
+            <Button variant="ghost" onClick={() => handleReturnToStep(step - 1)}>
+              Back
+            </Button>
+          )}
+          <div className="flex items-center gap-3 ml-auto">
             {step === 1 ? (
               <>
+                <Button variant="outline" onClick={() => requestLeave('/programmes')}>
+                  Cancel
+                </Button>
                 <Button variant="outline" onClick={saveAsDraft}>
                   Save as Draft
                 </Button>
@@ -3153,7 +3158,7 @@ export default function ProgrammeFormPage() {
             ) : step === 2 ? (
               /* Set Up Intakes & Assign Projects — validate intakes before Review */
               <>
-                <Button variant="outline" onClick={() => handleReturnToStep(1)}>
+                <Button variant="outline" onClick={() => requestLeave('/programmes')}>
                   Cancel
                 </Button>
                 <Button variant="outline" onClick={saveAsDraft}>
@@ -3165,7 +3170,7 @@ export default function ProgrammeFormPage() {
               </>
             ) : (
               <>
-                <Button variant="outline" onClick={() => handleReturnToStep(2)}>
+                <Button variant="outline" onClick={() => requestLeave('/programmes')}>
                   Cancel
                 </Button>
                 <Button variant="outline" onClick={saveAsDraft}>

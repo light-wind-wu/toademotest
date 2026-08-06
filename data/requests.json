@@ -166,8 +166,8 @@
     "programmeCenter": "PC3",
     "headName": "James Tan",
     "senderName": "Davina Tan",
-    "internCategory": "Undergraduate Student",
-    "educationLevel": "Undergraduate Student",
+    "internCategory": "Tech UP",
+    "educationLevel": "Tech UP",
     "calendarPeriod": "Jul 2027 – Dec 2027",
     "periodStart": "Jul 2027",
     "periodEnd": "Dec 2027",
@@ -178,5 +178,25 @@
     "sentDate": "2026-07-01",
     "deadline": "2026-09-30",
     "status": "partial"
+  },
+  {
+    "id": "seed-req-pc3-10",
+    "uploadToken": "seed-pc3-ug-2027",
+    "pc": "james.tan@dsta.gov.sg",
+    "programmeCenter": "PC3",
+    "headName": "James Tan",
+    "senderName": "Davina Tan",
+    "internCategory": "Undergraduate Student",
+    "educationLevel": "Undergraduate Student",
+    "calendarPeriod": "1 Jan 2027 – 30 Jun 2027",
+    "periodStart": "1 Jan 2027",
+    "periodEnd": "30 Jun 2027",
+    "duration": "1 Month",
+    "placements": 4,
+    "created": 0,
+    "uploaded": 0,
+    "sentDate": "2026-07-01",
+    "deadline": "2026-09-30",
+    "status": "pending"
   }
 ]

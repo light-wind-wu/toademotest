@@ -767,7 +767,7 @@ function parseStructuredWorkbook(
       .trim()) || defaultCategory;
 
     const cScope = idx(/project scope/i);
-    const cTech = idx(/tech competency|tech domain/i);
+    const cTech = idx(/tech competency|tech domain|skillset/i);
     const cDisc = idx(/discipline/i);
     const cPMName = idx(/primary mentor name|full name of main mentor|main mentor name/i);
     const cPMAppt = idx(/appointment/i);
@@ -807,6 +807,10 @@ function parseStructuredWorkbook(
         if (parts[1]) barDuration = parts[1];
       }
       const title = at(r, cTitle).trim();
+      if (/^\d+$/.test(title) || (!title && !at(r, cScope) && !at(r, cPlace) && !at(r, cPMName) && !at(r, cPMEmail))) {
+        r += 1;
+        continue;
+      }
       const hasTemplateContext = Boolean(barPeriod || title || at(r, cPlace) || at(r, cScope));
       if (hasTemplateContext && !/^placements filled/i.test(title) && !/^placements filled/i.test(barRaw)) {
         const stack = (colIdx: number) => {
@@ -816,12 +820,14 @@ function parseStructuredWorkbook(
           return out;
         };
         const disc = stack(cDisc);
+        const techStack = stack(cTech);
         const [pStart, pEnd] = barPeriod.split(/\s*[–-]\s*/);
         const values: Record<string, string> = {
           'Project Title': title,
           'Intern Category': category,
           'Project Scope': at(r, cScope),
-          'Tech Domain': stack(cTech)[0] ?? '',
+          'Tech Domain': techStack[0] ?? '',
+          'Skills / Knowledge Required': techStack.join(', '),
           'Discipline of Study 1': disc[0] ?? '',
           'Discipline of Study 2': disc[1] ?? '',
           'Discipline of Study 3': disc[2] ?? '',

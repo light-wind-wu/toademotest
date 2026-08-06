@@ -520,6 +520,7 @@ function RequestCard({
                     });
                     touchField(reqKey('programmeCentre'));
                   }}
+                  onOpenChange={open => { if (!open) touchField(reqKey('programmeCentre')); }}
                 >
                   <SelectTrigger className={cn('min-w-0 overflow-hidden', isFieldTouched(reqKey('programmeCentre')) && !entry.programmeCentre && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select programme centre" /></SelectTrigger>
                   <SelectContent>
@@ -534,7 +535,7 @@ function RequestCard({
                 <FieldLabel>
                   Response deadline <span className="text-danger">*</span>
                 </FieldLabel>
-                <DatePicker value={entry.deadline} onChange={d => { onChange({ deadline: d }); touchField(reqKey('deadline')); }} placeholder="Pick a date" align="right" minDate={sgTomorrow()} error={isFieldTouched(reqKey('deadline')) && !entry.deadline} />
+                <DatePicker value={entry.deadline} onChange={d => { onChange({ deadline: d }); touchField(reqKey('deadline')); }} placeholder="Pick a date" align="right" minDate={sgTomorrow()} error={isFieldTouched(reqKey('deadline')) && !entry.deadline} onClose={() => touchField(reqKey('deadline'))} />
                 <FieldRequired show={isFieldTouched(reqKey('deadline')) && !entry.deadline} />
               </Field>
             </div>
@@ -620,7 +621,7 @@ function RequestCard({
                         Intern category <span className="text-danger">*</span>
                         <FieldHelpTooltip label="Intern category">The type of intern the project is for</FieldHelpTooltip>
                       </FieldLabel>
-                      <Select value={lvl.level} onValueChange={v => { updateLevel(idx, { level: v ?? '', calendarStart: '', calendarEnd: '', calendarPeriod: '', customWindow: false }); touchField(levelKey(idx, 'level')); }}>
+                      <Select value={lvl.level} onValueChange={v => { updateLevel(idx, { level: v ?? '', calendarStart: '', calendarEnd: '', calendarPeriod: '', customWindow: false }); touchField(levelKey(idx, 'level')); }} onOpenChange={open => { if (!open) touchField(levelKey(idx, 'level')); }}>
                         <SelectTrigger className={cn('min-w-0 overflow-hidden', isFieldTouched(levelKey(idx, 'level')) && !lvl.level && 'border-danger')}>
                           <SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select intern category" />
                         </SelectTrigger>
@@ -662,6 +663,7 @@ function RequestCard({
                             placeholder="Select start and end date"
                             hideLabels
                             hideFooter
+                            onOpenChange={open => { if (!open) { touchField(levelKey(idx, 'calendarStart')); touchField(levelKey(idx, 'calendarEnd')); } }}
                             className={cn('w-full min-w-0', isFieldTouched(levelKey(idx, 'calendarStart')) && !!lvl.level && (!lvl.calendarStart || !lvl.calendarEnd) && 'border-danger')}
                           />
                           {winPresets.length > 0 && (
@@ -683,6 +685,7 @@ function RequestCard({
                             touchField(levelKey(idx, 'calendarStart'));
                             touchField(levelKey(idx, 'calendarEnd'));
                           }}
+                          onOpenChange={open => { if (!open) { touchField(levelKey(idx, 'calendarStart')); touchField(levelKey(idx, 'calendarEnd')); } }}
                         >
                           <SelectTrigger className={cn('min-w-0 overflow-hidden', isFieldTouched(levelKey(idx, 'calendarStart')) && !lvl.calendarStart && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select internship window" /></SelectTrigger>
                           <SelectContent>
@@ -698,7 +701,7 @@ function RequestCard({
                         Project duration <span className="text-danger">*</span>
                         <FieldHelpTooltip label="Project duration">Proposed projects should last around this length of time</FieldHelpTooltip>
                       </FieldLabel>
-                      <Select value={lvl.duration} onValueChange={v => { updateLevel(idx, { duration: v ?? '' }); touchField(levelKey(idx, 'duration')); }}>
+                      <Select value={lvl.duration} onValueChange={v => { updateLevel(idx, { duration: v ?? '' }); touchField(levelKey(idx, 'duration')); }} onOpenChange={open => { if (!open) touchField(levelKey(idx, 'duration')); }}>
                         <SelectTrigger className={cn('min-w-0 overflow-hidden', isFieldTouched(levelKey(idx, 'duration')) && !lvl.duration && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Project duration" /></SelectTrigger>
                         <SelectContent>
                           {durOptions.map(duration => <SelectItem key={duration} value={duration}>{duration}</SelectItem>)}
@@ -1022,7 +1025,7 @@ export default function ProjectRequestFormPage() {
   }, []);
 
   const isDirty = reqs.some(r => r.programmeCentre || r.pcHead || r.adpnc || r.deadline || r.levels.some(l => l.level || l.calendarStart || l.calendarEnd || l.duration));
-  const { setDirty, safeNavigate } = useUnsavedChanges();
+  const { setDirty, safeNavigate, requestLeave } = useUnsavedChanges();
   useEffect(() => { setDirty(isDirty); }, [isDirty, setDirty]);
   useEffect(() => () => setDirty(false), [setDirty]);
 
@@ -1256,7 +1259,7 @@ export default function ProjectRequestFormPage() {
     sessionStorage.setItem('dsta_pending_toast', 'The project request has been successfully sent to AD (P&C).');
     sessionStorage.setItem('dsta_pending_toast_title', 'Project request sent');
     setDirty(false);
-    router.push('/task-completed');
+    router.push('/requests?submitted=1');
   }
 
   /* Build ProjectRequest-shaped rows from a request entry so the structured Excel
@@ -1362,10 +1365,6 @@ export default function ProjectRequestFormPage() {
                         <h2 className="text-label-lg font-semibold text-fg">Requests</h2>
                         <p className="mt-0.5 text-caption text-fg-muted">
                           {reqs.length} request{reqs.length !== 1 ? 's' : ''}
-                          {/*·{' '}*/}
-                          {/*<span className={missingReqCount > 0 ? 'font-semibold text-danger' : 'text-success'}>
-                            {missingReqCount} filed missing
-                          </span>*/}
                         </p>
                       </div>
                       <Button size="sm" onClick={addRequest}><Plus size={14} />Add Project Request</Button>
@@ -1610,18 +1609,21 @@ export default function ProjectRequestFormPage() {
 
         {/* Footer actions */}
         <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-gradient-to-b from-surface to-bg px-[clamp(24px,2.6vw,40px)] py-2">
-          <Button variant="ghost" size="md" onClick={() => safeNavigate('/requests')}>
-            Back
-          </Button>
-          <div className="flex items-center gap-3">
+          {step > 1 && (
+            <Button variant="ghost" size="md" onClick={handleReturnToBuild}>
+              Back
+            </Button>
+          )}
+          <div className="flex items-center gap-3 ml-auto">
             {step === 1 ? (
               <>
+                <Button variant="outline" size="md" onClick={() => requestLeave('/requests')}>Cancel</Button>
                 <Button variant="outline" size="md" onClick={handleSaveDraft}>Save as Draft</Button>
                 <Button size="md" onClick={goToPreview}>Next</Button>
               </>
             ) : (
               <>
-                <Button variant="outline" size="md" onClick={handleReturnToBuild}>Cancel</Button>
+                <Button variant="outline" size="md" onClick={() => requestLeave('/requests')}>Cancel</Button>
                 <Button variant="outline" size="md" onClick={handleSaveDraft}>Save as Draft</Button>
                 <Button size="md" onClick={() => setConfirmSendOpen(true)}>Confirm Send</Button>
               </>

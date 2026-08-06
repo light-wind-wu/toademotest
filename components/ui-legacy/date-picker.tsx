@@ -18,6 +18,8 @@ interface DatePickerProps {
   align?: 'left' | 'right';
   /** Highlights the trigger with a danger border for inline validation. */
   error?: boolean;
+  /** Called when the picker popover closes, whether or not a date was chosen. */
+  onClose?: () => void;
 }
 
 function displayDate(value: string) {
@@ -39,6 +41,7 @@ export default function DatePicker({
   minDate,
   align = 'left',
   error = false,
+  onClose,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const selected = parseDate(value);
@@ -54,7 +57,7 @@ export default function DatePicker({
   }
 
   return (
-    <BasePopover.Root open={open} onOpenChange={setOpen}>
+    <BasePopover.Root open={open} onOpenChange={next => { setOpen(next); if (!next) onClose?.(); }}>
       <BasePopover.Trigger
         type="button"
         aria-label={placeholder}

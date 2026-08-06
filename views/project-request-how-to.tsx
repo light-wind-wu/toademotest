@@ -559,6 +559,7 @@ function RequestCard({
                     });
                     touchField(reqKey('programmeCentre'));
                   }}
+                  onOpenChange={open => { if (!open) touchField(reqKey('programmeCentre')); }}
                 >
                   <SelectTrigger className={cn('min-w-0 overflow-hidden', isFieldTouched(reqKey('programmeCentre')) && !entry.programmeCentre && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select programme centre" /></SelectTrigger>
                   <SelectContent>
@@ -573,7 +574,7 @@ function RequestCard({
                 <FieldLabel>
                   Response deadline <span className="text-danger">*</span>
                 </FieldLabel>
-                <DatePicker value={entry.deadline} onChange={d => { onChange({ deadline: d }); touchField(reqKey('deadline')); }} placeholder="Pick a date" align="right" minDate={sgTomorrow()} error={isFieldTouched(reqKey('deadline')) && !entry.deadline} />
+                <DatePicker value={entry.deadline} onChange={d => { onChange({ deadline: d }); touchField(reqKey('deadline')); }} placeholder="Pick a date" align="right" minDate={sgTomorrow()} error={isFieldTouched(reqKey('deadline')) && !entry.deadline} onClose={() => touchField(reqKey('deadline'))} />
                 <FieldRequired show={isFieldTouched(reqKey('deadline')) && !entry.deadline} />
               </Field>
             </div>
@@ -659,7 +660,7 @@ function RequestCard({
                         Intern category <span className="text-danger">*</span>
                         <FieldHelpTooltip label="Intern category">The type of intern the project is for</FieldHelpTooltip>
                       </FieldLabel>
-                      <Select value={lvl.level} onValueChange={v => { updateLevel(idx, { level: v ?? '', calendarStart: '', calendarEnd: '', calendarPeriod: '', customWindow: false }); touchField(levelKey(idx, 'level')); }}>
+                      <Select value={lvl.level} onValueChange={v => { updateLevel(idx, { level: v ?? '', calendarStart: '', calendarEnd: '', calendarPeriod: '', customWindow: false }); touchField(levelKey(idx, 'level')); }} onOpenChange={open => { if (!open) touchField(levelKey(idx, 'level')); }}>
                         <SelectTrigger className={cn('min-w-0 overflow-hidden', isFieldTouched(levelKey(idx, 'level')) && !lvl.level && 'border-danger')}>
                           <SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select intern category" />
                         </SelectTrigger>
@@ -701,6 +702,7 @@ function RequestCard({
                             placeholder="Select start and end date"
                             hideLabels
                             hideFooter
+                            onOpenChange={open => { if (!open) { touchField(levelKey(idx, 'calendarStart')); touchField(levelKey(idx, 'calendarEnd')); } }}
                             className={cn('w-full min-w-0', isFieldTouched(levelKey(idx, 'calendarStart')) && !!lvl.level && (!lvl.calendarStart || !lvl.calendarEnd) && 'border-danger')}
                           />
                           {winPresets.length > 0 && (
@@ -722,6 +724,7 @@ function RequestCard({
                             touchField(levelKey(idx, 'calendarStart'));
                             touchField(levelKey(idx, 'calendarEnd'));
                           }}
+                          onOpenChange={open => { if (!open) { touchField(levelKey(idx, 'calendarStart')); touchField(levelKey(idx, 'calendarEnd')); } }}
                         >
                           <SelectTrigger className={cn('min-w-0 overflow-hidden', isFieldTouched(levelKey(idx, 'calendarStart')) && !lvl.calendarStart && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select internship window" /></SelectTrigger>
                           <SelectContent>
@@ -737,7 +740,7 @@ function RequestCard({
                         Project duration <span className="text-danger">*</span>
                         <FieldHelpTooltip label="Project duration">Proposed projects should last around this length of time</FieldHelpTooltip>
                       </FieldLabel>
-                      <Select value={lvl.duration} onValueChange={v => { updateLevel(idx, { duration: v ?? '' }); touchField(levelKey(idx, 'duration')); }}>
+                      <Select value={lvl.duration} onValueChange={v => { updateLevel(idx, { duration: v ?? '' }); touchField(levelKey(idx, 'duration')); }} onOpenChange={open => { if (!open) touchField(levelKey(idx, 'duration')); }}>
                         <SelectTrigger className={cn('min-w-0 overflow-hidden', isFieldTouched(levelKey(idx, 'duration')) && !lvl.duration && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Project duration" /></SelectTrigger>
                         <SelectContent>
                           {durOptions.map(duration => <SelectItem key={duration} value={duration}>{duration}</SelectItem>)}
