@@ -229,13 +229,15 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
 
 export const MAX_RANKED = 5;
 
-/** Score quiz answers → winning archetype (ties prefer pioneer). */
+/** Score quiz answers → winning archetype.
+   +1 per answer; ties break by fixed order: sentinel → pathfinder → architect → pioneer
+   (matches docs/Defender-Profile-Quiz-Spec.docx §4–5 and apply-form.tsx). */
 export function resolveArchetype(answers: (number | null)[]): ArchetypeInfo {
   const scores: Record<ArchetypeId, number> = {
-    pioneer: 0,
-    pathfinder: 0,
     sentinel: 0,
+    pathfinder: 0,
     architect: 0,
+    pioneer: 0,
   };
   answers.forEach((optIndex, qIndex) => {
     if (optIndex == null) return;
@@ -244,7 +246,8 @@ export function resolveArchetype(answers: (number | null)[]): ArchetypeInfo {
     const key = opt.archetype as ArchetypeId;
     if (key in scores) scores[key] += 1;
   });
-  let best: ArchetypeId = 'pioneer';
+  /* Stable max: first key in insertion order wins ties */
+  let best: ArchetypeId = 'sentinel';
   let bestScore = -1;
   (Object.keys(scores) as ArchetypeId[]).forEach((k) => {
     if (scores[k] > bestScore) {

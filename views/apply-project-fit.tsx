@@ -80,14 +80,31 @@ type Phase = 'interests' | 'ranking' | 'quiz' | 'result';
 
 function shouldShowSession2Intro(): boolean {
   if (typeof window === 'undefined') return false;
-  const fromQuery = new URLSearchParams(window.location.search).get('intro');
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('from') === 'review') return false;
+  const fromQuery = params.get('intro');
   return fromQuery === 'session-2' || peekChapterIntro() === 'session-2';
+}
+
+function initialPhase(): Phase {
+  if (typeof window === 'undefined') return 'interests';
+  const phase = new URLSearchParams(window.location.search).get('phase');
+  if (phase === 'ranking' || phase === 'interests' || phase === 'quiz' || phase === 'result') {
+    return phase;
+  }
+  return 'interests';
+}
+
+function isFromReview(): boolean {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get('from') === 'review';
 }
 
 export default function ApplyProjectFitPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
+  const [fromReview, setFromReview] = useState(false);
   const [draft, setDraft] = useState<ApplySessionDraft | null>(null);
   const [phase, setPhase] = useState<Phase>('interests');
   const [showArchetype, setShowArchetype] = useState(false);
@@ -99,6 +116,8 @@ export default function ApplyProjectFitPage() {
       router.replace('/login');
       return;
     }
+    setFromReview(isFromReview());
+    setPhase(initialPhase());
     setShowIntro(shouldShowSession2Intro());
     const d = loadApplyDraft();
     setDraft(d);
@@ -171,12 +190,22 @@ export default function ApplyProjectFitPage() {
           }
       : phase === 'ranking'
         ? {
-            onBack: () => setPhase(draft.quizTaken ? 'result' : 'interests'),
+            onBack: () => {
+              if (fromReview) {
+                router.push('/apply/review');
+                return;
+              }
+              setPhase(draft.quizTaken ? 'result' : 'interests');
+            },
             onContinue: () => {
+              if (fromReview) {
+                router.push('/apply/review');
+                return;
+              }
               markChapterIntro('session-3');
               router.push('/apply/additional-details?intro=session-3');
             },
-            continueLabel: 'Next',
+            continueLabel: fromReview ? 'Save' : 'Next',
             continueDisabled: draft.rankedProjectIds.length === 0,
           }
         : {
@@ -220,6 +249,7 @@ export default function ApplyProjectFitPage() {
           onBack={footer.onBack}
           onContinue={footer.onContinue}
           continueDisabled={footer.continueDisabled}
+          continueLabel={footer.continueLabel}
         />
       )}
       {phase === 'result' && (
@@ -576,6 +606,7 @@ function RankingPhase({
   onBack,
   onContinue,
   continueDisabled,
+  continueLabel = 'Next',
 }: {
   displayName: string;
   rankedIds: string[];
@@ -583,6 +614,7 @@ function RankingPhase({
   onBack?: () => void;
   onContinue?: () => void;
   continueDisabled?: boolean;
+  continueLabel?: string;
 }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const rankedSet = useMemo(() => new Set(rankedIds), [rankedIds]);
@@ -757,7 +789,7 @@ function RankingPhase({
             onClick={onContinue}
             disabled={continueDisabled || !onContinue}
           >
-            Next
+            {continueLabel}
           </button>
         </div>
       </div>
@@ -1115,18 +1147,31 @@ function ArchetypeResultPhase({
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex min-h-0 flex-1 flex-col justify-start overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:justify-center">
       <div className="mx-auto w-full lg:w-[740px] lg:max-w-[740px]">
-        <h1
-          className="mb-5 w-full break-words max-lg:text-[20px] max-lg:leading-8 lg:text-[24px] lg:leading-8"
-          style={{
-            fontWeight: 600,
-            color: 'rgba(15, 23, 43, 1)',
-            textAlign: 'left',
-            overflowWrap: 'break-word',
-            wordBreak: 'normal',
-          }}
-        >
-          You will discover your Defender archetype
-        </h1>
+        <header className="mb-5 w-full">
+          <h1
+            className="w-full break-words max-lg:text-[20px] max-lg:leading-8 lg:text-[24px] lg:leading-8"
+            style={{
+              fontWeight: 600,
+              color: 'rgba(15, 23, 43, 1)',
+              textAlign: 'left',
+              overflowWrap: 'break-word',
+              wordBreak: 'normal',
+            }}
+          >
+            Meet Your Defender Archetype
+          </h1>
+          <p
+            style={{
+              marginTop: 4,
+              fontWeight: 400,
+              fontSize: 14,
+              lineHeight: '100%',
+              color: 'rgba(74, 85, 104, 1)',
+            }}
+          >
+            Based on your quiz responses
+          </p>
+        </header>
 
         <section className="relative w-full overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
           {/* Art sits on the card background — flush to edges, no inset gap */}

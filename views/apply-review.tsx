@@ -1,15 +1,17 @@
 'use client';
 
-/* Step 5 — Review: four collapsible cards (comps).
+/* Step 5 — Review: collapsible cards (comps).
    1 Personal (+ Contact below rule)
    2 Academic Transcript (+ CV below rule)
    3 Availability
-   4 Additional Details (scholarship / credit split by rule) */
+   4 Your project ranking
+   5 Additional Details (scholarship / credit split by rule) */
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
 import ApplicationFlowShell from '@/components/apply/application-flow-shell';
 import { loadApplyDraft, type ApplySessionDraft } from '@/lib/apply-application';
+import { PROJECT_MATCHES } from '@/lib/apply-project-fit';
 import { loadApplicantProfile, type ApplicantProfile } from '@/lib/myinfo';
 import { isSignedIn } from '@/lib/session';
 import { cn } from '@/lib/utils';
@@ -47,6 +49,7 @@ export default function ApplyReviewPage() {
     personal: true,
     transcript: true,
     availability: true,
+    ranking: true,
     additional: true,
   });
 
@@ -142,27 +145,30 @@ export default function ApplyReviewPage() {
           ) : (
             <p className="text-[13px] text-fg-muted">No transcript uploaded.</p>
           )}
-          {draft.transcriptName && (
+          {(draft.education.institution ||
+            draft.education.course ||
+            draft.education.yearOfStudy ||
+            draft.education.gpa) && (
             <div className="mt-3 rounded-lg bg-bg p-3">
               <p className="mb-2 text-[13px] font-bold text-fg">Education details</p>
               <dl className="grid gap-y-3 sm:grid-cols-2">
                 <div className="sm:pr-3">
-                  <Field label="Institution" value={draft.education.institution} />
+                  <Field label="Institution" value={draft.education.institution || '—'} />
                 </div>
                 <div
                   className="sm:border-l sm:pl-3"
                   style={{ borderColor: DIVIDER }}
                 >
-                  <Field label="Course of study" value={draft.education.course} />
+                  <Field label="Course of study" value={draft.education.course || '—'} />
                 </div>
                 <div className="sm:pr-3">
-                  <Field label="Year of study" value={draft.education.yearOfStudy} />
+                  <Field label="Year of study" value={draft.education.yearOfStudy || '—'} />
                 </div>
                 <div
                   className="sm:border-l sm:pl-3"
                   style={{ borderColor: DIVIDER }}
                 >
-                  <Field label="GPA" value={draft.education.gpa} />
+                  <Field label="GPA" value={draft.education.gpa || '—'} />
                 </div>
               </dl>
             </div>
@@ -206,7 +212,45 @@ export default function ApplyReviewPage() {
           </dl>
         </ReviewSection>
 
-        {/* 4 — Additional (scholarship / credit split by rule) */}
+        {/* 4 — Project ranking */}
+        <ReviewSection
+          title="Your project ranking"
+          open={open.ranking}
+          onToggle={() => toggle('ranking')}
+          onEdit={() => router.push('/apply/project-fit?phase=ranking&from=review')}
+        >
+          {draft.rankedProjectIds.length > 0 ? (
+            <ol className="space-y-3">
+              {draft.rankedProjectIds.map((id, index) => {
+                const project = PROJECT_MATCHES.find((p) => p.id === id);
+                return (
+                  <li key={id} className="flex items-center gap-3">
+                    <span
+                      className="inline-flex size-6 shrink-0 items-center justify-center rounded-full"
+                      style={{
+                        background: 'rgba(243, 239, 229, 1)',
+                        border: '1px solid rgba(231, 228, 221, 1)',
+                        fontWeight: 500,
+                        fontSize: 14,
+                        lineHeight: '20px',
+                        color: 'rgba(15, 23, 43, 1)',
+                      }}
+                    >
+                      {index + 1}
+                    </span>
+                    <span className="text-[14px] font-semibold text-fg">
+                      {project?.name ?? id}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          ) : (
+            <p className="text-[13px] text-fg-muted">No projects ranked yet.</p>
+          )}
+        </ReviewSection>
+
+        {/* 5 — Additional (scholarship / credit split by rule) */}
         <ReviewSection
           title="Additional Details"
           open={open.additional}
