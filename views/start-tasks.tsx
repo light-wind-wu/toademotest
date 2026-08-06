@@ -69,7 +69,7 @@ function pc3UgReturnedBatch(): ProjectSubmissionBatch {
     aiCheck: { grammar: 'pass' as const, level: 'pass' as const, notes: [] },
     pc: 'PC3',
     educationLevel: 'Undergraduate Student' as const,
-    internshipDuration: '1',
+    internshipDuration: '2',
     internshipPeriodStart: 'Jan 2027',
     internshipPeriodEnd: 'Jun 2027',
     workingLocation: 'DSTA',

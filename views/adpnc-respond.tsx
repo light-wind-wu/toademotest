@@ -1834,8 +1834,7 @@ function UploadSummaryDialog({
         <div className="max-h-[60vh] space-y-5 overflow-y-auto px-6 py-5">
           <div className="rounded-lg border border-border bg-bg-subtle p-4">
             <p className="text-body-sm font-semibold text-fg">{review.fileName}</p>
-            <div className="mt-3 grid gap-3 sm:grid-cols-3">
-              <SummaryTile label="Rows found" value={review.allProjects.length} />
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <SummaryTile label="Ready to import" value={review.readyProjects.length} valueClassName="text-success" />
               <SummaryTile label="Rows with issues" value={issueRows} valueClassName={issueRows ? 'text-danger' : 'text-success'} />
             </div>

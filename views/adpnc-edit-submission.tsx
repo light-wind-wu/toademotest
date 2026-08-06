@@ -500,7 +500,7 @@ export default function AdPncEditSubmissionPage() {
           </div>
 
           {/* Audit Log */}
-          {edit && (
+          {!edit && (
             <div className="rounded-lg border border-border bg-surface p-6">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
