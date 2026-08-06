@@ -9,6 +9,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import { useSession } from '@/lib/session';
+import { loadRequests } from '@/lib/storage';
 import { loadUtCatalogPath, loadUtTrack, type UtCatalogPath, type UtTrack } from '@/lib/ut-track';
 import Topbar from '@/components/layout/topbar';
 import {
@@ -38,11 +39,38 @@ const CARD_BORDER = 'rgba(231, 228, 221, 1)';
 const CARD_SHADOW =
   '0px 4px 6px -4px rgba(0, 0, 0, 0.05), 0px 10px 15px -3px rgba(0, 0, 0, 0.1)';
 
+/** Same token the AD (P&C) inbox uses for PC3 2027 (“Request for 2027 Projects”). */
+const AD_PNC_PC3_TOKEN_FALLBACK = 'seed-pc3-2027';
+
+/**
+ * Resolve respond URL from the same request list as /submissions
+ * (group.key === uploadToken). Falls back to seed token if missing.
+ */
+function resolveAdPncPc3RespondHref(): string {
+  try {
+    const requests = loadRequests();
+    const hit =
+      requests.find((r) => r.uploadToken === AD_PNC_PC3_TOKEN_FALLBACK) ||
+      requests.find(
+        (r) =>
+          r.programmeCenter === 'PC3' &&
+          (r.internCategory === 'Undergraduate Student' ||
+            r.educationLevel === 'Undergraduate Student'),
+      );
+    const token = hit?.uploadToken || AD_PNC_PC3_TOKEN_FALLBACK;
+    return `/submissions/respond?token=${encodeURIComponent(token)}&mode=upload`;
+  } catch {
+    return `/submissions/respond?token=${encodeURIComponent(AD_PNC_PC3_TOKEN_FALLBACK)}&mode=upload`;
+  }
+}
+
 type TaskDef = {
   id: number;
   title: string;
   description: string;
   href: string;
+  /** Optional live resolve (e.g. token from submissions list data). */
+  resolveHref?: () => string;
   enabled?: boolean;
 };
 
@@ -91,10 +119,34 @@ const IO_ADMIN_TASKS: TaskDef[] = [
 const AD_PNC_TASKS: TaskDef[] = [
   {
     id: 1,
-    title: 'Track Intake Progress',
+    title: 'Create and Submit a Project',
     description:
-      'Monitor the status of issued requests and submitted projects so the annual internship intake stays on schedule.',
+      'You have received the 2027 Internship Project Request for PC3. Create and submit a project in response to the request using the following details:\n\n' +
+      'Project title: AI-Enabled Defence Logistics Forecasting\n' +
+      'Project scope: Develop a prototype that uses historical logistics data to forecast equipment demand and identify potential supply shortages. The intern will clean and analyse data, compare forecasting approaches, and evaluate model performance. Deliverables include a working prototype, an evaluation report, and a dashboard presenting key forecasts.\n' +
+      'Skillsets: Python; Data Analysis; Machine Learning\n' +
+      'Disciplines of study: Computer Science; Data Science; Operations Research\n' +
+      'Primary mentor: Wei Jian Lim\n' +
+      'Primary mentor appointment: Senior Engineer\n' +
+      'Primary mentor email: weijian.lim@dsta.gov.sg\n' +
+      'Secondary mentor: Wei Ming\n' +
+      'Secondary mentor appointment: Senior Engineer\n' +
+      'Secondary mentor email: wei.ming@dsta.gov.sg\n' +
+      'Number of placements: 4\n\n' +
+      'Complete the project details and submit the project to IO admin for review.',
     href: '/submissions',
+  },
+  {
+    id: 2,
+    title: 'Update and Resubmit a Project',
+    description:
+      'The AI-Enabled Defence Logistics Forecasting project has been returned for update by the IO Admin. Review the remarks, update the project scope accordingly, and resubmit the project to IO.\n\n' +
+      'IO Admin remarks:\n' +
+      'Please narrow the scope to one equipment category, use only anonymised data, and include a baseline comparison for model evaluation.\n\n' +
+      'Updated project scope:\n' +
+      'Develop a prototype using anonymised logistics data for one equipment category to forecast demand and identify potential supply shortages. Compare the forecasting model against a baseline and evaluate its accuracy. Deliverables include a working prototype, an evaluation report, and a forecast dashboard.',
+    href: `/submissions/respond?token=${AD_PNC_PC3_TOKEN_FALLBACK}&mode=upload`,
+    resolveHref: resolveAdPncPc3RespondHref,
   },
 ];
 
@@ -185,7 +237,7 @@ function briefingFor(path: UtCatalogPath, track: UtTrack): { tasks: TaskDef[]; c
       copy: {
         heading: 'Prepare the Annual Internship Intake',
         body: 'You are responsible for reviewing project submissions for your Programme Centre.',
-        note: 'During this exercise, you will complete the following task.',
+        note: 'During this exercise, you will complete the following two tasks.',
       },
     };
   }
@@ -345,7 +397,7 @@ export default function StartTasks() {
                         description={task.description}
                         cta={`Start Task ${task.id}`}
                         disabled={task.enabled === false}
-                        onClick={() => router.push(task.href)}
+                        onClick={() => router.push(task.resolveHref?.() ?? task.href)}
                       />
                     ))}
                   </TooltipProvider>
@@ -468,7 +520,7 @@ function MobileBriefing({
                 description={task.description}
                 cta={`Start Task ${task.id}`}
                 disabled={task.enabled === false}
-                onClick={() => onStart(task.href)}
+                onClick={() => onStart(task.resolveHref?.() ?? task.href)}
                 compact
               />
             ))}
