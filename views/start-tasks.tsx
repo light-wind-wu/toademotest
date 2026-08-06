@@ -2,16 +2,21 @@
 
 /* B-end usability-test briefing.
    Desktop: fixed 1680×900 artboard, scales as one unit.
-   Mobile: natural scroll layout (artboard shrink made type unreadably small).
-   Staff track requires signed-in session; applicant track is reached from /catlog
-   before Singpass and routes Task 1 → /login. */
-import { useEffect, useState } from 'react';
+   Mobile: natural scroll layout.
+   Task list is driven by /catlog path (each role starts at Task 1). */
+import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import { useSession } from '@/lib/session';
-import { loadUtTrack, type UtTrack } from '@/lib/ut-track';
+import { loadUtCatalogPath, loadUtTrack, type UtCatalogPath, type UtTrack } from '@/lib/ut-track';
 import Topbar from '@/components/layout/topbar';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui-legacy/tooltip';
 import { cn } from '@/lib/utils';
 
 const ART_W = 1680;
@@ -33,31 +38,85 @@ const CARD_BORDER = 'rgba(231, 228, 221, 1)';
 const CARD_SHADOW =
   '0px 4px 6px -4px rgba(0, 0, 0, 0.05), 0px 10px 15px -3px rgba(0, 0, 0, 0.1)';
 
-const STAFF_TASKS = [
+type TaskDef = {
+  id: number;
+  title: string;
+  description: string;
+  href: string;
+  enabled?: boolean;
+};
+
+type Copy = {
+  heading: string;
+  body: string;
+  note: string;
+};
+
+const IO_ADMIN_TASKS: TaskDef[] = [
   {
     id: 1,
-    title: 'Create Project Requests',
+    title: 'Create a Project Request',
     description:
-      'Create and issue Project Requests to the relevant Programme Centres for the annual internship intake.',
-    href: '/requests/new',
+      'You have been asked to create a new project request for PC3 using the following details:\n' +
+      'Request title: 2027 Internship Project Request\n' +
+      'Response deadline: 31 August 2026\n' +
+      'Internship year: 2027\n' +
+      'Intern category: Undergraduate Student\n' +
+      'Internship window: 1 January to 30 June 2027\n' +
+      'Project duration: 2 months\n' +
+      'Number of placements: 4\n\n' +
+      'Complete and issue the project request to PC3.',
+    href: '/dashboard',
   },
   {
     id: 2,
-    title: 'Review Project Submissions',
+    title: 'Review and Route a Project for Approval',
     description:
-      'Assume that internship projects have subsequently been submitted by AD (P&C). Review the submitted projects and take the appropriate actions.',
-    href: '/submissions',
+      'The following project has been submitted by AD (P&C). Review the project details and, if everything is in order, route it for DCE approval.\n' +
+      'Project title: AI-Enabled Defence Logistics Forecasting\n' +
+      'Project scope: Develop a prototype that uses historical logistics data to forecast equipment demand and identify potential supply shortages. The intern will clean and analyse data, compare forecasting approaches, and evaluate model performance. Deliverables include a working prototype, an evaluation report, and a dashboard presenting key forecasts.\n' +
+      'Skillsets: Python; Data Analysis; Machine Learning\n' +
+      'Disciplines of study: Computer Science; Data Science; Operations Research\n' +
+      'Primary mentor: Wei Jian Lim\n' +
+      'Primary mentor appointment: Senior Engineer\n' +
+      'Primary mentor email: weijian.lim@dsta.gov.sg\n' +
+      'Secondary mentor: Wei Ming\n' +
+      'Secondary mentor appointment: Senior Engineer\n' +
+      'Secondary mentor email: wei.ming@dsta.gov.sg\n' +
+      'Number of placements: 4',
+    href: '/dashboard',
   },
+];
+
+const AD_PNC_TASKS: TaskDef[] = [
   {
-    id: 3,
+    id: 1,
     title: 'Track Intake Progress',
     description:
       'Monitor the status of issued requests and submitted projects so the annual internship intake stays on schedule.',
-    href: '/projects',
+    href: '/submissions',
   },
-] as const;
+];
 
-const APPLICANT_TASKS = [
+const IO_PROGRAMME_TASKS: TaskDef[] = [
+  {
+    id: 1,
+    title: 'Create a Programme',
+    description: 'Open the programme list and create a new programme for the intake cycle.',
+    href: '/programmes',
+  },
+];
+
+const IO_SHORTLIST_TASKS: TaskDef[] = [
+  {
+    id: 1,
+    title: 'Shortlist Applicants',
+    description: 'Review applicants on the dashboard and complete the shortlisting workflow.',
+    href: '/dashboard',
+  },
+];
+
+const APPLICANT_TASKS: TaskDef[] = [
   {
     id: 1,
     title: 'B1.1 — Submit an Application',
@@ -72,38 +131,99 @@ const APPLICANT_TASKS = [
     description:
       'You have been shortlisted for an interview and invited by the Mentor to select an interview time. Review the available timeslots, choose a suitable slot, and confirm your interview schedule.',
     href: '/apply/dashboard',
-    /** Locked until Task 1 is done — button greyed out for now. */
     enabled: false,
   },
-] as const;
+];
 
-const STAFF_COPY = {
-  heading: 'Prepare the Annual Internship Intake',
-  body: 'You are responsible for preparing the upcoming annual internship intake and managing the related project submissions.',
-  note: 'During this exercise, you will complete the following two tasks.',
-} as const;
+const PROBING_TASKS: TaskDef[] = [
+  {
+    id: 1,
+    title: 'Explore Applicant Homepage',
+    description:
+      'Open the applicant homepage for this probing variant. The task label is the same; the page layout differs by catalog choice (A / B).',
+    href: '/apply/dashboard',
+    enabled: true,
+  },
+];
 
-const APPLICANT_COPY = {
-  heading: '',
-  body: '',
-  note: 'During this exercise, you will complete the following two tasks.',
-} as const;
+function briefingFor(path: UtCatalogPath, track: UtTrack): { tasks: TaskDef[]; copy: Copy } {
+  if (track === 'applicant' || path === 'applicant' || path === 'probing') {
+    if (path === 'probing') {
+      return {
+        tasks: PROBING_TASKS,
+        copy: {
+          heading: '',
+          body: '',
+          note: 'During this exercise, you will complete the following task.',
+        },
+      };
+    }
+    return {
+      tasks: APPLICANT_TASKS,
+      copy: {
+        heading: '',
+        body: '',
+        note: 'During this exercise, you will complete the following two tasks.',
+      },
+    };
+  }
 
-type TaskItem = (typeof STAFF_TASKS)[number] | (typeof APPLICANT_TASKS)[number];
-type Copy = typeof STAFF_COPY | typeof APPLICANT_COPY;
+  if (path === 'io-admin') {
+    return {
+      tasks: IO_ADMIN_TASKS,
+      copy: {
+        heading: 'Prepare the Annual Internship Intake',
+        body: 'You are responsible for preparing the upcoming annual internship intake and managing the related project submissions.',
+        note: 'During this exercise, you will complete the following two tasks.',
+      },
+    };
+  }
+
+  if (path === 'ad-pnc') {
+    return {
+      tasks: AD_PNC_TASKS,
+      copy: {
+        heading: 'Prepare the Annual Internship Intake',
+        body: 'You are responsible for reviewing project submissions for your Programme Centre.',
+        note: 'During this exercise, you will complete the following task.',
+      },
+    };
+  }
+
+  if (path === 'io-programme') {
+    return {
+      tasks: IO_PROGRAMME_TASKS,
+      copy: {
+        heading: 'Create a Programme',
+        body: 'You will open the programme list and create a programme for the intake.',
+        note: 'During this exercise, you will complete the following task.',
+      },
+    };
+  }
+
+  return {
+    tasks: IO_SHORTLIST_TASKS,
+    copy: {
+      heading: 'Shortlist Applicants',
+      body: 'You will use the dashboard to shortlist applicants for the intake.',
+      note: 'During this exercise, you will complete the following task.',
+    },
+  };
+}
 
 export default function StartTasks() {
   const router = useRouter();
   const { signedIn } = useSession();
   const [mounted, setMounted] = useState(false);
   const [track, setTrack] = useState<UtTrack>('staff');
+  const [path, setPath] = useState<UtCatalogPath>('io-admin');
   const [scale, setScale] = useState(1);
-  /** Desktop artboard + start-task-bg only — mobile uses plain scroll layout. */
   const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     setTrack(loadUtTrack());
+    setPath(loadUtCatalogPath());
   }, []);
 
   useEffect(() => {
@@ -134,9 +254,9 @@ export default function StartTasks() {
     return () => window.removeEventListener('resize', update);
   }, [isDesktop]);
 
+  const { tasks, copy } = useMemo(() => briefingFor(path, track), [path, track]);
   const isApplicant = track === 'applicant';
-  const tasks = isApplicant ? APPLICANT_TASKS : STAFF_TASKS;
-  const copy = isApplicant ? APPLICANT_COPY : STAFF_COPY;
+  const taskCols = tasks.length === 1 ? 'grid-cols-1' : 'grid-cols-2';
 
   if (!mounted || (track === 'staff' && !signedIn)) {
     return (
@@ -158,7 +278,6 @@ export default function StartTasks() {
     >
       <Topbar navigationHidden hideProfile={isApplicant} />
 
-      {/* Mobile — plain bg, no décor images */}
       {!isDesktop && (
         <div className="flex flex-1 flex-col pt-16">
           <MobileBriefing
@@ -169,69 +288,72 @@ export default function StartTasks() {
         </div>
       )}
 
-      {/* Desktop — scaled 1440 artboard with start-task-bg */}
       {isDesktop && (
-      <div className="flex flex-1 items-center justify-center overflow-hidden pt-16">
-        <div
-          className="relative shrink-0"
-          style={{ width: ART_W * scale, height: ART_H * scale }}
-        >
+        <div className="flex flex-1 items-center justify-center overflow-hidden pt-16">
           <div
-            className="absolute left-0 top-0 origin-top-left"
-            style={{
-              width: ART_W,
-              height: ART_H,
-              transform: `scale(${scale})`,
-            }}
+            className="relative shrink-0"
+            style={{ width: ART_W * scale, height: ART_H * scale }}
           >
-            {/* Full 1680×900 bg — locked to artboard so décor stays in place when scaled */}
-            <Image
-              src="/images/start-task-bg.jpg"
-              alt=""
-              fill
-              priority
-              className="pointer-events-none object-cover object-center"
-              sizes="1680px"
-            />
-
             <div
-              className="absolute flex flex-col bg-white"
+              className="absolute left-0 top-0 origin-top-left"
               style={{
-                left: PANEL_LEFT,
-                top: PANEL_TOP,
-                width: PANEL_W,
-                height: PANEL_H,
-                zIndex: 2,
-                borderRadius: 12,
-                border: `1px solid ${CARD_BORDER}`,
-                boxShadow: CARD_SHADOW,
-                padding: '28px 34px',
+                width: ART_W,
+                height: ART_H,
+                transform: `scale(${scale})`,
               }}
             >
-              <BriefingHeader copy={copy} />
+              <Image
+                src="/images/start-task-bg.jpg"
+                alt=""
+                fill
+                priority
+                className="pointer-events-none object-cover object-center"
+                sizes="1680px"
+              />
+
               <div
-                className="grid grid-cols-2"
+                className="absolute flex flex-col bg-white"
                 style={{
-                  marginTop: 11,
-                  gap: 16,
+                  left: PANEL_LEFT,
+                  top: PANEL_TOP,
+                  width: PANEL_W,
+                  height: PANEL_H,
+                  zIndex: 2,
+                  borderRadius: 12,
+                  border: `1px solid ${CARD_BORDER}`,
+                  boxShadow: CARD_SHADOW,
+                  padding: '28px 34px',
                 }}
               >
-                {tasks.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    label={`Task ${task.id}`}
-                    title={task.title}
-                    description={task.description}
-                    cta={`Start Task ${task.id}`}
-                    disabled={'enabled' in task ? !task.enabled : false}
-                    onClick={() => router.push(task.href)}
-                  />
-                ))}
+                <BriefingHeader copy={copy} />
+                <div
+                  className={cn('grid', taskCols)}
+                  style={{
+                    marginTop: 11,
+                    gap: 16,
+                    flex: 1,
+                    minHeight: 0,
+                    alignContent: 'start',
+                  }}
+                >
+                  <TooltipProvider delay={200}>
+                    {tasks.map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        label={`Task ${task.id}`}
+                        title={task.title}
+                        description={task.description}
+                        cta={`Start Task ${task.id}`}
+                        disabled={task.enabled === false}
+                        onClick={() => router.push(task.href)}
+                      />
+                    ))}
+                  </TooltipProvider>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
       )}
     </div>
   );
@@ -301,7 +423,7 @@ function MobileBriefing({
   onStart,
 }: {
   copy: Copy;
-  tasks: readonly TaskItem[];
+  tasks: readonly TaskDef[];
   onStart: (href: string) => void;
 }) {
   return (
@@ -337,18 +459,20 @@ function MobileBriefing({
         </p>
 
         <div className="mt-5 flex flex-col gap-3">
-          {tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              label={`Task ${task.id}`}
-              title={task.title}
-              description={task.description}
-              cta={`Start Task ${task.id}`}
-              disabled={'enabled' in task ? !task.enabled : false}
-              onClick={() => onStart(task.href)}
-              compact
-            />
-          ))}
+          <TooltipProvider delay={200}>
+            {tasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                label={`Task ${task.id}`}
+                title={task.title}
+                description={task.description}
+                cta={`Start Task ${task.id}`}
+                disabled={task.enabled === false}
+                onClick={() => onStart(task.href)}
+                compact
+              />
+            ))}
+          </TooltipProvider>
         </div>
       </section>
     </div>
@@ -404,18 +528,34 @@ function TaskCard({
       >
         {title}
       </h2>
-      <p
-        style={{
-          marginTop: 6,
-          flex: 1,
-          fontWeight: 400,
-          fontSize: compact ? 13 : 13,
-          lineHeight: '20px',
-          color: MUTED,
-        }}
-      >
-        {description}
-      </p>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <p
+              className={cn(
+                'mt-1.5 min-h-0 cursor-help',
+                compact ? 'line-clamp-4' : 'line-clamp-5',
+              )}
+              style={{
+                flex: 1,
+                fontWeight: 400,
+                fontSize: 13,
+                lineHeight: '20px',
+                color: MUTED,
+              }}
+            />
+          }
+        >
+          {description.replace(/\n+/g, ' ')}
+        </TooltipTrigger>
+        <TooltipContent
+          side="top"
+          align="start"
+          className="max-h-[min(360px,50vh)] max-w-[360px] overflow-y-auto whitespace-pre-line text-left leading-5"
+        >
+          {description}
+        </TooltipContent>
+      </Tooltip>
       <button
         type="button"
         onClick={onClick}

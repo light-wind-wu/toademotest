@@ -3,13 +3,11 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Search, Bell, Settings, HelpCircle, LogOut, ChevronDown, ShieldCheck, UserCircle2, Briefcase, ClipboardList, GraduationCap, Award, User, CheckCheck, Gavel, LayoutGrid, ListTodo, PanelsTopLeft } from 'lucide-react';
-import { useRole, ROLE_LABELS, ROLE_PROFILES } from '@/lib/role';
-import type { UserRole } from '@/lib/types';
+import { Search, Bell, Settings, HelpCircle, LogOut, ChevronDown, User, CheckCheck, LayoutGrid, ListTodo, PanelsTopLeft } from 'lucide-react';
+import { useRole, ROLE_LABELS } from '@/lib/role';
 import { cn } from '@/lib/utils';
 import { useUnsavedChanges } from '@/lib/unsaved-changes';
 import { buildSearchIndex, buildRecordIndex, runSearch, type SearchEntry } from '@/lib/ia-nav';
-import { useSystemConfig } from '@/lib/portal-config';
 import Image from 'next/image';
 import { signOut } from '@/lib/session';
 import {
@@ -22,26 +20,6 @@ import {
   type ApplyDashboardVersion,
 } from '@/lib/apply-dashboard-version';
 
-const ROLE_DEFAULT_ROUTE: Record<UserRole, string> = {
-  'io-admin':                   '/dashboard',
-  'io':                         '/dashboard',
-  'mentor':                     '/mentor',
-  'ad-pnc':                     '/submissions',
-  'director':                   '/director',
-  'new-applicant':              '/apply',
-  'existing-scholar-applicant': '/apply',
-};
-
-const ROLE_SWITCHER: { role: UserRole; icon: typeof ShieldCheck }[] = [
-  { role: 'io-admin',                   icon: ShieldCheck   },
-  { role: 'io',                         icon: UserCircle2   },
-  { role: 'mentor',                     icon: Briefcase     },
-  { role: 'ad-pnc',                     icon: ClipboardList },
-  { role: 'director',                   icon: Gavel         },
-  { role: 'new-applicant',              icon: GraduationCap },
-  { role: 'existing-scholar-applicant', icon: Award         },
-];
-
 export default function Topbar({
   navigationHidden = false,
   hideProfile = false,
@@ -50,9 +28,8 @@ export default function Topbar({
   /** Catalog entry: logo only, no profile / search / bell */
   hideProfile?: boolean;
 }) {
-  const { role, setRole, profile } = useRole();
+  const { role, profile } = useRole();
   const { safeNavigate } = useUnsavedChanges();
-  const { roleSwitcher } = useSystemConfig(); // Admin → System config feature switch
   const router = useRouter();
   const pathname = usePathname();
   const onApplyRoute = pathname.startsWith('/apply');
@@ -338,30 +315,7 @@ export default function Topbar({
                 </div>
               </div>
 
-              {/* Role switcher — demo only; gated by the System-config feature switch */}
-              {roleSwitcher && (
-              <div className="p-2 border-b border-border">
-                <p className="px-2 py-1 text-[12px] font-bold text-fg-subtle uppercase tracking-widest">Demo — Switch Role</p>
-                {ROLE_SWITCHER.map(({ role: r, icon: Icon }) => (
-                  <button
-                    key={r}
-                    onClick={() => { setRole(r); setOpen(false); window.location.href = ROLE_DEFAULT_ROUTE[r]; }}
-                    className={cn(
-                      'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left',
-                      role === r ? 'bg-accent/10 text-accent' : 'hover:bg-bg-subtle text-fg'
-                    )}
-                  >
-                    <Icon size={16} className={role === r ? 'text-accent' : 'text-fg-muted'} />
-                    <div className="min-w-0">
-                      <p className="text-body-sm font-semibold">{ROLE_LABELS[r]}</p>
-                      <p className="text-[13px] text-fg-muted truncate">{ROLE_PROFILES[r].name}</p>
-                    </div>
-                    {role === r && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-accent shrink-0" />}
-                  </button>
-                ))}
-              </div>
-              )}
-
+              {/* Role switcher UI removed — switch roles from /catlog */}
               {/* Actions */}
               <div className="p-1.5">
                 {(role === 'new-applicant' || role === 'existing-scholar-applicant') && (

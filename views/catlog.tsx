@@ -2,7 +2,7 @@
 
 /* Demo catalog — PC: 1440×900 artboard + catlog-bg.
    Mobile: fluid list (no scale-down, no background).
-   All roles → /start-tasks first; Applicant then continues to /login from a task.
+   Role is switched here (profile dropdown role switcher hidden).
    Route: /catlog */
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
@@ -10,7 +10,14 @@ import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { useRole } from '@/lib/role';
 import { signIn } from '@/lib/session';
-import { saveUtTrack } from '@/lib/ut-track';
+import {
+  saveUtApplicantVariant,
+  saveUtCatalogPath,
+  saveUtTrack,
+  type UtApplicantVariant,
+  type UtCatalogPath,
+} from '@/lib/ut-track';
+import { saveApplyDashboardVersion, type ApplyDashboardVersion } from '@/lib/apply-dashboard-version';
 import type { UserRole } from '@/lib/types';
 import Topbar from '@/components/layout/topbar';
 import { cn } from '@/lib/utils';
@@ -24,57 +31,205 @@ const CARD_SHADOW =
   '0px 4px 6px -4px rgba(0, 0, 0, 0.05), 0px 10px 15px -3px rgba(0, 0, 0, 0.1)';
 const LABEL = 'rgba(15, 23, 43, 1)';
 
-/** Catalog column — centered in the artboard (PC) */
-const LIST_W = 420;
+const LIST_W = 620;
 const LIST_LEFT = (ART_W - LIST_W) / 2;
 const BTN_H = 56;
+const CHILD_H = 44;
 const BTN_GAP = 12;
 
-type CatalogItem =
-  | { id: string; label: string; kind: 'staff'; role: UserRole }
-  | { id: string; label: string; kind: 'applicant' };
+type StaffEntry = {
+  id: UtCatalogPath;
+  label: string;
+  kind: 'staff';
+  role: UserRole;
+};
 
-const CATALOG: CatalogItem[] = [
+type ExpandApplicant = {
+  id: 'applicant';
+  label: string;
+  kind: 'expand-applicant';
+};
+
+type ExpandProbing = {
+  id: 'probing';
+  label: string;
+  kind: 'expand-probing';
+};
+
+type CatalogRow = StaffEntry | ExpandApplicant | ExpandProbing;
+
+const CATALOG: CatalogRow[] = [
   { id: 'io-admin', label: 'A1.1 - A1.5 (IO Admin)', kind: 'staff', role: 'io-admin' },
-  { id: 'io-a2', label: 'A2.1 Creates Programme (IO)', kind: 'staff', role: 'io' },
-  { id: 'io-b2', label: 'B2.2 Shortlists Applicants (IO)', kind: 'staff', role: 'io' },
+  { id: 'io-programme', label: 'A2.1 Creates Programme (IO)', kind: 'staff', role: 'io' },
+  { id: 'io-shortlist', label: 'B2.2 Shortlists Applicants (IO)', kind: 'staff', role: 'io' },
   { id: 'ad-pnc', label: 'A1.3 - A1.5 (AD&PC)', kind: 'staff', role: 'ad-pnc' },
-  { id: 'applicant', label: 'B1.1 - B3.2 (Applicant)', kind: 'applicant' },
+  { id: 'applicant', label: 'B1.1 - B3.2 (Applicant)', kind: 'expand-applicant' },
+  { id: 'probing', label: 'Probing - Applicant Homepage', kind: 'expand-probing' },
 ];
 
-const LIST_H = CATALOG.length * BTN_H + (CATALOG.length - 1) * BTN_GAP;
-const LIST_TOP = (ART_H - LIST_H) / 2;
+const APPLICANT_VARIANTS: { id: UtApplicantVariant; label: string }[] = [
+  { id: 'polytechnic', label: 'Polytechnic Intern' },
+  { id: 'tech-up', label: 'Tech Up Intern' },
+  { id: 'undergraduate', label: 'Undergraduate Intern' },
+];
+
+const PROBING_VARIANTS: { id: ApplyDashboardVersion; label: string }[] = [
+  { id: 'v1', label: 'A' },
+  { id: 'v2', label: 'B' },
+];
+
+function PrimaryButton({
+  label,
+  showArrow,
+  onClick,
+  emphasized,
+}: {
+  label: string;
+  showArrow?: boolean;
+  onClick: () => void;
+  emphasized?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full cursor-pointer items-center justify-between rounded-xl bg-white px-5"
+      style={{
+        height: BTN_H,
+        boxShadow: CARD_SHADOW,
+        color: LABEL,
+        fontWeight: emphasized ? 600 : 500,
+        fontSize: emphasized ? 16 : 15,
+        lineHeight: '22px',
+      }}
+    >
+      <span className="truncate text-left">{label}</span>
+      {showArrow ? <ArrowRight className="size-5 shrink-0" strokeWidth={1.5} aria-hidden /> : null}
+    </button>
+  );
+}
+
+function ChildButton({
+  label,
+  onClick,
+  className,
+}: {
+  label: string;
+  onClick: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'group inline-flex cursor-pointer items-center justify-between gap-1.5 rounded-xl bg-white px-4',
+        'transition-all duration-200 ease-out',
+        'hover:-translate-y-0.5 hover:border-[rgba(26,101,248,0.35)] hover:bg-[rgba(26,101,248,0.06)] hover:shadow-md',
+        'active:translate-y-0 active:scale-[0.98]',
+        'focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[rgba(26,101,248,1)]',
+        className,
+      )}
+      style={{
+        height: CHILD_H,
+        boxShadow: CARD_SHADOW,
+        border: '1px solid transparent',
+        color: LABEL,
+        fontWeight: 500,
+        fontSize: 13,
+        lineHeight: '18px',
+      }}
+    >
+      <span className="whitespace-nowrap transition-colors duration-200 group-hover:text-[rgba(26,101,248,1)]">
+        {label}
+      </span>
+      <ArrowRight
+        className="size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-[rgba(26,101,248,1)]"
+        strokeWidth={1.5}
+        aria-hidden
+      />
+    </button>
+  );
+}
 
 function CatalogButtons({
-  onPick,
+  expandedId,
+  onToggleExpand,
+  onStaff,
+  onApplicantVariant,
+  onProbing,
   className,
   style,
 }: {
-  onPick: (item: CatalogItem) => void;
+  expandedId: string | null;
+  onToggleExpand: (id: string) => void;
+  onStaff: (item: StaffEntry) => void;
+  onApplicantVariant: (variant: UtApplicantVariant) => void;
+  onProbing: (version: ApplyDashboardVersion) => void;
   className?: string;
   style?: CSSProperties;
 }) {
   return (
     <nav className={cn('flex flex-col', className)} style={style} aria-label="Demo catalog">
-      {CATALOG.map((item) => (
-        <button
-          key={item.id}
-          type="button"
-          onClick={() => onPick(item)}
-          className="flex w-full cursor-pointer items-center justify-between rounded-xl bg-white px-5"
-          style={{
-            height: BTN_H,
-            boxShadow: CARD_SHADOW,
-            color: LABEL,
-            fontWeight: 500,
-            fontSize: 15,
-            lineHeight: '22px',
-          }}
-        >
-          <span className="truncate text-left">{item.label}</span>
-          <ArrowRight className="size-5 shrink-0" strokeWidth={1.5} aria-hidden />
-        </button>
-      ))}
+      {CATALOG.map((item) => {
+        if (item.kind === 'staff') {
+          return (
+            <PrimaryButton
+              key={item.id}
+              label={item.label}
+              showArrow
+              onClick={() => onStaff(item)}
+            />
+          );
+        }
+
+        if (item.kind === 'expand-applicant') {
+          const open = expandedId === item.id;
+          return (
+            <div key={item.id} className="flex flex-col gap-3">
+              <PrimaryButton
+                label={item.label}
+                onClick={() => onToggleExpand(item.id)}
+              />
+              {open && (
+                <div className="flex w-full flex-nowrap items-center justify-between gap-2">
+                  {APPLICANT_VARIANTS.map((v) => (
+                    <ChildButton
+                      key={v.id}
+                      label={v.label}
+                      className="w-auto shrink-0 px-3"
+                      onClick={() => onApplicantVariant(v.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        const open = expandedId === item.id;
+        return (
+          <div key={item.id} className="flex flex-col gap-3">
+            <PrimaryButton
+              label={item.label}
+              emphasized
+              onClick={() => onToggleExpand(item.id)}
+            />
+            {open && (
+              <div className="flex w-full items-center gap-4">
+                {PROBING_VARIANTS.map((v) => (
+                  <ChildButton
+                    key={v.id}
+                    label={v.label}
+                    className="min-w-[120px] flex-1 px-6"
+                    onClick={() => onProbing(v.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </nav>
   );
 }
@@ -84,6 +239,7 @@ export default function Catlog() {
   const { setRole } = useRole();
   const [mounted, setMounted] = useState(false);
   const [scale, setScale] = useState(1);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -91,7 +247,6 @@ export default function Catlog() {
 
   useEffect(() => {
     function update() {
-      /* PC artboard only — mobile uses fluid layout */
       if (window.innerWidth < 768) return;
       const next = Math.min(
         window.innerWidth / ART_W,
@@ -105,16 +260,31 @@ export default function Catlog() {
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  function pick(item: CatalogItem) {
-    if (item.kind === 'applicant') {
-      saveUtTrack('applicant');
-      setRole('new-applicant');
-      router.push('/start-tasks');
-      return;
-    }
+  function toggleExpand(id: string) {
+    setExpandedId((cur) => (cur === id ? null : id));
+  }
+
+  function goStaff(item: StaffEntry) {
     saveUtTrack('staff');
+    saveUtCatalogPath(item.id);
     setRole(item.role);
     signIn('corppass', new Date().toISOString());
+    router.push('/start-tasks');
+  }
+
+  function goApplicantVariant(variant: UtApplicantVariant) {
+    saveUtTrack('applicant');
+    saveUtCatalogPath('applicant');
+    saveUtApplicantVariant(variant);
+    setRole('new-applicant');
+    router.push('/start-tasks');
+  }
+
+  function goProbing(version: ApplyDashboardVersion) {
+    saveUtTrack('applicant');
+    saveUtCatalogPath('probing');
+    saveApplyDashboardVersion(version);
+    setRole('new-applicant');
     router.push('/start-tasks');
   }
 
@@ -129,6 +299,14 @@ export default function Catlog() {
     );
   }
 
+  const listProps = {
+    expandedId,
+    onToggleExpand: toggleExpand,
+    onStaff: goStaff,
+    onApplicantVariant: goApplicantVariant,
+    onProbing: goProbing,
+  };
+
   return (
     <div
       className="flex min-h-screen flex-col overflow-hidden"
@@ -138,16 +316,14 @@ export default function Catlog() {
     >
       <Topbar navigationHidden hideProfile />
 
-      {/* Mobile — full-width list, no bg, no artboard scale */}
-      <div className="flex flex-1 flex-col justify-center px-4 pb-10 pt-16 md:hidden">
+      <div className="flex flex-1 flex-col justify-center overflow-y-auto px-4 pb-10 pt-16 md:hidden">
         <CatalogButtons
-          onPick={pick}
-          className="mx-auto w-full max-w-[420px]"
+          {...listProps}
+          className="mx-auto w-full max-w-[620px]"
           style={{ gap: BTN_GAP }}
         />
       </div>
 
-      {/* PC — 1440×900 artboard + catlog-bg */}
       <div className="hidden flex-1 items-center justify-center pt-16 md:flex">
         <div
           className="relative shrink-0"
@@ -172,11 +348,11 @@ export default function Catlog() {
             />
 
             <CatalogButtons
-              onPick={pick}
+              {...listProps}
               className="absolute"
               style={{
                 left: LIST_LEFT,
-                top: LIST_TOP,
+                top: Math.max(48, (ART_H - 520) / 2),
                 width: LIST_W,
                 gap: BTN_GAP,
                 zIndex: 1,
