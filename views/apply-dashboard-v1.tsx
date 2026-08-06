@@ -588,7 +588,7 @@ export default function ApplyDashboardV1() {
                   </h3>
                   <p
                     className="mt-2 text-[14px] font-normal leading-6 lg:text-[16px]"
-                    style={{ color: archetype.color }}
+                    style={{ color: 'rgba(69, 85, 108, 1)' }}
                   >
                     {archetype.tagline}
                   </p>
