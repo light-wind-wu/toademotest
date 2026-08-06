@@ -53,7 +53,8 @@ export default function Shell({ children, activeRoute, hideNavigation = false, f
   useEffect(() => {
     if (!mounted) return;
     if (!signedIn) {
-      router.replace(onApplyRoute ? '/login' : '/login/staff');
+      /* Apply UT entry is /catlog — don't bounce sign-out back to /login. */
+      router.replace(onApplyRoute ? '/catlog' : '/login/staff');
     } else if (roleMismatch) {
       router.replace(roleHome(role));
     }

@@ -382,8 +382,8 @@ export default function ApplyDashboardV1() {
                       <TasksCard
                         className="relative mt-4"
                         stacked
-                        onConfirm={() => router.push('/apply/profile')}
-                        onUpdate={() => router.push('/apply/applications')}
+                        onConfirm={() => setOutOfScopeOpen(true)}
+                        onUpdate={() => setOutOfScopeOpen(true)}
                       />
                     </div>
 
@@ -445,7 +445,10 @@ export default function ApplyDashboardV1() {
 
                       <div className="min-w-0 w-full space-y-4">
                         <InterviewInvitationCard />
-                        <TasksCard onConfirm={() => router.push('/apply/profile')} onUpdate={() => router.push('/apply/applications')} />
+                        <TasksCard
+                          onConfirm={() => setOutOfScopeOpen(true)}
+                          onUpdate={() => setOutOfScopeOpen(true)}
+                        />
                       </div>
                     </div>
                   </div>

@@ -199,8 +199,8 @@ const PROBING_TASKS: TaskDef[] = [
     id: 1,
     title: 'Explore Applicant Homepage',
     description:
-      'Open the applicant homepage for this probing variant. The task label is the same; the page layout differs by catalog choice (A / B).',
-    href: '/apply/dashboard',
+      'Sign in with Singpass, then open the applicant homepage for this probing variant. The task label is the same; the page layout differs by catalog choice (A / B).',
+    href: '/login',
     enabled: true,
   },
 ];

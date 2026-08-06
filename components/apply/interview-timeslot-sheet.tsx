@@ -11,7 +11,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui-legacy/sheet';
-import { RadioGroup, RadioGroupItem } from '@/components/ui-legacy/radio-group';
 import { Checkbox } from '@/components/ui-legacy/checkbox';
 import { cn } from '@/lib/utils';
 
@@ -64,7 +63,6 @@ export default function InterviewTimeslotSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const [language, setLanguage] = useState('mandarin');
   const [selectedId, setSelectedId] = useState<string | null>('3');
 
   const selected = useMemo(
@@ -165,39 +163,8 @@ export default function InterviewTimeslotSheet({
             </div>
           </div>
 
-          {/* Language — 16px below meta, 16px above Available time */}
-          <div className="mt-4 mb-4">
-            <p
-              className="mb-3 text-[14px] font-normal leading-5"
-              style={{ color: 'rgba(69, 85, 108, 1)' }}
-            >
-              Interview language
-            </p>
-            <RadioGroup
-              value={language}
-              onValueChange={(v) => setLanguage(String(v))}
-              className="grid grid-cols-2 gap-4"
-            >
-              {(
-                [
-                  ['english', 'English'],
-                  ['mandarin', 'Mandarin'],
-                ] as const
-              ).map(([value, label]) => (
-                <label
-                  key={value}
-                  className="inline-flex min-w-0 cursor-pointer items-center gap-2 text-[14px] font-normal leading-5"
-                  style={{ color: 'rgba(15, 23, 43, 1)' }}
-                >
-                  <RadioGroupItem value={value} />
-                  {label}
-                </label>
-              ))}
-            </RadioGroup>
-          </div>
-
           {/* Slots */}
-          <div>
+          <div className="mt-4">
             <p
               className="mb-3 text-[14px] font-normal leading-5"
               style={{ color: 'rgba(69, 85, 108, 1)' }}

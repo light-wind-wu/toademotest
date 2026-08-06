@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
 import Image from 'next/image';
 import { Menu, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRole } from '@/lib/role';
@@ -9,6 +9,7 @@ import { useMenuVisibility, isSectionVisible } from '@/lib/portal-config';
 import { getNav, isSectionActive, type IaSection, type BadgeKey } from '@/lib/ia-nav';
 import { useSidebarBadges } from './use-sidebar-badges';
 import { cn } from '@/lib/utils';
+import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
 import {
   Tooltip,
   TooltipContent,
@@ -39,6 +40,7 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
   const { safeNavigate } = useUnsavedChanges();
   const { badges, hasApplied, hasInternship } = useSidebarBadges(role, profile.email, activeRoute);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [outOfScopeOpen, setOutOfScopeOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const burgerRef = useRef<HTMLButtonElement>(null);
   const prevDrawerOpen = useRef(false);
@@ -81,6 +83,15 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
     return g?.badge ? BADGE_TOOLTIP[g.badge](badges[g.badge]) : undefined;
   };
 
+  function goSection(s: IaSection) {
+    if (s.soon) {
+      setDrawerOpen(false);
+      setOutOfScopeOpen(true);
+      return;
+    }
+    safeNavigate(s.route);
+  }
+
   return (
     <>
       {/* Mobile burger button */}
@@ -89,7 +100,7 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
         onClick={() => setDrawerOpen(true)}
         aria-label="Open menu"
         aria-expanded={drawerOpen}
-        className="md:hidden fixed top-0 left-0 z-40 h-16 w-14 flex items-center justify-center text-fg-muted hover:text-accent"
+        className="md:hidden fixed top-0 left-0 z-40 h-16 w-14 flex cursor-pointer items-center justify-center text-fg-muted hover:text-accent"
       >
         <Menu size={24} />
       </button>
@@ -108,7 +119,7 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
           >
             <div className="h-16 flex items-center justify-between px-4 border-b border-border shrink-0">
               <Image src="/images/dsta-logo.svg" alt="DSTA" width={72} height={40} className="object-contain h-7 w-auto" />
-              <button onClick={() => setDrawerOpen(false)} aria-label="Close menu" className="p-1.5 rounded-lg text-fg-muted hover:bg-bg-subtle"><X size={20} /></button>
+              <button onClick={() => setDrawerOpen(false)} aria-label="Close menu" className="cursor-pointer rounded-lg p-1.5 text-fg-muted hover:bg-bg-subtle"><X size={20} /></button>
             </div>
             <nav className="flex-1 overflow-y-auto p-2">
               {sections.map((s) => {
@@ -116,11 +127,20 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
                 const Icon = s.icon;
                 const n = sectionBadge(s);
                 return (
-                  <button key={s.id} onClick={() => safeNavigate(s.route)}
+                  <button key={s.id} onClick={() => goSection(s)}
                     aria-current={active ? 'page' : undefined}
-                    className={cn('w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors', active ? 'bg-nav-active-bg text-nav-active-fg' : 'text-fg hover:bg-bg-muted')}>
+                    className={cn(
+                      'flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
+                      active
+                        ? 'bg-nav-active-bg text-nav-active-fg'
+                        : 'text-[rgba(10,22,40,1)] hover:bg-bg-muted',
+                    )}
+                  >
                     <span className="relative">
-                      <Icon size={20} />
+                      <Icon
+                        size={20}
+                        className={active ? 'text-nav-active-fg' : 'text-[rgba(10,22,40,1)]'}
+                      />
                       {n > 0 && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent" />}
                     </span>
                     <span className="flex-1 text-body-md font-semibold">{s.label}</span>
@@ -146,7 +166,7 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
           <button
             onClick={onToggle}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="p-1.5 border border-border rounded-lg text-fg-muted hover:bg-bg-subtle hover:text-fg transition-colors"
+            className="cursor-pointer rounded-lg border border-border p-1.5 text-fg-muted transition-colors hover:bg-bg-subtle hover:text-fg"
           >
             {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
@@ -154,54 +174,68 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
 
         {/* Navigation */}
         <nav className="flex-1 flex flex-col w-full overflow-y-auto py-2">
-          <TooltipProvider>
+          <TooltipProvider delay={0}>
             {sections.map((s) => {
               const active = isSectionActive(s, activeRoute);
               const Icon = s.icon;
               const n = sectionBadge(s);
-              const btn = (
+              const tip = sectionTip(s, n);
+              const button = (
                 <button
-                  key={s.id}
-                  onClick={() => safeNavigate(s.route)}
+                  type="button"
+                  onClick={() => goSection(s)}
                   aria-label={collapsed ? s.label : undefined}
                   aria-current={active ? 'page' : undefined}
-                  title={!collapsed ? sectionTip(s, n) : undefined}
+                  title={!collapsed ? tip : undefined}
                   className={cn(
-                    'relative flex items-center rounded-lg transition-colors duration-100 group mb-1',
-                    collapsed ? 'justify-center h-11 w-11 mx-auto p-2' : 'gap-3 px-3 py-2.5 mx-3',
-                    active ? 'bg-nav-active-bg text-nav-active-fg' : 'text-fg-muted hover:bg-bg-muted'
+                    'group relative mb-1 flex cursor-pointer items-center rounded-lg transition-colors duration-100',
+                    collapsed ? 'mx-auto h-11 w-11 justify-center p-2' : 'mx-3 gap-3 px-3 py-2.5',
+                    active
+                      ? 'bg-nav-active-bg text-nav-active-fg'
+                      : 'text-[rgba(10,22,40,1)] hover:bg-bg-muted',
                   )}
                 >
-                  {active && !collapsed && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-0 bg-nav-active-fg rounded-r" />}
+                  {active && !collapsed && (
+                    <span className="absolute left-0 top-1/2 h-6 w-0 -translate-y-1/2 rounded-r bg-nav-active-fg" />
+                  )}
                   {n > 0 && collapsed && (
-                    <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent" />
+                    <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-accent" />
                   )}
                   <span className="relative shrink-0">
-                    <Icon size={20} className={active ? 'text-nav-active-fg' : 'text-fg-muted'} />
+                    <Icon
+                      size={20}
+                      className={active ? 'text-nav-active-fg' : 'text-[rgba(10,22,40,1)]'}
+                    />
                   </span>
                   {!collapsed && (
-                    <span className="flex-1 text-body-sm font-semibold truncate text-left">{s.label}</span>
+                    <span className="flex-1 truncate text-left text-body-sm font-semibold">{s.label}</span>
                   )}
                   {n > 0 && !collapsed && (
-                    <span className="w-2 h-2 rounded-full bg-accent shrink-0" />
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-accent" />
                   )}
                 </button>
               );
-              if (collapsed) {
-                return (
-                  <Tooltip key={s.id}>
-                    <TooltipTrigger render={btn} />
-                    <TooltipContent side="right" sideOffset={8} className="bg-fg text-bg border-fg">
-                      {s.label}
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              }
-              return btn;
+
+              if (!collapsed) return <Fragment key={s.id}>{button}</Fragment>;
+
+              return (
+                <Tooltip key={s.id}>
+                  <TooltipTrigger delay={0} render={button} />
+                  <TooltipContent
+                    side="right"
+                    sideOffset={8}
+                    className="z-[200] border-fg bg-fg text-bg"
+                  >
+                    {s.label}
+                  </TooltipContent>
+                </Tooltip>
+              );
             })}
           </TooltipProvider>
         </nav>
       </aside>
+
+      <OutOfScopeDialog open={outOfScopeOpen} onOpenChange={setOutOfScopeOpen} />
     </>
   );
 }

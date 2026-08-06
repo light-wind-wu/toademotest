@@ -1,11 +1,19 @@
 'use client';
 
 /* Applicant sign-in — match C-end comps: Singpass + decorative email/password
-   (email login is visual only). Singpass → Myinfo → /apply/welcome. */
+   (email login is visual only). Singpass → Myinfo → welcome (apply path) or
+   /apply/dashboard (probing A/B — skip application flow). */
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRole } from '@/lib/role';
-import { getMyinfoProfile, saveMyinfoPending } from '@/lib/myinfo';
+import {
+  clearMyinfoPending,
+  getMyinfoProfile,
+  saveApplicantProfile,
+  saveMyinfoPending,
+} from '@/lib/myinfo';
+import { signIn } from '@/lib/session';
+import { loadUtCatalogPath } from '@/lib/ut-track';
 import LoginShell, { LoginBrand, GovAuthButton } from '@/components/gov/login-shell';
 import MyinfoFlow from '@/components/gov/myinfo-flow';
 import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
@@ -33,12 +41,30 @@ export default function LoginApplicant() {
   }
 
   function handleMyinfoContinue() {
+    const profile = getMyinfoProfile(DEMO_ROLE);
+    setRole(DEMO_ROLE);
+
+    /* Probing A/B: collect identity, then land on homepage — skip welcome / apply. */
+    if (loadUtCatalogPath() === 'probing') {
+      saveApplicantProfile({
+        ...profile,
+        nric: 'T0123456A',
+        role: DEMO_ROLE,
+        dataUseConsent: true,
+        declarationConsent: true,
+        createdAt: new Date().toISOString(),
+      });
+      clearMyinfoPending();
+      signIn('singpass', new Date().toISOString());
+      router.push('/apply/dashboard');
+      return;
+    }
+
     saveMyinfoPending({
       role: DEMO_ROLE,
-      profile: getMyinfoProfile(DEMO_ROLE),
+      profile,
       at: new Date().toISOString(),
     });
-    setRole(DEMO_ROLE);
     router.push('/apply/welcome');
   }
 

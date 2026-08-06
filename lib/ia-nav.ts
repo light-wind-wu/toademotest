@@ -14,8 +14,10 @@
    ──────────────────────────────────────────────────────────────────────────── */
 import {
   LayoutDashboard, GraduationCap, ClipboardList, BarChart3,
-  ShieldCheck, BookOpen, Settings, Folder, Home, User, Send, Inbox, type LucideIcon,
+  ShieldCheck, BookOpen, Settings, Folder, Send, Inbox, User,
+  BookCheck, FileText, type LucideIcon,
 } from 'lucide-react';
+import { InterviewsNavIcon, CertificationNavIcon } from '@/components/apply/nav-icons';
 import { mentorIdMatches } from './utils';
 import type { UserRole } from './types';
 
@@ -37,6 +39,8 @@ export interface IaSection {
   match?:  (route: string) => boolean; // active-state test (defaults to startsWith)
   groups?: IaGroup[];
   badge?:  BadgeKey;                    // section-level action badge
+  /** Not in this UT / not built — click opens the shared out-of-scope dialog. */
+  soon?:   boolean;
 }
 
 /** Keys for the live action-count badges computed in the rail from localStorage. */
@@ -105,19 +109,61 @@ function directorNav(): IaSection[] {
   ];
 }
 
-function applicantNav(hasApplied: boolean, hasInternship: boolean): IaSection[] {
-  const sections: IaSection[] = [];
-  if (!hasApplied) {
-    sections.push({ id: 'apply', label: 'Apply', icon: BookOpen, route: '/apply',
-      match: (r) => r === '/apply' || (r.startsWith('/apply/') && !r.startsWith('/apply/dashboard') && !r.startsWith('/apply/applications') && !r.startsWith('/apply/internship')) });
-  } else {
-    sections.push({ id: 'home',        label: 'Home',         icon: Home,          route: '/apply/dashboard' });
-    sections.push({ id: 'my-apps',     label: 'Applications', icon: ClipboardList, route: '/apply/applications' });
-  }
-  if (hasInternship) {
-    sections.push({ id: 'my-internship', label: 'Internships', icon: GraduationCap, route: '/apply/internship', badge: 'applicantFeedback' });
-  }
-  return sections;
+function applicantNav(_hasApplied: boolean, _hasInternship: boolean): IaSection[] {
+  /* C-end comps rail — always show full set; unfinished items use `soon`. */
+  return [
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: LayoutDashboard,
+      route: '/apply/dashboard',
+      match: (r) =>
+        r === '/apply/dashboard' ||
+        r === '/apply' ||
+        r.startsWith('/apply/dashboard'),
+    },
+    {
+      id: 'my-apps',
+      label: 'My Applications',
+      icon: ClipboardList,
+      route: '/apply/applications',
+    },
+    {
+      id: 'my-interviews',
+      label: 'My Interviews',
+      icon: InterviewsNavIcon as LucideIcon,
+      route: '/apply/interviews',
+      soon: true,
+    },
+    {
+      id: 'my-offers',
+      label: 'My Offers',
+      icon: BookCheck,
+      route: '/apply/offers',
+      soon: true,
+    },
+    {
+      id: 'my-internship',
+      label: 'My Internship',
+      icon: GraduationCap,
+      route: '/apply/internship',
+      badge: 'applicantFeedback',
+    },
+    {
+      id: 'certification',
+      label: 'Certification',
+      icon: CertificationNavIcon as LucideIcon,
+      route: '/apply/certification',
+      soon: true,
+    },
+    {
+      id: 'events',
+      label: 'Events',
+      icon: FileText,
+      route: '/apply/events',
+      soon: true,
+    },
+  ];
 }
 
 /** Resolve the rail sections for a role + applicant flags. */
