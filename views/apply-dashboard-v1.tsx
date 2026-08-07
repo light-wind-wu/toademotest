@@ -11,7 +11,8 @@ import { Calendar } from 'lucide-react';
 import Shell from '@/components/layout/shell';
 import { useRole } from '@/lib/role';
 import { resolveArchetype } from '@/lib/apply-project-fit';
-import { loadApplyDraft } from '@/lib/apply-application';
+import { loadApplyDraft, programmeTitleForVariant } from '@/lib/apply-application';
+import { loadUtApplicantVariant } from '@/lib/ut-track';
 import { cn } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import InterviewTimeslotSheet from '@/components/apply/interview-timeslot-sheet';
@@ -59,11 +60,16 @@ export default function ApplyDashboardV1() {
   const [answers, setAnswers] = useState<(number | null)[]>([]);
   const [timeslotOpen, setTimeslotOpen] = useState(false);
   const [outOfScopeOpen, setOutOfScopeOpen] = useState(false);
+  const [programmeTitle, setProgrammeTitle] = useState('Undergraduate Internship 2027');
 
   useEffect(() => {
     const d = loadApplyDraft();
     setQuizTaken(d.quizTaken);
     setAnswers(d.quizAnswers);
+    setProgrammeTitle(
+      d.programmeTitle ||
+        programmeTitleForVariant(loadUtApplicantVariant() ?? 'undergraduate'),
+    );
   }, []);
 
   const archetype = useMemo(
@@ -230,7 +236,7 @@ export default function ApplyDashboardV1() {
                     className="mt-2 text-[18px] font-semibold leading-[28.8px] lg:mt-2 lg:text-[24px] lg:tracking-[-0.48px]"
                     style={{ color: 'rgba(10, 22, 40, 1)' }}
                   >
-                    Undergraduate Internship 2027
+                    {programmeTitle}
                   </h2>
                   <p
                     className="mt-0.5 text-[14px] font-normal leading-[120%] lg:mt-2"

@@ -54,6 +54,7 @@ import {
 } from 'lucide-react';
 import ApplicationFlowShell from '@/components/apply/application-flow-shell';
 import ChapterIntro from '@/components/apply/chapter-intro';
+import { Input } from '@/components/ui-legacy/input';
 import {
   clearChapterIntro,
   loadApplyDraft,
@@ -64,6 +65,8 @@ import {
 } from '@/lib/apply-application';
 import {
   INTEREST_OPTIONS,
+  INTEREST_OTHERS_LABEL,
+  INTEREST_OTHERS_MAX,
   MAX_RANKED,
   PROJECT_MATCHES,
   QUIZ_QUESTIONS,
@@ -235,7 +238,17 @@ export default function ApplyProjectFitPage() {
       {phase === 'interests' && (
         <InterestsPhase
           selected={draft.interests}
-          onChange={(interests) => persist({ ...draft, interests })}
+          otherText={draft.interestsOther}
+          onChange={(interests) =>
+            persist({
+              ...draft,
+              interests,
+              interestsOther: interests.includes(INTEREST_OTHERS_LABEL)
+                ? draft.interestsOther
+                : '',
+            })
+          }
+          onOtherChange={(interestsOther) => persist({ ...draft, interestsOther })}
           onBack={footer.onBack}
           onContinue={footer.onContinue}
           continueDisabled={footer.continueDisabled}
@@ -303,17 +316,24 @@ const TAG_IDLE_BORDER = 'rgba(231, 228, 221, 1)';
 
 function InterestsPhase({
   selected,
+  otherText,
   onChange,
+  onOtherChange,
   onBack,
   onContinue,
   continueDisabled,
 }: {
   selected: string[];
+  otherText: string;
   onChange: (next: string[]) => void;
+  onOtherChange: (next: string) => void;
   onBack?: () => void;
   onContinue?: () => void;
   continueDisabled?: boolean;
 }) {
+  const othersSelected = selected.includes(INTEREST_OTHERS_LABEL);
+  const atLimit = otherText.length >= INTEREST_OTHERS_MAX;
+
   function toggle(tag: string) {
     if (selected.includes(tag)) onChange(selected.filter((t) => t !== tag));
     else onChange([...selected, tag]);
@@ -331,7 +351,7 @@ function InterestsPhase({
           Select the areas that interest you. We&apos;ll use them to personalize your project
           recommendations.
         </p>
-        <div className="mt-4 flex flex-wrap gap-3 lg:gap-2">
+        <div className="mt-4 flex flex-wrap items-center gap-3 lg:gap-2">
           {INTEREST_OPTIONS.map((tag) => {
             const on = selected.includes(tag);
             return (
@@ -353,6 +373,31 @@ function InterestsPhase({
               </button>
             );
           })}
+          {othersSelected && (
+            <div className="flex w-full basis-full flex-col gap-1 lg:w-[384px] lg:basis-auto lg:max-w-[384px]">
+              <Input
+                value={otherText}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  if (next.length <= INTEREST_OTHERS_MAX) onOtherChange(next);
+                  else onOtherChange(next.slice(0, INTEREST_OTHERS_MAX));
+                }}
+                maxLength={INTEREST_OTHERS_MAX}
+                placeholder="Enter your interest"
+                aria-label="Other interest"
+                aria-invalid={atLimit}
+                className={cn(
+                  'h-9 w-full lg:max-w-[384px]',
+                  atLimit && 'border-danger focus-visible:outline-danger',
+                )}
+              />
+              {atLimit && (
+                <p className="text-[12px] leading-4 text-danger">
+                  Maximum limit of 50 characters
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </section>
 

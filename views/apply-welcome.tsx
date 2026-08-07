@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import ApplicantChrome from '@/components/apply/applicant-chrome';
 import { firstName, loadMyinfoPending } from '@/lib/myinfo';
+import { applyingForLabel } from '@/lib/apply-application';
+import { loadUtApplicantVariant } from '@/lib/ut-track';
 import { useRole } from '@/lib/role';
 import { cn } from '@/lib/utils';
 
@@ -23,8 +25,6 @@ const BODY_FG = 'rgba(69, 85, 108, 1)';
 const CTA_BG = 'rgba(26, 101, 248, 1)';
 const CARD_BORDER = 'rgba(231, 228, 221, 1)';
 
-const PROGRAMME_LABEL = 'Applying for - Undergraduate Internship 2027';
-
 const READY_ITEMS = [
   'Your latest CV',
   'Your latest academic transcript',
@@ -34,6 +34,9 @@ export default function ApplyWelcome() {
   const router = useRouter();
   const { setRole } = useRole();
   const [name, setName] = useState('');
+  const [programmeLabel, setProgrammeLabel] = useState(
+    applyingForLabel('undergraduate'),
+  );
   const [leaving, setLeaving] = useState(false);
   const [navigating, setNavigating] = useState(false);
   const [scale, setScale] = useState(1);
@@ -47,6 +50,7 @@ export default function ApplyWelcome() {
     }
     setRole(pending.role);
     setName(firstName(pending.profile.name));
+    setProgrammeLabel(applyingForLabel(loadUtApplicantVariant()));
   }, [router, setRole]);
 
   useEffect(() => {
@@ -125,6 +129,7 @@ export default function ApplyWelcome() {
       >
         <WelcomeCard
           name={name}
+          programmeLabel={programmeLabel}
           leaving={leaving}
           onStart={goNext}
           variant="mobile"
@@ -162,6 +167,7 @@ export default function ApplyWelcome() {
             >
               <WelcomeCard
                 name={name}
+                programmeLabel={programmeLabel}
                 leaving={leaving}
                 onStart={goNext}
                 variant="pc"
@@ -176,11 +182,13 @@ export default function ApplyWelcome() {
 
 function WelcomeCard({
   name,
+  programmeLabel,
   leaving,
   onStart,
   variant,
 }: {
   name: string;
+  programmeLabel: string;
   leaving: boolean;
   onStart: () => void;
   variant: 'pc' | 'mobile';
@@ -241,7 +249,7 @@ function WelcomeCard({
             animationDelay: '240ms',
           }}
         >
-          {PROGRAMME_LABEL}
+          {programmeLabel}
         </p>
 
         <h1

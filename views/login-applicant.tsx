@@ -70,7 +70,7 @@ export default function LoginApplicant() {
 
   function handleCreateAccount(e: React.MouseEvent) {
     e.preventDefault();
-    setMyinfoOpen(true);
+    setOutOfScopeOpen(true);
   }
 
   return (
@@ -153,7 +153,7 @@ export default function LoginApplicant() {
           <a
             href="#create"
             onClick={handleCreateAccount}
-            className="font-semibold hover:underline"
+            className="cursor-pointer font-semibold hover:underline"
             style={{ color: CTA_BG }}
           >
             Create an account

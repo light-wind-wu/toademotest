@@ -61,6 +61,8 @@ export interface ApplySessionDraft {
   startDate: string; // ISO date yyyy-mm-dd
   endDate: string;
   interests: string[];
+  /** Free-text when "Others" is among interests (max 50 chars). */
+  interestsOther: string;
   rankedProjectIds: string[];
   quizAnswers: (number | null)[];
   /** True when the applicant completed (or started) the archetype quiz. */
@@ -101,6 +103,7 @@ const EMPTY_DRAFT: ApplySessionDraft = {
   startDate: '2026-07-13',
   endDate: '2026-10-31',
   interests: ['Advanced Systems', 'Air Systems', 'Simulation & Training Systems'],
+  interestsOther: '',
   rankedProjectIds: [],
   quizAnswers: [null, null, null, null, null, null],
   quizTaken: false,
@@ -121,9 +124,16 @@ export function defaultEducationDetails(
 export function programmeTitleForVariant(
   variant: 'polytechnic' | 'tech-up' | 'undergraduate',
 ): string {
-  if (variant === 'polytechnic') return 'Polytechnic Internship 2027';
-  if (variant === 'tech-up') return 'Tech Up Internship 2027';
+  if (variant === 'polytechnic') return 'Polytechnic Internship Programme';
+  if (variant === 'tech-up') return 'Tech Up Intern Programme';
   return 'Undergraduate Internship 2027';
+}
+
+/** Welcome eyebrow: programme title for the selected applicant path. */
+export function applyingForLabel(
+  variant: 'polytechnic' | 'tech-up' | 'undergraduate' | null | undefined,
+): string {
+  return programmeTitleForVariant(variant ?? 'undergraduate');
 }
 
 /** Align draft education / programme fields to the catalog applicant path. */

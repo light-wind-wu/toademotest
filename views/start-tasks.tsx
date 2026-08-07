@@ -8,7 +8,8 @@ import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
-import { useSession } from '@/lib/session';
+import { useSession, signIn, isSignedIn } from '@/lib/session';
+import { useRole } from '@/lib/role';
 import { loadRequests, loadSubmissions, saveRequests, saveSubmissions } from '@/lib/storage';
 import { loadUtCatalogPath, loadUtTrack, type UtCatalogPath, type UtTrack } from '@/lib/ut-track';
 import type { ProjectSubmissionBatch, SubmittedProject } from '@/lib/types';
@@ -21,6 +22,10 @@ import {
   TooltipTrigger,
 } from '@/components/ui-legacy/tooltip';
 import { cn } from '@/lib/utils';
+import {
+  getMyinfoProfile,
+  saveApplicantProfile,
+} from '@/lib/myinfo';
 
 const ART_W = 1680;
 const ART_H = 900;
@@ -411,7 +416,7 @@ const APPLICANT_TASKS: TaskDef[] = [
     description:
       'You have been shortlisted for an interview and invited by the Mentor to select an interview time. Review the available timeslots, choose a suitable slot, and confirm your interview schedule.',
     href: '/apply/dashboard',
-    enabled: false,
+    enabled: true,
   },
 ];
 
@@ -494,6 +499,7 @@ function briefingFor(path: UtCatalogPath, track: UtTrack): { tasks: TaskDef[]; c
 export default function StartTasks() {
   const router = useRouter();
   const { signedIn } = useSession();
+  const { setRole } = useRole();
   const [mounted, setMounted] = useState(false);
   const [track, setTrack] = useState<UtTrack>('staff');
   const [path, setPath] = useState<UtCatalogPath>('io-admin');
@@ -545,7 +551,26 @@ export default function StartTasks() {
       return;
     }
     task.onBeforeNavigate?.();
-    router.push(task.resolveHref?.() ?? task.href);
+    const href = task.resolveHref?.() ?? task.href;
+    /* Applicant Task 2 → dashboard: ensure session so Shell does not bounce to login/welcome. */
+    if (
+      (track === 'applicant' || path === 'applicant') &&
+      href.startsWith('/apply/dashboard') &&
+      !isSignedIn()
+    ) {
+      const profile = getMyinfoProfile('new-applicant');
+      saveApplicantProfile({
+        ...profile,
+        nric: 'T0123456A',
+        role: 'new-applicant',
+        dataUseConsent: true,
+        declarationConsent: true,
+        createdAt: new Date().toISOString(),
+      });
+      setRole('new-applicant');
+      signIn('singpass', new Date().toISOString());
+    }
+    router.push(href);
   }
 
   if (!mounted || (track === 'staff' && !signedIn)) {

@@ -8,7 +8,8 @@ import { Calendar } from 'lucide-react';
 import Shell from '@/components/layout/shell';
 import { useRole } from '@/lib/role';
 import { resolveArchetype } from '@/lib/apply-project-fit';
-import { loadApplyDraft } from '@/lib/apply-application';
+import { loadApplyDraft, programmeTitleForVariant } from '@/lib/apply-application';
+import { loadUtApplicantVariant } from '@/lib/ut-track';
 import { cn } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import InterviewTimeslotSheet from '@/components/apply/interview-timeslot-sheet';
@@ -56,11 +57,16 @@ export default function ApplyDashboardV2() {
   const [answers, setAnswers] = useState<(number | null)[]>([]);
   const [timeslotOpen, setTimeslotOpen] = useState(false);
   const [outOfScopeOpen, setOutOfScopeOpen] = useState(false);
+  const [programmeTitle, setProgrammeTitle] = useState('Undergraduate Internship 2027');
 
   useEffect(() => {
     const d = loadApplyDraft();
     setQuizTaken(d.quizTaken);
     setAnswers(d.quizAnswers);
+    setProgrammeTitle(
+      d.programmeTitle ||
+        programmeTitleForVariant(loadUtApplicantVariant() ?? 'undergraduate'),
+    );
   }, []);
 
   const archetype = useMemo(
@@ -194,7 +200,7 @@ export default function ApplyDashboardV2() {
                     className="text-[24px] font-semibold tracking-[-0.48px] leading-[28.8px]"
                     style={{ color: 'rgba(10, 22, 40, 1)' }}
                   >
-                    Polytechnic Internship 2027
+                    {programmeTitle}
                   </h2>
                   <span
                     className="inline-flex h-[22px] shrink-0 items-center rounded-full px-2.5 text-[12px] font-normal leading-4"
@@ -219,7 +225,7 @@ export default function ApplyDashboardV2() {
                   className="text-[18px] font-semibold leading-7 lg:hidden"
                   style={{ color: 'rgba(10, 22, 40, 1)' }}
                 >
-                  Polytechnic Internship 2027
+                  {programmeTitle}
                 </h2>
                 <p
                   className="mt-0.5 inline-flex items-center gap-1.5 text-[12px] font-normal leading-5 lg:hidden"

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Upload } from 'lucide-react';
 import ApplicationFlowShell from '@/components/apply/application-flow-shell';
 import ChapterIntro from '@/components/apply/chapter-intro';
+import DatePicker from '@/components/ui-legacy/date-picker';
 import { Input } from '@/components/ui/input';
 import {
   clearChapterIntro,
@@ -272,12 +273,25 @@ export default function ApplyEducationPage() {
                   onChange={(v) => updateEducation({ gpa: v })}
                 />
                 {!isPolyPath && (
-                  <Field
-                    label="Expected Graduation"
-                    value={draft.education.expectedGraduation || ''}
-                    onChange={(v) => updateEducation({ expectedGraduation: v })}
-                    type="date"
-                  />
+                  <div>
+                    <label
+                      className="block"
+                      style={{
+                        marginBottom: 6,
+                        fontWeight: 500,
+                        fontSize: 14,
+                        lineHeight: '14px',
+                        color: 'rgba(15, 23, 43, 1)',
+                      }}
+                    >
+                      Expected Graduation
+                    </label>
+                    <DatePicker
+                      value={draft.education.expectedGraduation || ''}
+                      onChange={(v) => updateEducation({ expectedGraduation: v })}
+                      placeholder="Select date"
+                    />
+                  </div>
                 )}
               </div>
             </div>
@@ -329,12 +343,10 @@ function Field({
   label,
   value,
   onChange,
-  type = 'text',
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
-  type?: string;
 }) {
   return (
     <div>
@@ -351,7 +363,7 @@ function Field({
         {label}
       </label>
       <Input
-        type={type}
+        type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="h-9 rounded-md bg-white"

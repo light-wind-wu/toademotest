@@ -278,6 +278,8 @@ export default function Catlog() {
     saveUtTrack('applicant');
     saveUtCatalogPath('applicant');
     saveUtApplicantVariant(variant);
+    /* Poly / Tech Up → homepage V1; Undergraduate → V2 (Task 2). */
+    saveApplyDashboardVersion(variant === 'undergraduate' ? 'v2' : 'v1');
     seedApplyDraftForVariant(variant);
     seedApplicantProfileForVariant(variant);
     setRole('new-applicant');

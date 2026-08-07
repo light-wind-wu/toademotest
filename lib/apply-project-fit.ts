@@ -19,6 +19,9 @@ export const INTEREST_OPTIONS = [
   'Others',
 ] as const;
 
+export const INTEREST_OTHERS_LABEL = 'Others';
+export const INTEREST_OTHERS_MAX = 50;
+
 export interface ProjectMatch {
   id: string;
   name: string;

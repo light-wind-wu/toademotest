@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { X } from 'lucide-react';
 import {
   Sheet,
@@ -11,24 +11,20 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui-legacy/sheet';
-import { Checkbox } from '@/components/ui-legacy/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui-legacy/radio-group';
+import TaskCompletedDialog from '@/components/apply/task-completed-dialog';
 import { cn } from '@/lib/utils';
-
-type SlotStatus = 'full' | 'spots' | 'open';
 
 type TimeSlot = {
   id: string;
   dateLabel: string;
   timeLabel: string;
-  status: SlotStatus;
-  spotsLeft?: number;
 };
 
 const SLOTS: TimeSlot[] = [
-  { id: '1', dateLabel: 'Wed, 5 Aug', timeLabel: '10:00 – 10:30', status: 'full' },
-  { id: '2', dateLabel: 'Wed, 5 Aug', timeLabel: '14:00 – 14:30', status: 'spots', spotsLeft: 2 },
-  { id: '3', dateLabel: 'Thu, 6 Aug', timeLabel: '09:30 – 10:00', status: 'spots', spotsLeft: 1 },
-  { id: '4', dateLabel: 'Fri, 7 Aug', timeLabel: '11:00 – 11:30', status: 'open' },
+  { id: '1', dateLabel: 'Wed, 5 Aug 2026', timeLabel: '14:00–14:30' },
+  { id: '2', dateLabel: 'Thu, 6 Aug 2026', timeLabel: '14:00–14:30' },
+  { id: '3', dateLabel: 'Fri, 7 Aug 2026', timeLabel: '10:00–10:30' },
 ];
 
 const META = [
@@ -63,18 +59,17 @@ export default function InterviewTimeslotSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const [selectedId, setSelectedId] = useState<string | null>('3');
+  const [selectedId, setSelectedId] = useState<string>('2');
+  const [taskCompletedOpen, setTaskCompletedOpen] = useState(false);
 
-  const selected = useMemo(
-    () => SLOTS.find((s) => s.id === selectedId) ?? null,
-    [selectedId],
-  );
-
-  const confirmLabel = selected
-    ? `Confirm ${selected.dateLabel} · ${selected.timeLabel.replace(/\s/g, '')}`
-    : 'Confirm';
+  function handleConfirm() {
+    onOpenChange(false);
+    /* Let the sheet close first so the success dialog stacks cleanly */
+    window.setTimeout(() => setTaskCompletedOpen(true), 180);
+  }
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
@@ -97,19 +92,23 @@ export default function InterviewTimeslotSheet({
             className="pr-8 text-[12px] font-normal leading-5"
             style={{ color: 'rgba(69, 85, 108, 1)' }}
           >
-            Invitation from Aisha Rahman
+            Interview invitation
           </p>
           <SheetTitle
             className="mt-1.5 text-left text-[16px] font-semibold leading-[22px]"
             style={{ color: 'rgba(15, 23, 43, 1)' }}
           >
-            Please confirm your availability for the interview by selecting a day/time slot.
-            First come first served!
+            You have been selected to interview for project Cyber Security.
           </SheetTitle>
+          <p
+            className="mt-1.5 text-[14px] font-normal leading-5"
+            style={{ color: 'rgba(15, 23, 43, 1)' }}
+          >
+            Choose an available timeslot to confirm your interview.
+          </p>
         </SheetHeader>
 
         <SheetBody className="flex flex-col gap-0 px-4 pb-5 pt-4 sm:px-6">
-          {/* Mobile: Format | Duration, then Responded by. Desktop: 3 equal cols */}
           <div
             style={{
               borderTop: '1px solid rgba(231, 228, 221, 1)',
@@ -163,7 +162,6 @@ export default function InterviewTimeslotSheet({
             </div>
           </div>
 
-          {/* Slots */}
           <div className="mt-4">
             <p
               className="mb-3 text-[14px] font-normal leading-5"
@@ -171,87 +169,47 @@ export default function InterviewTimeslotSheet({
             >
               Available time
             </p>
-            <ul className="space-y-2">
+            <RadioGroup
+              value={selectedId}
+              onValueChange={(v) => {
+                if (typeof v === 'string') setSelectedId(v);
+              }}
+              className="gap-2"
+            >
               {SLOTS.map((slot) => {
-                const disabled = slot.status === 'full';
                 const checked = selectedId === slot.id;
                 return (
-                  <li key={slot.id}>
-                    <button
-                      type="button"
-                      disabled={disabled}
-                      onClick={() => {
-                        if (!disabled) setSelectedId(slot.id);
-                      }}
-                      className={cn(
-                        'flex w-full cursor-pointer items-start gap-3 rounded-lg border p-6 text-left transition-colors max-sm:h-[132px]',
-                        'sm:h-auto sm:items-center sm:px-4 sm:py-3',
-                        disabled && 'cursor-not-allowed',
-                        checked
-                          ? 'border-[rgba(26,101,248,1)] bg-[rgba(26,101,248,0.04)]'
-                          : 'border-[rgba(231,228,221,1)] bg-white',
-                        checked && 'max-sm:border-[rgba(231,228,221,1)] max-sm:bg-white',
-                      )}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p
-                          className="text-[16px] font-semibold leading-[18px] max-sm:text-[16px] sm:text-[14px] sm:leading-5"
-                          style={{
-                            color: disabled
-                              ? 'rgba(163, 174, 191, 1)'
-                              : 'rgba(15, 23, 43, 1)',
-                          }}
-                        >
-                          {slot.dateLabel}
-                        </p>
-                        <p
-                          className="mt-1.5 text-[14px] font-normal leading-5"
-                          style={{
-                            color: disabled
-                              ? 'rgba(163, 174, 191, 1)'
-                              : 'rgba(69, 85, 108, 1)',
-                          }}
-                        >
-                          {slot.timeLabel}
-                        </p>
-                        {slot.status === 'full' && (
-                          <span
-                            className="mt-4 inline-flex h-[22px] items-center rounded-full px-2 text-[12px] font-normal leading-4"
-                            style={{
-                              background: 'rgba(251, 44, 54, 0.15)',
-                              color: 'rgba(193, 0, 7, 1)',
-                            }}
-                          >
-                            Full
-                          </span>
-                        )}
-                        {slot.status === 'spots' && slot.spotsLeft != null && (
-                          <span
-                            className="mt-4 inline-flex h-[22px] items-center rounded-full px-2 text-[12px] font-normal leading-4"
-                            style={{
-                              background: 'rgba(0, 166, 244, 0.15)',
-                              color: 'rgba(0, 105, 168, 1)',
-                            }}
-                          >
-                            {slot.spotsLeft} spots left
-                          </span>
-                        )}
-                      </div>
-
-                      <Checkbox
-                        checked={checked}
-                        disabled={disabled}
-                        onCheckedChange={(v) => {
-                          if (disabled) return;
-                          setSelectedId(v ? slot.id : null);
-                        }}
-                        className="pointer-events-none size-5 shrink-0 [&_svg]:size-3.5"
-                      />
-                    </button>
-                  </li>
+                  <label
+                    key={slot.id}
+                    className={cn(
+                      'flex w-full cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors',
+                      checked
+                        ? 'border-[rgba(26,101,248,1)] bg-[rgba(26,101,248,0.04)]'
+                        : 'border-[rgba(231,228,221,1)] bg-white',
+                    )}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className="text-[14px] font-semibold leading-5"
+                        style={{ color: 'rgba(15, 23, 43, 1)' }}
+                      >
+                        {slot.dateLabel}
+                      </p>
+                      <p
+                        className="mt-1 text-[14px] font-normal leading-5"
+                        style={{ color: 'rgba(69, 85, 108, 1)' }}
+                      >
+                        {slot.timeLabel}
+                      </p>
+                    </div>
+                    <RadioGroupItem
+                      value={slot.id}
+                      className="size-5 shrink-0"
+                    />
+                  </label>
                 );
               })}
-            </ul>
+            </RadioGroup>
           </div>
         </SheetBody>
 
@@ -266,15 +224,21 @@ export default function InterviewTimeslotSheet({
           </button>
           <button
             type="button"
-            disabled={!selected}
-            onClick={() => onOpenChange(false)}
-            className="h-9 min-w-0 flex-1 cursor-pointer rounded-md px-4 text-[14px] text-white disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
+            disabled={!selectedId}
+            onClick={handleConfirm}
+            className="h-9 min-w-0 cursor-pointer rounded-md px-4 text-[14px] text-white disabled:cursor-not-allowed disabled:opacity-50"
             style={{ background: 'rgba(26, 101, 248, 1)' }}
           >
-            <span className="block truncate">{confirmLabel}</span>
+            Confirm
           </button>
         </SheetFooter>
       </SheetContent>
     </Sheet>
+
+    <TaskCompletedDialog
+      open={taskCompletedOpen}
+      onOpenChange={setTaskCompletedOpen}
+    />
+    </>
   );
 }
