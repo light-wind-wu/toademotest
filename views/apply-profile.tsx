@@ -171,7 +171,7 @@ export default function ApplyProfile() {
     saveProfile(profile.email, form);
     setDirty(false);
     setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setTimeout(() => setSaved(false), 6000);
   }
 
   function simulateUpload(docKey: keyof ApplicantProfile['documents']) {

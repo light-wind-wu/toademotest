@@ -98,7 +98,7 @@ export default function MentorInterviewDetailPage() {
       ...extra,
     });
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setTimeout(() => setSaved(false), 6000);
   }
 
   function handleMarkComplete() {

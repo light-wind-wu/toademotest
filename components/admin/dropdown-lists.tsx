@@ -32,7 +32,7 @@ export default function DropdownLists() {
   function persist(next: ManagedList[]) {
     setLists(next);
     try { localStorage.setItem(KEY, JSON.stringify(next)); } catch {}
-    setSaved(true); setTimeout(() => setSaved(false), 2000);
+    setSaved(true); setTimeout(() => setSaved(false), 6000);
   }
   function addValue() {
     const v = draft.trim();

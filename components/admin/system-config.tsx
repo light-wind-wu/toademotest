@@ -30,7 +30,7 @@ export default function SystemConfig() {
 
   function save() {
     saveSystemConfig(cfg);
-    setSaved(true); setTimeout(() => setSaved(false), 2500);
+    setSaved(true); setTimeout(() => setSaved(false), 6000);
   }
 
   return (

@@ -33,7 +33,7 @@ export default function Microsite() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => { try { const raw = localStorage.getItem(KEY); if (raw) setSite({ ...DEFAULTS, ...JSON.parse(raw) }); } catch {} }, []);
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(site)); } catch {} setSaved(true); setTimeout(() => setSaved(false), 2500); }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(site)); } catch {} setSaved(true); setTimeout(() => setSaved(false), 6000); }
 
   return (
     <div className="space-y-5">

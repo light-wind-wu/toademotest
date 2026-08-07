@@ -33,7 +33,7 @@ export default function SubjectTaxonomy() {
     setTax(next);
     saveSubjectTaxonomy(next);
     logAccess({ actor: profile.name, action: 'decision', detail: auditDetail, subjectId: SUBJECT_AUDIT_ID });
-    setSaved(true); setTimeout(() => setSaved(false), 2000);
+    setSaved(true); setTimeout(() => setSaved(false), 6000);
   }
   function addValue() {
     const v = draft.trim();

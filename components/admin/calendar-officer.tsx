@@ -30,7 +30,7 @@ export default function CalendarOfficer() {
   const [hName, setHName] = useState('');
 
   useEffect(() => { try { const raw = localStorage.getItem(KEY); if (raw) setData({ ...DEFAULTS, ...JSON.parse(raw) }); } catch {} }, []);
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {} setSaved(true); setTimeout(() => setSaved(false), 2500); }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {} setSaved(true); setTimeout(() => setSaved(false), 6000); }
   function setDay(day: string, patch: Partial<OfficerHours>) { setData(d => ({ ...d, hours: { ...d.hours, [day]: { ...d.hours[day], ...patch } } })); }
   function addHoliday() { if (!hDate || !hName.trim()) return; setData(d => ({ ...d, holidays: [...d.holidays, { date: hDate, name: hName.trim() }].sort((a, b) => a.date.localeCompare(b.date)) })); setHDate(''); setHName(''); }
   function removeHoliday(date: string) { setData(d => ({ ...d, holidays: d.holidays.filter(h => h.date !== date) })); }

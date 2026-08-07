@@ -250,7 +250,7 @@ export default function AdminSettingsPage() {
   function save() {
     localStorage.setItem(ADMIN_SETTINGS_KEY, JSON.stringify(settings));
     setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    setTimeout(() => setSaved(false), 6000);
   }
 
   function setDceProjectApprovalEnabled(enabled: boolean) {

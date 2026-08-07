@@ -195,7 +195,7 @@ export default function MentorInterviewEvaluatePage() {
     if (!app) return;
     saveApp({ ...app, mentorScores: scores, mentorAiSummary: aiSummary || undefined, ...extra });
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setTimeout(() => setSaved(false), 6000);
   }
 
   function handleDecisionConfirm() {

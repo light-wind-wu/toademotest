@@ -41,7 +41,7 @@ export default function DceApprovals() {
   }
   useEffect(() => { refresh(); }, []);
 
-  function showToast(m: string) { setToast(m); setTimeout(() => setToast(''), 2500); }
+  function showToast(m: string) { setToast(m); setTimeout(() => setToast(''), 6000); }
 
   function decide(batch: ProjectSubmissionBatch, decision: 'approved' | 'rejected', reason?: string) {
     dceDecideBatch(batch.id, decision, profile.name, reason);

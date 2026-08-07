@@ -22,7 +22,7 @@ export default function MenuVisibility() {
       return { ...v, [role]: cur.includes(secId) ? cur.filter(s => s !== secId) : [...cur, secId] };
     });
   }
-  function save() { saveMenuVisibility(vis); setSaved(true); setTimeout(() => setSaved(false), 2500); }
+  function save() { saveMenuVisibility(vis); setSaved(true); setTimeout(() => setSaved(false), 6000); }
 
   return (
     <div className="card p-6">
