@@ -31,7 +31,7 @@ export default function OutOfScopeDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-[440px] gap-0 p-6"
+        className="w-[calc(100%-32px)] max-w-[440px] gap-0 p-6"
         style={{
           borderRadius: 12,
           border: '1px solid rgba(231, 228, 221, 1)',

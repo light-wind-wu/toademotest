@@ -594,34 +594,45 @@ function TaskCard({
       >
         {title}
       </h2>
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <p
-              className={cn(
-                'mt-1.5 min-h-0 cursor-help',
-                compact ? 'line-clamp-4' : 'line-clamp-5',
-              )}
-              style={{
-                flex: 1,
-                fontWeight: 400,
-                fontSize: 13,
-                lineHeight: '20px',
-                color: MUTED,
-              }}
-            />
-          }
-        >
-          {description.replace(/\n+/g, ' ')}
-        </TooltipTrigger>
-        <TooltipContent
-          side="top"
-          align="start"
-          className="max-h-[min(360px,50vh)] max-w-[360px] overflow-y-auto whitespace-pre-line text-left leading-5"
+      {compact ? (
+        <p
+          className="mt-1.5 whitespace-pre-line"
+          style={{
+            fontWeight: 400,
+            fontSize: 13,
+            lineHeight: '20px',
+            color: MUTED,
+          }}
         >
           {description}
-        </TooltipContent>
-      </Tooltip>
+        </p>
+      ) : (
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <p
+                className="mt-1.5 min-h-0 cursor-help line-clamp-5"
+                style={{
+                  flex: 1,
+                  fontWeight: 400,
+                  fontSize: 13,
+                  lineHeight: '20px',
+                  color: MUTED,
+                }}
+              />
+            }
+          >
+            {description.replace(/\n+/g, ' ')}
+          </TooltipTrigger>
+          <TooltipContent
+            side="top"
+            align="start"
+            className="max-h-[min(360px,50vh)] max-w-[360px] overflow-y-auto whitespace-pre-line text-left leading-5"
+          >
+            {description}
+          </TooltipContent>
+        </Tooltip>
+      )}
       <button
         type="button"
         onClick={onClick}

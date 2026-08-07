@@ -34,6 +34,7 @@ export default function Topbar({
   const pathname = usePathname();
   const onApplyRoute = pathname.startsWith('/apply');
   const onStartTasks = pathname === '/start-tasks';
+  const onCatlog = pathname === '/catlog';
   const [open,      setOpen]      = useState(false);
   const [bellOpen,  setBellOpen]  = useState(false);
   const [notifs,    setNotifs]    = useState<AppNotification[]>([]);
@@ -138,6 +139,18 @@ export default function Topbar({
       </div>
 
       <div className="flex items-center gap-2 md:gap-4 shrink-0">
+        {/* Applicant /start-tasks: no profile yet — offer return to catalog */}
+        {hideProfile && !onCatlog && (
+          <button
+            type="button"
+            onClick={() => router.push('/catlog')}
+            className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-topbar-fg/20 bg-topbar-fg/10 px-3 py-2 text-body-sm font-semibold text-topbar-fg transition-colors hover:bg-topbar-fg/15"
+          >
+            <LayoutGrid size={16} className="shrink-0" strokeWidth={1.5} />
+            Go Catlog
+          </button>
+        )}
+
         {!hideProfile && (
         <>
         {/* Cross-IA search — desktop only. Spans every section the role can reach. */}
@@ -338,7 +351,7 @@ export default function Topbar({
                       {(
                         [
                           ['v1', 'V1'],
-                          ['v2', 'V2 (classic)'],
+                          ['v2', 'V2'],
                         ] as const
                       ).map(([value, label]) => (
                         <button
@@ -367,19 +380,24 @@ export default function Topbar({
                     </div>
                   </div>
                 )}
-                {!onApplyRoute && !onStartTasks && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOpen(false);
-                      router.push('/start-tasks');
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bg-subtle text-body-md text-fg transition-colors"
-                  >
-                    <ListTodo size={18} className="text-fg-muted shrink-0" />
-                    Go Tasks
-                  </button>
-                )}
+                <button
+                  type="button"
+                  disabled={onStartTasks}
+                  onClick={() => {
+                    if (onStartTasks) return;
+                    setOpen(false);
+                    router.push('/start-tasks');
+                  }}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-body-md transition-colors',
+                    onStartTasks
+                      ? 'cursor-not-allowed text-fg-muted opacity-50'
+                      : 'cursor-pointer text-fg hover:bg-bg-subtle',
+                  )}
+                >
+                  <ListTodo size={18} className="shrink-0 text-fg-muted" />
+                  Go Tasks
+                </button>
                 <button onClick={() => setOpen(false)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bg-subtle text-body-md text-fg transition-colors">
                   <HelpCircle size={18} className="text-fg-muted shrink-0" />
                   Help and Support

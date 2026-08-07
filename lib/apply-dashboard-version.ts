@@ -1,4 +1,4 @@
-/* Apply dashboard version preference (V1 comps / V2 legacy). Default V1. */
+/* Apply dashboard version preference (V1 / V2 comps). Default V1. */
 
 export type ApplyDashboardVersion = 'v1' | 'v2';
 

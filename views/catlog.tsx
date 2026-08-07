@@ -194,12 +194,12 @@ function CatalogButtons({
                 onClick={() => onToggleExpand(item.id)}
               />
               {open && (
-                <div className="flex w-full flex-nowrap items-center justify-between gap-2">
+                <div className="flex w-full flex-col gap-2.5 pl-3 md:flex-row md:flex-nowrap md:items-center md:justify-between md:gap-2 md:pl-0">
                   {APPLICANT_VARIANTS.map((v) => (
                     <ChildButton
                       key={v.id}
                       label={v.label}
-                      className="w-auto shrink-0 px-3"
+                      className="w-fit max-w-full shrink-0 px-3"
                       onClick={() => onApplicantVariant(v.id)}
                     />
                   ))}

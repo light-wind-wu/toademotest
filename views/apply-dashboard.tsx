@@ -1,10 +1,10 @@
 'use client';
 
-/* Apply dashboard entry — default V1; V2 is the preserved legacy layout.
-   Version preference lives in localStorage and can be toggled from Topbar. */
+/* Apply dashboard entry — V1 / V2 comps layouts (catalog probing A / B).
+   Version preference lives in localStorage (also set from /catlog A·B). */
 import { useEffect, useState } from 'react';
 import ApplyDashboardV1 from '@/views/apply-dashboard-v1';
-import ApplyDashboardLegacy from '@/views/apply-dashboard-legacy';
+import ApplyDashboardV2 from '@/views/apply-dashboard-v2';
 import {
   loadApplyDashboardVersion,
   type ApplyDashboardVersion,
@@ -34,5 +34,5 @@ export default function ApplyDashboardPage() {
     );
   }
 
-  return version === 'v2' ? <ApplyDashboardLegacy /> : <ApplyDashboardV1 />;
+  return version === 'v2' ? <ApplyDashboardV2 /> : <ApplyDashboardV1 />;
 }
