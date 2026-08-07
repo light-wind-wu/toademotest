@@ -2164,8 +2164,8 @@ function ProjectCard({
       <article className="rounded-lg border border-border bg-surface p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h2 className="text-body-lg font-semibold text-fg leading-tight">{project.title || 'Untitled project'}</h2>
-          <span className={cn('mt-1 text-caption font-normal', itemStatusCls)}>
+          <h2 className="text-[18px] font-semibold text-fg leading-tight">{project.title || 'Untitled project'}</h2>
+          <span className={cn('mt-1 text-[14px] font-normal', itemStatusCls)}>
             {statusLabel}
           </span>
         </div>
