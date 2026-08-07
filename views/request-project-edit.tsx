@@ -14,7 +14,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { ChevronRight, ChevronLeft, Minus, Plus } from 'lucide-react';
-import { PC_CODES, TECH_DOMAINS, EDUCATION_LEVELS, toEducationLevel } from '@/lib/data';
+import { PC_CODES, TECH_DOMAINS, EDUCATION_LEVELS, toEducationLevel, STATUS_COLOURS } from '@/lib/data';
 import { AI_COLOURS } from '@/lib/ai-colours';
 import { DISCIPLINE_OPTIONS, parseDisciplines, toggleDiscipline } from '@/lib/disciplines';
 import { periodLabelToMMMYY, mmmyyToISO, mmmyyToISOEnd } from '@/lib/internship-period';
@@ -218,7 +218,10 @@ export default function RequestProjectEditPage() {
       <Shell activeRoute="/requests">
         <div className="flex flex-col items-center justify-center py-32 gap-3">
           <p className="text-body-lg text-fg-muted">Project not found.</p>
-          <Button variant="ghost" onClick={() => router.push('/requests')}>
+          <Button variant="ghost" onClick={() => {
+            sessionStorage.setItem('dsta_requests_target_tab', 'pending');
+            router.push('/requests');
+          }}>
             <ChevronLeft size={14} />Back to Requests
           </Button>
         </div>
@@ -240,11 +243,11 @@ export default function RequestProjectEditPage() {
         <div className="flex-1">
           {/* Breadcrumb */}
           <nav className="mb-3 flex items-center gap-2 text-body-sm text-fg-muted">
-            <button type="button" onClick={() => router.push('/requests')} className="hover:text-accent">
+            <button type="button" onClick={() => { sessionStorage.setItem('dsta_requests_target_tab', proj.status === 'frozen' ? 'pendingDce' : 'pending'); router.push('/requests'); }} className="hover:text-accent">
               Project request
             </button>
             <ChevronRight size={14} className="text-fg-subtle" />
-            <button type="button" onClick={() => router.push('/requests?tab=submissions')} className="hover:text-accent">
+            <button type="button" onClick={() => { sessionStorage.setItem('dsta_requests_target_tab', proj.status === 'frozen' ? 'pendingDce' : 'pending'); router.push('/requests'); }} className="hover:text-accent">
               Project Submissions
             </button>
             <ChevronRight size={14} className="text-fg-subtle" />
@@ -254,7 +257,9 @@ export default function RequestProjectEditPage() {
           {/* Header */}
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <h1 className="text-headline-lg text-fg">{proj.title}</h1>
-            <Badge className="bg-warning-bg text-warning border-warning/30">Pending</Badge>
+            <Badge className={STATUS_COLOURS[proj.status] ?? STATUS_COLOURS.pending}>
+              {proj.status === 'frozen' ? 'Pending DCE Approval' : proj.status === 'returnedForUpdate' ? 'Return for Update' : proj.status === 'rejected' ? 'Rejected' : proj.status === 'approved' ? 'Approved' : 'Pending'}
+            </Badge>
           </div>
 
           <p className="mb-4 text-body-sm text-fg-muted">

@@ -60,7 +60,7 @@ import {
 } from '@/lib/storage';
 import { addNotification } from '@/lib/notifications';
 import { AI_COLOURS } from '@/lib/ai-colours';
-import { PROJECT_SUBMISSION_COLUMNS, STATUS_COLOURS, toEducationLevel } from '@/lib/data';
+import { ITEM_STATUS_COLOURS, PROJECT_SUBMISSION_COLUMNS, toEducationLevel } from '@/lib/data';
 import { DISCIPLINE_OPTIONS, parseDisciplines, toggleDiscipline } from '@/lib/disciplines';
 import {
   runAiCheck,
@@ -124,6 +124,16 @@ const STATUS_LABELS: Record<SubmittedProject['status'], string> = {
   rejected: 'Rejected',
   returnedForUpdate: 'Returned for Update',
   withdrawn: 'Withdrawn',
+};
+
+const PROJECT_STATUS_TO_ITEM_KEY: Record<SubmittedProject['status'], keyof typeof ITEM_STATUS_COLOURS> = {
+  draft: 'notSubmitted',
+  pending: 'pendingReview',
+  frozen: 'pendingDceApproval',
+  approved: 'approved',
+  rejected: 'rejected',
+  returnedForUpdate: 'returnedForUpdate',
+  withdrawn: 'notSubmitted',
 };
 
 function categoryLabel(value: string) {
@@ -1155,7 +1165,8 @@ export default function AdPncRespondPage() {
   async function handleDownloadTemplate() {
     if (!group) return;
     try {
-      await downloadResponseTemplateXlsx(group.requests);
+      const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+      await downloadResponseTemplateXlsx(group.requests, `DCE_Project_Approval_List_${dateStr}.xlsx`);
     } catch {
       showToast('Could not download the template. Please try again.', 'danger');
     }
@@ -1994,7 +2005,7 @@ function ProjectListRow({
   onWithdraw: () => void;
 }) {
   const statusLabel = STATUS_LABELS[project.status] ?? STATUS_LABELS.pending;
-  const statusCls = STATUS_COLOURS[project.status] ?? STATUS_COLOURS.pending;
+  const itemStatusCls = ITEM_STATUS_COLOURS[PROJECT_STATUS_TO_ITEM_KEY[project.status]];
   const aiMeta = aiCheckMeta(project);
   const showAiMeta = project.status !== 'approved' && project.status !== 'withdrawn';
   const canEdit = canManage && (project.status === 'draft' || (Boolean(batchId) && (project.status === 'returnedForUpdate' || project.status === 'withdrawn')));
@@ -2041,7 +2052,7 @@ function ProjectListRow({
           )}
         </TableCell>
         <TableCell className="px-3 py-2.5">
-          <span className={cn('badge text-caption font-normal', statusCls)}>{statusLabel}</span>
+          <span className={cn('text-caption font-normal', itemStatusCls)}>{statusLabel}</span>
         </TableCell>
         <TableCell className="px-3 py-2.5 text-right">
           {(canEdit || onViewDetails || canWithdraw || canDelete) && (
@@ -2139,7 +2150,7 @@ function ProjectCard({
   onWithdraw: () => void;
 }) {
   const statusLabel = STATUS_LABELS[project.status] ?? STATUS_LABELS.pending;
-  const statusCls = STATUS_COLOURS[project.status] ?? STATUS_COLOURS.pending;
+  const itemStatusCls = ITEM_STATUS_COLOURS[PROJECT_STATUS_TO_ITEM_KEY[project.status]];
   const aiMeta = aiCheckMeta(project);
   const showAiMeta = project.status !== 'approved' && project.status !== 'withdrawn';
   const canEdit = canManage && (project.status === 'draft' || (Boolean(batchId) && (project.status === 'returnedForUpdate' || project.status === 'withdrawn')));
@@ -2154,7 +2165,7 @@ function ProjectCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h2 className="text-body-lg font-semibold text-fg leading-tight">{project.title || 'Untitled project'}</h2>
-          <span className={cn('mt-1 badge text-[14px] font-normal', statusCls)}>
+          <span className={cn('mt-1 text-caption font-normal', itemStatusCls)}>
             {statusLabel}
           </span>
         </div>

@@ -146,6 +146,12 @@ export const programmeStep2Schema = (isEdit: boolean, today: string) =>
               message: 'Application Open Date cannot be in the past.',
               path: ['intakes', i, 'appOpen'],
             });
+          } else if (intake.start && intake.appOpen < intake.start) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: 'Application Open Date cannot be before the Internship Start Date.',
+              path: ['intakes', i, 'appOpen'],
+            });
           }
         }
 
@@ -167,6 +173,12 @@ export const programmeStep2Schema = (isEdit: boolean, today: string) =>
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               message: 'Application Close Date must be after Open Date.',
+              path: ['intakes', i, 'appClose'],
+            });
+          } else if (intake.end && intake.appClose > intake.end) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: 'Application Close Date cannot be after the Internship End Date.',
               path: ['intakes', i, 'appClose'],
             });
           }

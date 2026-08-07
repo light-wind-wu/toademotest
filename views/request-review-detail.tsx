@@ -8,16 +8,24 @@ import { Toast, useToast } from '@/components/ui-legacy/toast';
 import AiSparkleIcon from '@/components/ui-legacy/ai-sparkle-icon';
 import Modal from '@/components/ui-legacy/modal';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import Accordion from '@/components/ui-legacy/accordion';
 import {
-  AlertTriangle, Check,
+  AlertTriangle, Check, X,
   ChevronRight, ChevronDown,
 } from 'lucide-react';
 import { SUBMISSION_SEED, DEFAULT_PROGRAMMES, PC_CODES, TECH_DOMAINS, EMERGING_AREAS, INTERN_CATEGORIES, EDUCATION_LEVELS, toEducationLevel, progEducationLevelMap, batchEducationLevel, STATUS_COLOURS } from '@/lib/data';
 import { AI_COLOURS } from '@/lib/ai-colours';
 import { projectMatchesRequest } from '@/lib/request-groups';
-import { loadSubmissions, saveSubmissions, loadRequests, saveRequests } from '@/lib/storage';
+import { loadSubmissions, saveSubmissions, loadRequests, saveRequests, loadProjects, saveProjects } from '@/lib/storage';
 import { addNotification } from '@/lib/notifications';
 import { useRole } from '@/lib/role';
 import { cn } from '@/lib/utils';
@@ -25,7 +33,7 @@ import Combobox from '@/components/ui-legacy/combobox';
 import DateRangePicker from '@/components/ui-legacy/date-range-picker';
 import { DISCIPLINE_OPTIONS, parseDisciplines, toggleDiscipline } from '@/lib/disciplines';
 import { periodLabelToMMMYY, mmmyyToISO, mmmyyToISOEnd } from '@/lib/internship-period';
-import type { ProjectSubmissionBatch, SubmittedProject } from '@/lib/types';
+import type { ProjectSubmissionBatch, SubmittedProject, ProjectEntry } from '@/lib/types';
 
 const DURATION_OPTS = ['1 Month', '2 Months', '3 Months', '4 Months', '6 Months', '12 Months'];
 const LOCATION_OPTS = ['Hybrid', 'On-Site'];
@@ -373,23 +381,50 @@ function BottomActionBar({
   reviewingLabel,
   onLock,
   canLock,
+  status,
+  onApprove,
+  onReject,
+  onReturn,
 }: {
   reviewingLabel: string;
   onLock: () => void;
   canLock: boolean;
+  status: string;
+  onApprove: () => void;
+  onReject: () => void;
+  onReturn: () => void;
 }) {
   const router = useRouter();
+  const backTarget = status === 'frozen' ? 'pendingDce' : status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : 'pending';
   return (
     <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-8 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-gradient-to-b from-surface to-bg px-[clamp(24px,2.6vw,40px)] py-2">
       <p className="text-body-sm text-fg-muted">
-        <Button variant="ghost" size="md" onClick={() => router.push('/requests')}>
+        <Button variant="ghost" size="md" onClick={() => {
+          sessionStorage.setItem('dsta_requests_target_tab', backTarget);
+          router.push('/requests');
+        }}>
           Back
         </Button>
       </p>
       <div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
-        <Button size="md" disabled={!canLock} onClick={onLock}>
-          Lock for Review
-        </Button>
+        {status === 'pending' && (
+          <Button size="md" disabled={!canLock} onClick={onLock}>
+            Lock for Review
+          </Button>
+        )}
+        {status === 'frozen' && (
+          <>
+            <Button size="md" variant="outline" onClick={onReturn}>
+              Returned for Update
+            </Button>
+            <Button size="md" variant="outline" className="text-danger border-danger/30 hover:bg-danger-bg" onClick={onReject}>
+              Reject Project
+            </Button>
+            <Button size="md" onClick={onApprove}>
+              Approve Project
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -411,6 +446,10 @@ export default function RequestReviewDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const [draft, setDraft] = useState<SubmittedProject | null>(null);
   const [activeTab, setActiveTab] = useState('review');
+  const [dceRejectOpen, setDceRejectOpen] = useState(false);
+  const [dceRejectRemarks, setDceRejectRemarks] = useState('');
+  const [dceReturnOpen, setDceReturnOpen] = useState(false);
+  const [dceReturnRemarks, setDceReturnRemarks] = useState('');
 
   const progMap = Object.fromEntries(DEFAULT_PROGRAMMES.map(p => [p.id, p.title]));
   const eduMap = progEducationLevelMap();
@@ -528,6 +567,84 @@ export default function RequestReviewDetail() {
     router.push('/requests');
   }
 
+  function doDceApprove() {
+    if (!proj || !batch) return;
+    const existingProjs = loadProjects();
+    const nums = existingProjs.map(p => parseInt(p.id.replace(/^PROJ-/, ''), 10)).filter(n => !isNaN(n));
+    const nextNum = (nums.length > 0 ? Math.max(...nums) : 0) + 1;
+    const newId = `PROJ-${String(nextNum).padStart(4, '0')}`;
+    const newProj: ProjectEntry = {
+      id: newId,
+      title: proj.title,
+      description: proj.description,
+      mentor: proj.mentor,
+      mentorAppointment: proj.mentorAppointment,
+      mentorUserId: proj.mentorUserId,
+      mentorBio: proj.mentorBio,
+      skills: proj.skills,
+      discipline: proj.discipline,
+      slots: proj.slots,
+      matched: 0,
+      status: 'open',
+      programme: '',
+      pc: proj.pc,
+      techDomain: proj.techDomain,
+      emergingArea: proj.emergingArea,
+      educationLevel: proj.educationLevel,
+      internshipDuration: proj.internshipDuration,
+      internshipPeriodStart: proj.internshipPeriodStart,
+      internshipPeriodEnd: proj.internshipPeriodEnd,
+      workingLocation: proj.workingLocation,
+    };
+    const updated = batches.map(b => b.id !== batchId ? b : {
+      ...b,
+      projects: b.projects.map(p => p.id !== projId || p.status !== 'frozen' ? p : { ...p, status: 'approved' as const }),
+    });
+    setBatches(updated);
+    saveSubmissions(updated);
+    saveProjects([...existingProjs, newProj]);
+    syncProjectsToRequests(updated);
+    addNotification({ forRole: 'ad-pnc', title: `Project approved by DCE — ${batchEducationLevel(batch, eduMap)}`, body: `Your project submission for ${batchEducationLevel(batch, eduMap)} has been approved by the DCE.`, href: '/submissions', tier: 'info' });
+    addNotification({ forRole: 'mentor', ...(proj.mentorUserId ? { forMentorId: proj.mentorUserId } : {}), title: `Your project has been approved — ${proj.title}`, body: `"${proj.title}" has been approved by the DCE and is now open for applicants.`, href: '/mentor/projects', tier: 'info' });
+    showToast(`Project approved by DCE.`);
+    sessionStorage.setItem('dsta_requests_target_tab', 'approved');
+    router.push('/requests');
+  }
+
+  function doDceReject() {
+    if (!proj || !batch || !dceRejectRemarks.trim()) return;
+    const updated = batches.map(b => b.id !== batchId ? b : {
+      ...b,
+      projects: b.projects.map(p => p.id !== projId || p.status !== 'frozen' ? p : { ...p, status: 'rejected' as const, remarks: dceRejectRemarks.trim() }),
+    });
+    setBatches(updated);
+    saveSubmissions(updated);
+    syncProjectsToRequests(updated);
+    addNotification({ forRole: 'ad-pnc', title: `Project rejected by DCE — ${proj.title}`, body: `Your project "${proj.title}" has been rejected by the DCE. See the rejection remarks for details.`, href: '/submissions', tier: 'action' });
+    setDceRejectOpen(false);
+    setDceRejectRemarks('');
+    showToast(`Project rejected by DCE.`);
+    sessionStorage.setItem('dsta_requests_target_tab', 'rejected');
+    router.push('/requests');
+  }
+
+  function doDceReturnForUpdate() {
+    if (!proj || !batch || !dceReturnRemarks.trim()) return;
+    const updated = batches.map(b => b.id !== batchId ? b : {
+      ...b,
+      projects: b.projects.map(p => p.id !== projId || p.status !== 'frozen' ? p : { ...p, status: 'returnedForUpdate' as const, remarks: dceReturnRemarks.trim() }),
+    });
+    setBatches(updated);
+    saveSubmissions(updated);
+    syncProjectsToRequests(updated);
+    addNotification({ forRole: 'ad-pnc', title: `Project returned for update by DCE — ${proj.title}`, body: `Your project "${proj.title}" has been returned for update by the DCE. Reason: ${dceReturnRemarks.trim()}`, href: '/submissions', tier: 'action' });
+    setDceReturnOpen(false);
+    setDceReturnRemarks('');
+    showToast(`Project returned for update by DCE.`);
+    sessionStorage.setItem('dsta_requests_target_tab', 'pending');
+    router.push('/requests');
+  }
+
   /* ── Loading / not found ──────────────────────────────────────────────── */
   if (batches.length === 0) {
     return (
@@ -553,14 +670,22 @@ export default function RequestReviewDetail() {
           <nav className="mb-4 flex shrink-0 items-center gap-2 text-label-md">
             <span
               className="cursor-pointer text-fg-muted transition-colors hover:text-accent"
-              onClick={() => router.push('/requests')}
+              onClick={() => {
+                const target = proj.status === 'frozen' ? 'pendingDce' : 'pending';
+                sessionStorage.setItem('dsta_requests_target_tab', target);
+                router.push('/requests');
+              }}
             >
               Project request
             </span>
             <ChevronRight size={14} className="text-fg-subtle" />
             <span
               className="cursor-pointer text-fg-muted transition-colors hover:text-accent"
-              onClick={() => router.push('/requests?tab=submissions')}
+              onClick={() => {
+                const target = proj.status === 'frozen' ? 'pendingDce' : 'pending';
+                sessionStorage.setItem('dsta_requests_target_tab', target);
+                router.push('/requests');
+              }}
             >
               Project Submissions
             </span>
@@ -572,7 +697,9 @@ export default function RequestReviewDetail() {
           <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 flex-wrap items-center gap-3">
               <h1 className="min-w-0 text-headline-lg font-bold text-fg">{proj.title}</h1>
-              <Badge className={STATUS_COLOURS.pending}>Pending</Badge>
+              <Badge className={STATUS_COLOURS[proj.status] ?? STATUS_COLOURS.pending}>
+                {proj.status === 'frozen' ? 'Pending DCE Approval' : proj.status === 'returnedForUpdate' ? 'Return for Update' : proj.status === 'rejected' ? 'Rejected' : proj.status === 'approved' ? 'Approved' : 'Pending'}
+              </Badge>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
               {canReviewProjects && (
@@ -666,11 +793,15 @@ export default function RequestReviewDetail() {
       </div>
     </div>
 
-    {canReviewProjects && (
+    {canReviewProjects && proj && (
       <BottomActionBar
         reviewingLabel={reviewingLabel}
         onLock={doLockForReview}
         canLock={proj.status === 'pending'}
+        status={proj.status}
+        onApprove={doDceApprove}
+        onReject={() => { setDceRejectRemarks(''); setDceRejectOpen(true); }}
+        onReturn={() => { setDceReturnRemarks(''); setDceReturnOpen(true); }}
       />
     )}
   </div>
@@ -739,6 +870,76 @@ export default function RequestReviewDetail() {
           </Modal>
         );
       })()}
+
+      {/* DCE Return for Update dialog */}
+      <Dialog open={dceReturnOpen} onOpenChange={setDceReturnOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Return Project for Update?</DialogTitle>
+            <DialogDescription>
+              AD (P&amp;C) will need to revise and resubmit this project before it can be reviewed again.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-label-sm text-fg">
+              Reason for return <span className="text-danger">*</span>
+            </p>
+            <textarea
+              rows={4}
+              autoFocus
+              className="w-full resize-none rounded-lg border border-border bg-surface px-3 py-2 text-body-sm text-fg outline-none focus:ring-2 focus:ring-warning/30"
+              placeholder="Explain what needs to change..."
+              value={dceReturnRemarks}
+              onChange={e => setDceReturnRemarks(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDceReturnOpen(false)}>Cancel</Button>
+            <Button
+              disabled={!dceReturnRemarks.trim()}
+              onClick={doDceReturnForUpdate}
+              className="bg-[rgba(251,44,54,0.1)] text-[#C10007] hover:bg-[rgba(251,44,54,0.15)] border border-[#F8A4A8]"
+            >
+              Return for Update
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* DCE Reject dialog */}
+      <Dialog open={dceRejectOpen} onOpenChange={setDceRejectOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reject Project?</DialogTitle>
+            <DialogDescription>
+              This project will be rejected and will not proceed.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-label-sm text-fg">
+              Rejection remarks <span className="text-danger">*</span>
+            </p>
+            <textarea
+              rows={4}
+              autoFocus
+              className="w-full resize-none rounded-lg border border-border bg-surface px-3 py-2 text-body-sm text-fg outline-none focus:ring-2 focus:ring-danger/30"
+              placeholder="Explain why this project is being rejected..."
+              value={dceRejectRemarks}
+              onChange={e => setDceRejectRemarks(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDceRejectOpen(false)}>Cancel</Button>
+            <Button
+              variant="danger"
+              disabled={!dceRejectRemarks.trim()}
+              onClick={doDceReject}
+            >
+              <X size={14} /> Reject Project
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Toast message={toast} />
     </Shell>

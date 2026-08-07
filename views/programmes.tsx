@@ -42,7 +42,14 @@ import {
 import { EDUCATION_LEVELS, internCategoriesForLevel } from '@/lib/data';
 import { loadProgrammes, saveProgrammes, loadProjects } from '@/lib/storage';
 import { PROGRAMMES_CHANGED_EVENT } from '@/lib/programme-context';
-import Modal from '@/components/ui-legacy/modal';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Toast, useToast } from '@/components/ui-legacy/toast';
 import { cn, exportToCSV } from '@/lib/utils';
 import { programmeIntakes, type NormalisedIntake } from '@/lib/intakes';
@@ -749,51 +756,64 @@ export default function ProgrammesPage() {
         );
       })()}
 
-      {/* Duplicate Modal */}
-      <Modal open={!!dupProg} onClose={() => setDupProg(null)} labelledBy="duplicate-programme-title">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-full bg-info-bg flex items-center justify-center shrink-0">
-            <Copy size={18} className="text-accent" />
+      {/* Duplicate Dialog */}
+      <Dialog open={!!dupProg} onOpenChange={(open) => { if (!open) setDupProg(null); }}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-info-bg flex items-center justify-center shrink-0">
+                <Copy size={18} className="text-accent" />
+              </div>
+              Duplicate Programme
+            </DialogTitle>
+            <DialogDescription>
+              The duplicate will start as <strong>Draft</strong>. All eligibility requirements and settings will be copied over — you can edit them afterwards.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="block text-body-md font-semibold text-fg mb-1.5">New Programme Title <span className="text-danger">*</span></label>
+              <input
+                value={dupTitle}
+                onChange={e => { setDupTitle(e.target.value); setDupError(false); }}
+                placeholder="Enter a title for the duplicate"
+                className={cn('w-full rounded-md border border-border bg-surface px-3 py-2 text-body-sm text-fg outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent', dupError && 'border-danger')}
+                autoFocus
+              />
+              {dupError && <p className="text-body-sm text-danger mt-1.5">Please enter a programme title.</p>}
+            </div>
+            <div className="flex items-start gap-2.5 px-4 py-3 bg-bg-subtle rounded-lg border border-border">
+              <Info size={16} className="text-accent shrink-0 mt-0.5" />
+              <p className="text-body-sm text-fg-muted">The duplicate will start as <strong className="text-fg">Draft</strong>. All eligibility requirements and settings will be copied over — you can edit them afterwards.</p>
+            </div>
           </div>
-          <h2 id="duplicate-programme-title" className="text-headline-md text-fg">Duplicate Programme</h2>
-        </div>
-        <div className="mb-4">
-          <label className="block text-body-md font-semibold text-fg mb-1.5">New Programme Title <span className="text-danger">*</span></label>
-          <input
-            value={dupTitle}
-            onChange={e => { setDupTitle(e.target.value); setDupError(false); }}
-            placeholder="Enter a title for the duplicate"
-            className={cn('input', dupError && 'border-danger')}
-            autoFocus
-          />
-          {dupError && <p className="text-body-sm text-danger mt-1.5">Please enter a programme title.</p>}
-        </div>
-        <div className="flex items-start gap-2.5 px-4 py-3 bg-bg-subtle rounded-lg border border-border mb-6">
-          <Info size={16} className="text-accent shrink-0 mt-0.5" />
-          <p className="text-body-sm text-fg-muted">The duplicate will start as <strong className="text-fg">Draft</strong>. All eligibility requirements and settings will be copied over — you can edit them afterwards.</p>
-        </div>
-        <div className="flex gap-3 justify-end">
-          <Button onClick={confirmDup}><Copy size={16} />Duplicate</Button>
-          <Button variant="outline" onClick={() => setDupProg(null)}>Cancel</Button>
-        </div>
-      </Modal>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDupProg(null)}>Cancel</Button>
+            <Button onClick={confirmDup}><Copy size={16} />Duplicate</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* Delete Modal */}
-      <Modal open={!!deleteProg} onClose={() => setDeleteProg(null)} labelledBy="delete-programme-title">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-danger-bg flex items-center justify-center shrink-0">
-            <Trash2 size={18} className="text-danger" />
-          </div>
-          <h2 id="delete-programme-title" className="text-headline-md text-fg">Delete Programme</h2>
-        </div>
-        <p className="text-body-md text-fg-muted mb-1">Are you sure you want to delete</p>
-        <p className="text-body-md font-semibold text-fg mb-1">"{deleteProg?.title}"</p>
-        <p className="text-body-sm text-fg-muted mb-6">This action cannot be undone.</p>
-        <div className="flex gap-3 justify-end">
-          <Button variant="danger" onClick={confirmDelete}><Trash2 size={16} />Delete</Button>
-          <Button variant="outline" onClick={() => setDeleteProg(null)}>Cancel</Button>
-        </div>
-      </Modal>
+      {/* Delete Dialog */}
+      <Dialog open={!!deleteProg} onOpenChange={(open) => { if (!open) setDeleteProg(null); }}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-danger-bg flex items-center justify-center shrink-0">
+                <Trash2 size={18} className="text-danger" />
+              </div>
+              Delete Programme
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete <span className="font-semibold text-fg">"{deleteProg?.title}"</span>? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteProg(null)}>Cancel</Button>
+            <Button variant="danger" onClick={confirmDelete}><Trash2 size={16} />Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Toast message={toast} />
     </Shell>

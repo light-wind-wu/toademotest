@@ -425,6 +425,7 @@ export default function SubmissionReviewPage() {
     addNotification({ forRole: 'ad-pnc', title: `Project approved — ${project.title}`, body: `Your project "${project.title}" (${approvedLevel}) has been approved by the IO.`, href: '/submissions', tier: 'info' });
     addNotification({ forRole: 'mentor', ...(project.mentorUserId ? { forMentorId: project.mentorUserId } : {}), title: `Your project has been approved — ${project.title}`, body: `"${project.title}" has been approved by the IO and is now open for applicants.`, href: '/mentor/projects', tier: 'info' });
     sessionStorage.setItem('dsta_pending_toast', `"${project.title}" approved and added to Projects.`);
+    sessionStorage.setItem('dsta_requests_target_tab', 'approved');
     router.push('/requests');
   }
 
@@ -437,6 +438,7 @@ export default function SubmissionReviewPage() {
     saveSubmissions(updated);
     addNotification({ forRole: 'ad-pnc', title: `Project rejected — ${project.title}`, body: `Your project "${project.title}" has been rejected by the IO. See the rejection remarks for details.`, href: '/submissions', tier: 'action' });
     sessionStorage.setItem('dsta_pending_toast', `"${project.title}" rejected.`);
+    sessionStorage.setItem('dsta_requests_target_tab', 'rejected');
     router.push('/requests');
   }
 
@@ -458,9 +460,9 @@ export default function SubmissionReviewPage() {
     <Shell activeRoute="/requests">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 mb-4 text-label-md flex-wrap">
-        <span className="text-fg-muted cursor-pointer hover:text-accent transition-colors" onClick={() => router.push('/requests')}>Requests</span>
+        <span className="text-fg-muted cursor-pointer hover:text-accent transition-colors" onClick={() => { sessionStorage.setItem('dsta_requests_target_tab', project.status === 'frozen' ? 'pendingDce' : 'pending'); router.push('/requests'); }}>Requests</span>
         <ChevronRight size={16} className="text-fg-subtle" />
-        <span className="text-fg-muted cursor-pointer hover:text-accent transition-colors" onClick={() => router.push('/requests')}>Submissions</span>
+        <span className="text-fg-muted cursor-pointer hover:text-accent transition-colors" onClick={() => { sessionStorage.setItem('dsta_requests_target_tab', project.status === 'frozen' ? 'pendingDce' : 'pending'); router.push('/requests'); }}>Submissions</span>
         <ChevronRight size={16} className="text-fg-subtle" />
         <span className="text-fg truncate max-w-[300px]">{project.title}</span>
       </nav>
@@ -488,7 +490,7 @@ export default function SubmissionReviewPage() {
               </span>
             )}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => router.push('/requests')}>Back</Button>
+          <Button variant="outline" size="sm" onClick={() => { sessionStorage.setItem('dsta_requests_target_tab', project.status === 'frozen' ? 'pendingDce' : 'pending'); router.push('/requests'); }}>Back</Button>
         </div>
       </div>
 

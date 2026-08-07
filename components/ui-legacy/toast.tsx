@@ -33,7 +33,7 @@ export function useToast() {
   function showToast(message: string, tone: ToastTone = 'success', title?: string) {
     setToast({ message, tone, title });
     clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setToast(null), 3000);
+    timerRef.current = setTimeout(() => setToast(null), 6000);
   }
 
   return { toast, showToast };

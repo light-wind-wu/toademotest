@@ -57,6 +57,20 @@ export const STATUS_COLOURS = {
   frozen:          'bg-[rgba(254,154,0,0.15)] text-[rgba(187,77,0,1)]',
 } as const;
 
+function textOnly(cls: string) {
+  return cls.split(' ').filter(c => c.startsWith('text-')).join(' ') || cls;
+}
+
+/* Project item status text colours (no badge background) — used for sub rows in request tables. */
+export const ITEM_STATUS_COLOURS = {
+  notSubmitted:      'text-[rgba(69,85,108,1)]',
+  pendingReview:     textOnly(STATUS_COLOURS.pending),
+  returnedForUpdate: textOnly(STATUS_COLOURS.returnedForUpdate),
+  pendingDceApproval: textOnly(STATUS_COLOURS.frozen),
+  approved:          textOnly(STATUS_COLOURS.approved),
+  rejected:          textOnly(STATUS_COLOURS.rejected),
+} as const;
+
 /* Competency Domains (from SDP) — the approved Tech Competency list used by the
    project templates and the project forms. Column B of the SDP source list. */
 export const COMPETENCY_DOMAINS = [
