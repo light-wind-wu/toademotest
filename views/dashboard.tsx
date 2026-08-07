@@ -21,16 +21,12 @@ import {
   AlertTriangle,
   Send,
   BookOpen,
-  Folder,
-  Zap,
   ChevronDown,
   type LucideIcon,
 } from "lucide-react";
 import { COHORT_DATA, WIDGET_DEFS, INTERN_CATEGORIES } from "@/lib/data";
 import { loadSubmissions, loadProgrammes, loadRequests } from "@/lib/storage";
-import ProgToggle from "@/components/ui-legacy/prog-toggle";
 import DashboardCards from "@/components/ui-legacy/dashboard-cards";
-import CreateProjectChooser from "@/components/ui-legacy/create-project-chooser";
 import { useRole } from "@/lib/role";
 import { cn, deriveAppStatus } from "@/lib/utils";
 import type {
@@ -38,6 +34,13 @@ import type {
   ProjectRequest,
   Programme,
 } from "@/lib/types";
+import {
+  Select,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 function loadWidgetState(): Record<string, boolean> {
   if (typeof window === "undefined")
@@ -89,7 +92,6 @@ export default function DashboardPage() {
   const [widgets, setWidgets] = useState<Record<string, boolean>>({});
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [newMenuOpen, setNewMenuOpen] = useState(false);
-  const [createChooserOpen, setCreateChooserOpen] = useState(false);
   const newMenuRef = useRef<HTMLDivElement>(null);
   const [liveFunnel, setLiveFunnel] = useState<LiveFunnel>(EMPTY_FUNNEL);
 
@@ -124,11 +126,8 @@ export default function DashboardPage() {
   // Quick actions for IO roles — surfaced via the header "New" menu. "Create Project"
   // opens the same upload-vs-create chooser as the Projects page (not a direct link).
   const quickActions: { label: string; icon: LucideIcon; href?: string; onClick?: () => void }[] = [
-    ...(role === "io-admin"
-      ? [{ label: "Create Project Request", icon: Send, href: "/requests/new" }]
-      : []),
+    { label: "Create Project Request", icon: Send, href: "/requests/new" },
     { label: "Create Programme", icon: BookOpen, href: "/programmes/new" },
-    { label: "Create Project", icon: Folder, onClick: () => setCreateChooserOpen(true) },
   ];
 
   useEffect(() => {
@@ -271,18 +270,31 @@ export default function DashboardPage() {
     <Shell activeRoute="/dashboard">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-        <h1 className="text-headline-lg text-fg">Dashboard</h1>
+        <h1 className="text-[24px] font-bold text-fg">Dashboard</h1>
         <div className="flex items-center gap-2">
+          <Select value={cohort} onValueChange={(v) => setCohort(v ?? "all")}>
+            <SelectTrigger className="w-[200px]">
+              <span className="flex-1 text-left text-body-sm">
+                {cohort === "all" ? "All Intern categories" : cohort}
+              </span>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Intern categories</SelectItem>
+              {INTERN_CATEGORIES.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           {(role === "io-admin" || role === "io") && (
             <div className="relative" ref={newMenuRef}>
               <button
                 onClick={() => setNewMenuOpen((o) => !o)}
                 aria-haspopup="menu"
                 aria-expanded={newMenuOpen}
-                className="flex items-center gap-1.5 bg-accent text-accent-fg font-bold text-label-md px-4 py-2 rounded-lg hover:bg-accent/90 transition-all"
+                className="flex items-center gap-1.5 bg-accent text-accent-fg font-normal text-[14px] px-4 py-2 rounded-lg hover:bg-accent/90 transition-all"
               >
-                <Zap size={18} />
-                Quick actions
+                Quick Actions
                 <ChevronDown
                   size={15}
                   className={cn("transition-transform", newMenuOpen && "rotate-180")}
@@ -302,11 +314,9 @@ export default function DashboardPage() {
                         if (a.onClick) a.onClick();
                         else if (a.href) router.push(a.href);
                       }}
-                      className="group flex w-full items-center gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-bg-subtle"
+                      className="group flex w-full items-center gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-[#F4F2EC]"
                     >
-                      <span className="grid place-items-center w-9 h-9 rounded-lg bg-accent/10 text-accent shrink-0">
-                        <a.icon size={17} />
-                      </span>
+                      <a.icon size={17} className="text-fg-muted shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-body-sm font-semibold text-fg">{a.label}</p>
                       </div>
@@ -318,7 +328,7 @@ export default function DashboardPage() {
           )}
           <button
             onClick={() => setDrawerOpen(true)}
-            className="flex items-center gap-2 text-accent font-bold text-label-md hover:bg-accent/5 px-4 py-2 rounded-lg border border-accent/20 transition-all"
+            className="hidden flex items-center gap-2 text-accent font-bold text-label-md hover:bg-accent/5 px-4 py-2 rounded-lg border border-accent/20 transition-all"
           >
             <Settings size={18} />
             Customize
@@ -329,20 +339,11 @@ export default function DashboardPage() {
       {/* Per-role action cards — "needs your attention" (hidden for IO roles) */}
       {role !== "io" && role !== "io-admin" && <DashboardCards />}
 
-      {/* Intern-category filter — scopes the application data below */}
-      <div className="mb-4">
-        <ProgToggle
-          options={[{ value: "all", label: "All categories" }, ...INTERN_CATEGORIES.map((c) => ({ value: c, label: c }))]}
-          value={cohort}
-          onChange={setCohort}
-        />
-      </div>
-
       {/* Grid */}
       <div className="grid grid-cols-12 gap-4">
         {/* Application Overview bar chart */}
-        <div className="col-span-12 lg:col-span-6 card p-4">
-          <h2 className="text-headline-md text-fg mb-4">
+        <div className="col-span-12 lg:col-span-6 card p-5">
+          <h2 className="text-[18px] font-semibold text-fg mb-4">
             Application Overview
           </h2>
           {!hasData ? (
@@ -358,82 +359,43 @@ export default function DashboardPage() {
           ) : (
             (() => {
               const ROWS = [
-                {
-                  label: "Total Applications",
-                  val: liveFunnel.total,
-                  filter: "All",
-                },
-                {
-                  label: "Eligible",
-                  val: liveFunnel.eligible,
-                  filter: "Eligible",
-                },
-                {
-                  label: "In Progress",
-                  val: liveFunnel.inProgress,
-                  filter: "In Progress",
-                },
-                {
-                  label: "Interview Completed",
-                  val: liveFunnel.interviewCompleted,
-                  filter: "Interview Completed",
-                },
-                {
-                  label: "Offer Extended",
-                  val: liveFunnel.offerExtended,
-                  filter: "Offer Extended",
-                },
-                {
-                  label: "Accepted",
-                  val: liveFunnel.accepted,
-                  filter: "Closed",
-                },
-                {
-                  label: "Rejected",
-                  val: liveFunnel.rejected,
-                  filter: "Closed",
-                },
+                { label: "Eligible", val: liveFunnel.eligible },
+                { label: "In Progress", val: liveFunnel.inProgress },
+                { label: "Interview Completed", val: liveFunnel.interviewCompleted },
+                { label: "Offer Extended", val: liveFunnel.offerExtended },
+                { label: "Accepted", val: liveFunnel.accepted },
+                { label: "Rejected", val: liveFunnel.rejected },
               ];
-              const barMax = Math.max(...ROWS.map((r) => r.val), 1);
+              const barMax = liveFunnel.total || 1;
               return (
-                <div className="space-y-2.5 mt-1">
-                  {ROWS.map((r) => (
-                    <button
-                      key={r.label}
-                      onClick={() => goToApps(r.filter)}
-                      className="w-full flex items-center gap-3 group text-left"
-                    >
-                      <span className="text-[13px] text-fg-muted w-36 shrink-0 text-right">
-                        {r.label}
-                      </span>
-                      <div className="flex-1 bg-bg-subtle rounded-full h-5 overflow-hidden">
-                        <div
-                          className={cn(
-                            "h-full rounded-full flex items-center justify-end pr-2 transition-all duration-500",
-                            r.label === "Rejected"
-                              ? "bg-danger/70"
-                              : r.label === "Accepted"
-                                ? "bg-success"
-                                : "bg-accent",
-                          )}
-                          style={{
-                            width: `${Math.max((r.val / barMax) * 100, r.val > 0 ? 4 : 0)}%`,
-                          }}
-                        >
-                          {r.val > 0 && (
-                            <span className="text-[12px] font-bold text-white leading-none">
-                              {r.val}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      {r.val === 0 && (
-                        <span className="text-[13px] text-fg-subtle w-4 shrink-0">
-                          0
+                <div className="space-y-5">
+                  <div className="pb-5 border-b border-border">
+                    <p className="text-[14px] font-normal text-fg">
+                      Total Applications <span className="font-semibold text-accent ml-2">{liveFunnel.total}</span>
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    {ROWS.map((r) => (
+                      <button
+                        key={r.label}
+                        onClick={() => goToApps(r.label)}
+                        className="w-full flex items-center gap-4 group text-left"
+                      >
+                        <span className="text-[13px] text-fg-muted w-36 shrink-0">
+                          {r.label}
                         </span>
-                      )}
-                    </button>
-                  ))}
+                        <div className="flex-1 bg-[#F4F2EC] rounded-full h-2.5 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-accent transition-all duration-500"
+                            style={{ width: `${Math.max((r.val / barMax) * 100, r.val > 0 ? 3 : 0)}%` }}
+                          />
+                        </div>
+                        <span className="text-[13px] font-semibold text-fg w-6 text-right shrink-0">
+                          {r.val}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               );
             })()
@@ -441,16 +403,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Tasks */}
-        <div className="col-span-12 lg:col-span-6 card p-4 flex flex-col gap-4">
+        <div className="col-span-12 lg:col-span-6 card p-5 flex flex-col gap-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <h2 className="text-headline-md text-fg">Tasks</h2>
-              {liveTasks.length > 0 && (
-                <span className="bg-warning-bg text-warning text-caption-bold px-2.5 py-1 rounded-full">
-                  {liveTasks.length} Open
-                </span>
-              )}
-            </div>
+            <h2 className="text-[18px] font-semibold text-fg">Tasks {liveTasks.length > 0 && <span className="text-fg-muted">({liveTasks.length})</span>}</h2>
           </div>
           {liveTasks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center gap-2">
@@ -462,14 +417,14 @@ export default function DashboardPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {liveTasks.map((t, i) => (
                 <a
                   key={i}
                   href={t.href}
-                  className={`flex items-center gap-3 px-3 py-3 rounded-lg ${t.bg} cursor-pointer border border-border/50 transition-colors no-underline`}
+                  className="flex items-center gap-4 p-4 rounded-xl bg-surface border border-border cursor-pointer transition-colors no-underline hover:border-accent/30"
                 >
-                  <t.icon size={18} className={`${t.color} shrink-0`} />
+                  <t.icon size={20} className={`${t.color} shrink-0`} />
                   <div className="flex-1 min-w-0">
                     <p className="text-body-md font-semibold text-fg truncate">
                       {t.label}
@@ -477,7 +432,7 @@ export default function DashboardPage() {
                     <p className="text-body-sm text-fg-muted mt-0.5">{t.sub}</p>
                   </div>
                   <span
-                    className={`text-caption-bold px-2 py-0.5 rounded shrink-0 ${t.tagCls}`}
+                    className="text-body-sm font-medium px-3 py-1 rounded-full shrink-0 bg-warning-bg text-warning"
                   >
                     {t.tag}
                   </span>
@@ -802,8 +757,6 @@ export default function DashboardPage() {
           </button>
         </div>
       </div>
-
-      <CreateProjectChooser open={createChooserOpen} onClose={() => setCreateChooserOpen(false)} />
     </Shell>
   );
 }

@@ -98,6 +98,19 @@ export function isGroupClosed(group: RequestGroup): boolean {
   return requestDeadlinePassed(group.deadline);
 }
 
+export function requestYearLabel(
+  group: RequestGroup,
+  source: 'sentDate' | 'period' = 'period',
+): string {
+  const raw =
+    source === 'sentDate'
+      ? group.sentDate
+      : group.requests[0]?.periodStart || group.requests[0]?.calendarPeriod;
+  if (!raw) return new Date().getFullYear().toString();
+  const year = new Date(raw).getFullYear();
+  return isNaN(year) ? new Date().getFullYear().toString() : year.toString();
+}
+
 export function groupTotals(group: RequestGroup): { placements: number; uploaded: number } {
   return group.requests.reduce(
     (acc, r) => ({ placements: acc.placements + r.placements, uploaded: acc.uploaded + (r.uploaded ?? 0) }),

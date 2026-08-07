@@ -51,6 +51,8 @@ export interface DateRangePickerProps {
   hideLabels?: boolean;
   /** Hides the footer showing the selected range and the Clear button. */
   hideFooter?: boolean;
+  /** Called whenever the popover opens or closes (close = interaction end). */
+  onOpenChange?: (open: boolean) => void;
 }
 
 /** Midnight today — the boundary for "no dates in the past" rules. */
@@ -114,6 +116,7 @@ export function DateRangePicker({
   toYear,
   hideLabels = false,
   hideFooter = false,
+  onOpenChange,
 }: DateRangePickerProps) {
   // Forwarded to both calendars; relies on the local Calendar fork's dropdown header.
   const calendarYearProps = {
@@ -142,7 +145,7 @@ export function DateRangePicker({
   };
 
   return (
-    <Popover>
+    <Popover onOpenChange={onOpenChange}>
       <PopoverTrigger
         disabled={disabled}
         className={cn(

@@ -110,7 +110,7 @@ export function toMonthIndex(s: string | undefined | null): number | null {
   if (iso !== null) return iso;
   const mmmyy = parseMMMYY(t);
   if (mmmyy !== null) return mmmyy;
-  const m = t.match(/^([A-Za-z]{3})[A-Za-z]*\.?\s+'?(\d{2,4})$/);   // "Dec 2027" / "December 2027"
+  const m = t.match(/^(?:\d{1,2}\s+)?([A-Za-z]{3})[A-Za-z]*\.?\s+'?(\d{2,4})$/);   // "1 Jan 2027" / "Dec 2027" / "January 2027"
   if (m) {
     const monthIdx = MONTHS.findIndex(mm => mm.toLowerCase() === m[1].toLowerCase());
     if (monthIdx >= 0) {
@@ -181,7 +181,7 @@ export function periodLabelToMMMYY(label: string | undefined | null): string {
   const s = label.trim();
   const direct = parseMMMYY(s);            // already "Jun26" / "Jun 26"
   if (direct !== null) return formatMMMYY(direct);
-  const m = s.match(/^([A-Za-z]{3})[A-Za-z]*\.?\s+'?(\d{2,4})$/);  // "Jan 2026" / "January 2026"
+  const m = s.match(/^(?:\d{1,2}\s+)?([A-Za-z]{3})[A-Za-z]*\.?\s+'?(\d{2,4})$/);  // "1 Jan 2026" / "Jan 2026" / "January 2026"
   if (!m) return '';
   const monthIdx = MONTHS.findIndex(mm => mm.toLowerCase() === m[1].toLowerCase());
   if (monthIdx < 0) return '';

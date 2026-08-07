@@ -473,8 +473,9 @@ export default function ShortlistingReviewPage() {
     setConfirmOpen(false);
     setDispatchProjectIds(new Set());
     showToast(
-      `Candidates dispatched. ${dispatchSummary.total} candidate${dispatchSummary.total !== 1 ? 's' : ''} has been sent across ${dispatchSummary.projectCount} project${dispatchSummary.projectCount !== 1 ? 's' : ''}. Projects with remaining seats stay open.`,
-      'success'
+      `${dispatchSummary.total} candidate${dispatchSummary.total !== 1 ? 's have' : ' has'} been sent across ${dispatchSummary.projectCount} project${dispatchSummary.projectCount !== 1 ? 's' : ''}. Projects with remaining seats stay open.`,
+      'success',
+      'Candidates dispatched'
     );
   }
 
@@ -524,7 +525,7 @@ export default function ShortlistingReviewPage() {
   return (
     <Shell activeRoute="/shortlisting-review">
       <div className="mb-1">
-        <h1 className="text-headline-lg text-fg">Shortlisting review</h1>
+        <h1 className="text-headline-lg text-fg">Project Shortlisting</h1>
         <p className="text-body-md text-fg-muted mt-1">
           Select an intake to review system-ranked applicants by project and send approved shortlists to mentors.
         </p>
@@ -554,7 +555,7 @@ export default function ShortlistingReviewPage() {
             </label>
             <Select value={category} onValueChange={v => handleCategoryChange(v ?? '')} disabled={!year}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder={year ? 'Select intern category' : 'Select a year first'} />
+                <SelectValue placeholder={year ? 'Select category' : 'Select a year first'} />
               </SelectTrigger>
               <SelectContent className="max-w-[min(28rem,var(--available-width))]">
                 {categoryOptions.map(c => (
@@ -573,7 +574,7 @@ export default function ShortlistingReviewPage() {
                 <span className={cn('flex-1 text-left text-body-sm', !windowValue && 'text-fg-subtle')}>
                   {windowValue
                     ? windowOptions.find(w => w.value === windowValue)?.label
-                    : category ? 'Select internship window' : 'Select an intern category first'}
+                    : category ? 'Select window' : 'Select an intern category first'}
                 </span>
               </SelectTrigger>
               <SelectContent>
@@ -614,7 +615,7 @@ export default function ShortlistingReviewPage() {
 
           {activeTab === 'shortlist' && (
             <div className="bg-[#F3EFE5] border border-[#E6E1D8] rounded-xl p-4 mb-5">
-              <h2 className="text-body-md font-semibold text-fg mb-1">Review the suggested shortlist</h2>
+              <h2 className="text-body-md font-semibold text-fg mb-1">Candidates are shortlisted and ranked based on matching their discipline of studies, skills and project preference.</h2>
               <p className="text-body-sm text-fg-muted mb-3">
                 Applicants are ranked by fit and the top few are pre-selected for each project. No one is shortlisted for more than one project at a time.
               </p>
@@ -632,9 +633,9 @@ export default function ShortlistingReviewPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] min-h-[calc(100vh-380px)]">
-            <div className="card p-0 overflow-hidden lg:overflow-visible rounded-r-none">
-              <div className="px-4 py-3 border-b border-border bg-[#FDFCFA] flex items-center justify-between">
+          <div className="grid min-h-[calc(100vh-380px)] min-w-0 overflow-hidden rounded-xl border border-border bg-surface shadow-sm lg:grid-cols-[minmax(260px,360px)_minmax(0,1fr)]">
+            <aside className="relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-border bg-surface shadow-lg lg:overflow-visible lg:border-b-0 lg:border-r">
+              <div className="px-4 py-7 border-b border-border bg-[#FDFCFA] flex items-center justify-between">
                 <span className="text-body-sm font-semibold text-fg">Projects for shortlisting</span>
                 <span className="text-body-sm text-fg-muted">{filteredProjects.length} projects</span>
               </div>
@@ -679,7 +680,7 @@ export default function ShortlistingReviewPage() {
                           </p>
                           <p className="text-[12px] text-fg-muted mt-0.5">
                             {project.slots} placement{project.slots !== 1 ? 's' : ''}
-                            {' · recommended '}{recommendedMin}-{recommendedMax} candidates
+                            {' · recommended '}{recommendedMin}–{recommendedMax} candidates
                           </p>
                           <p className={cn('text-[12px] mt-0.5', isDispatched ? 'text-success' : 'text-fg-muted')}>
                             {isDispatched
@@ -714,10 +715,10 @@ export default function ShortlistingReviewPage() {
                     </div>
                   );
                 })}
-              </div>
-            </div>
+                </div>
+              </aside>
 
-            <div className="card p-0 overflow-hidden flex flex-col rounded-l-none">
+            <div className="flex min-h-0 min-w-0 flex-col bg-surface">
               {viewingProject ? (
                 <>
                   <div className="px-5 py-4 border-b border-border bg-[#F9F8F4] flex items-start justify-between gap-4">
@@ -725,7 +726,7 @@ export default function ShortlistingReviewPage() {
                       <h2 className="text-body-lg font-semibold text-fg">{viewingProject.title}</h2>
                       <p className="text-body-sm text-fg-muted">
                         {viewingProject.slots} placement{viewingProject.slots !== 1 ? 's' : ''}
-                        {' · Recommended shortlist: '}{Math.min(viewingProject.slots + 1, (applicationsByProject[viewingProject.id] || []).length) || viewingProject.slots + 1}-{Math.min(viewingProject.slots + 2, (applicationsByProject[viewingProject.id] || []).length) || viewingProject.slots + 2} candidates
+                        {' · Recommended shortlist: '}{Math.min(viewingProject.slots + 1, (applicationsByProject[viewingProject.id] || []).length) || viewingProject.slots + 1}–{Math.min(viewingProject.slots + 2, (applicationsByProject[viewingProject.id] || []).length) || viewingProject.slots + 2} candidates
                       </p>
                       {(() => {
                         const dispatchedCount = apps.filter(a => a.shortlistedFor === viewingProject.id && a.status === 'Shortlisted for Interview').length;
@@ -771,8 +772,9 @@ export default function ShortlistingReviewPage() {
                   </div>
                 </>
               ) : (
-                <div className="flex-1 flex items-center justify-center text-body-md text-fg-muted py-20">
-                  Select a project to view applicants.
+                <div className="flex-1 flex flex-col items-center justify-center text-center text-body-md text-fg-muted py-20">
+                  <p className="font-semibold text-fg">Select a project to review</p>
+                  <p>Choose a project from the left panel to view its system-ranked applicants.</p>
                 </div>
               )}
             </div>
@@ -812,7 +814,7 @@ export default function ShortlistingReviewPage() {
                   <div className="min-w-0">
                     <p className="text-body-sm font-semibold text-fg truncate">{proj?.title || pid}</p>
                     <p className="text-body-sm text-fg-muted truncate">
-                      {newIds.map(appId => apps.find(a => a.id === appId)?.name).filter(Boolean).join(', ') || 'No new candidates'}
+                      {newIds.map(appId => apps.find(a => a.id === appId)?.name).filter(Boolean).join(', ') || 'No new candidates selected'}
                     </p>
                   </div>
                   <span className="shrink-0 text-body-sm font-medium text-fg">
@@ -853,7 +855,7 @@ export default function ShortlistingReviewPage() {
               </p>
               {belowRecommendedProjects.length > 0 && (
                 <p className="text-body-sm text-warning/80">
-                  {belowRecommendedProjects.length} project{belowRecommendedProjects.length !== 1 ? 's' : ''} is below the recommended shortlist. IO may proceed with this exception.
+                  {belowRecommendedProjects.length} project{belowRecommendedProjects.length !== 1 ? 's are' : ' is'} below the recommended shortlist. IO may proceed with this exception.
                 </p>
               )}
               <p className="text-body-sm text-warning/80">
@@ -1008,7 +1010,6 @@ function CandidateList({
                 onClick={onToggleExpanded}
                 className="flex items-center gap-1 text-body-sm font-medium text-accent hover:underline"
               >
-                {expanded ? `Hide ${eligibleRows.length} eligible applicant${eligibleRows.length !== 1 ? 's' : ''}` : `Show ${eligibleRows.length} eligible applicant${eligibleRows.length !== 1 ? 's' : ''}`}
                 <ChevronDown size={16} className={cn('transition-transform', expanded && 'rotate-180')} />
               </button>
             </div>
@@ -1142,7 +1143,7 @@ function CandidateRowCard({
               : 'bg-danger-bg text-danger border-danger/30'
           )}>
             {row.disciplineMatch ? <Check size={10} /> : <span className="text-[10px]">×</span>}
-            {row.disciplineMatch ? 'Discipline of Study' : 'Discipline match'}
+            {row.disciplineMatch ? 'Discipline of Study' : 'Discipline mismatch'}
           </span>
           <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-bg-subtle text-fg-muted border border-border">
             {row.skillsMatched} / {row.skillsTotal} skills

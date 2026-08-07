@@ -6,6 +6,8 @@ import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
 import EmptyState from '@/components/ui-legacy/empty-state';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { SuccessCelebration } from '@/components/ui-legacy/success-celebration';
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Inbox, CheckCircle2, Calendar, ListFilter, Filter } from 'lucide-react';
@@ -16,9 +18,11 @@ import { cn } from '@/lib/utils';
 import { useToast, Toast } from '@/components/ui-legacy/toast';
 import {
   groupRequests, isGroupClosed, groupTotals, submittedForGroup, projectMatchesRequest,
+  requestYearLabel,
   type RequestGroup,
 } from '@/lib/request-groups';
 import type { ProjectRequest, ProjectSubmissionBatch } from '@/lib/types';
+import { saveUtCatalogPath, saveUtTrack } from '@/lib/ut-track';
 
 const REQUEST_CATEGORY_LABELS: Record<string, string> = {
   University: 'University',
@@ -29,7 +33,7 @@ const REQUEST_CATEGORY_LABELS: Record<string, string> = {
   'Post Junior College/Post Polytechnic Student': 'Post Junior College / Post Polytechnic',
   'Integrated Programme (IP)': 'Integrated Programme (IP)',
   'Undergraduate Scholar/Merit Scholar': 'University',
-  'Undergraduate Student': 'University',
+  'Undergraduate Student': 'Undergraduate Student',
   'Junior College Scholar/Junior College Student': 'Junior College',
   'Polytechnic Scholar/Polytechnic Student': 'Polytechnic',
   'Young Defence Scientist Programme': 'Integrated Programme (IP)',
@@ -144,11 +148,12 @@ function getCardAction(
 ): { label: string; mode: 'upload' | 'view' } {
   const submitted = submittedForGroup(group, batches);
   const hasIssue = submitted.some(p => p.status === 'rejected' || p.status === 'returnedForUpdate');
-  const { uploaded, placements } = groupTotals(group);
+  const placements = groupTotals(group).placements;
+  const uploaded = groupSubmittedSlots(group, batches);
 
   if (hasIssue) return { label: 'View Submission', mode: 'view' };
   if (uploaded === 0) return { label: 'Start Submission', mode: 'upload' };
-  if (uploaded < placements) return { label: 'View Submission', mode: 'upload' };
+  // if (uploaded < placements) return { label: 'Continue Submission', mode: 'upload' };
   return { label: 'View Submission', mode: 'view' };
 }
 
@@ -269,6 +274,7 @@ export default function AdPncSubmissionsPage() {
   const [progMap,  setProgMap]  = useState<Record<string, string>>({});
   const [tab, setTab] = useState<'open' | 'done'>('open');
   const [statusFilters, setStatusFilters] = useState<string[]>([]);
+  const [submittedDialog, setSubmittedDialog] = useState(false);
 
   useEffect(() => {
     // Surface a one-shot flash toast set by the upload/create flows before redirect.
@@ -278,6 +284,14 @@ export default function AdPncSubmissionsPage() {
         sessionStorage.removeItem('dsta_flash');
         const { message, tone } = JSON.parse(raw);
         if (message) showToast(message, tone ?? 'success');
+      }
+    } catch {}
+
+    try {
+      const raw = sessionStorage.getItem('dsta_submissions_success_dialog');
+      if (raw) {
+        setSubmittedDialog(true);
+        sessionStorage.removeItem('dsta_submissions_success_dialog');
       }
     } catch {}
 
@@ -389,6 +403,21 @@ export default function AdPncSubmissionsPage() {
         </>
       )}
 
+      <Dialog open={submittedDialog} onOpenChange={(open) => { if (!open) setSubmittedDialog(false); }}>
+        <DialogContent className="border-none bg-transparent p-0 shadow-none">
+          <SuccessCelebration
+            title="Task Completed"
+            message="You have successfully completed this test task. Your responses have been recorded."
+            buttonText="Back to Tasks"
+            onButtonClick={() => {
+              setSubmittedDialog(false);
+              saveUtTrack('staff');
+              saveUtCatalogPath('ad-pnc');
+              router.push('/start-tasks');
+            }}
+          />
+        </DialogContent>
+      </Dialog>
       <Toast message={toastMsg} />
     </Shell>
   );
@@ -411,7 +440,7 @@ function RequestCard({
   const counts = getProjectStatusCounts(group, batches);
   const returnedForUpdate = getReturnedForUpdateProjects(group, batches);
   const action = getCardAction(group, batches);
-  const pc = group.requests[0]?.programmeCenter ?? '—';
+  const pc = group.requests[0]?.programmeCenter ?? 'IO Admin';
 
   const projectStatusItems = [
     counts.notSubmitted > 0 && { key: 'notSubmitted', label: 'Not submitted', count: counts.notSubmitted, cls: textOnly(STATUS_COLOURS.draft) },
@@ -428,10 +457,10 @@ function RequestCard({
       <div className="flex flex-col gap-3 border-border px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h3 className="text-headline-sm text-fg">
-            Request from {group.senderName ?? 'IO Admin'}
+            {pc}:{requestYearLabel(group, 'sentDate')} Internship Project Request
           </h3>
           <p className="mt-0.5 text-body-sm text-fg-muted">
-            Sent {fmtDate(group.sentDate)} · {pc}
+            Sent {fmtDate(group.sentDate)}
           </p>
         </div>
         <span className={cn('badge text-caption font-normal shrink-0', GROUP_STATUS_COLOURS[badge.label])}>{badge.label}</span>
@@ -476,7 +505,7 @@ function RequestCard({
         {/* Project Statuses */}
         <div>
           <h4 className="text-label-md mb-3 font-semibold text-fg">Project Statuses</h4>
-          {projectStatusItems.length === 0 ? (
+          {projectStatusItems.length === 0 || (projectStatusItems.length === 1 && projectStatusItems[0].key === 'notSubmitted') ? (
             <p className="text-body-sm text-fg-muted">No project yet.</p>
           ) : (
             <div className="flex flex-wrap items-center gap-y-2 text-body-sm">

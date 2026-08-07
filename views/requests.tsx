@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect, Fragment } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
 import Modal from '@/components/ui-legacy/modal';
 import DatePicker from '@/components/ui-legacy/date-picker';
 import TableToolbar from '@/components/ui-legacy/table-toolbar';
+import { SuccessCelebration } from '@/components/ui-legacy/success-celebration';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
@@ -59,7 +60,7 @@ import {
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import {
   Send, Check, X, FileText, ChevronRight, Filter, MoreVertical, Eye, Bell, CalendarClock, Pencil, Trash2, Ban,
-  ArrowUp, ArrowDown, ArrowUpDown, CornerDownRight, Plus, ArrowLeft, Lock,
+  ArrowUp, ArrowDown, ArrowUpDown, CornerDownRight, Plus, ArrowLeft, Lock, Info,
 } from 'lucide-react';
 import { CONTACTS, STATUS_COLOURS, progEducationLevelMap, batchEducationLevel } from '@/lib/data';
 import { projectMatchesRequest } from '@/lib/request-groups';
@@ -71,6 +72,7 @@ import { loadRequestAuditLogs, loadRequests, saveRequestAuditLogs, saveRequests,
 import { useProgramme } from '@/lib/programme-context';
 import { addNotification } from '@/lib/notifications';
 import { cn, exportToCSV, exportToXLSX } from '@/lib/utils';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Toast, useToast } from '@/components/ui-legacy/toast';
 import { TruncatedTooltip } from '@/components/ui-legacy/truncated-tooltip';
 import type {
@@ -662,10 +664,13 @@ const DEMO_REQUEST_IDS = new Set([
 /* ── Page ─────────────────────────────────────────────────────────────────── */
 export default function RequestsPage() {
   const router   = useRouter();
+  const searchParams = useSearchParams();
   const { role, roleReady, profile } = useRole();
   const { progOpts } = useProgramme();
   const progMap  = Object.fromEntries(progOpts.map(p => [p.value, p.label]));
   const { toast, showToast } = useToast();
+
+  const [showSubmittedDialog, setShowSubmittedDialog] = useState(false);
 
   const [reqs,       setReqs]       = useState<ProjectRequest[]>(loadRequests());
   const [batches,    setBatches]    = useState<ProjectSubmissionBatch[]>([]);
@@ -1615,7 +1620,9 @@ export default function RequestsPage() {
             <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('slots')?.getSize()} truncate>{r.slots}</TableCell>
           )}
           <TableCell className="px-4 py-3" maxWidth={table.getColumn('status')?.getSize()}>
-            <span className="badge text-caption font-normal text-warning">Pending</span>
+            <span className={cn('badge text-caption font-normal', r.status === 'returnedForUpdate' ? 'text-danger' : 'text-warning')}>
+              {r.status === 'returnedForUpdate' ? 'Return for Update' : 'Pending'}
+            </span>
           </TableCell>
           <TableCell className="px-4 py-3" maxWidth={table.getColumn('actions')?.getSize()} onClick={e => e.stopPropagation()}>
             <Menu>
@@ -2137,6 +2144,10 @@ export default function RequestsPage() {
       sessionStorage.removeItem('dsta_pending_toast_title');
       showToast(msg, 'success', toastTitle ?? undefined);
     }
+    if (searchParams.get('submitted') === '1') {
+      setShowSubmittedDialog(true);
+    }
+
     const targetTab =
       sessionStorage.getItem('dsta_requests_target_tab') ??
       new URLSearchParams(window.location.search).get('tab');
@@ -2572,7 +2583,7 @@ export default function RequestsPage() {
 
   /* ── Tab + search + filter + sort (submissions tabs) ─────────────────── */
   const tabRows = flatRows.filter(r => {
-    if (tab === 'pending')    return r.status === 'pending';
+    if (tab === 'pending')    return r.status === 'pending' || r.status === 'returnedForUpdate';
     if (tab === 'pendingDce') return r.status === 'frozen';
     if (tab === 'rejected')   return r.status === 'rejected' || r.status === 'returnedForUpdate';
     if (tab === 'approved')   return r.status === 'approved';
@@ -2606,7 +2617,7 @@ export default function RequestsPage() {
     return ((va as number) - (vb as number)) * sortDir;
   });
 
-  const pendingKeys    = tableRows.filter(r => r.status === 'pending').map(r => r.key);
+  const pendingKeys    = tableRows.filter(r => r.status === 'pending' || r.status === 'returnedForUpdate').map(r => r.key);
   const allPendingSel  = pendingKeys.length > 0 && pendingKeys.every(k => selectedKeys.has(k));
   const somePendingSel = pendingKeys.some(k => selectedKeys.has(k));
 
@@ -2661,7 +2672,7 @@ export default function RequestsPage() {
 
   const tabCounts = {
     sent:       pcGroups.length,
-    pending:    flatRows.filter(r => r.status === 'pending').length,
+    pending:    flatRows.filter(r => r.status === 'pending' || r.status === 'returnedForUpdate').length,
     pendingDce: flatRows.filter(r => r.status === 'frozen').length,
     pendingAll: flatRows.filter(r => r.status === 'pending' || r.status === 'frozen').length,
     rejected:   flatRows.filter(r => r.status === 'rejected' || r.status === 'returnedForUpdate').length,
@@ -2749,6 +2760,15 @@ export default function RequestsPage() {
           ariaLabel="Project requests workspace"
         />
       </div>
+      
+      {topTab === 'submissions' && (
+        <Alert variant="default" className="mb-6 shrink-0 bg-[#F3EFE5] border-[#E7E4DD]">
+          <Info size={16} className="shrink-0 text-fg-muted" />
+          <AlertDescription>
+            Lock projects before editing - Select a project and click Lock for Review. Once locked, you can edit the project details and proceed with the review.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* ── Main table card ────────────────────────────────────────────────── */}
       <div className="bg-surface rounded-lg border border-border overflow-hidden shadow-sm">
@@ -2987,6 +3007,7 @@ export default function RequestsPage() {
         ) : (
           /* ── Submissions tabs ──────────────────────────────────────────── */
           <>
+
             {tab === 'pending' && (
               <div className="flex items-center gap-3 mb-3 px-4 py-2.5 bg-bg-muted rounded-lg">
                 <span className="text-body-sm font-semibold flex-1">
@@ -3361,6 +3382,26 @@ export default function RequestsPage() {
           pos={statusCFPos}
         />
       )}
+
+      <Dialog
+        open={showSubmittedDialog}
+        onOpenChange={(open) => {
+          setShowSubmittedDialog(open);
+          if (!open) router.replace('/requests');
+        }}
+      >
+        <DialogContent className="border-none bg-transparent p-0 shadow-none">
+          <SuccessCelebration
+            title="Task Completed"
+            message="You have successfully completed this test task. Your responses have been recorded."
+            buttonText="Back to Tasks"
+            onButtonClick={() => {
+              setShowSubmittedDialog(false);
+              router.push('/start-tasks');
+            }}
+          />
+        </DialogContent>
+      </Dialog>
 
       <Toast message={toast} />
     </Shell>

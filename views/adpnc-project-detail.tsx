@@ -48,6 +48,7 @@ function requestPeriodForProject(request: ProjectRequest | undefined): { start: 
 }
 
 function projectPeriod(project: SubmittedProject, request?: ProjectRequest) {
+  if (project.calendarPeriod) return project.calendarPeriod;
   const requestPeriod = requestPeriodForProject(request);
   const start = project.internshipPeriodStart || requestPeriod.start || 'Start month';
   const end = project.internshipPeriodEnd || requestPeriod.end || 'End month';
@@ -160,7 +161,7 @@ export default function AdPncProjectDetailPage() {
       <div className="space-y-5 min-h-[calc(100vh-280px)]">
         {group && (
           <section className="rounded-lg border border-border bg-surface p-5">
-            <RequestContextTable requests={group.requests} title="Request Context" />
+            <RequestContextTable requests={group.requests} title="Request Context" batches={batch ? [batch] : undefined} />
           </section>
         )}
 

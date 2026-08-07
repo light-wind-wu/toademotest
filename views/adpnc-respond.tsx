@@ -72,6 +72,7 @@ import {
   requestRawCategory,
   submittedForGroup,
   groupTotals,
+  requestYearLabel,
   type RequestGroup,
 } from '@/lib/request-groups';
 import type { ProjectRequest, ProjectResponseDraft, ProjectSubmissionBatch, RequestStatus, SubmittedProject } from '@/lib/types';
@@ -138,13 +139,6 @@ function requestLineKey(req: ProjectRequest, index: number) {
   return req.id || `${req.uploadToken || 'request'}-${requestRawCategory(req)}-${index}`;
 }
 
-function requestYearLabel(group: RequestGroup): string {
-  const start = group.requests[0]?.periodStart || group.requests[0]?.calendarPeriod;
-  if (!start) return new Date().getFullYear().toString();
-  const year = new Date(start).getFullYear();
-  return isNaN(year) ? new Date().getFullYear().toString() : year.toString();
-}
-
 function requestStatusForGroup(
   group: RequestGroup,
   batches: ProjectSubmissionBatch[],
@@ -175,6 +169,7 @@ function requestPeriodForProject(request: ProjectRequest | undefined): { start: 
 }
 
 function projectPeriod(project: SubmittedProject, request?: ProjectRequest) {
+  if (project.calendarPeriod) return project.calendarPeriod;
   const requestPeriod = requestPeriodForProject(request);
   const start = project.internshipPeriodStart || requestPeriod.start || 'Start month';
   const end = project.internshipPeriodEnd || requestPeriod.end || 'End month';
@@ -633,6 +628,7 @@ function projectFromUploadRow(
     .filter(Boolean);
   const startMonth = pickValue(values, 'Internship Start Month', 'internshipStartMonth') || periodParts[0] || '';
   const endMonth = pickValue(values, 'Internship End Month', 'internshipEndMonth') || periodParts[1] || periodParts[0] || '';
+  const calendarPeriod = pickValue(values, 'Calendar Period', 'calendarPeriod', 'internshipPeriod') || (startMonth && endMonth ? `${startMonth} – ${endMonth}` : undefined);
 
   return {
     id: `sub-inline-${Date.now()}-${index}`,
@@ -667,6 +663,7 @@ function projectFromUploadRow(
     internshipDuration: pickValue(values, 'Project Duration', 'Internship Duration', 'Duration', 'duration') || undefined,
     internshipPeriodStart: periodLabelToMMMYY(startMonth),
     internshipPeriodEnd: periodLabelToMMMYY(endMonth),
+    calendarPeriod,
     workingLocation: pickValue(values, 'Working Location', 'workingLocation') || undefined,
   };
 }
@@ -767,7 +764,7 @@ function parseStructuredWorkbook(
       .trim()) || defaultCategory;
 
     const cScope = idx(/project scope/i);
-    const cTech = idx(/tech competency|tech domain/i);
+    const cTech = idx(/tech competency|tech domain|skillset/i);
     const cDisc = idx(/discipline/i);
     const cPMName = idx(/primary mentor name|full name of main mentor|main mentor name/i);
     const cPMAppt = idx(/appointment/i);
@@ -807,6 +804,10 @@ function parseStructuredWorkbook(
         if (parts[1]) barDuration = parts[1];
       }
       const title = at(r, cTitle).trim();
+      if (/^\d+$/.test(title) || (!title && !at(r, cScope) && !at(r, cPlace) && !at(r, cPMName) && !at(r, cPMEmail))) {
+        r += 1;
+        continue;
+      }
       const hasTemplateContext = Boolean(barPeriod || title || at(r, cPlace) || at(r, cScope));
       if (hasTemplateContext && !/^placements filled/i.test(title) && !/^placements filled/i.test(barRaw)) {
         const stack = (colIdx: number) => {
@@ -816,12 +817,14 @@ function parseStructuredWorkbook(
           return out;
         };
         const disc = stack(cDisc);
+        const techStack = stack(cTech);
         const [pStart, pEnd] = barPeriod.split(/\s*[–-]\s*/);
         const values: Record<string, string> = {
           'Project Title': title,
           'Intern Category': category,
           'Project Scope': at(r, cScope),
-          'Tech Domain': stack(cTech)[0] ?? '',
+          'Tech Domain': techStack[0] ?? '',
+          'Skills / Knowledge Required': techStack.join(', '),
           'Discipline of Study 1': disc[0] ?? '',
           'Discipline of Study 2': disc[1] ?? '',
           'Discipline of Study 3': disc[2] ?? '',
@@ -1230,6 +1233,7 @@ export default function AdPncRespondPage() {
         message: `${submitProjects.length} project${submitProjects.length !== 1 ? 's' : ''} submitted for review.`,
         tone: 'success',
       }));
+      sessionStorage.setItem('dsta_submissions_success_dialog', '1');
     } catch {}
     router.push('/submissions');
   }
@@ -1390,9 +1394,6 @@ export default function AdPncRespondPage() {
               <div>
                 <div className="flex flex-wrap items-center gap-3">
                   <h1 className="text-headline-lg text-fg mb-1">Request for {requestYear} Projects</h1>
-                  {requestStatus && (
-                    <Badge variant={requestStatus.variant}>{requestStatus.label}</Badge>
-                  )}
                 </div>
                 <p className="text-body-sm text-fg-muted">
                   {visibleProjects.length} project{visibleProjects.length !== 1 ? 's' : ''} · {selectedProjectIds.size} selected across tabs
@@ -1422,7 +1423,7 @@ export default function AdPncRespondPage() {
 
           {/* Request Context */}
           <div className="rounded-lg border border-border bg-surface p-5">
-            <RequestContextTable requests={group.requests} title="Placement requirements" />
+            <RequestContextTable requests={group.requests} title="Placement requirements" batches={batches} />
           </div>
 
           {visibleProjects.length === 0 ? (
@@ -1647,38 +1648,13 @@ export default function AdPncRespondPage() {
           )}
 
           <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-gradient-to-b from-surface to-bg px-[clamp(24px,2.6vw,40px)] py-2">
-            <p className="text-body-sm text-fg">
-              {isUploadMode
-                ? visibleProjects.length > 0
-                  ? `Submitting ${selectedProjectIds.size} of ${activeVisibleProjects.length} project${activeVisibleProjects.length !== 1 ? 's' : ''}`
-                  : 'No projects added yet'
-                : visibleProjects.length > 0
-                  ? `${visibleProjects.length} project${visibleProjects.length !== 1 ? 's' : ''}`
-                  : 'No projects submitted'}
-            </p>
+            <p className="text-body-sm text-fg"></p>
             <div className="flex items-center gap-3">
-              {!isUploadMode && (
-                <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>
-                  Back
-                </Button>
-              )}
-              {isUploadMode && visibleProjects.length === 0 && (
+              <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>
+                Cancel
+              </Button>
+              {isUploadMode && visibleProjects.length >= 0 && (
                 <>
-                  <Button variant="outline" size="md" onClick={triggerUpload}>
-                    <Upload size={15} />
-                    Upload Excel
-                  </Button>
-                  <Button size="md" onClick={handleCreateProject}>
-                    <Plus size={15} />
-                    Create a New Project
-                  </Button>
-                </>
-              )}
-              {isUploadMode && visibleProjects.length > 0 && (
-                <>
-                  <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>
-                    Back
-                  </Button>
                   <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>Save and Exit</Button>
                   <Button size="md" disabled={!canSubmit} onClick={() => setConfirmSubmitOpen(true)}>
                     Submit
@@ -1833,8 +1809,7 @@ function UploadSummaryDialog({
         <div className="max-h-[60vh] space-y-5 overflow-y-auto px-6 py-5">
           <div className="rounded-lg border border-border bg-bg-subtle p-4">
             <p className="text-body-sm font-semibold text-fg">{review.fileName}</p>
-            <div className="mt-3 grid gap-3 sm:grid-cols-3">
-              <SummaryTile label="Rows found" value={review.allProjects.length} />
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <SummaryTile label="Ready to import" value={review.readyProjects.length} valueClassName="text-success" />
               <SummaryTile label="Rows with issues" value={issueRows} valueClassName={issueRows ? 'text-danger' : 'text-success'} />
             </div>
@@ -1910,9 +1885,6 @@ function UploadSummaryDialog({
         </div>
         <DialogFooter className="border-t border-border px-6 py-4">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button variant="outline" onClick={onImportDemo} disabled={!canImportDemo}>
-            Demo data
-          </Button>
           <Button onClick={onImport} disabled={!canImport}>
             Import as drafts
           </Button>

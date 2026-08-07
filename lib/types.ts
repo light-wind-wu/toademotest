@@ -645,6 +645,8 @@ export interface SubmittedProject {
   // Internship period (month granularity, "MMMYY" e.g. "Jun26"). end = start + duration months.
   internshipPeriodStart?: string;
   internshipPeriodEnd?:   string;
+  // Optional original display label for the period (e.g. "1 Jul 2026 – 30 Sep 2026").
+  calendarPeriod?:       string;
   workingLocation?:    string;
 }
 

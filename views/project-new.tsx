@@ -911,11 +911,19 @@ export default function ProjectNewPage() {
           </div>
         </div>
 
-        <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-end gap-3 border-t border-border bg-bg-subtle px-[clamp(24px,2.6vw,40px)] py-2">
-          <Button variant="outline" size="md" onClick={() => router.push(backRoute)}>Cancel</Button>
-          <Button size="md" onClick={handleAddProjectClick} disabled={saving}>
-            {saving ? "Saving..." : "Add Project"}
-          </Button>
+        <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-bg-subtle px-[clamp(24px,2.6vw,40px)] py-2">
+          <p className="text-body-sm text-fg">
+            <Button variant="ghost" size="md" onClick={() => router.push(backRoute)}>
+              Back
+            </Button>
+          </p>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="md" onClick={() => router.push(backRoute)}>Cancel</Button>
+            <Button variant="outline" size="md" onClick={() => router.push(backRoute)}>Save and Exit</Button>
+            <Button size="md" onClick={handleAddProjectClick} disabled={saving}>
+              {saving ? "Saving..." : "Add Project"}
+            </Button>
+          </div>
         </div>
 
         <Dialog open={confirmAddOpen} onOpenChange={setConfirmAddOpen}>

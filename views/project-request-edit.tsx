@@ -726,7 +726,7 @@ function RequestEditor({
               >
                 <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !model.programmeCentre && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select programme centre" /></SelectTrigger>
                 <SelectContent>
-                  {programmeCentreOptions().map(option => <SelectItem key={option.value} value={option.value}>{option.value}</SelectItem>)}
+                  {programmeCentreOptions().map(option => <SelectItem key={option.value} value={option.value} disabled={option.value !== 'PC3'}>{option.value}</SelectItem>)}
                 </SelectContent>
               </Select>
               <FieldRequired show={showErrors && !model.programmeCentre} />
@@ -1650,7 +1650,7 @@ export default function ProjectRequestEditPage() {
   const params = useParams();
   const routeKey = decodeRouteParam(params.id);
   const { profile } = useRole();
-  const { setDirty, safeNavigate } = useUnsavedChanges();
+  const { setDirty, safeNavigate, requestLeave } = useUnsavedChanges();
   const { toast, showToast } = useToast();
   const initialSnapshot = useRef<string | null>(null);
   const [requests, setRequests] = useState<ProjectRequest[]>([]);
@@ -2483,20 +2483,23 @@ export default function ProjectRequestEditPage() {
 
         {model && (
           <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-gradient-to-b from-surface to-bg px-[clamp(24px,2.6vw,40px)] py-2">
-            <Button variant="ghost" size="md" onClick={navigateToRequests}>
-              Back
-            </Button>
-            <div className="flex items-center gap-3">
+            {step > 1 && (
+              <Button variant="ghost" size="md" onClick={() => setStep(1)}>
+                Back
+              </Button>
+            )}
+            <div className="flex items-center gap-3 ml-auto">
               {mode === 'draft' ? (
                 <>
                   {step === 1 ? (
                     <>
+                      <Button variant="outline" size="md" onClick={() => requestLeave('/requests')}>Cancel</Button>
                       <Button variant="outline" size="md" onClick={saveDraft}>Save as Draft</Button>
                       <Button size="md" onClick={() => { if (missing.length > 0) { setShowErrors(true); } else { setShowErrors(false); setStep(2); } }}>Next</Button>
                     </>
                   ) : (
                     <>
-                      <Button variant="outline" size="md" onClick={() => setStep(1)}>Cancel</Button>
+                      <Button variant="outline" size="md" onClick={() => requestLeave('/requests')}>Cancel</Button>
                       <Button variant="outline" size="md" onClick={saveDraft}>Save as Draft</Button>
                       <Button size="md" onClick={() => setDraftConfirmSendOpen(true)}><Send size={16} />Confirm Send</Button>
                     </>
@@ -2504,6 +2507,7 @@ export default function ProjectRequestEditPage() {
                 </>
               ) : (
                 <>
+                  <Button variant="outline" size="md" onClick={() => requestLeave('/requests')}>Cancel</Button>
                   {canManageOpen && (
                     step === 1 ? (
                       <>
@@ -2512,7 +2516,6 @@ export default function ProjectRequestEditPage() {
                       </>
                     ) : (
                       <>
-                        <Button variant="outline" size="md" onClick={() => setStep(1)}>Cancel</Button>
                         <Button size="md" onClick={() => openPreview('combined')}><Send size={16} />Confirm Send</Button>
                       </>
                     )

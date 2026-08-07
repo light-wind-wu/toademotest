@@ -9,8 +9,9 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import { useSession } from '@/lib/session';
-import { loadRequests } from '@/lib/storage';
+import { loadRequests, loadSubmissions, saveRequests, saveSubmissions } from '@/lib/storage';
 import { loadUtCatalogPath, loadUtTrack, type UtCatalogPath, type UtTrack } from '@/lib/ut-track';
+import type { ProjectSubmissionBatch, SubmittedProject } from '@/lib/types';
 import Topbar from '@/components/layout/topbar';
 import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
 import {
@@ -40,8 +41,224 @@ const CARD_BORDER = 'rgba(231, 228, 221, 1)';
 const CARD_SHADOW =
   '0px 4px 6px -4px rgba(0, 0, 0, 0.05), 0px 10px 15px -3px rgba(0, 0, 0, 0.1)';
 
-/** Same token the AD (P&C) inbox uses for PC3 2027 (“Request for 2027 Projects”). */
-const AD_PNC_PC3_TOKEN_FALLBACK = 'seed-pc3-2027';
+/** Same token the AD (P&C) inbox uses for the PC3 UG request (“2027 Internship Project Request”). */
+const AD_PNC_PC3_TOKEN_FALLBACK = 'seed-pc3-ug-2027';
+
+/** Placements shown by the returned-for-update scenario for the PC3 UG request. */
+const AD_PNC_PC3_PLACEMENTS = 7;
+
+/** Seed placements for the PC3 UG request (reset value for Task 1). */
+const AD_PNC_PC3_BASE_PLACEMENTS = 4;
+
+/* ── PC3 UG returned-for-update scenario ───────────────────────────────────
+   Task 2 seeds a fixed “returned” state right before navigating, so both the
+   respond screen and the /submissions inbox card show:
+   1 not submitted · 2 pending · 1 returned for update · 3 approved
+   (placements 7, six projects × 1 slot). Idempotent. */
+function pc3UgReturnedBatch(): ProjectSubmissionBatch {
+  const base = {
+    requestLineId: 'seed-req-pc3-10',
+    mentorDept: 'DSTA',
+    skills: ['Python', 'Data Analysis'],
+    discipline: 'Computer Science / Data Science / Operations Research',
+    slots: 1,
+    preferredEducation: 'Undergraduate Student',
+    minGpa: '',
+    projectType: 'Technical',
+    additionalRequirements: '',
+    aiCheck: { grammar: 'pass' as const, level: 'pass' as const, notes: [] },
+    pc: 'PC3',
+    educationLevel: 'Undergraduate Student' as const,
+    internshipDuration: '2',
+    internshipPeriodStart: 'Jan 2027',
+    internshipPeriodEnd: 'Jun 2027',
+    workingLocation: 'DSTA',
+  };
+
+  const projects: SubmittedProject[] = [
+    {
+      ...base,
+      id: 'sub-pc3-ug-return-001',
+      title: 'AI-Enabled Defence Logistics Forecasting',
+      description:
+        'Develop a prototype that uses historical logistics data to forecast equipment demand and identify potential supply shortages. The intern will clean and analyse data, compare forecasting approaches, and evaluate model performance. Deliverables include a working prototype, an evaluation report, and a dashboard presenting key forecasts.',
+      mentor: 'Wei Jian Lim',
+      mentorAppointment: 'Senior Engineer',
+      mentorEmail: 'weijian.lim@dsta.gov.sg',
+      mentorUserId: 'mentor-weijian',
+      mentorBio: 'Senior engineer focused on applied analytics and logistics modelling.',
+      skills: ['Python', 'Data Analysis', 'Machine Learning'],
+      status: 'returnedForUpdate',
+      remarks:
+        'Please narrow the scope to one equipment category, use only anonymised data, and include a baseline comparison for model evaluation.',
+      techDomain: 'Digital',
+      emergingArea: 'Data Analytics',
+    },
+    {
+      ...base,
+      id: 'sub-pc3-ug-pending-002',
+      title: 'Cyber Threat Intelligence Automation',
+      description:
+        'Build a pipeline that ingests open-source threat feeds, deduplicates indicators, and surfaces actionable alerts for the SOC team.',
+      mentor: 'Dr. Nadia Rahman',
+      mentorAppointment: 'Senior Specialist',
+      mentorEmail: 'nadia_rahman@dsta.gov.sg',
+      mentorUserId: 'mentor-nadia',
+      mentorBio: 'Specialises in threat intelligence and secure automation.',
+      skills: ['Python', 'Cyber Security', 'Automation'],
+      status: 'pending',
+      techDomain: 'Cyber',
+      emergingArea: 'Cybersecurity',
+    },
+    {
+      ...base,
+      id: 'sub-pc3-ug-pending-003',
+      title: 'Autonomous Inspection Drone for Hangar Maintenance',
+      description:
+        'Develop flight-planning and image-capture logic for a small drone that inspects aircraft hangar structures, with anomaly detection on captured imagery.',
+      mentor: 'Dr. Samuel Yeo',
+      mentorAppointment: 'Principal Engineer',
+      mentorEmail: 'samuel_yeo@dsta.gov.sg',
+      mentorUserId: 'mentor-samuel',
+      mentorBio: 'Specialises in perception, sensor fusion and mobile robot autonomy.',
+      skills: ['Python', 'ROS', 'Computer Vision'],
+      status: 'pending',
+      techDomain: 'Autonomy',
+      emergingArea: 'Robotics & Autonomous Systems',
+    },
+    {
+      ...base,
+      id: 'sub-pc3-ug-approved-004',
+      title: 'Secure Supply Chain Analytics Dashboard',
+      description:
+        'Prototype a dashboard that visualises supply chain risk signals from structured datasets, with role-based access and export controls.',
+      mentor: 'Michael Lim',
+      mentorAppointment: 'Lead Engineer',
+      mentorEmail: 'michael_lim@dsta.gov.sg',
+      mentorUserId: 'mentor-michael',
+      mentorBio: 'Engineering lead focused on secure data platforms and dashboards.',
+      skills: ['Data Analysis', 'Dashboarding', 'TypeScript'],
+      status: 'approved',
+      reviewedAt: '2026-07-10',
+      reviewedBy: 'Davina Tan',
+      techDomain: 'Digital',
+      emergingArea: 'Data Analytics',
+    },
+    {
+      ...base,
+      id: 'sub-pc3-ug-approved-005',
+      title: 'Signal Classification for Spectrum Monitoring',
+      description:
+        'Train and evaluate machine-learning classifiers that identify radio emitters in congested spectrum, with explainability for analyst review.',
+      mentor: 'Ravi Menon',
+      mentorAppointment: 'Lead Engineer',
+      mentorEmail: 'ravi_menon@dsta.gov.sg',
+      mentorUserId: 'mentor-ravi',
+      mentorBio: 'Specialises in signal processing and applied machine learning.',
+      skills: ['Machine Learning', 'Signal Processing', 'PyTorch'],
+      status: 'approved',
+      reviewedAt: '2026-07-10',
+      reviewedBy: 'Davina Tan',
+      techDomain: 'Sensors',
+      emergingArea: 'AI/ML',
+    },
+    {
+      ...base,
+      id: 'sub-pc3-ug-approved-006',
+      title: 'Predictive Maintenance for Mission-Critical Systems',
+      description:
+        'Develop models that forecast component wear from sensor telemetry to schedule maintenance proactively across mission-critical platforms.',
+      mentor: 'Gerald Tan',
+      mentorAppointment: 'Senior Engineer',
+      mentorEmail: 'gerald_tan@dsta.gov.sg',
+      mentorUserId: 'mentor-gerald',
+      mentorBio: 'Builds data-driven tools for platform sustainment and readiness.',
+      skills: ['Data Analysis', 'Predictive Maintenance', 'Python'],
+      status: 'approved',
+      reviewedAt: '2026-07-10',
+      reviewedBy: 'Davina Tan',
+      techDomain: 'Digital',
+      emergingArea: 'Data Analytics',
+    },
+    // {
+    //   ...base,
+    //   id: 'sub-pc3-ug-approved-007',
+    //   title: 'Autonomous Threat Detection for Perimeter Security',
+    //   description:
+    //     'Prototype a low-latency detection pipeline that classifies acoustic and motion sensor events along secure perimeters, reducing false alarms for operators.',
+    //   mentor: 'Linda Ong',
+    //   mentorAppointment: 'Principal Engineer',
+    //   mentorEmail: 'linda_ong@dsta.gov.sg',
+    //   mentorUserId: 'mentor-linda',
+    //   mentorBio: 'Leads applied AI projects for situational awareness and sensor fusion.',
+    //   skills: ['Python', 'Machine Learning', 'Signal Processing'],
+    //   status: 'approved',
+    //   reviewedAt: '2026-07-10',
+    //   reviewedBy: 'Davina Tan',
+    //   techDomain: 'Sensors',
+    //   emergingArea: 'AI/ML',
+    // },
+  ];
+
+  return {
+    id: 'batch-pc3-ug-2027-returned',
+    uploadToken: 'seed-pc3-ug-2027',
+    pc: 'james.tan@dsta.gov.sg',
+    pcHead: 'James Tan',
+    submittedBy: 'James Tan',
+    programme: '',
+    educationLevel: 'Undergraduate Student',
+    requestedEducationLevels: ['Undergraduate Student'],
+    placements: 6,
+    uploadedAt: '2026-07-08',
+    projects,
+  };
+}
+
+/** Write the PC3 UG returned-for-update state to localStorage (idempotent). */
+function seedTask2Scenario(): void {
+  try {
+    const returned = pc3UgReturnedBatch();
+    const nextUploaded = returned.projects
+      .filter(p => p.status !== 'withdrawn')
+      .reduce((sum, p) => sum + p.slots, 0);
+    const nextStatus: import('@/lib/types').RequestStatus =
+      nextUploaded > AD_PNC_PC3_PLACEMENTS
+        ? 'excess'
+        : nextUploaded === AD_PNC_PC3_PLACEMENTS
+          ? 'matched'
+          : nextUploaded > 0
+            ? 'partial'
+            : 'pending';
+    saveRequests(
+      loadRequests().map(r =>
+        r.id === 'seed-req-pc3-10'
+          ? { ...r, placements: AD_PNC_PC3_PLACEMENTS, uploaded: nextUploaded, status: nextStatus }
+          : r,
+      ),
+    );
+    saveSubmissions([
+      ...loadSubmissions().filter(b => b.uploadToken !== 'seed-pc3-ug-2027'),
+      returned,
+    ]);
+  } catch {
+    /* best-effort seed — non-fatal for a mockup */
+  }
+}
+
+/** Undo the Task 2 scenario so Task 1 starts from the clean seed state. */
+function seedTask1Scenario(): void {
+  try {
+    saveRequests(
+      loadRequests().map(r =>
+        r.id === 'seed-req-pc3-10' ? { ...r, placements: AD_PNC_PC3_BASE_PLACEMENTS, uploaded: 0 } : r,
+      ),
+    );
+    saveSubmissions(loadSubmissions().filter(b => b.uploadToken !== 'seed-pc3-ug-2027'));
+  } catch {
+    /* best-effort reset — non-fatal for a mockup */
+  }
+}
 
 /**
  * Resolve respond URL from the same request list as /submissions
@@ -59,9 +276,9 @@ function resolveAdPncPc3RespondHref(): string {
             r.educationLevel === 'Undergraduate Student'),
       );
     const token = hit?.uploadToken || AD_PNC_PC3_TOKEN_FALLBACK;
-    return `/submissions/respond?token=${encodeURIComponent(token)}&mode=upload`;
+    return `/submissions?token=${encodeURIComponent(token)}&mode=upload`;
   } catch {
-    return `/submissions/respond?token=${encodeURIComponent(AD_PNC_PC3_TOKEN_FALLBACK)}&mode=upload`;
+    return `/submissions?token=${encodeURIComponent(AD_PNC_PC3_TOKEN_FALLBACK)}&mode=upload`;
   }
 }
 
@@ -72,6 +289,8 @@ type TaskDef = {
   href: string;
   /** Optional live resolve (e.g. token from submissions list data). */
   resolveHref?: () => string;
+  /** Runs synchronously right before navigating (used to seed scenario state). */
+  onBeforeNavigate?: () => void;
   /**
    * When false, Start Task stays clickable but opens the out-of-scope dialog
    * instead of navigating (feature not in this UT).
@@ -142,6 +361,7 @@ const AD_PNC_TASKS: TaskDef[] = [
       'Number of placements: 4\n\n' +
       'Complete the project details and submit the project to IO admin for review.',
     href: '/submissions',
+    onBeforeNavigate: seedTask1Scenario,
   },
   {
     id: 2,
@@ -154,6 +374,7 @@ const AD_PNC_TASKS: TaskDef[] = [
       'Develop a prototype using anonymised logistics data for one equipment category to forecast demand and identify potential supply shortages. Compare the forecasting model against a baseline and evaluate its accuracy. Deliverables include a working prototype, an evaluation report, and a forecast dashboard.',
     href: `/submissions/respond?token=${AD_PNC_PC3_TOKEN_FALLBACK}&mode=upload`,
     resolveHref: resolveAdPncPc3RespondHref,
+    onBeforeNavigate: seedTask2Scenario,
   },
 ];
 
@@ -323,6 +544,7 @@ export default function StartTasks() {
       setOutOfScopeOpen(true);
       return;
     }
+    task.onBeforeNavigate?.();
     router.push(task.resolveHref?.() ?? task.href);
   }
 

@@ -16,12 +16,15 @@ interface UnsavedChangesCtx {
   isDirty: boolean;
   setDirty: (v: boolean) => void;
   safeNavigate: (url: string) => void;
+  /** Requests leaving the page, always prompting for confirmation (dirty or not). */
+  requestLeave: (url: string) => void;
 }
 
 const Ctx = createContext<UnsavedChangesCtx>({
   isDirty: false,
   setDirty: () => {},
   safeNavigate: () => {},
+  requestLeave: () => {},
 });
 
 export function useUnsavedChanges() { return useContext(Ctx); }
@@ -40,6 +43,10 @@ export function UnsavedChangesProvider({ children }: { children: React.ReactNode
       router.push(url);
     }
   }, [isDirty, router]);
+
+  const requestLeave = useCallback((url: string) => {
+    setPendingUrl(url);
+  }, []);
 
   useEffect(() => {
     if (!isDirty) return;
@@ -64,14 +71,14 @@ export function UnsavedChangesProvider({ children }: { children: React.ReactNode
   }
 
   return (
-    <Ctx.Provider value={{ isDirty, setDirty, safeNavigate }}>
+    <Ctx.Provider value={{ isDirty, setDirty, safeNavigate, requestLeave }}>
       {children}
       <Dialog open={!!pendingUrl} onOpenChange={open => { if (!open) cancelLeave(); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Unsaved changes</DialogTitle>
+            <DialogTitle>Leave this page?</DialogTitle>
             <DialogDescription>
-              You have unsaved changes that will be lost if you leave this page.
+              Any unsaved changes will be lost if you leave this page.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

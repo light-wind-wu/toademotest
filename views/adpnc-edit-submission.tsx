@@ -17,9 +17,9 @@ import { useToast, Toast } from '@/components/ui-legacy/toast';
 import { addNotification } from '@/lib/notifications';
 import { runAiCheck } from '@/lib/ai-check';
 import { cn } from '@/lib/utils';
-import { loadRequests, loadSubmissions, saveSubmissions } from '@/lib/storage';
-import { groupRequests, requestRawCategory } from '@/lib/request-groups';
-import type { ProjectRequest, ProjectSubmissionBatch, SubmittedProject } from '@/lib/types';
+import { loadRequests, loadSubmissions, saveSubmissions, saveRequests } from '@/lib/storage';
+import { groupRequests, requestRawCategory, projectMatchesRequest } from '@/lib/request-groups';
+import type { ProjectRequest, ProjectSubmissionBatch, RequestStatus, SubmittedProject } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -287,8 +287,31 @@ export default function AdPncEditSubmissionPage() {
     });
     setBatches(updated);
     saveSubmissions(updated);
+
+    const updatedRequests = requests.map(request => {
+      if (request.uploadToken !== batch.uploadToken) return request;
+      const matchingProjects = updated
+        .filter(b => b.uploadToken === batch.uploadToken)
+        .flatMap(b => b.projects)
+        .filter(p => p.status !== 'withdrawn')
+        .filter(p => projectMatchesRequest(p, request));
+      const nextUploaded = matchingProjects.reduce((sum, p) => sum + p.slots, 0);
+      const nextStatus: RequestStatus =
+        nextUploaded > request.placements
+          ? 'excess'
+          : nextUploaded === request.placements
+            ? 'matched'
+            : nextUploaded > 0
+              ? 'partial'
+              : 'pending';
+      return { ...request, uploaded: nextUploaded, created: matchingProjects.length, status: nextStatus };
+    });
+    setRequests(updatedRequests);
+    saveRequests(updatedRequests);
+
     addNotification({ forRole: 'io', title: `Project resubmitted — ${edit.title}`, body: `AD (P&C) has resubmitted "${edit.title}" for ${progMap[batch.programme] ?? batch.programme} after revision. Ready for IO review.`, href: '/projects', tier: 'action' });
     sessionStorage.setItem('dsta_pending_toast', `"${edit.title}" resubmitted for IO review.`);
+    sessionStorage.setItem('dsta_submissions_success_dialog', '1');
     router.push('/submissions');
   }
 
@@ -338,7 +361,7 @@ export default function AdPncEditSubmissionPage() {
         </div>
 
         {group && group.requests.length > 0 && (
-          <RequestContextTable requests={group.requests} className="mb-6 p-5 border border-border" highlightedCategory={edit.educationLevel} />
+          <RequestContextTable requests={group.requests} className="mb-6 p-5 border border-border" highlightedCategory={edit.educationLevel} batches={batches} />
         )}
 
         <div className="space-y-6">
@@ -425,6 +448,7 @@ export default function AdPncEditSubmissionPage() {
                   placeholder="Select tech competencies…"
                   chipClassName="bg-bg-muted text-[rgba(69,85,108,1)]"
                   chips="inline"
+                  error={!!errors.skillsRaw}
                 />
               </Field>
 
@@ -438,6 +462,7 @@ export default function AdPncEditSubmissionPage() {
                   placeholder="Select disciplines…"
                   chipClassName="bg-bg-muted text-[rgba(69,85,108,1)]"
                   chips="inline"
+                  error={!!errors.discipline}
                 />
               </Field>
 
@@ -497,7 +522,7 @@ export default function AdPncEditSubmissionPage() {
           </div>
 
           {/* Audit Log */}
-          {edit && (
+          {!edit && (
             <div className="rounded-lg border border-border bg-surface p-6">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -556,7 +581,7 @@ export default function AdPncEditSubmissionPage() {
             setErrors(validationErrors);
             if (Object.keys(validationErrors).length === 0) setConfirmSaveOpen(true);
           }}>
-            {saving ? 'Saving…' : 'Save Changes'}
+            {saving ? 'Saving…' : 'Submit'}
           </Button>
         </div>
       </div>
@@ -564,9 +589,9 @@ export default function AdPncEditSubmissionPage() {
       <Dialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Save changes?</DialogTitle>
+            <DialogTitle>Send project?</DialogTitle>
             <DialogDescription>
-              This will resubmit the updated project for IO review.
+              Your projects will be sent to the IO review.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -574,7 +599,7 @@ export default function AdPncEditSubmissionPage() {
               Cancel
             </Button>
             <Button onClick={() => { setConfirmSaveOpen(false); handleSave(); }}>
-              Save Changes
+              Confirm
             </Button>
           </DialogFooter>
         </DialogContent>
