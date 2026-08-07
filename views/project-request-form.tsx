@@ -1618,13 +1618,13 @@ export default function ProjectRequestFormPage() {
           <div className="flex items-center gap-3 ml-auto">
             {step === 1 ? (
               <>
-                <Button variant="outline" size="md" onClick={() => requestLeave('/requests')}>Cancel</Button>
+                <Button variant="outline" size="md" onClick={() => { sessionStorage.setItem('dsta_requests_target_tab', 'draft'); requestLeave('/requests'); }}>Cancel</Button>
                 <Button variant="outline" size="md" onClick={handleSaveDraft}>Save as Draft</Button>
                 <Button size="md" onClick={goToPreview}>Next</Button>
               </>
             ) : (
               <>
-                <Button variant="outline" size="md" onClick={() => requestLeave('/requests')}>Cancel</Button>
+                <Button variant="outline" size="md" onClick={() => { sessionStorage.setItem('dsta_requests_target_tab', 'draft'); requestLeave('/requests'); }}>Cancel</Button>
                 <Button variant="outline" size="md" onClick={handleSaveDraft}>Save as Draft</Button>
                 <Button size="md" onClick={() => setConfirmSendOpen(true)}>Confirm Send</Button>
               </>

@@ -62,7 +62,7 @@ import {
   Send, Check, X, FileText, ChevronRight, Filter, MoreVertical, Eye, Bell, CalendarClock, Pencil, Trash2, Ban,
   ArrowUp, ArrowDown, ArrowUpDown, CornerDownRight, Plus, ArrowLeft, Lock, Info,
 } from 'lucide-react';
-import { CONTACTS, STATUS_COLOURS, progEducationLevelMap, batchEducationLevel } from '@/lib/data';
+import { CONTACTS, ITEM_STATUS_COLOURS, STATUS_COLOURS, progEducationLevelMap, batchEducationLevel } from '@/lib/data';
 import { projectMatchesRequest } from '@/lib/request-groups';
 import { parseDisciplines } from '@/lib/disciplines';
 import { downloadRequestTemplateXLSX } from '@/lib/request-template';
@@ -437,10 +437,6 @@ const LINE_STATUS_META = {
   },
 };
 
-function textOnly(cls: string) {
-  return cls.split(' ').filter(c => c.startsWith('text-')).join(' ') || cls;
-}
-
 /* Project request status colours — used for group rows (with background). */
 const REQUEST_STATUS_COLOURS = {
   draft:      STATUS_COLOURS.draft,
@@ -449,16 +445,6 @@ const REQUEST_STATUS_COLOURS = {
   fulfilled:  STATUS_COLOURS.fulfilled,
   closed:     STATUS_COLOURS.closed,
   expired:    STATUS_COLOURS.expired,
-} as const;
-
-/* Project item status colours — used for sub rows (text only, no badge). */
-const ITEM_STATUS_COLOURS = {
-  notSubmitted:      'text-[rgba(69,85,108,1)]',
-  pendingReview:     textOnly(STATUS_COLOURS.pending),
-  returnedForUpdate: textOnly(STATUS_COLOURS.returnedForUpdate),
-  pendingDceApproval: textOnly(STATUS_COLOURS.frozen),
-  approved:          textOnly(STATUS_COLOURS.approved),
-  rejected:          textOnly(STATUS_COLOURS.rejected),
 } as const;
 
 const PROJ_REVIEW_TIPS: Record<string, string> = {
@@ -695,6 +681,7 @@ export default function RequestsPage() {
   const { toast, showToast } = useToast();
 
   const [showSubmittedDialog, setShowSubmittedDialog] = useState(false);
+  const [returnUpdateSuccessOpen, setReturnUpdateSuccessOpen] = useState(false);
 
   const [reqs,       setReqs]       = useState<ProjectRequest[]>(loadRequests());
   const [batches,    setBatches]    = useState<ProjectSubmissionBatch[]>([]);
@@ -753,6 +740,11 @@ export default function RequestsPage() {
     setAppStatusCF([]);
     setSentPage(1);
     setExpandedPcs(new Set());
+  }
+
+  function saveReturnTab() {
+    const target = topTab === 'submissions' ? tab : requestTab;
+    try { sessionStorage.setItem('dsta_requests_target_tab', target); } catch {}
   }
 
   function doSort(col: string) {
@@ -849,6 +841,7 @@ export default function RequestsPage() {
   }
 
   function openRequestEditor(group: PCGroup) {
+    saveReturnTab();
     router.push(`/requests/edit/${encodeURIComponent(requestActionKey(group.requests[0]))}`);
   }
 
@@ -909,9 +902,6 @@ export default function RequestsPage() {
               <MenuItem onClick={() => openExtendDeadline(group)}>
                 <CalendarClock size={14} />Extend Deadline
               </MenuItem>
-              <MenuItem onClick={() => openRequestEditor(group)}>
-                <Eye size={14} />View
-              </MenuItem>
             </>
           ) : (
             <>
@@ -938,7 +928,7 @@ export default function RequestsPage() {
           <MoreVertical size={16} />
         </MenuTrigger>
         <MenuContent className="w-48" sideOffset={6}>
-          <MenuItem onClick={() => router.push(`/requests/project/${encodeURIComponent(currentRow.batchId)}/${encodeURIComponent(currentRow.projId)}`)}>
+          <MenuItem onClick={() => { saveReturnTab(); router.push(`/requests/project/${encodeURIComponent(currentRow.batchId)}/${encodeURIComponent(currentRow.projId)}`); }}>
             View
           </MenuItem>
           <MenuSeparator />
@@ -1658,9 +1648,14 @@ export default function RequestsPage() {
                 <MoreVertical size={16} />
               </MenuTrigger>
               <MenuContent className="w-48" sideOffset={6}>
-                <MenuItem onClick={() => router.push(`/requests/project/${encodeURIComponent(r.batchId)}/${encodeURIComponent(r.projId)}`)}>
+                <MenuItem onClick={() => { saveReturnTab(); router.push(`/requests/project/${encodeURIComponent(r.batchId)}/${encodeURIComponent(r.projId)}`); }}>
                   View
                 </MenuItem>
+                {r.status === 'pending' && (
+                  <MenuItem onClick={() => { setSelectedKeys(new Set([r.key])); setFreezeOpen(true); }}>
+                    Lock for Review
+                  </MenuItem>
+                )}
               </MenuContent>
             </Menu>
           </TableCell>
@@ -2060,7 +2055,7 @@ export default function RequestsPage() {
                 <MoreVertical size={16} />
               </MenuTrigger>
               <MenuContent className="w-48" sideOffset={6}>
-                <MenuItem onClick={() => router.push(`/requests/project/${encodeURIComponent(r.batchId)}/${encodeURIComponent(r.projId)}`)}>
+                <MenuItem onClick={() => { saveReturnTab(); router.push(`/requests/project/${encodeURIComponent(r.batchId)}/${encodeURIComponent(r.projId)}`); }}>
                   View
                 </MenuItem>
               </MenuContent>
@@ -2117,11 +2112,11 @@ export default function RequestsPage() {
             >
               <MoreVertical size={16} />
             </MenuTrigger>
-            <MenuContent className="w-48" sideOffset={6}>
-              <MenuItem onClick={() => router.push(`/requests/project/${encodeURIComponent(r.batchId)}/${encodeURIComponent(r.projId)}`)}>
-                View
-              </MenuItem>
-            </MenuContent>
+              <MenuContent className="w-48" sideOffset={6}>
+                <MenuItem onClick={() => { saveReturnTab(); router.push(`/requests/project/${encodeURIComponent(r.batchId)}/${encodeURIComponent(r.projId)}`); }}>
+                  View
+                </MenuItem>
+              </MenuContent>
           </Menu>
         </TableCell>
       </TableRow>
@@ -2323,7 +2318,7 @@ export default function RequestsPage() {
     });
     setSelectedKeys(new Set());
     setBulkReturnOpen(false);
-    showToast(`${selectedKeys.size} project${selectedKeys.size !== 1 ? 's' : ''} returned for update.`);
+    setReturnUpdateSuccessOpen(true);
   }
 
   function doFreezeSelected() {
@@ -2766,7 +2761,7 @@ export default function RequestsPage() {
           <h1 className="text-headline-md text-fg">Project Requests</h1>
         </div>
         {showHeaderCreateRequest && (
-          <Button onClick={() => router.push('/requests/new')} className="self-start">
+          <Button onClick={() => { saveReturnTab(); router.push('/requests/new'); }} className="self-start">
             <Plus size={15} />Create Project Request
           </Button>
         )}
@@ -2855,9 +2850,6 @@ export default function RequestsPage() {
                 <TabsTrigger value="pendingDce">
                   Pending DCE Approval ({tabCounts.pendingDce})
                 </TabsTrigger>
-                {/*<TabsTrigger value="pendingAll">
-                  Pending IO Review ({tabCounts.pendingAll})
-                </TabsTrigger>*/}
                 <TabsTrigger value="approved">
                   Approved ({tabCounts.approved})
                 </TabsTrigger>
@@ -2876,7 +2868,7 @@ export default function RequestsPage() {
               title={requestTab === 'draft' ? 'No draft requests' : requestTab === 'closed' ? 'No closed requests' : 'No open requests'}
               description={requestTab === 'draft' ? 'Draft requests will appear here before they are sent.' : requestTab === 'closed' ? 'Requests move here automatically once their response deadline has passed.' : 'Send a project request to an AD (P&C) to get started.'}
               action={showEmptyCreateRequest ? (
-                <Button onClick={() => router.push('/requests/new')}>
+                <Button onClick={() => { saveReturnTab(); router.push('/requests/new'); }}>
                   <Send size={15} />Create Project Request
                 </Button>
               ) : undefined}
@@ -3406,6 +3398,25 @@ export default function RequestsPage() {
           pos={statusCFPos}
         />
       )}
+
+      <Dialog
+        open={returnUpdateSuccessOpen}
+        onOpenChange={(open) => {
+          setReturnUpdateSuccessOpen(open);
+        }}
+      >
+        <DialogContent className="border-none bg-transparent p-0 shadow-none">
+          <SuccessCelebration
+            title="Returned for Update"
+            message="The selected project(s) have been returned for update."
+            buttonText="Back to Tasks"
+            onButtonClick={() => {
+              setReturnUpdateSuccessOpen(false);
+              router.push('/start-tasks');
+            }}
+          />
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={showSubmittedDialog}

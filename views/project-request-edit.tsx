@@ -1947,6 +1947,7 @@ export default function ProjectRequestEditPage() {
       });
     });
     sessionStorage.setItem('dsta_pending_toast', 'Draft sent.');
+    sessionStorage.setItem('dsta_requests_target_tab', 'open');
     setDirty(false);
     router.push('/requests');
   }

@@ -22,6 +22,8 @@ interface DateRangePickerProps {
   placeholder?: string;
   /** Earliest selectable day (ISO yyyy-MM-dd). */
   minDate?: string;
+  /** Latest selectable day (ISO yyyy-MM-dd). */
+  maxDate?: string;
   /** Which edge the calendar popover aligns to. */
   align?: 'left' | 'right';
   /** Locks the start so only the end is editable (e.g. a running intake in edit mode). */
@@ -50,6 +52,7 @@ export default function DateRangePicker({
   onChange,
   placeholder = 'Pick dates',
   minDate,
+  maxDate,
   align = 'left',
   lockStart = false,
   error = false,
@@ -61,6 +64,7 @@ export default function DateRangePicker({
   const startDate = parseDate(start);
   const endDate = parseDate(end);
   const min = parseDate(minDate);
+  const max = parseDate(maxDate);
 
   // Which edge the next click sets. Reset each time the popover opens.
   const [selecting, setSelecting] = useState<'start' | 'end'>(lockStart ? 'end' : 'start');
@@ -198,7 +202,7 @@ export default function DateRangePicker({
             {cells.map((day, idx) => {
               if (day === null) return <div key={`empty-${idx}`} className="h-8 w-9" />;
               const date = new Date(year, month, day);
-              const isDisabled = min ? date < min : false;
+              const isDisabled = (min ? date < min : false) || (max ? date > max : false);
               const isStart = startDate ? isSameDay(date, startDate) : false;
               const isEnd = previewEnd ? isSameDay(date, previewEnd) : false;
               const inRange = startDate && previewEnd && date > startDate && date < previewEnd;

@@ -61,13 +61,14 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import EmptyState from '@/components/ui-legacy/empty-state';
+import { SuccessCelebration } from '@/components/ui-legacy/success-celebration';
 import { TruncatedTooltip } from '@/components/ui-legacy/truncated-tooltip';
 import { Spinner } from '@/components/ui/spinner';
 import {
   AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2,
   ChevronRight, Eye, FileInput, FileOutput, Folder, Info, Pencil, Plus, Save, ShieldCheck, Sparkles, Trash2, X,
 } from 'lucide-react';
-import { REQ_TYPES, REQ_TIER_LABELS, EDUCATION_LEVELS, OPS, loadSubjectTaxonomy, toEducationLevel } from '@/lib/data';
+import { REQ_TYPES, REQ_TIER_LABELS, EDUCATION_LEVELS, OPS, loadSubjectTaxonomy, toEducationLevel, internCategoriesForLevel } from '@/lib/data';
 import { loadProgrammes, saveProgrammes, loadProjects, saveProjects, loadAttachments, saveAttachments } from '@/lib/storage';
 import { poolFor, attachWarnings } from '@/lib/attachments';
 import { PROGRAMMES_CHANGED_EVENT } from '@/lib/programme-context';
@@ -1512,10 +1513,10 @@ export default function ProgrammeFormPage() {
   const [isEdit, setIsEdit]             = useState(false);
   const [editingId, setEditingId]       = useState<string | null>(null);
   const [step, setStep]                 = useState(1);
+  const [showSuccess, setShowSuccess]   = useState(false);
 
   const [cpTitle, setCpTitle]           = useState('');
   const [cpCategory, setCpCategory]     = useState<string[]>([]);
-  const [cpStatus, setCpStatus]         = useState<ProgStatus>('Active');
   const [cpIntakes, setCpIntakes] = useState<IntakeWindow[]>([{ id: newIntakeId(), appOpen: '', appClose: '', start: '', end: '' }]);
   // Calendar year the seeded internship windows are anchored to. Picking a category
   // seeds each intake's window shifted to this year; changing it shifts them all.
@@ -1546,7 +1547,7 @@ export default function ProgrammeFormPage() {
       setOpenIntakeId(id);
     });
   };
-  const [assignFilter, setAssignFilter] = useState<'assigned' | 'unassigned'>('assigned');
+  const [assignFilter, setAssignFilter] = useState<'assigned' | 'unassigned'>('unassigned');
   // Edit-mode auto-allocation: a one-time initial fill, plus tracking of which intakes
   // have been auto-allocated so a NEWLY-added intake gets filled without disturbing the
   // existing ones.
@@ -1744,18 +1745,7 @@ export default function ProgrammeFormPage() {
         setIsEdit(true);
         setEditingId(prog.id);
         setCpTitle(prog.title);
-        setCpCategory(prog.educationLevel ? [prog.educationLevel] : []);
-        setCpStatus(prog.status === 'Draft' ? 'Active' : prog.status);
-        const loadedIntakes = withIntakeIds(
-          prog.intakeWindows?.length
-            ? prog.intakeWindows
-            : [{ appOpen: prog.appOpen ?? '', appClose: prog.appDeadline ?? '', start: prog.start ?? '', end: prog.end ?? '' }]
-        );
-        setCpIntakes(loadedIntakes);
-        // Anchor the year selector to the saved intakes so year-shifts stay relative.
-        const firstStart = loadedIntakes.find(w => w.start)?.start;
-        const loadedYear = firstStart ? Math.floor((monthIndexFromISO(firstStart) ?? 0) / 12) : 0;
-        if (loadedYear) setCpIntakeYear(loadedYear);
+        setCpCategory(internCategoriesForLevel(prog.educationLevel));
         setCpDescription(prog.description ?? '');
         setCpReqs(JSON.parse(JSON.stringify(prog.requirements ?? [])));
         setOrigReqs(JSON.stringify(prog.requirements ?? []));
@@ -2345,7 +2335,8 @@ export default function ProgrammeFormPage() {
 
     setDirty(false);
     if (isEdit && editingId) {
-      const updated = { ...progs.find(p => p.id === editingId)!, title, educationLevel: toEducationLevel(cpCategory[0] ?? 'Undergraduate Student'), status: cpStatus, appOpen: firstIntake.appOpen, appDeadline: firstIntake.appClose, start: firstIntake.start, end: firstIntake.end, timeline, daysLeft, description: cpDescription, formTemplate: derivedTemplate, requirements: reqs, intakeWindows: titledIntakes };
+      const originalProg = progs.find(p => p.id === editingId)!;
+      const updated = { ...originalProg, title, educationLevel: toEducationLevel(cpCategory[0] ?? 'Undergraduate Student'), status: originalProg.status, appOpen: firstIntake.appOpen, appDeadline: firstIntake.appClose, start: firstIntake.start, end: firstIntake.end, timeline, daysLeft, description: cpDescription, formTemplate: derivedTemplate, requirements: reqs, intakeWindows: titledIntakes };
       saveProgs(progs.map(p => p.id === editingId ? updated : p));
       attachSelectedProjects(editingId);
       localStorage.setItem('dsta_programme_view', JSON.stringify(updated));
@@ -2365,10 +2356,7 @@ export default function ProgrammeFormPage() {
       };
       saveProgs([newProg, ...progs]);
       attachSelectedProjects(newProg.id);
-      sessionStorage.setItem('dsta_pending_toast', attachTotal > 0
-        ? `Programme created successfully. ${attachTotal} project${attachTotal !== 1 ? 's' : ''} attached.`
-        : 'Programme created successfully.');
-      router.push('/programmes');
+      setShowSuccess(true);
     }
   }
 
@@ -2409,6 +2397,21 @@ export default function ProgrammeFormPage() {
 
   // Single source of truth for step labels (stepper, card header, Next button).
   const stepTitle = STEP_DEFS[step - 1].label;
+
+  if (showSuccess) {
+    return (
+      <Shell activeRoute="/programmes">
+        <div className="flex min-h-[calc(100vh-96px)] flex-col items-center justify-center">
+          <SuccessCelebration
+            title="Task Completed"
+            message="You have successfully completed this test task. Your responses have been recorded."
+            buttonText="Back to Tasks"
+            onButtonClick={() => router.push('/start-tasks')}
+          />
+        </div>
+      </Shell>
+    );
+  }
 
   return (
     <Shell activeRoute="/programmes">
@@ -2480,9 +2483,16 @@ export default function ProgrammeFormPage() {
                     }}
                   >
                     <option value="" disabled>Select a category…</option>
-                    {CATEGORY_OPTIONS.map(({ label }) => (
-                      <option key={label} value={label}>{label}</option>
-                    ))}
+                    {CATEGORY_OPTIONS.map(({ label }) => {
+                      const allowed = [
+                        'Polytechnic Scholar/Polytechnic Student',
+                        'Tech UP',
+                        'Undergraduate Student',
+                      ].includes(label);
+                      return (
+                        <option key={label} value={label} disabled={!allowed}>{label}</option>
+                      );
+                    })}
                   </Sel>
                   <FieldRequired show={isFieldTouched('category') && !!cpErrors.category} />
                   <p className="text-xs leading-relaxed text-fg-muted">
@@ -2599,19 +2609,7 @@ export default function ProgrammeFormPage() {
                   />
                 </Field>
 
-                {/* Status — edit mode only */}
-                {isEdit && (
-                  <div className="lg:col-span-2">
-                    <label className="block text-body-sm font-semibold text-fg">Programme Status</label>
-                    <p className="mb-1 mt-1 text-xs leading-relaxed text-fg-muted">
-                      Active programmes accept applications.
-                    </p>
-                    <Sel value={cpStatus} onChange={e => setCpStatus(e.target.value as ProgStatus)}>
-                      <option value="Active">Active</option>
-                      <option value="Completed">Completed</option>
-                    </Sel>
-                  </div>
-                )}
+
 
               </div>
 
@@ -2798,7 +2796,8 @@ export default function ProgrammeFormPage() {
                                     }}
                                     placeholder="Pick the application dates"
                                     lockStart={isEdit && selectedIndex === 0}
-                                    minDate={sgToday()}
+                                    minDate={selectedIntake.start || sgToday()}
+                                    maxDate={selectedIntake.end}
                                     error={isFieldTouched(`intake_${selectedIndex}_appOpen`) && Boolean(cpErrors[`intake_${selectedIndex}_appOpen`] || cpErrors[`intake_${selectedIndex}_appClose`])}
                                   />
                                   {isFieldTouched(`intake_${selectedIndex}_appOpen`) && (cpErrors[`intake_${selectedIndex}_appOpen`] || cpErrors[`intake_${selectedIndex}_appClose`]) && (
