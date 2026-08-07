@@ -232,6 +232,27 @@ function copy<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
 }
 
+// The browser ExcelJS build drops the workbook's custom indexed-colors palette when
+// writing a cloned sheet back. The template below uses indexed colors; we convert
+// them to explicit ARGB when copying styles so the generated file looks identical.
+const TEMPLATE_INDEXED_COLORS = [
+  'FF000000', 'FFFFFFFF', 'FFFF0000', 'FF00FF00', 'FF0000FF', 'FFFFFF00', 'FFFF00FF', 'FF00FFFF',
+  'FF000000', 'FFFFFFFF', 'FF0F2F6E', 'FFAAAAAA', 'FF555555', 'FFBFC7D2', 'FF1856D6', 'FFEAF1FF',
+  'FF666666', 'FFEDEFF2', 'FF0000FF', 'FFF3F7FF',
+];
+
+function resolveIndexedColor(value: any): any {
+  if (value && typeof value === 'object' && 'indexed' in value) {
+    return { argb: TEMPLATE_INDEXED_COLORS[value.indexed] ?? 'FF000000' };
+  }
+  return value;
+}
+
+function copyStyle<T>(style: T): T {
+  if (!style) return style;
+  return JSON.parse(JSON.stringify(style), (_key, value) => resolveIndexedColor(value));
+}
+
 /** Clone an ExcelJS worksheet into a new (already-created) worksheet. */
 function cloneWorksheet(source: any, target: any) {
   if (source.properties) target.properties = copy(source.properties);
@@ -243,7 +264,7 @@ function cloneWorksheet(source: any, target: any) {
     targetCol.width = col.width;
     targetCol.hidden = col.hidden;
     targetCol.outlineLevel = col.outlineLevel;
-    if (col.style) targetCol.style = copy(col.style);
+    if (col.style) targetCol.style = copyStyle(col.style);
   });
 
   source.eachRow((row: any, rowNum: number) => {
@@ -251,7 +272,7 @@ function cloneWorksheet(source: any, target: any) {
     targetRow.height = row.height;
     targetRow.hidden = row.hidden;
     targetRow.outlineLevel = row.outlineLevel;
-    if (row.style) targetRow.style = copy(row.style);
+    if (row.style) targetRow.style = copyStyle(row.style);
 
     row.eachCell((cell: any, colNum: number) => {
       const targetCell = targetRow.getCell(colNum);
@@ -260,9 +281,10 @@ function cloneWorksheet(source: any, target: any) {
       } else {
         targetCell.value = cell.value;
       }
-      if (cell.style) targetCell.style = copy(cell.style);
+      if (cell.style) targetCell.style = copyStyle(cell.style);
       if (cell.dataValidation) targetCell.dataValidation = copy(cell.dataValidation);
-      if (cell.hyperlink) targetCell.hyperlink = cell.hyperlink;
+      // Hyperlink is read-only in the browser ExcelJS build; skip it.
+      // if (cell.hyperlink) targetCell.hyperlink = cell.hyperlink;
     });
   });
 
@@ -489,59 +511,66 @@ export async function downloadResponseTemplateXlsx(
   requests: ProjectRequest[],
   fileName = 'DSTA_Project_Response_Template.xlsx',
 ): Promise<void> {
-  const ExcelJS = (await import('exceljs')).default;
+  try {
+    const ExcelJS = (await import('exceljs')).default;
 
-  const res = await fetch(RESPONSE_TEMPLATE_PATH);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch template: ${res.status} ${res.statusText}`);
-  }
-  const arrayBuffer = await res.arrayBuffer();
-
-  const wb = new ExcelJS.Workbook();
-  await wb.xlsx.load(arrayBuffer);
-
-  const template = wb.getWorksheet(RESPONSE_TEMPLATE_SHEET_NAME);
-  if (!template) {
-    throw new Error(`Template sheet '${RESPONSE_TEMPLATE_SHEET_NAME}' not found`);
-  }
-
-  const byCat = new Map<string, ProjectRequest[]>();
-  for (const r of requests) {
-    const cat = (r.internCategory || r.educationLevel || 'Uncategorised') as string;
-    if (!byCat.has(cat)) byCat.set(cat, []);
-    byCat.get(cat)!.push(r);
-  }
-
-  const usedTabs = new Set<string>();
-  const lastCol = template.columns.length;
-  const lastLetter = template.getColumn(lastCol).letter;
-
-  // Columns whose values are merged across the 3 entry rows (all except the bar
-  // and the two stacked multi-select columns E and F).
-  const MERGED_COLS = ['B', 'C', 'D', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
-
-  for (const [cat, rows] of Array.from(byCat.entries())) {
-    const ws = wb.addWorksheet(safeTab(cat, usedTabs));
-    cloneWorksheet(template, ws);
-
-    // Update the title banner to match the intern category; clear the instructions.
-    ws.getCell('A1').value = `${cat} — Internship Project Submission`;
-    ws.getCell('A2').value = '';
-
-    // Remove all data-area merges so we can rebuild the blocks cleanly.
-    const mergesToRemove = (ws.model.merges || []).filter((merge: string) => {
-      const [topLeft] = merge.split(':');
-      const row = parseInt(topLeft.replace(/[A-Z]+/g, ''), 10);
-      return row >= 4;
-    });
-    mergesToRemove.forEach((merge: string) => ws.unMergeCells(merge));
-
-    // Clear any leftover values from the sample data rows.
-    for (let rr = 4; rr <= ws.rowCount; rr++) {
-      for (let cc = 1; cc <= lastCol; cc++) {
-        ws.getCell(`${ws.getColumn(cc).letter}${rr}`).value = undefined;
-      }
+    const res = await fetch(RESPONSE_TEMPLATE_PATH);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch template: ${res.status} ${res.statusText}`);
     }
+    const arrayBuffer = await res.arrayBuffer();
+
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(arrayBuffer);
+
+    const template = wb.getWorksheet(RESPONSE_TEMPLATE_SHEET_NAME);
+    if (!template) {
+      throw new Error(`Template sheet '${RESPONSE_TEMPLATE_SHEET_NAME}' not found`);
+    }
+
+    const byCat = new Map<string, ProjectRequest[]>();
+    for (const r of requests) {
+      const cat = (r.internCategory || r.educationLevel || 'Uncategorised') as string;
+      if (!byCat.has(cat)) byCat.set(cat, []);
+      byCat.get(cat)!.push(r);
+    }
+
+    const usedTabs = new Set<string>([RESPONSE_TEMPLATE_SHEET_NAME]);
+    const lastCol = template.columnCount;
+    const lastLetter = template.getColumn(lastCol).letter;
+
+    // Columns whose values are merged across the 3 entry rows (all except the bar
+    // and the two stacked multi-select columns E and F).
+    const MERGED_COLS = ['B', 'C', 'D', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
+
+    for (const [cat, rows] of Array.from(byCat.entries())) {
+      const ws = wb.addWorksheet(safeTab(cat, usedTabs));
+      cloneWorksheet(template, ws);
+
+      // Update the title banner to match the intern category.
+      ws.getCell('A1').value = `${cat} — Internship Project Submission`;
+
+      // Fill the instruction row from the current request data.
+      const sender = rows.find(r => r.senderName)?.senderName ?? 'Internship Office';
+      const headName = rows.find(r => r.headName)?.headName ?? '';
+      const deadline = rows.find(r => r.deadline)?.deadline ?? '';
+      const pc = rows.find(r => r.programmeCenter)?.programmeCenter ?? rows.find(r => r.pc)?.pc ?? '';
+      ws.getCell('A2').value = `Requested by ${sender}${headName ? ` · to ${headName}` : ''}${deadline ? ` · reply by ${deadline}` : ''}. Programme Centre (${pc || 'PC'}) is pre-filled. Each project uses 3 rows so you can pick up to 3 Skillset and 3 Disciplines. Add projects until each block's placements are met.`;
+
+      // Remove all data-area merges so we can rebuild the blocks cleanly.
+      const mergesToRemove = (ws.model.merges || []).filter((merge: string) => {
+        const [topLeft] = merge.split(':');
+        const row = parseInt(topLeft.replace(/[A-Z]+/g, ''), 10);
+        return row >= 4;
+      });
+      mergesToRemove.forEach((merge: string) => ws.unMergeCells(merge));
+
+      // Clear any leftover values from the sample data rows.
+      for (let rr = 4; rr <= ws.rowCount; rr++) {
+        for (let cc = 1; cc <= lastCol; cc++) {
+          ws.getCell(`${ws.getColumn(cc).letter}${rr}`).value = undefined;
+        }
+      }
 
     let r = 4;
     for (const req of rows) {
@@ -614,4 +643,7 @@ export async function downloadResponseTemplateXlsx(
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+  } catch (e) {
+    throw e;
+  }
 }

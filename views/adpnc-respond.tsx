@@ -1155,7 +1155,8 @@ export default function AdPncRespondPage() {
   async function handleDownloadTemplate() {
     if (!group) return;
     try {
-      await downloadResponseTemplateXlsx(group.requests);
+      const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+      await downloadResponseTemplateXlsx(group.requests, `DCE_Project_Approval_List_${dateStr}.xlsx`);
     } catch {
       showToast('Could not download the template. Please try again.', 'danger');
     }

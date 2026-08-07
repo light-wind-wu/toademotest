@@ -24,6 +24,16 @@ import {
   ChevronDown,
   type LucideIcon,
 } from "lucide-react";
+import { Button } from "@/components/ui-legacy/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui-legacy/dialog";
 import { COHORT_DATA, WIDGET_DEFS, INTERN_CATEGORIES } from "@/lib/data";
 import { loadSubmissions, loadProgrammes, loadRequests } from "@/lib/storage";
 import DashboardCards from "@/components/ui-legacy/dashboard-cards";
@@ -34,13 +44,7 @@ import type {
   ProjectRequest,
   Programme,
 } from "@/lib/types";
-import {
-  Select,
-  SelectValue,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+
 
 function loadWidgetState(): Record<string, boolean> {
   if (typeof window === "undefined")
@@ -94,6 +98,7 @@ export default function DashboardPage() {
   const [newMenuOpen, setNewMenuOpen] = useState(false);
   const newMenuRef = useRef<HTMLDivElement>(null);
   const [liveFunnel, setLiveFunnel] = useState<LiveFunnel>(EMPTY_FUNNEL);
+  const [exploreOpen, setExploreOpen] = useState(false);
 
   type LiveTask = {
     icon: LucideIcon;
@@ -275,19 +280,27 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <h1 className="text-[24px] font-bold text-fg">Dashboard</h1>
         <div className="flex items-center gap-2">
-          <Select value={cohort} onValueChange={(v) => setCohort(v ?? "all")}>
-            <SelectTrigger className="w-[200px]">
+          <Dialog open={exploreOpen} onOpenChange={setExploreOpen}>
+            <DialogTrigger
+              className="flex h-9 w-[200px] items-center justify-between rounded-md border border-border bg-surface px-3 py-1 text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent cursor-pointer"
+            >
               <span className="flex-1 text-left text-body-sm">
                 {cohort === "all" ? "All Intern categories" : cohort}
               </span>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Intern categories</SelectItem>
-              {INTERN_CATEGORIES.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <ChevronDown className="h-4 w-4 text-fg-muted" />
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Thanks for exploring</DialogTitle>
+                <DialogDescription>
+                  This feature is not included in the scope of this usability test. Please return to the task to continue.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button onClick={() => setExploreOpen(false)}>Back</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {(role === "io-admin" || role === "io") && (
             <div className="relative" ref={newMenuRef}>

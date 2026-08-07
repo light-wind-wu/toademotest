@@ -3,17 +3,22 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Search, Bell, Settings, HelpCircle, LogOut, ChevronDown, User, CheckCheck, LayoutGrid, ListTodo, PanelsTopLeft } from 'lucide-react';
+import { Search, Bell, Settings, HelpCircle, LogOut, ChevronDown, User, LayoutGrid, ListTodo, PanelsTopLeft } from 'lucide-react';
 import { useRole, ROLE_LABELS } from '@/lib/role';
 import { cn } from '@/lib/utils';
-import { useUnsavedChanges } from '@/lib/unsaved-changes';
-import { buildSearchIndex, buildRecordIndex, runSearch, type SearchEntry } from '@/lib/ia-nav';
+
 import Image from 'next/image';
 import { signOut } from '@/lib/session';
+import { Button } from '@/components/ui-legacy/button';
 import {
-  getNotificationsForRole, markRead, markAllRead,
-  timeAgo, NOTIF_CHANGED_EVENT, type AppNotification,
-} from '@/lib/notifications';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui-legacy/dialog';
+
 import {
   loadApplyDashboardVersion,
   saveApplyDashboardVersion,
@@ -29,81 +34,25 @@ export default function Topbar({
   hideProfile?: boolean;
 }) {
   const { role, profile } = useRole();
-  const { safeNavigate } = useUnsavedChanges();
   const router = useRouter();
   const pathname = usePathname();
   const onApplyRoute = pathname.startsWith('/apply');
   const onStartTasks = pathname === '/start-tasks';
   const onCatlog = pathname === '/catlog';
   const [open,      setOpen]      = useState(false);
-  const [bellOpen,  setBellOpen]  = useState(false);
-  const [notifs,    setNotifs]    = useState<AppNotification[]>([]);
-  const [searchQ,    setSearchQ]    = useState('');
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchHi,   setSearchHi]   = useState(0);
-  const [flags,      setFlags]      = useState({ hasApplied: false, hasInternship: false });
+  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
+  const [notifDialogOpen, setNotifDialogOpen] = useState(false);
   const [dashVersion, setDashVersion] = useState<ApplyDashboardVersion>('v1');
   const ref       = useRef<HTMLDivElement>(null);
-  const bellRef   = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  const mentorId = profile.email;
   const isApplicant = role === 'new-applicant' || role === 'existing-scholar-applicant';
 
   useEffect(() => {
     setDashVersion(loadApplyDashboardVersion());
   }, [open]);
 
-  /* Applicant flags so the search index spans the right applicant sections. */
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem('dsta_my_applications');
-      const hasSubs = raw ? (JSON.parse(raw) as unknown[]).length > 0 : false;
-      let hasDraft = false;
-      for (let i = 0; i < localStorage.length; i++) if (localStorage.key(i)?.startsWith('dsta_apply_draft_')) { hasDraft = true; break; }
-      let hasInternship = false;
-      if (role === 'new-applicant' || role === 'existing-scholar-applicant') {
-        const S = new Set(['Offer Accepted', 'Active Intern', 'Internship Completed', 'Withdrawn', 'Terminated']);
-        const ioApps: { email?: string; status?: string }[] = JSON.parse(localStorage.getItem('dsta_applications') ?? '[]');
-        hasInternship = ioApps.some(a => a.email === profile.email && S.has(a.status ?? ''));
-      }
-      setFlags({ hasApplied: hasSubs || hasDraft, hasInternship });
-    } catch { setFlags({ hasApplied: false, hasInternship: false }); }
-  }, [role, profile.email]);
-
-  // Record index (candidates/projects/programmes) reads localStorage → compute in an effect.
-  const [records, setRecords] = useState<SearchEntry[]>([]);
-  useEffect(() => {
-    setRecords(buildRecordIndex(role, profile.email, flags));
-  }, [role, profile.email, flags.hasApplied, flags.hasInternship]);
-
-  const searchIndex = buildSearchIndex(role, flags);
-  const searchResults = runSearch([...searchIndex, ...records], searchQ);
-
-  function pickSearch(i: number) {
-    const r = searchResults[i];
-    if (!r || !r.route || r.soon) return;
-    setSearchOpen(false); setSearchQ('');
-    safeNavigate(r.route);
-  }
-
-  function refreshNotifs() {
-    setNotifs(getNotificationsForRole(role, profile.email, mentorId));
-  }
-
-  useEffect(() => {
-    refreshNotifs();
-    window.addEventListener(NOTIF_CHANGED_EVENT, refreshNotifs);
-    return () => window.removeEventListener(NOTIF_CHANGED_EVENT, refreshNotifs);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role, profile.email]);
-
   useEffect(() => {
     function onClick(e: MouseEvent) {
       if (ref.current       && !ref.current.contains(e.target as Node))       setOpen(false);
-      if (bellRef.current   && !bellRef.current.contains(e.target as Node))   setBellOpen(false);
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false);
     }
     document.addEventListener('click', onClick);
     return () => document.removeEventListener('click', onClick);
@@ -116,14 +65,12 @@ export default function Topbar({
         const target = e.target as HTMLElement;
         if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
         e.preventDefault();
-        searchInputRef.current?.focus();
+        setSearchDialogOpen(true);
       }
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, []);
-
-  const unread = notifs.filter(n => !n.read).length;
 
   return (
     <header className={cn(
@@ -153,150 +100,56 @@ export default function Topbar({
 
         {!hideProfile && (
         <>
-        {/* Cross-IA search — desktop only. Spans every section the role can reach. */}
-        <div className="relative hidden md:flex items-center group" ref={searchRef}>
-          <Search size={18} className="absolute left-3 text-[rgba(244,242,236,0.72)] group-focus-within:text-topbar-fg transition-colors pointer-events-none" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={searchQ}
-            placeholder="Search across TOA…"
-            role="combobox"
-            aria-expanded={searchOpen && searchResults.length > 0}
-            aria-controls="toa-search-results"
-            onChange={(e) => { setSearchQ(e.target.value); setSearchOpen(true); setSearchHi(0); }}
-            onFocus={() => setSearchOpen(true)}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowDown') { e.preventDefault(); setSearchHi(h => Math.min(h + 1, searchResults.length - 1)); }
-              else if (e.key === 'ArrowUp') { e.preventDefault(); setSearchHi(h => Math.max(h - 1, 0)); }
-              else if (e.key === 'Enter') { e.preventDefault(); pickSearch(searchHi); }
-              else if (e.key === 'Escape') { setSearchOpen(false); }
-            }}
-            className="w-64 pl-9 pr-10 py-2 bg-topbar-fg/10 border border-topbar-fg/10 rounded-lg text-body-sm text-topbar-fg placeholder:text-[rgba(244,242,236,0.72)] focus:outline-none focus:ring-2 focus:ring-topbar-fg/20 focus:border-topbar-fg/20 transition-all"
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-            <span className="text-[12px] font-semibold text-[rgba(244,242,236,0.72)] group-focus-within:text-topbar-fg border border-topbar-fg/20 rounded px-1.5 py-0.5">/</span>
-          </div>
-          {searchOpen && searchQ.trim() && (
-            <div id="toa-search-results" role="listbox" className="absolute right-0 top-full mt-2 w-[26rem] bg-surface rounded-2xl shadow-xl border border-border z-50 overflow-hidden">
-              <p className="px-4 pt-3 pb-1 text-[12px] font-semibold text-fg-subtle">Searching pages and records across TOA</p>
-              {searchResults.length === 0 ? (
-                <p className="px-4 py-4 text-body-sm text-fg-muted">No matches for &ldquo;{searchQ.trim()}&rdquo;.</p>
-              ) : (
-                <div className="p-1.5 pt-0.5">
-                  {searchResults.map((r, i) => {
-                    const RIcon = r.icon;
-                    return (
-                      <button
-                        key={`${r.label}-${i}`}
-                        role="option"
-                        aria-selected={i === searchHi}
-                        onMouseEnter={() => setSearchHi(i)}
-                        onClick={() => pickSearch(i)}
-                        disabled={r.soon || !r.route}
-                        className={cn('w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors',
-                          r.soon ? 'cursor-not-allowed opacity-60' : i === searchHi ? 'bg-accent/10' : 'hover:bg-bg-subtle')}
-                      >
-                        <span className={cn('grid place-items-center w-8 h-8 rounded-lg shrink-0', i === searchHi ? 'bg-accent/15 text-accent' : 'bg-bg-subtle text-fg-muted')}>
-                          <RIcon size={15} />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-body-sm font-semibold text-fg truncate">{r.label}</span>
-                          <span className="block text-[12px] text-fg-muted truncate">{r.sub}{r.soon ? ' · coming soon' : ''}</span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+        {/* Cross-IA search — desktop only. Disabled for usability test. */}
+        <Dialog open={searchDialogOpen} onOpenChange={setSearchDialogOpen}>
+          <div className="relative hidden md:flex items-center group">
+            <Search size={18} className="absolute left-3 text-[rgba(244,242,236,0.72)] transition-colors pointer-events-none" />
+            <button
+              type="button"
+              onClick={() => setSearchDialogOpen(true)}
+              className="w-64 pl-9 pr-10 py-2 bg-topbar-fg/10 border border-topbar-fg/10 rounded-lg text-left text-body-sm text-[rgba(244,242,236,0.72)] focus:outline-none focus:ring-2 focus:ring-topbar-fg/20 focus:border-topbar-fg/20 transition-all cursor-pointer"
+            >
+              Search across TOA…
+            </button>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+              <span className="text-[12px] font-semibold text-[rgba(244,242,236,0.72)] border border-topbar-fg/20 rounded px-1.5 py-0.5">/</span>
             </div>
-          )}
-        </div>
+          </div>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Thanks for exploring</DialogTitle>
+              <DialogDescription>
+                This feature is not included in the scope of this usability test. Please return to the task to continue.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={() => setSearchDialogOpen(false)}>Back</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-        {/* Notifications */}
-        <div className="relative" ref={bellRef}>
+        {/* Notifications — disabled for usability test. */}
+        <Dialog open={notifDialogOpen} onOpenChange={setNotifDialogOpen}>
           <button
-            onClick={e => { e.stopPropagation(); setBellOpen(o => !o); }}
-            aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
-            aria-expanded={bellOpen}
-            className="relative p-2 text-topbar-fg-muted hover:bg-topbar-fg/10 rounded-full transition-all"
+            type="button"
+            onClick={() => setNotifDialogOpen(true)}
+            aria-label="Notifications"
+            className="relative p-2 text-topbar-fg-muted hover:bg-topbar-fg/10 rounded-full transition-all cursor-pointer"
           >
             <Bell size={20} />
-            {unread > 0 && (
-              // <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-0.5 bg-topbar-accent rounded-full flex items-center justify-center text-[12px] font-black text-topbar-bg leading-none">
-              //   {unread > 99 ? '99+' : unread}
-              // </span>
-              <span className="absolute top-1.5 right-2 w-[6px] h-[6px] bg-topbar-accent rounded-full flex items-center justify-center font-black text-topbar-bg leading-none" />
-            )}
           </button>
-
-          {bellOpen && (
-            <div className="absolute right-0 top-full mt-2 w-96 bg-surface rounded-2xl shadow-xl border border-border z-50 overflow-hidden flex flex-col max-h-[560px]">
-              {/* Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-                <div className="flex items-center gap-2">
-                  <Bell size={15} className="text-fg-subtle" />
-                  <span className="text-body-sm font-bold text-fg">Notifications</span>
-                  {unread > 0 && (
-                    <span className="px-1.5 py-0.5 bg-danger/10 text-danger text-[12px] font-bold rounded-full">{unread} new</span>
-                  )}
-                </div>
-                {unread > 0 && (
-                  <button
-                    onClick={() => { markAllRead(role); refreshNotifs(); }}
-                    className="flex items-center gap-1 text-[13px] text-accent hover:underline font-semibold"
-                  >
-                    <CheckCheck size={12} /> Mark all read
-                  </button>
-                )}
-              </div>
-
-              {/* List */}
-              <div className="overflow-y-auto flex-1">
-                {notifs.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-                    <Bell size={28} className="text-fg-subtle mb-3 opacity-40" />
-                    <p className="text-body-sm font-semibold text-fg-muted">No notifications</p>
-                    <p className="text-[12px] text-fg-subtle mt-1">You're all caught up</p>
-                  </div>
-                ) : (
-                  notifs.map((n, i) => (
-                    <button
-                      key={n.id}
-                      onClick={() => {
-                        markRead(n.id);
-                        refreshNotifs();
-                        setBellOpen(false);
-                        router.push(n.href);
-                      }}
-                      className={cn(
-                        'w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-bg-subtle transition-colors',
-                        i < notifs.length - 1 && 'border-b border-border',
-                        !n.read && 'bg-bg-subtle/60',
-                      )}
-                    >
-                      <span className={cn(
-                        'mt-1.5 w-2 h-2 rounded-full shrink-0',
-                        n.tier === 'action' ? 'bg-warning' : 'bg-border-strong',
-                        n.read && 'opacity-40',
-                      )} />
-                      <div className="min-w-0 flex-1">
-                        <p className={cn(
-                          'text-body-sm leading-snug',
-                          !n.read ? 'font-semibold text-fg' : 'font-normal text-fg-muted',
-                        )}>
-                          {n.title}
-                        </p>
-                        <p className="text-[12px] text-fg-muted mt-0.5 leading-snug">{n.body}</p>
-                        <p className="text-[13px] text-fg-subtle mt-1">{timeAgo(n.createdAt)}</p>
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Thanks for exploring</DialogTitle>
+              <DialogDescription>
+                This feature is not included in the scope of this usability test. Please return to the task to continue.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={() => setNotifDialogOpen(false)}>Back</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Profile */}
         <div className="relative border-l border-topbar-fg/10 pl-4" ref={ref}>
