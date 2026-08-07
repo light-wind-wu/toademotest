@@ -95,14 +95,26 @@ export default function InterviewTimeslotSheet({
             Interview invitation
           </p>
           <SheetTitle
-            className="mt-1.5 text-left text-[16px] font-semibold leading-[22px]"
-            style={{ color: 'rgba(15, 23, 43, 1)' }}
+            className="mt-1.5 text-left"
+            style={{
+              fontWeight: 600,
+              fontSize: 18,
+              lineHeight: '24px',
+              letterSpacing: '-0.45px',
+              color: 'rgba(15, 23, 43, 1)',
+            }}
           >
             You have been selected to interview for project Cyber Security.
           </SheetTitle>
           <p
-            className="mt-1.5 text-[14px] font-normal leading-5"
-            style={{ color: 'rgba(15, 23, 43, 1)' }}
+            className="mt-1.5 text-left"
+            style={{
+              fontWeight: 600,
+              fontSize: 18,
+              lineHeight: '24px',
+              letterSpacing: '-0.45px',
+              color: 'rgba(15, 23, 43, 1)',
+            }}
           >
             Choose an available timeslot to confirm your interview.
           </p>
