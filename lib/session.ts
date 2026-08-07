@@ -63,7 +63,7 @@ export function signIn(method: SignInMethod, atIso: string, opts?: { guardian?: 
   persist({ signedIn: true, method, at: atIso, guardian: opts?.guardian || undefined });
 }
 
-/** Clear the session — returns the user to the sign-in screen. */
+/** Clear the session — callers should send the user to `/catlog` (UT entry). */
 export function signOut() {
   persist(SIGNED_OUT);
 }

@@ -166,9 +166,6 @@ export default function ApplyPersonalDetailsPage() {
   return (
     <ApplicationFlowShell
       stepId="personal"
-      onBack={() =>
-        router.push(fromReview ? '/apply/review' : '/start-tasks')
-      }
       onContinue={handleContinue}
       continueLabel={fromReview ? 'Save' : 'Next'}
     >

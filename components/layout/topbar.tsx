@@ -143,7 +143,10 @@ export default function Topbar({
         {hideProfile && !onCatlog && (
           <button
             type="button"
-            onClick={() => router.push('/catlog')}
+            onClick={() => {
+              signOut();
+              window.location.href = '/catlog';
+            }}
             className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-topbar-fg/20 bg-topbar-fg/10 px-3 py-2 text-body-sm font-semibold text-topbar-fg transition-colors hover:bg-topbar-fg/15"
           >
             <LayoutGrid size={16} className="shrink-0" strokeWidth={1.5} />
@@ -416,8 +419,9 @@ export default function Topbar({
                   <button
                     type="button"
                     onClick={() => {
+                      signOut();
                       setOpen(false);
-                      router.push('/catlog');
+                      window.location.href = '/catlog';
                     }}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-danger-bg text-body-md text-danger transition-colors"
                   >

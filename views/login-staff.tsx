@@ -1,8 +1,8 @@
 'use client';
 
-/* Internal staff sign-in (separate console touchpoint). DSS chrome + Corppass /
+/* Internal staff sign-in (separate console touchpoint). DSS chrome + Singpass /
    Staff SSO. No real auth: in the demo, a role selector stands in for the
-   identity Corppass would resolve, then drops the user into that role's console. */
+   identity Singpass would resolve, then drops the user into that role's console. */
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRole, ROLE_PROFILES } from '@/lib/role';
@@ -44,7 +44,7 @@ export default function LoginStaff() {
         Sign in with your government credentials to pick up where you left off.
       </p>
 
-      {/* Demo: which Corppass / SSO identity is returned */}
+      {/* Demo: which Singpass / SSO identity is returned */}
       <p className="text-[11px] font-bold uppercase tracking-widest text-fg-subtle mb-2">Demo identity</p>
       <div className="grid grid-cols-1 gap-2 mb-5">
         {STAFF_ROLES.map(r => {
@@ -63,7 +63,7 @@ export default function LoginStaff() {
         })}
       </div>
 
-      <GovAuthButton wordmark="Corppass" onClick={() => handleSignIn('corppass')} />
+      <GovAuthButton wordmark="singpass" lowercase onClick={() => handleSignIn('singpass')} />
       <button
         onClick={() => handleSignIn('sso')}
         className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-surface text-fg py-3 text-body-md font-semibold hover:border-accent/50 transition-colors"

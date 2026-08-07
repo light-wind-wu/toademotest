@@ -11,9 +11,9 @@ import {
   DialogTitle,
 } from '@/components/ui-legacy/dialog';
 
-const TITLE = 'Thanks for exploring';
+const TITLE = 'Thanks for exploring!';
 const BODY =
-  'This feature is not included in the scope of this usability test. Please return to the task to continue.';
+  'This feature is not part of the current test scope and is not required to complete the task. You can safely skip it and continue with the test scenario.';
 
 export default function OutOfScopeDialog({
   open,

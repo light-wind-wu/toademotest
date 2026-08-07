@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import InterviewTimeslotSheet from '@/components/apply/interview-timeslot-sheet';
 import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
+import { HeroV2Bg, HeroV2Fx } from '@/components/apply/hero-v2-art';
 
 const STEPS: {
   id: number;
@@ -78,21 +79,14 @@ export default function ApplyDashboardV2() {
     <Shell activeRoute="/apply/dashboard" flushTop>
       {/* Cancel shell gutter; Part1 bg full-bleed */}
       <div className="relative mx-[calc(-1*clamp(24px,2.6vw,40px))]">
-          {/* ── Part 1: Hero — mobile: banner 242 + copy below; PC: 345 overlay */}
+          {/* ── Part 1: Hero — bitmap under Part 2; FX layered after Part 2 */}
           <header
-            className="relative z-0 w-full overflow-hidden bg-bg lg:h-[345px] lg:overflow-visible lg:bg-[rgba(254,253,251,1)]"
+            className="relative z-0 w-full overflow-hidden bg-bg lg:h-[313px] lg:bg-[rgba(254,253,251,1)]"
           >
-            <div className="relative mx-auto w-full max-w-[1440px] lg:h-full">
-              {/* PC art */}
+            <div className="relative mx-auto h-full w-full max-w-[1440px]">
+              {/* PC bitmap only — covered by status card where they overlap */}
               <div className="pointer-events-none absolute inset-0 z-0 hidden lg:block">
-                <Image
-                  src="/images/dashboard-v2-top.png"
-                  alt=""
-                  fill
-                  className="object-contain object-right"
-                  sizes="1440px"
-                  priority
-                />
+                <HeroV2Bg />
               </div>
 
               {/* Mobile banner — fixed 242, not a full-bleed text background */}
@@ -174,7 +168,14 @@ export default function ApplyDashboardV2() {
             </div>
           </header>
 
-          {/* ── Part 2: Status card — PC: radar right; mobile: no radar */}
+          {/* Radar / diagonal — same contain box as bg, stacked above Part 2 */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-30 hidden h-[313px] overflow-visible lg:block">
+            <div className="relative mx-auto h-full w-full max-w-[1440px] overflow-visible">
+              <HeroV2Fx />
+            </div>
+          </div>
+
+          {/* ── Part 2: Status card — above bg, below FX */}
           <div className="relative z-20 mx-auto w-full max-w-[1440px] px-4 lg:px-6">
             <section
               className="relative mt-6 overflow-hidden rounded-2xl border border-border bg-white p-6 lg:-mt-[47px] lg:min-h-[330px] lg:p-8"

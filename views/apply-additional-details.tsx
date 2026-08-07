@@ -102,9 +102,8 @@ export default function ApplyAdditionalDetailsPage() {
     );
   }
 
-  const creditOk =
-    draft.creditBearing !== null &&
-    (draft.creditBearing !== true || draft.creditModuleCode.trim().length > 0);
+  /* Module code is optional — Yes/No alone unlocks Next */
+  const creditOk = draft.creditBearing !== null;
   const bondedOk =
     isPolyPath ||
     (draft.bondedScholarship !== null &&
@@ -190,7 +189,7 @@ export default function ApplyAdditionalDetailsPage() {
               <Input
                 value={draft.creditModuleCode}
                 onChange={(e) => persist({ ...draft, creditModuleCode: e.target.value })}
-                placeholder="e.g. INTR3001"
+                placeholder="e.g. INTR3001 (Optional)"
                 className="h-10 rounded-md"
               />
             </div>

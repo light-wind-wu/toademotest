@@ -1,11 +1,10 @@
 'use client';
 
 /* Shared C-end application chrome: topbar + PC vertical stepper + mobile
-   horizontal stepper + sticky footer actions. */
+   horizontal stepper + fixed bottom actions (same pattern as project-fit). */
 import { type ReactNode } from 'react';
 import Image from 'next/image';
 import ApplicantChrome from '@/components/apply/applicant-chrome';
-import { Button } from '@/components/ui/button';
 import {
   APPLICATION_STEPS,
   type ApplicationStepId,
@@ -184,7 +183,8 @@ export default function ApplicationFlowShell({
             'flex min-w-0 flex-1 flex-col',
             lockViewport
               ? 'min-h-0 overflow-hidden px-4 pb-4 pt-0 lg:px-8 lg:pb-5 lg:pt-[60px]'
-              : 'px-4 pb-10 pt-0 lg:px-8 lg:pt-[60px]',
+              : 'px-4 pt-0 lg:px-8 lg:pt-[60px]',
+            !hideFooter && !lockViewport && 'pb-[68px]',
           )}
         >
           {/* Mobile — full-bleed white stepper strip (h 106) */}
@@ -251,24 +251,49 @@ export default function ApplicationFlowShell({
           </div>
 
           {!hideFooter && (
-            <div className="mt-[18px] flex items-center justify-between gap-2 lg:mt-3">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-9 rounded-md bg-surface px-4"
-                onClick={onBack}
-                disabled={!onBack}
+            <div
+              className={cn(
+                'fixed inset-x-0 bottom-0 z-30 flex h-[68px] items-center border-t border-border bg-surface px-4',
+                !chapterMode ? 'lg:left-[220px] lg:px-8' : 'lg:px-8',
+              )}
+            >
+              <div
+                className={cn(
+                  'flex w-full items-center gap-3',
+                  onBack ? 'justify-between' : 'justify-end',
+                )}
               >
-                Back
-              </Button>
-              <Button
-                type="button"
-                className="h-9 rounded-md px-4 font-semibold"
-                onClick={onContinue}
-                disabled={continueDisabled || !onContinue}
-              >
-                {continueLabel}
-              </Button>
+                {onBack && (
+                  <button
+                    type="button"
+                    className="cursor-pointer bg-transparent p-0"
+                    style={{
+                      fontWeight: 500,
+                      fontSize: 14,
+                      lineHeight: '20px',
+                      color: 'rgba(15, 23, 42, 1)',
+                    }}
+                    onClick={onBack}
+                  >
+                    Back
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="h-9 cursor-pointer rounded-md px-5 disabled:opacity-50 lg:h-10"
+                  style={{
+                    background: 'rgba(37, 99, 235, 1)',
+                    fontWeight: 400,
+                    fontSize: 14,
+                    lineHeight: '20px',
+                    color: 'rgba(255, 255, 255, 1)',
+                  }}
+                  onClick={onContinue}
+                  disabled={continueDisabled || !onContinue}
+                >
+                  {continueLabel}
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import InterviewTimeslotSheet from '@/components/apply/interview-timeslot-sheet';
 import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
+import HeroRadarOverlay from '@/components/apply/hero-radar-overlay';
 
 const STEPS: {
   id: number;
@@ -87,15 +88,9 @@ export default function ApplyDashboardV1() {
             style={{ background: 'rgba(254, 253, 251, 1)' }}
           >
             <div className="relative mx-auto h-full w-full max-w-[1440px]">
-              <div className="pointer-events-none absolute inset-0 z-0 hidden lg:block">
-                <Image
-                  src="/images/dashboard-v1-top.png"
-                  alt=""
-                  fill
-                  className="object-contain object-right"
-                  sizes="1440px"
-                  priority
-                />
+              {/* Desktop ship bg + radar share one contain frame (sidebar-safe) */}
+              <div className="ship-float pointer-events-none absolute inset-0 z-0 hidden lg:block">
+                <HeroRadarOverlay />
               </div>
               <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden lg:hidden">
                 <Image
@@ -278,13 +273,14 @@ export default function ApplyDashboardV1() {
 
             <div
               className="pointer-events-none hidden lg:block"
-              style={{ height: 'calc(298px + 24px + 338px + 24px - 345px + 20px)' }}
+              /* Part2 top 298 + p-6 + 338 col + p-6 + 24 gap − hero spacer 345 */
+              style={{ height: 'calc(298px + 24px + 338px + 24px + 24px - 345px)' }}
               aria-hidden
             />
           </div>
 
           {/* ── Part 3: mobile inset 16; PC 1fr | 20 | 314 ─── */}
-          <div className="relative mx-auto w-full max-w-[1440px] px-4 pb-8 pt-6 lg:px-6">
+          <div className="relative mx-auto w-full max-w-[1440px] px-4 pb-8 pt-6 lg:px-6 lg:pt-0">
             <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_314px] lg:items-start lg:gap-5">
               <div className="flex min-w-0 w-full flex-col gap-5">
                 <section

@@ -289,9 +289,14 @@ export default function Catlog() {
   function goProbing(version: ApplyDashboardVersion) {
     saveUtTrack('applicant');
     saveUtCatalogPath('probing');
+    saveUtApplicantVariant('undergraduate');
     saveApplyDashboardVersion(version);
+    /* Skip login — seed defaults so Shell / dashboard can render. */
+    seedApplyDraftForVariant('undergraduate');
+    seedApplicantProfileForVariant('undergraduate');
     setRole('new-applicant');
-    router.push('/start-tasks');
+    signIn('singpass', new Date().toISOString());
+    router.push('/apply/dashboard');
   }
 
   if (!mounted) {

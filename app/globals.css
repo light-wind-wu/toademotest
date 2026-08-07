@@ -446,6 +446,157 @@
   }
 }
 
+/* ── V1 ship radar overlay (Figma Make) ──────────────────────────────────── */
+@keyframes ship-float {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-9px) rotate(0.4deg);
+  }
+  60% {
+    transform: translateY(-4px) rotate(-0.25deg);
+  }
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+.ship-float {
+  animation: ship-float 8s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes ship-radar-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ship-radar-pulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.38);
+  }
+  14% {
+    opacity: 0.8;
+  }
+  80%,
+  100% {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
+
+.ship-radar-sweep {
+  animation: ship-radar-spin 4s linear infinite;
+  will-change: transform;
+}
+
+.ship-radar-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ship-radar-pulse 4s ease-out infinite;
+}
+
+.ship-radar-ring-d2 {
+  animation-delay: -1.333s;
+}
+
+.ship-radar-ring-d3 {
+  animation-delay: -2.666s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ship-float,
+  .ship-radar-sweep,
+  .ship-radar-ring,
+  .ship-radar-ring-d2,
+  .ship-radar-ring-d3 {
+    animation: none;
+  }
+}
+
+/* ── V2 hero radar + diagonal (Figma Make design Copy) ───────────────────── */
+@keyframes v2-radar-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(7);
+    opacity: 0;
+  }
+}
+
+@keyframes v2-radar-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes v2-radar-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.15;
+    transform: scale(0.7);
+  }
+}
+
+@keyframes v2-diag-slide {
+  0% {
+    transform: translateX(110%);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.9;
+  }
+  75% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+}
+
+.v2-radar-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: v2-radar-pulse 2.8s ease-out infinite;
+}
+
+.v2-radar-sweep {
+  transform-origin: 160px 160px;
+  animation: v2-radar-sweep 5s linear infinite;
+}
+
+.v2-radar-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: v2-radar-dot 2.1s ease-in-out infinite;
+}
+
+.v2-diag-slide {
+  animation: v2-diag-slide 2.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-radar-pulse,
+  .v2-radar-sweep,
+  .v2-radar-dot,
+  .v2-diag-slide {
+    animation: none;
+  }
+}
+
 /* ── Drawer animation ────────────────────────────────────────────────────── */
 .drawer-enter {
   transform: translateX(100%);
