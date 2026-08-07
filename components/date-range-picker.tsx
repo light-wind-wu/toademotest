@@ -51,6 +51,8 @@ export interface DateRangePickerProps {
   hideLabels?: boolean;
   /** Hides the footer showing the selected range and the Clear button. */
   hideFooter?: boolean;
+  /** Positions the calendar icon on the left (default) or right side of the trigger. */
+  iconPosition?: 'left' | 'right';
   /** Called whenever the popover opens or closes (close = interaction end). */
   onOpenChange?: (open: boolean) => void;
 }
@@ -116,6 +118,7 @@ export function DateRangePicker({
   toYear,
   hideLabels = false,
   hideFooter = false,
+  iconPosition = 'left',
   onOpenChange,
 }: DateRangePickerProps) {
   // Forwarded to both calendars; relies on the local Calendar fork's dropdown header.
@@ -152,6 +155,7 @@ export function DateRangePicker({
           "inline-flex h-9 min-w-64 items-center gap-2 rounded-md border border-border bg-surface px-3 text-sm text-fg shadow-sm",
           "hover:bg-bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
           "disabled:cursor-not-allowed disabled:opacity-50",
+          iconPosition === 'right' && "flex-row-reverse",
           !range?.from && "text-fg-muted",
           className,
         )}
