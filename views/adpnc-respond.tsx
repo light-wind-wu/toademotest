@@ -36,6 +36,7 @@ import {
   ChevronRight,
   ChevronUp,
   Clock,
+  Download,
   Eye,
   Inbox,
   LayoutGrid,
@@ -67,6 +68,7 @@ import {
 } from '@/lib/ai-check';
 import { periodLabelToMMMYY } from '@/lib/internship-period';
 import {
+  deadlinePassed,
   findGroup,
   projectMatchesRequest,
   requestRawCategory,
@@ -75,6 +77,7 @@ import {
   requestYearLabel,
   type RequestGroup,
 } from '@/lib/request-groups';
+import { downloadResponseTemplateXlsx } from '@/lib/request-template';
 import type { ProjectRequest, ProjectResponseDraft, ProjectSubmissionBatch, RequestStatus, SubmittedProject } from '@/lib/types';
 
 const FLASH_KEY = 'dsta_flash';
@@ -924,6 +927,7 @@ export default function AdPncRespondPage() {
   }, []);
 
   const group = token ? findGroup(requests, token) : null;
+  const deadlineLocked = group ? deadlinePassed(group.deadline) : false;
   const requestOptions = useMemo(
     () => group?.requests.map((request, index) => ({
       key: requestLineKey(request, index),
@@ -1030,7 +1034,7 @@ export default function AdPncRespondPage() {
 
   const activeVisibleProjects = activeSubmittedProjects(visibleProjects);
   const selectedSubmittableProjects = activeVisibleProjects.filter(p => selectedProjectIds.has(p.id));
-  const canSubmit = selectedSubmittableProjects.length > 0 && pcCleared && securityCleared;
+  const canSubmit = selectedSubmittableProjects.length > 0 && pcCleared && securityCleared && !deadlineLocked;
 
   const requestStatus = group ? requestStatusForGroup(group, batches) : null;
   const requestYear = group ? requestYearLabel(group) : '';
@@ -1102,6 +1106,7 @@ export default function AdPncRespondPage() {
   }
 
   function withdrawProject(projectId: string) {
+    if (deadlineLocked) return;
     const withdrawnAt = new Date().toISOString();
     const updated = batches.map(batch => batch.uploadToken !== token ? batch : {
         ...batch,
@@ -1147,6 +1152,15 @@ export default function AdPncRespondPage() {
     fileInputRef.current?.click();
   }
 
+  async function handleDownloadTemplate() {
+    if (!group) return;
+    try {
+      await downloadResponseTemplateXlsx(group.requests);
+    } catch {
+      showToast('Could not download the template. Please try again.', 'danger');
+    }
+  }
+
   function saveResponseDraftProjects(projects: SubmittedProject[]) {
     const nextDraft: ProjectResponseDraft = {
       id: responseDraft?.id ?? `response-draft-${Date.now()}`,
@@ -1160,17 +1174,19 @@ export default function AdPncRespondPage() {
   }
 
   function deleteDraftProject(projectId: string) {
+    if (deadlineLocked) return;
     saveResponseDraftProjects(draftProjects.filter(project => project.id !== projectId));
   }
 
   function updateDraftProject(project: SubmittedProject) {
+    if (deadlineLocked) return;
     saveResponseDraftProjects(draftProjects.map(item => item.id === project.id ? project : item));
     setEditingDraftProjectId(null);
     showToast('Project draft updated.');
   }
 
   function resubmitProject(project: SubmittedProject) {
-    if (!editingSubmittedProject) return;
+    if (deadlineLocked || !editingSubmittedProject) return;
     const resubmittedAt = new Date().toISOString();
     const updatedBatches = batches.map(batch => batch.id !== editingSubmittedProject.batchId ? batch : {
       ...batch,
@@ -1250,6 +1266,7 @@ export default function AdPncRespondPage() {
   }
 
   function createProjectForRequest(request: ProjectRequest) {
+    if (deadlineLocked) return;
     const params = new URLSearchParams({ token });
     params.set('category', requestRawCategory(request));
     if (request.id) params.set('requestId', request.id);
@@ -1257,7 +1274,7 @@ export default function AdPncRespondPage() {
   }
 
   function handleCreateProject() {
-    if (!group) return;
+    if (!group || deadlineLocked) return;
     if (group.requests.length === 1) {
       createProjectForRequest(group.requests[0]);
       return;
@@ -1266,7 +1283,7 @@ export default function AdPncRespondPage() {
   }
 
   async function handleUploadFile(file: File | undefined) {
-    if (!file || !group) return;
+    if (!file || !group || deadlineLocked) return;
     const defaultCategory = group.requests[0] ? requestRawCategory(group.requests[0]) : '';
     try {
       const projects = await parseUploadedProjects(file, defaultCategory);
@@ -1283,7 +1300,7 @@ export default function AdPncRespondPage() {
   }
 
   function confirmUploadImport() {
-    if (!uploadReview || uploadReview.issues.length > 0 || uploadReview.readyProjects.length === 0) return;
+    if (deadlineLocked || !uploadReview || uploadReview.issues.length > 0 || uploadReview.readyProjects.length === 0) return;
     saveResponseDraftProjects([...draftProjects, ...uploadReview.readyProjects]);
     const importedCategories = new Set(
       uploadReview.readyProjects.map(project => {
@@ -1355,7 +1372,7 @@ export default function AdPncRespondPage() {
   }
 
   function importDemoUploadDrafts() {
-    if (!uploadReview || uploadReview.allProjects.length === 0) return;
+    if (deadlineLocked || !uploadReview || uploadReview.allProjects.length === 0) return;
     const demoProjects = uploadReview.allProjects.map(demoProjectFromUpload);
     saveResponseDraftProjects([...draftProjects, ...demoProjects]);
     showToast(`${demoProjects.length} demo project${demoProjects.length !== 1 ? 's' : ''} added as draft.`);
@@ -1401,7 +1418,11 @@ export default function AdPncRespondPage() {
               </div>
               {isUploadMode && (
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" onClick={triggerUpload}>
+                  <Button variant="outline" onClick={handleDownloadTemplate} disabled={!group}>
+                    <Download size={15} />
+                    Download Template
+                  </Button>
+                  <Button variant="outline" onClick={triggerUpload} disabled={deadlineLocked}>
                     <Upload size={15} />
                     Upload excel
                   </Button>
@@ -1412,7 +1433,7 @@ export default function AdPncRespondPage() {
                     accept=".xlsx,.xls"
                     onChange={event => handleUploadFile(event.target.files?.[0])}
                   />
-                  <Button onClick={handleCreateProject}>
+                  <Button onClick={handleCreateProject} disabled={deadlineLocked}>
                     <Plus size={15} />
                     Create a New Project
                   </Button>
@@ -1420,6 +1441,18 @@ export default function AdPncRespondPage() {
               )}
             </div>
           </div>
+
+          {deadlineLocked && (
+            <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning-bg px-4 py-3">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0 text-warning" />
+              <div>
+                <p className="text-body-sm font-medium text-fg">Response deadline has passed</p>
+                <p className="text-body-sm text-fg-muted">
+                  This request is closed — projects can no longer be added, edited, or submitted.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Request Context */}
           <div className="rounded-lg border border-border bg-surface p-5">
@@ -1431,6 +1464,7 @@ export default function AdPncRespondPage() {
               <EmptyProjectsCard
                 isUploadMode={isUploadMode}
                 onUpload={triggerUpload}
+                disabled={deadlineLocked}
               />
             </div>
           ) : (
@@ -1532,7 +1566,7 @@ export default function AdPncRespondPage() {
                               batchId={isUploadMode ? undefined : batch?.id}
                               selected={isSelected}
                               onToggleSelect={() => toggleProjectSelection(project.id)}
-                              canManage={true}
+                                    canManage={!deadlineLocked}
                               onViewDetails={batch?.id ? () => router.push(`/submissions/project/${encodeURIComponent(batch.id)}/${encodeURIComponent(project.id)}`) : undefined}
                               onEdit={() => {
                                 if (isUploadMode) {
@@ -1592,7 +1626,7 @@ export default function AdPncRespondPage() {
                                     batchId={isUploadMode ? undefined : batch?.id}
                                     selected={isSelected}
                                     onToggleSelect={() => toggleProjectSelection(project.id)}
-                                    canManage={true}
+                              canManage={!deadlineLocked}
                                     onViewDetails={batch?.id ? () => router.push(`/submissions/project/${encodeURIComponent(batch.id)}/${encodeURIComponent(project.id)}`) : undefined}
                                     onEdit={() => {
                                       if (isUploadMode) {
@@ -1629,14 +1663,14 @@ export default function AdPncRespondPage() {
                   <div className="mt-4 space-y-3">
                     <CheckRow
                       checked={pcCleared}
-                      disabled={false}
+                      disabled={deadlineLocked}
                       title="PC Head approval obtained"
                       description="I confirm that all projects have been reviewed and approved by the Programme Centre Head."
                       onCheckedChange={setPcCleared}
                     />
                     <CheckRow
                       checked={securityCleared}
-                      disabled={false}
+                      disabled={deadlineLocked}
                       title="Security review completed"
                       description="I confirm that all projects have been reviewed for security and data protection considerations."
                       onCheckedChange={setSecurityCleared}
@@ -1679,7 +1713,7 @@ export default function AdPncRespondPage() {
             <Button variant="outline" onClick={() => setConfirmSubmitOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => { setConfirmSubmitOpen(false); handleSubmitResponse(); }}>
+            <Button onClick={() => { setConfirmSubmitOpen(false); handleSubmitResponse(); }} disabled={deadlineLocked}>
               Submit
             </Button>
           </DialogFooter>
@@ -1911,7 +1945,7 @@ function SummaryTile({
   );
 }
 
-function EmptyProjectsCard({ isUploadMode, onUpload }: { isUploadMode: boolean; onUpload: () => void }) {
+function EmptyProjectsCard({ isUploadMode, onUpload, disabled }: { isUploadMode: boolean; onUpload: () => void; disabled?: boolean }) {
   return (
     <div className="rounded-lg border border-border bg-surface">
       <EmptyState
@@ -1923,7 +1957,7 @@ function EmptyProjectsCard({ isUploadMode, onUpload }: { isUploadMode: boolean; 
             : 'Uploaded projects for this request will appear here.'
         }
         action={isUploadMode ? (
-          <Button variant="outline" size="sm" onClick={onUpload}>
+          <Button variant="outline" size="sm" onClick={onUpload} disabled={disabled}>
             <Upload size={14} />
             Upload Excel
           </Button>

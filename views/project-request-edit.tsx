@@ -300,10 +300,14 @@ function contactPcForProgrammeCentre(programmeCentre: string): string {
 function programmeCentreOptions() {
   const options = CONTACTS
     .filter(c => c.title === 'Programme Centre Head' && c.pc)
-    .map(c => ({
-      value: c.department === 'DSO' ? 'DSO' : c.pc!,
-      department: c.department as RecipientDepartment,
-    }));
+    .map(c => {
+      const value = c.department === 'DSO' ? 'DSO' : c.pc!;
+      return {
+        value,
+        label: value,
+        department: c.department as RecipientDepartment,
+      };
+    });
 
   const unique = Array.from(new Map(options.map(option => [option.value, option])).values());
   // Canonical PC order first, DSO (and any unlisted centre) last.
@@ -405,9 +409,9 @@ function emptyDraftModel(): EditModel {
 
 function missingFields(model: EditModel) {
   const missing: string[] = [];
-  if (!model.programmeCentre) missing.push('Programme Centre');
+  if (!model.programmeCentre) missing.push('Programme centre');
   if (!model.pcHead) missing.push('PC Head');
-  if (!model.deadline) missing.push('Response Deadline');
+  if (!model.deadline) missing.push('Response deadline');
   if (model.lines.length === 0 || model.lines.some(line =>
     !line.internCategory || !line.calendarPeriod || !line.duration || line.placements < 1
   )) missing.push('Placement Requirements');
@@ -593,6 +597,8 @@ function DerivedRecipients({ pcHead, adpnc, showAll = false, ccEmails, toEmails 
   const [showAllRecipients, setShowAllRecipients] = useState(showAll);
   const ccList = ccEmails ? parseCcList(ccEmails) : HQ_CC_RECIPIENTS;
   const toList = toEmails ? parseCcList(toEmails) : [];
+  const matchesRecipient = (emailOrName: string, targetEmail?: string) =>
+    targetEmail && (emailOrName === targetEmail || emailOrName === recipientLabel(targetEmail));
 
   if (!pcHead && !adpnc) {
     return (
@@ -606,18 +612,18 @@ function DerivedRecipients({ pcHead, adpnc, showAll = false, ccEmails, toEmails 
     <div className="rounded-lg border border-border bg-bg-subtle p-4">
       <div className="flex min-h-9 flex-wrap items-center gap-2">
         <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">To</span>
-        {toList.length > 0 ? toList.map((email, i) => (
-          <Fragment key={email}>
-            <RecipientChip email={email} role={email === pcHead ? 'PC Head' : email === adpnc ? 'AD (P&C)' : ''} badgeVariant="info" />
-            {i < toList.length - 1 && <span className="text-fg-muted">,</span>}
-          </Fragment>
-        )) : (
-          <>
-            {pcHead && <RecipientChip email={pcHead} role="PC Head" badgeVariant="info" />}
-            {pcHead && adpnc && <span className="text-fg-muted">,</span>}
-            {adpnc && <RecipientChip email={adpnc} role="AD (P&C)" badgeVariant="info" />}
-          </>
-        )}
+            {toList.length > 0 ? toList.map((email, i) => (
+              <Fragment key={email}>
+                <RecipientChip email={email} role={matchesRecipient(email, pcHead) ? 'PC Head' : matchesRecipient(email, adpnc) ? 'AD (P&C)' : ''} badgeVariant="info" />
+                {i < toList.length - 1 && <span className="text-fg-muted">,</span>}
+              </Fragment>
+            )) : (
+              <>
+                {pcHead && <RecipientChip email={pcHead} role="PC Head" badgeVariant="info" />}
+                {pcHead && adpnc && <span className="text-fg-muted">,</span>}
+                {adpnc && <RecipientChip email={adpnc} role="AD (P&C)" badgeVariant="info" />}
+              </>
+            )}
       </div>
       {showAllRecipients ? (
         <div className="flex min-h-9 flex-wrap items-center gap-2">
@@ -707,7 +713,7 @@ function RequestEditor({
           <div className="grid grid-cols-4 gap-3 lg:grid-cols-4 lg:items-start">
             <Field>
               <FieldLabel>
-                Programme Centre {!disabled && <span className="text-danger">*</span>}
+                Programme centre {!disabled && <span className="text-danger">*</span>}
               </FieldLabel>
               <Select
                 value={model.programmeCentre}
@@ -726,7 +732,7 @@ function RequestEditor({
               >
                 <SelectTrigger className={cn('min-w-0 overflow-hidden', showErrors && !model.programmeCentre && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select programme centre" /></SelectTrigger>
                 <SelectContent>
-                  {programmeCentreOptions().map(option => <SelectItem key={option.value} value={option.value} disabled={option.value !== 'PC3'}>{option.value}</SelectItem>)}
+                  {programmeCentreOptions().map(option => <SelectItem key={option.value} value={option.value} disabled={option.value !== 'PC3'}>{option.label}</SelectItem>)}
                 </SelectContent>
               </Select>
               <FieldRequired show={showErrors && !model.programmeCentre} />
@@ -858,6 +864,7 @@ function RequestEditor({
                           placeholder="Select start and end date"
                           hideLabels
                           hideFooter
+                          iconPosition="right"
                           className={cn('w-full min-w-0', showErrors && !!line.internCategory && (!line.calendarStart || !line.calendarEnd) && 'border-danger')}
                         />
                         {winPresets.length > 0 && !disabled && (
@@ -975,6 +982,7 @@ function RequestEditor({
                             placeholder="Select start and end date"
                             hideLabels
                             hideFooter
+                            iconPosition="right"
                           />
                           {winPresets.length > 0 && (
                             <button type="button" className="text-label-sm text-accent hover:underline" onClick={() => updateAdditionalLine(line.id, { customWindow: false, calendarStart: '', calendarEnd: '', calendarPeriod: '' })}>Use a preset window</button>
@@ -1031,7 +1039,7 @@ function RequestEditor({
             ))}
             {canAddLines && (
               <Button variant="outline" size="sm" onClick={addLine}>
-                <Plus size={14} />Add intern category
+                <Plus size={14} />Add Intern Category
               </Button>
             )}
           </div>
@@ -1113,7 +1121,7 @@ function AdditionalInternCategoryPanel({
           size="sm"
           onClick={() => onChange([...lines, { id: `additional-${Date.now()}`, internCategory: '', calendarPeriod: '', calendarStart: '', calendarEnd: '', duration: '', placements: 1 }])}
         >
-          <Plus size={14} />Add intern category
+          <Plus size={14} />Add Intern Category
         </Button>
       </div>
     </section>
@@ -1230,7 +1238,7 @@ function DraftReviewDetails({ model, onPreview, emailEdits }: { model: EditModel
         <SectionDivider label="Recipients" uppercase={false} showLine={false} />
         <div className="space-y-5">
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <SummaryItem label="Programme Centre" value={model.programmeCentre} />
+            <SummaryItem label="Programme centre" value={model.programmeCentre} />
             <SummaryItem label="Response deadline" value={fmtDate(model.deadline)} />
           </div>
           <div>
@@ -1274,7 +1282,7 @@ function ReviewPanel({ model, mode, onPreview, emailEdits }: { model: EditModel;
           <SectionDivider label="Recipients" uppercase={false} showLine={false} />
           <div className="space-y-5">
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <SummaryItem label="Programme Centre" value={model.programmeCentre} />
+              <SummaryItem label="Programme centre" value={model.programmeCentre} />
               <SummaryItem label="Response deadline" value={fmtDate(model.deadline)} />
             </div>
             <div>
@@ -1342,7 +1350,7 @@ function ManageReviewPanel({
             <SectionDivider label="Recipients" uppercase={false} showLine={false} />
             <div className="space-y-5">
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <SummaryItem label="Programme Centre" value={model.programmeCentre} />
+                <SummaryItem label="Programme centre" value={model.programmeCentre} />
                 <SummaryItem
                   label="Response deadline"
                   value={deadlineChanged ? `${fmtDate(oldDeadline)} -> ${fmtDate(model.deadline)}` : fmtDate(model.deadline)}

@@ -136,10 +136,14 @@ const PC_ORDER = ['AS', 'CIO', 'Cyber', 'DH', 'EDS', 'Info', 'MDS', 'PC3', 'PC4'
 function programmeCentreOptions() {
   const options = CONTACTS
     .filter(c => c.title === 'Programme Centre Head' && c.pc)
-    .map(c => ({
-      value: c.department === 'DSO' ? 'DSO' : c.pc!,
-      department: c.department as RecipientDepartment,
-    }));
+    .map(c => {
+      const value = c.department === 'DSO' ? 'DSO' : c.pc!;
+      return {
+        value,
+        label: value,
+        department: c.department as RecipientDepartment,
+      };
+    });
 
   const unique = Array.from(new Map(options.map(option => [option.value, option])).values());
   // Canonical PC order first, DSO (and any unlisted centre) last.
@@ -253,7 +257,7 @@ function emptyLevel(): ReqLevel {
 /** The required fields a request is still missing — drives the "N missing" badge. */
 function reqMissing(r: ReqEntry): string[] {
   const m: string[] = [];
-  if (!r.programmeCentre) m.push('Programme Centre');
+  if (!r.programmeCentre) m.push('Programme centre');
   if (!r.deadline) m.push('Response deadline');
   if (r.levels.length === 0 || r.levels.some(l => !l.level || !l.calendarStart || !l.calendarEnd || !l.duration || l.placements < 1)) m.push('Intern category');
   return m;
@@ -364,6 +368,8 @@ function DerivedRecipients({ pcHead, adpnc, hasProgrammeCentre, ccEmails, toEmai
   const [showAllRecipients, setShowAllRecipients] = useState(true);
   const ccList = ccEmails ? parseCcList(ccEmails) : HQ_CC_RECIPIENTS;
   const toList = toEmails ? parseCcList(toEmails) : [];
+  const matchesRecipient = (emailOrName: string, targetEmail?: string) =>
+    targetEmail && (emailOrName === targetEmail || emailOrName === recipientLabel(targetEmail));
 
   if (!pcHead && !adpnc) {
     return (
@@ -377,18 +383,18 @@ function DerivedRecipients({ pcHead, adpnc, hasProgrammeCentre, ccEmails, toEmai
     <div className="rounded-lg border border-border bg-bg-subtle p-4">
       <div className="flex min-h-9 flex-wrap items-center gap-2">
         <span className="w-8 shrink-0 text-caption font-semibold uppercase tracking-wider text-fg-muted">To</span>
-        {toList.length > 0 ? toList.map((email, i) => (
-          <Fragment key={email}>
-            <RecipientChip email={email} role={email === pcHead ? 'PC Head' : email === adpnc ? 'AD (P&C)' : ''} badgeVariant="info" />
-            {i < toList.length - 1 && <span className="text-fg-muted">,</span>}
-          </Fragment>
-        )) : (
-          <>
-            {pcHead && <RecipientChip email={pcHead} role="PC Head" badgeVariant="info" />}
-            {pcHead && adpnc && <span className="text-fg-muted">,</span>}
-            {adpnc && <RecipientChip email={adpnc} role="AD (P&C)" badgeVariant="info" />}
-          </>
-        )}
+            {toList.length > 0 ? toList.map((email, i) => (
+              <Fragment key={email}>
+                <RecipientChip email={email} role={matchesRecipient(email, pcHead) ? 'PC Head' : matchesRecipient(email, adpnc) ? 'AD (P&C)' : ''} badgeVariant="info" />
+                {i < toList.length - 1 && <span className="text-fg-muted">,</span>}
+              </Fragment>
+            )) : (
+              <>
+                {pcHead && <RecipientChip email={pcHead} role="PC Head" badgeVariant="info" />}
+                {pcHead && adpnc && <span className="text-fg-muted">,</span>}
+                {adpnc && <RecipientChip email={adpnc} role="AD (P&C)" badgeVariant="info" />}
+              </>
+            )}
       </div>
       {showAllRecipients ? (
         <div className="flex min-h-9 flex-wrap items-center gap-2">
@@ -436,7 +442,7 @@ function RequestCard({
   const filledLevels = entry.levels.filter(l => l.level).length;
   const totalPlacements = entry.levels.reduce((sum, level) => sum + Math.max(0, level.placements || 0), 0);
   const summaryParts = [
-    entry.programmeCentre || 'Select Programme Centre to begin',
+    entry.programmeCentre || 'Select Programme centre to begin',
     entry.pcHead && recipientLabel(entry.pcHead),
     filledLevels > 0 && `${filledLevels} intern categor${filledLevels === 1 ? 'y' : 'ies'}`,
     `${totalPlacements} placement${totalPlacements === 1 ? '' : 's'}`,
@@ -505,7 +511,7 @@ function RequestCard({
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-4 lg:items-start">
               <Field className={highlightClassFor('programmeCentre')}>
                 <FieldLabel>
-                  Programme Centre <span className="text-danger">*</span>
+                  Programme centre <span className="text-danger">*</span>
                 </FieldLabel>
                 <Select
                   value={entry.programmeCentre}
@@ -518,14 +524,12 @@ function RequestCard({
                       pcHead,
                       adpnc: adPncForProgrammeCentre(programmeCentre),
                     });
-                    touchField(reqKey('programmeCentre'));
                   }}
-                  onOpenChange={open => { if (!open) touchField(reqKey('programmeCentre')); }}
                 >
                   <SelectTrigger className={cn('min-w-0 overflow-hidden', isFieldTouched(reqKey('programmeCentre')) && !entry.programmeCentre && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select programme centre" /></SelectTrigger>
                   <SelectContent>
                     {programmeCentreOptions().map(option => (
-                      <SelectItem key={option.value} value={option.value} disabled={option.value !== 'PC3'}>{option.value}</SelectItem>
+                      <SelectItem key={option.value} value={option.value} disabled={option.value !== 'PC3'}>{option.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -535,7 +539,7 @@ function RequestCard({
                 <FieldLabel>
                   Response deadline <span className="text-danger">*</span>
                 </FieldLabel>
-                <DatePicker value={entry.deadline} onChange={d => { onChange({ deadline: d }); touchField(reqKey('deadline')); }} placeholder="Pick a date" align="right" minDate={sgTomorrow()} error={isFieldTouched(reqKey('deadline')) && !entry.deadline} onClose={() => touchField(reqKey('deadline'))} />
+                <DatePicker value={entry.deadline} onChange={d => { onChange({ deadline: d }); }} placeholder="Pick a date" align="right" minDate={sgTomorrow()} error={isFieldTouched(reqKey('deadline')) && !entry.deadline} />
                 <FieldRequired show={isFieldTouched(reqKey('deadline')) && !entry.deadline} />
               </Field>
             </div>
@@ -621,7 +625,7 @@ function RequestCard({
                         Intern category <span className="text-danger">*</span>
                         <FieldHelpTooltip label="Intern category">The type of intern the project is for</FieldHelpTooltip>
                       </FieldLabel>
-                      <Select value={lvl.level} onValueChange={v => { updateLevel(idx, { level: v ?? '', calendarStart: '', calendarEnd: '', calendarPeriod: '', customWindow: false }); touchField(levelKey(idx, 'level')); }} onOpenChange={open => { if (!open) touchField(levelKey(idx, 'level')); }}>
+                      <Select value={lvl.level} onValueChange={v => { updateLevel(idx, { level: v ?? '', calendarStart: '', calendarEnd: '', calendarPeriod: '', customWindow: false }); }}>
                         <SelectTrigger className={cn('min-w-0 overflow-hidden', isFieldTouched(levelKey(idx, 'level')) && !lvl.level && 'border-danger')}>
                           <SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select intern category" />
                         </SelectTrigger>
@@ -657,24 +661,22 @@ function RequestCard({
                               const patch: Partial<ReqLevel> = { calendarStart, calendarEnd, calendarPeriod: monthRangeLabel(calendarStart, calendarEnd) };
                               if (wm && lvl.duration && parseInt(lvl.duration, 10) > wm) patch.duration = '';
                               updateLevel(idx, patch);
-                              touchField(levelKey(idx, 'calendarStart'));
-                              touchField(levelKey(idx, 'calendarEnd'));
                             }}
                             placeholder="Select start and end date"
                             hideLabels
                             hideFooter
-                            onOpenChange={open => { if (!open) { touchField(levelKey(idx, 'calendarStart')); touchField(levelKey(idx, 'calendarEnd')); } }}
+                            iconPosition="right"
                             className={cn('w-full min-w-0', isFieldTouched(levelKey(idx, 'calendarStart')) && !!lvl.level && (!lvl.calendarStart || !lvl.calendarEnd) && 'border-danger')}
                           />
                           {winPresets.length > 0 && (
-                            <button type="button" className="text-label-sm text-accent hover:underline hidden" onClick={() => { updateLevel(idx, { customWindow: false, calendarStart: '', calendarEnd: '', calendarPeriod: '' }); touchField(levelKey(idx, 'calendarStart')); touchField(levelKey(idx, 'calendarEnd')); }}>Use a preset window</button>
+                            <button type="button" className="text-label-sm text-accent hover:underline hidden" onClick={() => { updateLevel(idx, { customWindow: false, calendarStart: '', calendarEnd: '', calendarPeriod: '' }); }}>Use a preset window</button>
                           )}
                         </div>
                       ) : (
                         <Select
                           value={winSelected}
                           onValueChange={v => {
-                            if (v === '__custom__') { updateLevel(idx, { customWindow: true, calendarStart: '', calendarEnd: '', calendarPeriod: '' }); touchField(levelKey(idx, 'calendarStart')); touchField(levelKey(idx, 'calendarEnd')); return; }
+                            if (v === '__custom__') { updateLevel(idx, { customWindow: true, calendarStart: '', calendarEnd: '', calendarPeriod: '' }); return; }
                             const p = winPresets.find(x => x.label === v);
                             if (!p) return;
                             const ps = toMonthIndex(p.start), pe = toMonthIndex(p.end);
@@ -682,10 +684,7 @@ function RequestCard({
                             const patch: Partial<ReqLevel> = { calendarStart: p.start, calendarEnd: p.end, calendarPeriod: monthRangeLabel(p.start, p.end), customWindow: false };
                             if (wm && lvl.duration && parseInt(lvl.duration, 10) > wm) patch.duration = '';
                             updateLevel(idx, patch);
-                            touchField(levelKey(idx, 'calendarStart'));
-                            touchField(levelKey(idx, 'calendarEnd'));
                           }}
-                          onOpenChange={open => { if (!open) { touchField(levelKey(idx, 'calendarStart')); touchField(levelKey(idx, 'calendarEnd')); } }}
                         >
                           <SelectTrigger className={cn('min-w-0 overflow-hidden', isFieldTouched(levelKey(idx, 'calendarStart')) && !lvl.calendarStart && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Select internship window" /></SelectTrigger>
                           <SelectContent>
@@ -701,7 +700,7 @@ function RequestCard({
                         Project duration <span className="text-danger">*</span>
                         <FieldHelpTooltip label="Project duration">Proposed projects should last around this length of time</FieldHelpTooltip>
                       </FieldLabel>
-                      <Select value={lvl.duration} onValueChange={v => { updateLevel(idx, { duration: v ?? '' }); touchField(levelKey(idx, 'duration')); }} onOpenChange={open => { if (!open) touchField(levelKey(idx, 'duration')); }}>
+                      <Select value={lvl.duration} onValueChange={v => { updateLevel(idx, { duration: v ?? '' }); }}>
                         <SelectTrigger className={cn('min-w-0 overflow-hidden', isFieldTouched(levelKey(idx, 'duration')) && !lvl.duration && 'border-danger')}><SelectValue className="truncate block min-w-0 flex-1 text-left" placeholder="Project duration" /></SelectTrigger>
                         <SelectContent>
                           {durOptions.map(duration => <SelectItem key={duration} value={duration}>{duration}</SelectItem>)}
@@ -713,7 +712,7 @@ function RequestCard({
                       <div className="flex items-center gap-2">
                         <Field>
                           <FieldLabel className="lg:hidden">Placements <span className="text-danger">*</span></FieldLabel>
-                          <Stepper value={lvl.placements} onChange={n => updateLevel(idx, { placements: n })} onInteract={() => touchField(levelKey(idx, 'placements'))} />
+                          <Stepper value={lvl.placements} onChange={n => updateLevel(idx, { placements: n })} />
                         </Field>
                         <button
                           type="button"
@@ -734,7 +733,7 @@ function RequestCard({
             </div>
             {!hideAddInternCategory && <div className="mt-3 pt-1">
               <Button variant="outline" size="sm" onClick={addLevel}>
-                <Plus size={14} />Add intern category
+                <Plus size={14} />Add Intern Category
               </Button>
             </div>}
           </div>
@@ -757,13 +756,15 @@ function ReviewField({ label, value }: { label: string; value: string }) {
 function ReviewRecipientChips({ entry, ccEmails, toEmails }: { entry: ReqEntry; ccEmails?: string; toEmails?: string }) {
   const ccList = ccEmails ? parseCcList(ccEmails) : HQ_CC_RECIPIENTS;
   const toList = toEmails ? parseCcList(toEmails) : [];
+  const matchesRecipient = (emailOrName: string, targetEmail?: string) =>
+    targetEmail && (emailOrName === targetEmail || emailOrName === recipientLabel(targetEmail));
   return (
     <div className="space-y-2">
       <div className="flex min-h-9 flex-wrap items-center gap-2">
         <span className="shrink-0 text-body-sm text-fg-muted">To:</span>
         {toList.length > 0 ? toList.map((email, i) => (
           <Fragment key={email}>
-            <RecipientChip email={email} role={email === entry.pcHead ? 'PC Head' : email === entry.adpnc ? 'AD (P&C)' : ''} badgeVariant="info" />
+            <RecipientChip email={email} role={matchesRecipient(email, entry.pcHead) ? 'PC Head' : matchesRecipient(email, entry.adpnc) ? 'AD (P&C)' : ''} badgeVariant="info" />
             {i < toList.length - 1 && <span className="text-fg-muted">,</span>}
           </Fragment>
         )) : (
@@ -795,7 +796,7 @@ function ReviewDetails({ entry, onPreview, ccEdit, toEdit }: { entry: ReqEntry; 
         <div className="space-y-5">
           <div className="flex w-1/2 items-stretch gap-4">
             <div className="flex-1">
-              <ReviewField label="Programme Centre" value={entry.programmeCentre} />
+              <ReviewField label="Programme centre" value={entry.programmeCentre} />
             </div>
             <div className="w-px self-stretch bg-border" aria-hidden="true" />
             <div className="flex-1">

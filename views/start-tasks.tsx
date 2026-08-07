@@ -185,24 +185,6 @@ function pc3UgReturnedBatch(): ProjectSubmissionBatch {
       techDomain: 'Digital',
       emergingArea: 'Data Analytics',
     },
-    // {
-    //   ...base,
-    //   id: 'sub-pc3-ug-approved-007',
-    //   title: 'Autonomous Threat Detection for Perimeter Security',
-    //   description:
-    //     'Prototype a low-latency detection pipeline that classifies acoustic and motion sensor events along secure perimeters, reducing false alarms for operators.',
-    //   mentor: 'Linda Ong',
-    //   mentorAppointment: 'Principal Engineer',
-    //   mentorEmail: 'linda_ong@dsta.gov.sg',
-    //   mentorUserId: 'mentor-linda',
-    //   mentorBio: 'Leads applied AI projects for situational awareness and sensor fusion.',
-    //   skills: ['Python', 'Machine Learning', 'Signal Processing'],
-    //   status: 'approved',
-    //   reviewedAt: '2026-07-10',
-    //   reviewedBy: 'Davina Tan',
-    //   techDomain: 'Sensors',
-    //   emergingArea: 'AI/ML',
-    // },
   ];
 
   return {

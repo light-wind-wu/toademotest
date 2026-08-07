@@ -264,7 +264,10 @@ export default function DashboardPage() {
 
   const maxSchool = Math.max(...data.schools.map((s) => s.count), 1);
 
-  const hasData = liveFunnel.total > 0;
+  // Temporary: force both cards to render their empty-state placeholder on entry.
+  const SHOW_EMPTY_STATE = true;
+
+  const hasData = !SHOW_EMPTY_STATE && liveFunnel.total > 0;
 
   return (
     <Shell activeRoute="/dashboard">
@@ -347,13 +350,18 @@ export default function DashboardPage() {
             Application Overview
           </h2>
           {!hasData ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
-              <Inbox size={32} className="text-fg-subtle" />
-              <p className="text-body-md font-medium text-fg-muted">
-                No applications yet
+            <div className="flex flex-col items-center justify-center py-10 text-center gap-3">
+              <img
+                src="/images/application-overview-empty.png"
+                alt=""
+                className="w-[240px] h-auto"
+              />
+              <p className="text-body-md font-semibold text-fg">
+                Dashboard content placeholder
               </p>
-              <p className="text-body-sm text-fg-subtle">
-                Data will appear once this programme receives applications.
+              <p className="text-body-sm text-fg-muted max-w-[360px]">
+                This area is a preview of the future Dashboard and is not part of
+                this usability test. Please continue with your task.
               </p>
             </div>
           ) : (
@@ -405,15 +413,21 @@ export default function DashboardPage() {
         {/* Tasks */}
         <div className="col-span-12 lg:col-span-6 card p-5 flex flex-col gap-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-[18px] font-semibold text-fg">Tasks {liveTasks.length > 0 && <span className="text-fg-muted">({liveTasks.length})</span>}</h2>
+            <h2 className="text-[18px] font-semibold text-fg">Tasks {liveTasks.length > 0 && <span className="text-fg-muted hidden">({liveTasks.length})</span>}</h2>
           </div>
-          {liveTasks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center gap-2">
-              <CheckCircle size={28} className="text-success" />
-              <p className="text-body-md font-medium text-fg">All caught up</p>
-              <p className="text-body-sm text-fg-muted">
-                No pending project submissions or approaching windows with open
-                requests.
+          {liveTasks.length === 0 || SHOW_EMPTY_STATE ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center gap-3 flex-1">
+              <img
+                src="/images/tasks-empty.png"
+                alt=""
+                className="w-[240px] h-auto"
+              />
+              <p className="text-body-md font-semibold text-fg">
+                Dashboard content placeholder
+              </p>
+              <p className="text-body-sm text-fg-muted max-w-[360px]">
+                This area is a preview of the future Dashboard and is not part of
+                this usability test. Please continue with your task.
               </p>
             </div>
           ) : (

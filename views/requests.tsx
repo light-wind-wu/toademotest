@@ -437,6 +437,30 @@ const LINE_STATUS_META = {
   },
 };
 
+function textOnly(cls: string) {
+  return cls.split(' ').filter(c => c.startsWith('text-')).join(' ') || cls;
+}
+
+/* Project request status colours — used for group rows (with background). */
+const REQUEST_STATUS_COLOURS = {
+  draft:      STATUS_COLOURS.draft,
+  pending:    STATUS_COLOURS.pending,
+  incomplete: STATUS_COLOURS.incomplete,
+  fulfilled:  STATUS_COLOURS.fulfilled,
+  closed:     STATUS_COLOURS.closed,
+  expired:    STATUS_COLOURS.expired,
+} as const;
+
+/* Project item status colours — used for sub rows (text only, no badge). */
+const ITEM_STATUS_COLOURS = {
+  notSubmitted:      'text-[rgba(69,85,108,1)]',
+  pendingReview:     textOnly(STATUS_COLOURS.pending),
+  returnedForUpdate: textOnly(STATUS_COLOURS.returnedForUpdate),
+  pendingDceApproval: textOnly(STATUS_COLOURS.frozen),
+  approved:          textOnly(STATUS_COLOURS.approved),
+  rejected:          textOnly(STATUS_COLOURS.rejected),
+} as const;
+
 const PROJ_REVIEW_TIPS: Record<string, string> = {
   approved:         'Approved by IO and added to Projects.',
   rejected:         'Rejected by IO and will not proceed.',
@@ -878,7 +902,7 @@ export default function RequestsPage() {
               <MenuItem onClick={() => openExtendDeadline(group)}>
                 <CalendarClock size={14} />Extend Deadline
               </MenuItem>
-              <MenuSeparator />
+              {isClosed && <MenuSeparator />}
             </>
           ) : isClosed ? (
             <>
@@ -1548,7 +1572,7 @@ export default function RequestsPage() {
       header: () => <SortHeader label="Status" colId="status" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
       meta: { size: 'long' },
       cell: () => (
-        <span className="badge text-caption font-normal text-warning">Pending</span>
+        <span className={cn('badge text-caption font-normal', REQUEST_STATUS_COLOURS.pending)}>Pending</span>
       ),
     }));
     cols.push(pendingColumnHelper.display({
@@ -1620,7 +1644,7 @@ export default function RequestsPage() {
             <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('slots')?.getSize()} truncate>{r.slots}</TableCell>
           )}
           <TableCell className="px-4 py-3" maxWidth={table.getColumn('status')?.getSize()}>
-            <span className={cn('badge text-caption font-normal', r.status === 'returnedForUpdate' ? 'text-danger' : 'text-warning')}>
+            <span className={cn('text-xs font-normal ml-1', r.status === 'returnedForUpdate' ? ITEM_STATUS_COLOURS.returnedForUpdate : ITEM_STATUS_COLOURS.pendingReview)}>
               {r.status === 'returnedForUpdate' ? 'Return for Update' : 'Pending'}
             </span>
           </TableCell>
@@ -1750,8 +1774,8 @@ export default function RequestsPage() {
       header: () => <SortHeader label="Status" colId="status" sortCol={sortCol} sortDir={sortDir} onSort={doSort} />,
       meta: { size: 'long' },
       cell: () => (
-        <span className="badge text-caption font-normal text-warning">
-          Pending DCE Approval
+        <span className={cn('badge text-caption font-normal', REQUEST_STATUS_COLOURS.incomplete)}>
+          Incomplete
         </span>
       ),
     }));
@@ -1825,7 +1849,7 @@ export default function RequestsPage() {
                 <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('slots')?.getSize()} truncate>{r.slots}</TableCell>
               )}
               <TableCell className="" maxWidth={table.getColumn('status')?.getSize()}>
-                <span className="badge text-caption font-normal text-warning">Pending DCE Approval</span>
+                <span className={cn('text-xs font-normal ml-1', ITEM_STATUS_COLOURS.pendingDceApproval)}>Pending DCE Approval</span>
               </TableCell>
               <TableCell
                 className="px-4 py-3"
@@ -1950,7 +1974,7 @@ export default function RequestsPage() {
       cell: ({ row }) => {
         const hasUnfinished = row.original.rows.some(r => r.status === 'pending' || r.status === 'frozen');
         return hasUnfinished ? (
-          <span className="badge text-caption font-normal text-warning">Incomplete</span>
+          <span className={cn('badge text-caption font-normal', REQUEST_STATUS_COLOURS.incomplete)}>Incomplete</span>
         ) : null;
       },
     }));
@@ -2022,7 +2046,7 @@ export default function RequestsPage() {
             <TableCell className="px-4 py-3 text-body-sm text-fg-muted" maxWidth={table.getColumn('slots')?.getSize()} truncate>{r.slots}</TableCell>
           )}
           <TableCell className="px-4 py-3" maxWidth={table.getColumn('status')?.getSize()}>
-            <span className={cn('badge text-caption font-normal', r.status === 'frozen' ? 'text-warning' : 'text-warning')}>
+            <span className={cn('text-xs font-normal ml-1', r.status === 'frozen' ? ITEM_STATUS_COLOURS.pendingDceApproval : ITEM_STATUS_COLOURS.pendingReview)}>
               {r.status === 'frozen' ? 'Pending DCE Approval' : 'Pending'}
             </span>
           </TableCell>
