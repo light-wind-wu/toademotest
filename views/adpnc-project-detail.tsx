@@ -6,12 +6,21 @@ import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
 import { ArrowLeft, ChevronRight, Clock, History, FileClock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { loadRequests, loadSubmissions, saveSubmissions } from '@/lib/storage';
+import { loadRequests, loadSubmissions, saveSubmissions, saveRequests } from '@/lib/storage';
+import { addNotification } from '@/lib/notifications';
 import { findGroup, projectMatchesRequest, requestRawCategory } from '@/lib/request-groups';
 import { periodLabelToMMMYY } from '@/lib/internship-period';
 import { STATUS_COLOURS } from '@/lib/data';
 import RequestContextTable from '@/components/ui-legacy/request-context-table';
-import type { ProjectRequest, ProjectSubmissionBatch, SubmittedProject } from '@/lib/types';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import type { ProjectRequest, ProjectSubmissionBatch, RequestStatus, SubmittedProject } from '@/lib/types';
 
 const STATUS_LABELS: Record<SubmittedProject['status'], string> = {
   draft: 'Draft',
@@ -81,6 +90,7 @@ export default function AdPncProjectDetailPage() {
   const [project, setProject] = useState<SubmittedProject | null>(null);
   const [requests, setRequests] = useState<ProjectRequest[]>([]);
   const [auditOpen, setAuditOpen] = useState(false);
+  const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
 
   useEffect(() => {
     const batches = loadSubmissions();
@@ -130,6 +140,51 @@ export default function AdPncProjectDetailPage() {
     saveSubmissions(nextBatches);
     setProject(nextProject);
     setBatch(nextBatch);
+  }
+
+  function handleSubmit() {
+    if (!batch || !project) return;
+    const resubmittedAt = new Date().toISOString();
+    const allBatches = loadSubmissions();
+    const updated = allBatches.map(b => b.id !== batch.id ? b : {
+      ...b,
+      projects: b.projects.map(p => p.id !== project.id ? p : {
+        ...p,
+        status: 'pending' as const,
+        remarks: undefined,
+        resubmittedAt,
+        resubmittedBy: b.submittedBy ?? b.pcHead ?? 'AD (P&C)',
+      }),
+    });
+    saveSubmissions(updated);
+    const updatedRequests = loadRequests().map(request => {
+      if (request.uploadToken !== batch.uploadToken) return request;
+      const matchingProjects = updated
+        .filter(b => b.uploadToken === batch.uploadToken)
+        .flatMap(b => b.projects)
+        .filter(p => p.status !== 'withdrawn')
+        .filter(p => projectMatchesRequest(p, request));
+      const nextUploaded = matchingProjects.reduce((sum, p) => sum + p.slots, 0);
+      const nextStatus: RequestStatus =
+        nextUploaded > request.placements
+          ? 'excess'
+          : nextUploaded === request.placements
+            ? 'matched'
+            : nextUploaded > 0
+              ? 'partial'
+              : 'pending';
+      return { ...request, uploaded: nextUploaded, created: matchingProjects.length, status: nextStatus };
+    });
+    saveRequests(updatedRequests);
+    addNotification({
+      forRole: 'io',
+      title: `Project submitted — ${project.title}`,
+      body: `AD (P&C) has submitted "${project.title}" for IO review.`,
+      href: '/projects',
+      tier: 'action',
+    });
+    sessionStorage.setItem('dsta_submissions_success_dialog', '1');
+    router.push(`/submissions/respond?token=${encodeURIComponent(batch.uploadToken)}&mode=view`);
   }
 
   return (
@@ -262,16 +317,42 @@ export default function AdPncProjectDetailPage() {
       </div>
 
       <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-gradient-to-b from-surface to-bg px-[clamp(24px,2.6vw,40px)] py-2">
-        <p className="text-body-sm text-fg-muted">Read-only project details</p>
-        <div className="flex items-center gap-3">
+        <p className="text-body-sm text-fg-muted">
           <Button variant="outline" onClick={() => router.push(backHref)}>
             Back
+          </Button>
+        </p>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={() => router.push(backHref)}>
+            Cancel
+          </Button>
+          <Button onClick={() => setConfirmSubmitOpen(true)}>
+            Submit
           </Button>
           <Button variant="danger" onClick={handleWithdraw}>
             Withdraw Project
           </Button>
         </div>
       </div>
+
+      <Dialog open={confirmSubmitOpen} onOpenChange={setConfirmSubmitOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send project?</DialogTitle>
+            <DialogDescription>
+              Your project will be sent to the IO review.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmSubmitOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => { setConfirmSubmitOpen(false); handleSubmit(); }}>
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Shell>
   );
 }

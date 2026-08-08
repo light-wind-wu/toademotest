@@ -2443,7 +2443,7 @@ export default function RequestsPage() {
     });
     setSelectedKeys(new Set());
     setDceReturnOpen(false);
-    showToast(`${targetKeys.size} project${targetKeys.size !== 1 ? 's' : ''} returned for update by DCE.`);
+    setReturnUpdateSuccessOpen(true);
   }
 
   function doUnlockForEditing(keys?: Set<string>) {

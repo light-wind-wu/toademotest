@@ -11,6 +11,7 @@ import EmptyState from '@/components/ui-legacy/empty-state';
 import RequestContextTable from '@/components/ui-legacy/request-context-table';
 import { SortHeader } from '@/components/ui-legacy/sort-header';
 import AiCheckBlock from '@/components/ui-legacy/ai-check-block';
+import { SuccessCelebration } from '@/components/ui-legacy/success-celebration';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
@@ -920,6 +921,7 @@ export default function AdPncRespondPage() {
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<1 | -1>(1);
   const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
+  const [submittedDialog, setSubmittedDialog] = useState(false);
 
   useEffect(() => {
     try {
@@ -928,6 +930,13 @@ export default function AdPncRespondPage() {
         sessionStorage.removeItem(FLASH_KEY);
         const { message, tone } = JSON.parse(raw);
         if (message) showToast(message, tone ?? 'success');
+      }
+    } catch {}
+    try {
+      const raw = sessionStorage.getItem('dsta_submissions_success_dialog');
+      if (raw) {
+        setSubmittedDialog(true);
+        sessionStorage.removeItem('dsta_submissions_success_dialog');
       }
     } catch {}
     setRequests(loadRequests());
@@ -1444,7 +1453,7 @@ export default function AdPncRespondPage() {
                     accept=".xlsx,.xls"
                     onChange={event => handleUploadFile(event.target.files?.[0])}
                   />
-                  <Button onClick={handleCreateProject} disabled={deadlineLocked}>
+                  <Button onClick={() => showToast('This button is not available for this test', 'info')} className="pointer-events-auto opacity-50 cursor-not-allowed">
                     <Plus size={15} />
                     Create a New Project
                   </Button>
@@ -1789,6 +1798,19 @@ export default function AdPncRespondPage() {
           onImportDemo={importDemoUploadDrafts}
         />
       )}
+      <Dialog open={submittedDialog} onOpenChange={(open) => { if (!open) setSubmittedDialog(false); }}>
+        <DialogContent className="border-none bg-transparent p-0 shadow-none">
+          <SuccessCelebration
+            title="Task Completed"
+            message="You have successfully completed this test task. Your responses have been recorded."
+            buttonText="Back to Tasks"
+            onButtonClick={() => {
+              setSubmittedDialog(false);
+              router.push('/start-tasks');
+            }}
+          />
+        </DialogContent>
+      </Dialog>
       <Toast message={toast} />
     </Shell>
   );

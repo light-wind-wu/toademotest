@@ -414,10 +414,10 @@ function BottomActionBar({
         )}
         {status === 'frozen' && (
           <>
-            <Button size="md" variant="outline" onClick={onReturn}>
+            <Button size="md" onClick={onReturn} className="bg-[rgba(251,44,54,0.1)] text-[rgba(193,0,7,1)] hover:bg-[rgba(251,44,54,0.15)] border border-[#F8A4A8]">
               Returned for Update
             </Button>
-            <Button size="md" variant="outline" className="text-danger border-danger/30 hover:bg-danger-bg" onClick={onReject}>
+            <Button size="md" variant="danger" onClick={onReject}>
               Reject Project
             </Button>
             <Button size="md" onClick={onApprove}>

@@ -312,7 +312,7 @@ export default function AdPncEditSubmissionPage() {
     addNotification({ forRole: 'io', title: `Project resubmitted — ${edit.title}`, body: `AD (P&C) has resubmitted "${edit.title}" for ${progMap[batch.programme] ?? batch.programme} after revision. Ready for IO review.`, href: '/projects', tier: 'action' });
     sessionStorage.setItem('dsta_pending_toast', `"${edit.title}" resubmitted for IO review.`);
     sessionStorage.setItem('dsta_submissions_success_dialog', '1');
-    router.push('/submissions');
+    router.push(`/submissions/respond?token=${encodeURIComponent(batch.uploadToken)}&mode=view`);
   }
 
   function setTechCompetency(index: number, value: string) {
