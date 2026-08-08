@@ -490,7 +490,7 @@ export default function SubmissionReviewPage() {
               </span>
             )}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => { sessionStorage.setItem('dsta_requests_target_tab', project.status === 'frozen' ? 'pendingDce' : 'pending'); router.push('/requests'); }}>Back</Button>
+          <Button variant="outline" size="sm" onClick={() => { if (window.history.length > 1) router.back(); else router.push('/requests'); }}>Back</Button>
         </div>
       </div>
 

@@ -1411,7 +1411,7 @@ export default function AdPncRespondPage() {
               size="sm"
             />
           </div>
-          <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-end gap-3 border-t border-border bg-bg-subtle px-[clamp(24px,2.6vw,40px)] py-2">
+          <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-start gap-3 border-t border-border bg-bg-subtle px-[clamp(24px,2.6vw,40px)] py-2">
             <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>Back to Project Requests</Button>
           </div>
         </>
@@ -1702,7 +1702,9 @@ export default function AdPncRespondPage() {
           )}
 
           <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-gradient-to-b from-surface to-bg px-[clamp(24px,2.6vw,40px)] py-2">
-            <p className="text-body-sm text-fg"></p>
+            <p className="text-body-sm text-fg">
+              <Button variant="ghost" size="md" onClick={() => router.push('/submissions')}>Back</Button>
+            </p>
             <div className="flex items-center gap-3">
               <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>
                 Cancel

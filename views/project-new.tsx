@@ -1344,29 +1344,32 @@ export default function ProjectNewPage() {
         </div>
 
         {/* Footer — full-bleed sticky action bar (matches the project-request wizard) */}
-        <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-end gap-3 border-t border-border bg-surface/95 px-[clamp(24px,2.6vw,40px)] py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] backdrop-blur">
-          {step === 1 ? (
-            <Button variant="outline" onClick={() => router.push(backRoute)}>Cancel</Button>
-          ) : (
+        <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-5 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-surface/95 px-[clamp(24px,2.6vw,40px)] py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] backdrop-blur">
+          {step > 1 && (
             <Button variant="ghost" onClick={() => { setErrors({}); setStep(step - 1); }}>
               <ArrowLeft size={16} />Back
             </Button>
           )}
-          {canDraft && (
-            <Button variant="outline" onClick={handleSaveDraft}>
-              <Save size={15} />Save Draft
-            </Button>
-          )}
-          {step < 4 ? (
-            <Button onClick={step === 1 ? goToStep2 : step === 2 ? goToStep3 : goToStep4}>
-              Next: {STEP_DEFS[step].label} <ArrowRight size={16} />
-            </Button>
-          ) : (
-            <Button onClick={handleSubmit} disabled={saving}>
-              <CheckCircle2 size={16} />
-              {saving ? "Saving…" : isAd ? "Submit Project" : "Create Project"}
-            </Button>
-          )}
+          <div className="flex items-center gap-3 ml-auto">
+            {step === 1 && (
+              <Button variant="outline" onClick={() => router.push(backRoute)}>Cancel</Button>
+            )}
+            {canDraft && (
+              <Button variant="outline" onClick={handleSaveDraft}>
+                <Save size={15} />Save Draft
+              </Button>
+            )}
+            {step < 4 ? (
+              <Button onClick={step === 1 ? goToStep2 : step === 2 ? goToStep3 : goToStep4}>
+                Next: {STEP_DEFS[step].label} <ArrowRight size={16} />
+              </Button>
+            ) : (
+              <Button onClick={handleSubmit} disabled={saving}>
+                <CheckCircle2 size={16} />
+                {saving ? "Saving…" : isAd ? "Submit Project" : "Create Project"}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
       <Toast message={toast} />

@@ -2172,7 +2172,8 @@ export default function RequestsPage() {
       new URLSearchParams(window.location.search).get('tab');
     if (targetTab) {
       sessionStorage.removeItem('dsta_requests_target_tab');
-      if (targetTab === 'submissions' || targetTab === 'pending' || targetTab === 'approved' || targetTab === 'rejected') {
+      const submissionTabs: TabKey[] = ['sent', 'pending', 'pendingDce', 'pendingAll', 'rejected', 'approved', 'all'];
+      if (targetTab === 'submissions' || (submissionTabs as string[]).includes(targetTab)) {
         // Land on the Project Submissions workspace (optionally a specific sub-tab).
         setTopTab('submissions');
         if (targetTab !== 'submissions') setTab(targetTab as TabKey);

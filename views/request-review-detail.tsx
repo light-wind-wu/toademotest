@@ -395,13 +395,12 @@ function BottomActionBar({
   onReturn: () => void;
 }) {
   const router = useRouter();
-  const backTarget = status === 'frozen' ? 'pendingDce' : status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : 'pending';
   return (
     <div className="sticky bottom-0 z-20 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-8 flex shrink-0 items-center justify-between gap-3 border-t border-border bg-gradient-to-b from-surface to-bg px-[clamp(24px,2.6vw,40px)] py-2">
       <p className="text-body-sm text-fg-muted">
         <Button variant="ghost" size="md" onClick={() => {
-          sessionStorage.setItem('dsta_requests_target_tab', backTarget);
-          router.push('/requests');
+          if (window.history.length > 1) router.back();
+          else router.push('/requests');
         }}>
           Back
         </Button>
