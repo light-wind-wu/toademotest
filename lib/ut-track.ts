@@ -82,3 +82,35 @@ export function loadUtApplicantVariant(): UtApplicantVariant | null {
   }
   return null;
 }
+
+/** Which applicant task on /start-tasks launched login (affects post-Singpass landing). */
+export type UtApplicantTaskIntent = 'apply' | 'interview';
+
+export const UT_APPLICANT_TASK_KEY = 'dsta_ut_applicant_task';
+
+export function saveUtApplicantTaskIntent(intent: UtApplicantTaskIntent) {
+  try {
+    localStorage.setItem(UT_APPLICANT_TASK_KEY, intent);
+  } catch {
+    /* noop */
+  }
+}
+
+export function loadUtApplicantTaskIntent(): UtApplicantTaskIntent | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(UT_APPLICANT_TASK_KEY);
+    if (raw === 'apply' || raw === 'interview') return raw;
+  } catch {
+    /* noop */
+  }
+  return null;
+}
+
+export function clearUtApplicantTaskIntent() {
+  try {
+    localStorage.removeItem(UT_APPLICANT_TASK_KEY);
+  } catch {
+    /* noop */
+  }
+}

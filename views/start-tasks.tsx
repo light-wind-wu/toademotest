@@ -8,12 +8,13 @@ import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
-import { useSession, signIn, isSignedIn } from '@/lib/session';
+import { useSession, signIn, signOut } from '@/lib/session';
 import { useRole } from '@/lib/role';
 import {
   loadUtApplicantVariant,
   loadUtCatalogPath,
   loadUtTrack,
+  saveUtApplicantTaskIntent,
   type UtCatalogPath,
   type UtTrack,
 } from '@/lib/ut-track';
@@ -21,10 +22,7 @@ import { getAdPncTask2RespondHref, resetUtScenario } from '@/lib/ut-scenarios';
 import Topbar from '@/components/layout/topbar';
 import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
 import { cn } from '@/lib/utils';
-import {
-  getMyinfoProfile,
-  saveApplicantProfile,
-} from '@/lib/myinfo';
+import { getMyinfoProfile, saveApplicantProfile } from '@/lib/myinfo';
 
 const ART_W = 1680;
 const ART_H = 900;
@@ -108,7 +106,7 @@ const APPLICANT_TASKS: TaskDef[] = [
   {
     id: 2,
     title: 'B3.2 — Schedule an Interview with a Mentor',
-    href: '/apply/dashboard',
+    href: '/login',
     enabled: true,
   },
 ];
@@ -117,7 +115,7 @@ const PROBING_TASKS: TaskDef[] = [
   {
     id: 1,
     title: 'Explore Applicant Homepage',
-    href: '/login',
+    href: '/apply/dashboard',
     enabled: true,
   },
 ];
@@ -193,12 +191,13 @@ export default function StartTasks() {
         : null;
     resetUtScenario({ path, taskId: task.id, applicantVariant });
     const href = task.resolveHref?.() ?? task.href;
-    /* Applicant Task 2 → dashboard: ensure session so Shell does not bounce to login/welcome. */
-    if (
-      (track === 'applicant' || path === 'applicant') &&
-      href.startsWith('/apply/dashboard') &&
-      !isSignedIn()
-    ) {
+    /* Catalog item 5: both tasks require Singpass; Task 2 lands on dashboard after login. */
+    if ((track === 'applicant' || path === 'applicant') && path !== 'probing' && href === '/login') {
+      saveUtApplicantTaskIntent(task.id === 2 ? 'interview' : 'apply');
+      signOut();
+    }
+    /* Catalog item 6 (A/B): skip login — open the seeded homepage directly. */
+    if (path === 'probing' && href.startsWith('/apply/dashboard')) {
       const profile = getMyinfoProfile('new-applicant');
       saveApplicantProfile({
         ...profile,

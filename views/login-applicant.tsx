@@ -1,8 +1,8 @@
 'use client';
 
 /* Applicant sign-in — match C-end comps: Singpass + decorative email/password
-   (email login is visual only). Singpass → Myinfo → welcome (apply path) or
-   /apply/dashboard (probing A/B — skip application flow). */
+   (email login is visual only). Singpass → Myinfo → welcome (apply Task 1),
+   or /apply/dashboard (Task 2 interview / probing A·B). */
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRole } from '@/lib/role';
@@ -13,7 +13,11 @@ import {
   saveMyinfoPending,
 } from '@/lib/myinfo';
 import { signIn } from '@/lib/session';
-import { loadUtCatalogPath } from '@/lib/ut-track';
+import {
+  clearUtApplicantTaskIntent,
+  loadUtApplicantTaskIntent,
+  loadUtCatalogPath,
+} from '@/lib/ut-track';
 import LoginShell, { LoginBrand, GovAuthButton } from '@/components/gov/login-shell';
 import MyinfoFlow from '@/components/gov/myinfo-flow';
 import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
@@ -44,8 +48,12 @@ export default function LoginApplicant() {
     const profile = getMyinfoProfile(DEMO_ROLE);
     setRole(DEMO_ROLE);
 
-    /* Probing A/B: collect identity, then land on homepage — skip welcome / apply. */
-    if (loadUtCatalogPath() === 'probing') {
+    const landOnDashboard =
+      loadUtCatalogPath() === 'probing' ||
+      loadUtApplicantTaskIntent() === 'interview';
+
+    /* Probing A/B, or catalog Task 2 (interview): homepage after Singpass. */
+    if (landOnDashboard) {
       saveApplicantProfile({
         ...profile,
         nric: 'T0123456A',
@@ -55,11 +63,13 @@ export default function LoginApplicant() {
         createdAt: new Date().toISOString(),
       });
       clearMyinfoPending();
+      clearUtApplicantTaskIntent();
       signIn('singpass', new Date().toISOString());
       router.push('/apply/dashboard');
       return;
     }
 
+    clearUtApplicantTaskIntent();
     saveMyinfoPending({
       role: DEMO_ROLE,
       profile,

@@ -179,7 +179,10 @@ export default function ApplyProjectFitPage() {
           onBack: () => router.push('/apply/availability'),
           onContinue: () => setShowArchetype(true),
           continueLabel: 'Next',
-          continueDisabled: draft.interests.length === 0,
+          continueDisabled:
+            draft.interests.length === 0 ||
+            (draft.interests.includes(INTEREST_OTHERS_LABEL) &&
+              !draft.interestsOther.trim()),
         }
       : phase === 'result'
         ? {
@@ -383,7 +386,7 @@ function InterestsPhase({
                   else onOtherChange(next.slice(0, INTEREST_OTHERS_MAX));
                 }}
                 maxLength={INTEREST_OTHERS_MAX}
-                placeholder="Enter your interest"
+                placeholder="Enter your interest (max. 50 characters)"
                 aria-label="Other interest"
                 aria-invalid={atLimit}
                 className={cn(

@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { useRole } from '@/lib/role';
-import { signIn } from '@/lib/session';
+import { signIn, signOut } from '@/lib/session';
 import {
   saveUtApplicantVariant,
   saveUtCatalogPath,
@@ -283,6 +283,8 @@ export default function Catlog() {
     seedApplyDraftForVariant(variant);
     seedApplicantProfileForVariant(variant);
     setRole('new-applicant');
+    /* Tasks require Singpass — clear any prior probing session. */
+    signOut();
     router.push('/start-tasks');
   }
 
@@ -291,12 +293,11 @@ export default function Catlog() {
     saveUtCatalogPath('probing');
     saveUtApplicantVariant('undergraduate');
     saveApplyDashboardVersion(version);
-    /* Skip login — seed defaults so Shell / dashboard can render. */
+    /* Seed defaults; task list → Start Task lands on A/B dashboard (no login). */
     seedApplyDraftForVariant('undergraduate');
     seedApplicantProfileForVariant('undergraduate');
     setRole('new-applicant');
-    signIn('singpass', new Date().toISOString());
-    router.push('/apply/dashboard');
+    router.push('/start-tasks');
   }
 
   if (!mounted) {

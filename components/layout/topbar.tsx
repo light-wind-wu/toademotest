@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Search, Bell, Settings, HelpCircle, LogOut, ChevronDown, User, LayoutGrid, ListTodo, PanelsTopLeft } from 'lucide-react';
+import { Search, Bell, Settings, HelpCircle, ChevronDown, LayoutGrid, ListTodo, PanelsTopLeft } from 'lucide-react';
 import { useRole, ROLE_LABELS } from '@/lib/role';
 import { cn } from '@/lib/utils';
 
@@ -28,7 +28,6 @@ export default function Topbar({
   const { role, profile } = useRole();
   const router = useRouter();
   const pathname = usePathname();
-  const onApplyRoute = pathname.startsWith('/apply');
   const onStartTasks = pathname === '/start-tasks';
   const onCatlog = pathname === '/catlog';
   const [open,      setOpen]      = useState(false);
@@ -155,16 +154,7 @@ export default function Topbar({
               {/* Role switcher UI removed — switch roles from /catlog */}
               {/* Actions */}
               <div className="p-1.5">
-                {(role === 'new-applicant' || role === 'existing-scholar-applicant') && (
-                  <Link
-                    href="/apply/profile"
-                    onClick={() => setOpen(false)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bg-subtle text-body-md text-fg transition-colors"
-                  >
-                    <User size={18} className="text-fg-muted shrink-0" />
-                    My Profile
-                  </Link>
-                )}
+                {/* My Profile hidden for UT — re-enable when profile is in scope */}
                 {isApplicant && (
                   <div className="px-3 py-2">
                     <p className="mb-1.5 flex items-center gap-2 text-[12px] font-semibold text-fg-muted">
@@ -174,8 +164,8 @@ export default function Topbar({
                     <div className="grid grid-cols-2 gap-1.5">
                       {(
                         [
-                          ['v1', 'V1'],
-                          ['v2', 'V2'],
+                          ['v1', 'A'],
+                          ['v2', 'B'],
                         ] as const
                       ).map(([value, label]) => (
                         <button
@@ -236,32 +226,18 @@ export default function Topbar({
                 </Link>
               </div>
               <div className="border-t border-border p-1.5">
-                {!onApplyRoute && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      signOut();
-                      setOpen(false);
-                      window.location.href = '/catlog';
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-danger-bg text-body-md text-danger transition-colors"
-                  >
-                    <LayoutGrid size={18} className="shrink-0" />
-                    Go Catlog
-                  </button>
-                )}
-                {onApplyRoute && (
-                  <button
-                    onClick={() => {
-                      signOut();
-                      setOpen(false);
-                      window.location.href = '/catlog';
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-danger-bg text-body-md text-danger transition-colors">
-                    <LogOut size={18} className="shrink-0" />
-                    Sign Out
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    signOut();
+                    setOpen(false);
+                    window.location.href = '/catlog';
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-danger-bg text-body-md text-danger transition-colors"
+                >
+                  <LayoutGrid size={18} className="shrink-0" />
+                  Go Catlog
+                </button>
               </div>
             </div>
           )}
