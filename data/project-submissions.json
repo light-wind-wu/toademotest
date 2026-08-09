@@ -7,7 +7,10 @@
     "submittedBy": "Priya Nair",
     "programme": "",
     "educationLevel": "University",
-    "requestedEducationLevels": ["Tech UP", "Junior College Scholar/Junior College Student"],
+    "requestedEducationLevels": [
+      "Tech UP",
+      "Junior College Scholar/Junior College Student"
+    ],
     "placements": 2,
     "uploadedAt": "2026-07-07",
     "projects": [
@@ -21,7 +24,11 @@
         "mentorUserId": "mentor-rajesh",
         "mentorDept": "Advanced Systems",
         "mentorBio": "Senior engineer specialising in communications modelling and applied simulation.",
-        "skills": ["Python", "Simulation", "Signal Processing"],
+        "skills": [
+          "Python",
+          "Simulation",
+          "Signal Processing"
+        ],
         "discipline": "Electrical Engineering",
         "slots": 1,
         "preferredEducation": "Undergraduate Scholar/Merit Scholar",
@@ -37,8 +44,8 @@
         "pc": "PC6",
         "techDomain": "Communications",
         "emergingArea": "Advanced Sensing",
-        "requestLineId": "seed-req-pc6-3",
         "educationLevel": "Tech UP",
+        "requestLineId": "seed-req-pc6-3",
         "internshipDuration": "3",
         "internshipPeriodStart": "Jun 2026",
         "internshipPeriodEnd": "Aug 2026",
@@ -54,7 +61,11 @@
         "mentorUserId": "mentor-michael",
         "mentorDept": "Digital Systems",
         "mentorBio": "Engineering lead focused on operational analytics and secure dashboard delivery.",
-        "skills": ["Data Analysis", "Dashboarding", "TypeScript"],
+        "skills": [
+          "Data Analysis",
+          "Dashboarding",
+          "TypeScript"
+        ],
         "discipline": "Computer Science",
         "slots": 1,
         "preferredEducation": "Undergraduate Scholar/Merit Scholar",
@@ -70,8 +81,8 @@
         "pc": "PC6",
         "techDomain": "Digital",
         "emergingArea": "Data Analytics",
-        "requestLineId": "seed-req-pc6-4",
         "educationLevel": "Junior College Scholar/Junior College Student",
+        "requestLineId": "seed-req-pc6-4",
         "internshipDuration": "3",
         "internshipPeriodStart": "Jul 2026",
         "internshipPeriodEnd": "Sep 2026",
@@ -87,7 +98,10 @@
     "submittedBy": "Benjamin Lee",
     "programme": "",
     "educationLevel": "University",
-    "requestedEducationLevels": ["Undergraduate Student", "Polytechnic Scholar/Polytechnic Student"],
+    "requestedEducationLevels": [
+      "Undergraduate Student",
+      "Polytechnic Scholar/Polytechnic Student"
+    ],
     "placements": 5,
     "uploadedAt": "2026-07-05",
     "projects": [
@@ -101,7 +115,12 @@
         "mentorUserId": "mentor-weisheng",
         "mentorDept": "Autonomous Systems",
         "mentorBio": "Leads research in multi-agent autonomy and control for unmanned platforms.",
-        "skills": ["Python", "ROS", "Control Systems", "Reinforcement Learning"],
+        "skills": [
+          "Python",
+          "ROS",
+          "Control Systems",
+          "Reinforcement Learning"
+        ],
         "discipline": "Computer Science / Aerospace Engineering / Electrical Engineering",
         "slots": 2,
         "preferredEducation": "Undergraduate Student",
@@ -134,7 +153,11 @@
         "mentorUserId": "mentor-ravi",
         "mentorDept": "Sensors",
         "mentorBio": "Specialises in radar signal processing and applied machine learning.",
-        "skills": ["Machine Learning", "Signal Processing", "PyTorch"],
+        "skills": [
+          "Machine Learning",
+          "Signal Processing",
+          "PyTorch"
+        ],
         "discipline": "Electrical Engineering / Data Science",
         "slots": 3,
         "preferredEducation": "Polytechnic Scholar/Polytechnic Student",
@@ -144,7 +167,9 @@
         "aiCheck": {
           "grammar": "pass",
           "level": "warn",
-          "notes": ["Scope is ambitious for a polytechnic intern; consider narrowing the dataset."]
+          "notes": [
+            "Scope is ambitious for a polytechnic intern; consider narrowing the dataset."
+          ]
         },
         "status": "pending",
         "pc": "PC4",
@@ -167,7 +192,10 @@
     "submittedBy": "Kelvin Ong",
     "programme": "",
     "educationLevel": "University",
-    "requestedEducationLevels": ["Undergraduate Student", "Tech UP"],
+    "requestedEducationLevels": [
+      "Undergraduate Student",
+      "Tech UP"
+    ],
     "placements": 4,
     "uploadedAt": "2026-07-06",
     "projects": [
@@ -181,7 +209,11 @@
         "mentorUserId": "mentor-nurul",
         "mentorDept": "Cyber Security",
         "mentorBio": "Works on embedded security and trusted computing for deployed systems.",
-        "skills": ["C", "Embedded Systems", "Cryptography"],
+        "skills": [
+          "C",
+          "Embedded Systems",
+          "Cryptography"
+        ],
         "discipline": "Computer Science / Computer Engineering",
         "slots": 2,
         "preferredEducation": "Undergraduate Student",
@@ -214,7 +246,11 @@
         "mentorUserId": "mentor-gerald",
         "mentorDept": "Land Systems",
         "mentorBio": "Builds data-driven tools for platform sustainment and readiness.",
-        "skills": ["Data Analysis", "Digital Twin", "Predictive Maintenance"],
+        "skills": [
+          "Data Analysis",
+          "Digital Twin",
+          "Predictive Maintenance"
+        ],
         "discipline": "Mechanical Engineering / Data Science / Computer Science",
         "slots": 2,
         "preferredEducation": "Tech UP",
@@ -235,87 +271,6 @@
         "internshipDuration": "6",
         "internshipPeriodStart": "Jan 2027",
         "internshipPeriodEnd": "Jun 2027",
-        "workingLocation": "DSTA"
-      }
-    ]
-  },
-  {
-    "id": "batch-pc3-2027-demo",
-    "uploadToken": "seed-pc3-2027",
-    "pc": "james.tan@dsta.gov.sg",
-    "pcHead": "James Tan",
-    "submittedBy": "James Tan",
-    "programme": "",
-    "educationLevel": "University",
-    "requestedEducationLevels": ["Tech UP"],
-    "placements": 3,
-    "uploadedAt": "2026-07-08",
-    "projects": [
-      {
-        "id": "sub-pc3-robotics-001",
-        "title": "Robotic Perception for Indoor Navigation",
-        "description": "Prototype a perception pipeline for small indoor robots using lidar and camera fusion, enabling robust localisation and obstacle avoidance in GPS-denied environments.",
-        "mentor": "Dr. Samuel Yeo",
-        "mentorAppointment": "Principal Engineer",
-        "mentorEmail": "samuel_yeo@dsta.gov.sg",
-        "mentorUserId": "mentor-samuel",
-        "mentorDept": "Robotics",
-        "mentorBio": "Specialises in perception, sensor fusion and mobile robot autonomy.",
-        "skills": ["Python", "ROS", "Computer Vision", "Sensor Fusion"],
-        "discipline": "Computer Science / Electrical Engineering / Mechanical Engineering",
-        "slots": 2,
-        "preferredEducation": "Undergraduate Student",
-        "minGpa": "",
-        "projectType": "Technical",
-        "additionalRequirements": "Basic Python and linear algebra; prior ROS experience is a plus.",
-        "aiCheck": {
-          "grammar": "pass",
-          "level": "pass",
-          "notes": []
-        },
-        "status": "pending",
-        "pc": "PC3",
-        "techDomain": "Autonomy",
-        "emergingArea": "Robotics & Autonomous Systems",
-        "educationLevel": "Undergraduate Student",
-        "requestLineId": "seed-req-pc3-9",
-        "internshipDuration": "6",
-        "internshipPeriodStart": "Jul 2027",
-        "internshipPeriodEnd": "Dec 2027",
-        "workingLocation": "DSTA"
-      },
-      {
-        "id": "sub-pc3-return-001",
-        "title": "AI Model Compression for Edge Deployment",
-        "description": "Compress and quantise large computer-vision models so they run efficiently on resource-constrained edge devices, preserving accuracy within a tight latency budget.",
-        "mentor": "Dr. Nadia Rahman",
-        "mentorAppointment": "Senior Specialist",
-        "mentorEmail": "nadia_rahman@dsta.gov.sg",
-        "mentorUserId": "mentor-nadia",
-        "mentorDept": "AI & Data",
-        "mentorBio": "Specialises in model compression, efficient inference and edge AI deployment.",
-        "skills": ["Python", "PyTorch", "ONNX", "Model Quantisation"],
-        "discipline": "Computer Science / Electrical Engineering",
-        "slots": 1,
-        "preferredEducation": "Tech UP",
-        "minGpa": "",
-        "projectType": "Technical",
-        "additionalRequirements": "Experience with deep learning frameworks and model optimisation.",
-        "aiCheck": {
-          "grammar": "pass",
-          "level": "pass",
-          "notes": []
-        },
-        "status": "returnedForUpdate",
-        "remarks": "Placement duration is 12 months, longer than the requested 6 months.",
-        "pc": "PC3",
-        "techDomain": "AI / ML",
-        "emergingArea": "Artificial Intelligence",
-        "educationLevel": "Tech UP",
-        "requestLineId": "seed-req-pc3-9",
-        "internshipDuration": "6",
-        "internshipPeriodStart": "Jul 2027",
-        "internshipPeriodEnd": "Dec 2027",
         "workingLocation": "DSTA"
       }
     ]

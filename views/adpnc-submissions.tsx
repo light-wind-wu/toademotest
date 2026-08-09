@@ -23,6 +23,7 @@ import {
 } from '@/lib/request-groups';
 import type { ProjectRequest, ProjectSubmissionBatch } from '@/lib/types';
 import { saveUtCatalogPath, saveUtTrack } from '@/lib/ut-track';
+import { getAdPncTask1Allowlist, getAdPncTask2ClosedRequests } from '@/lib/ut-scenarios';
 
 const REQUEST_CATEGORY_LABELS: Record<string, string> = {
   University: 'University',
@@ -303,7 +304,16 @@ export default function AdPncSubmissionsPage() {
     const myPcs = new Set(
       CONTACTS.filter(c => c.title === 'AD (P&C)' && c.email === profile.email).map(c => c.pc),
     );
-    setRequests(loadRequests().filter(r => {
+    const allowlist = getAdPncTask1Allowlist();
+    const task2Closed = getAdPncTask2ClosedRequests();
+    const baseRequests = loadRequests();
+    const scoped = allowlist.length > 0
+      ? [...baseRequests, ...task2Closed].filter(
+          r => r.uploadToken && allowlist.includes(r.uploadToken),
+        )
+      : baseRequests;
+
+    setRequests(scoped.filter(r => {
       if (r.id?.startsWith('draft-request-demo-')) return false;
       const pc = r.programmeCenter || CONTACTS.find(c => c.email === r.pc)?.pc || r.pc;
       return myPcs.has(pc);
