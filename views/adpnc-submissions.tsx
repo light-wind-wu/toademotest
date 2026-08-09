@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 import { useToast, Toast } from '@/components/ui-legacy/toast';
 import {
   groupRequests, isGroupClosed, groupTotals, submittedForGroup, projectMatchesRequest,
-  requestYearLabel,
+  requestGroupLabel,
   type RequestGroup,
 } from '@/lib/request-groups';
 import type { ProjectRequest, ProjectSubmissionBatch } from '@/lib/types';
@@ -440,7 +440,6 @@ function RequestCard({
   const counts = getProjectStatusCounts(group, batches);
   const returnedForUpdate = getReturnedForUpdateProjects(group, batches);
   const action = getCardAction(group, batches);
-  const pc = group.requests[0]?.programmeCenter ?? 'IO Admin';
 
   const projectStatusItems = [
     counts.notSubmitted > 0 && { key: 'notSubmitted', label: 'Not submitted', count: counts.notSubmitted, cls: textOnly(STATUS_COLOURS.draft) },
@@ -457,7 +456,7 @@ function RequestCard({
       <div className="flex flex-col gap-3 border-border px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h3 className="text-headline-sm text-fg">
-            {pc}:{requestYearLabel(group, 'sentDate')} Internship Project Request
+            {requestGroupLabel(group)}
           </h3>
           <p className="mt-0.5 text-body-sm text-fg-muted">
             Sent {fmtDate(group.sentDate)}

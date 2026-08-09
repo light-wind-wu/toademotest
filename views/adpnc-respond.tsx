@@ -72,10 +72,10 @@ import {
   deadlinePassed,
   findGroup,
   projectMatchesRequest,
+  requestGroupLabel,
   requestRawCategory,
   submittedForGroup,
   groupTotals,
-  requestYearLabel,
   type RequestGroup,
 } from '@/lib/request-groups';
 import { downloadResponseTemplateXlsx } from '@/lib/request-template';
@@ -1056,7 +1056,6 @@ export default function AdPncRespondPage() {
   const canSubmit = selectedSubmittableProjects.length > 0 && pcCleared && securityCleared && !deadlineLocked;
 
   const requestStatus = group ? requestStatusForGroup(group, batches) : null;
-  const requestYear = group ? requestYearLabel(group) : '';
   const breadcrumbLabel = useMemo(() => {
     if (!group) return '';
     if (isUploadMode) return visibleProjects.length === 0 ? 'Update' : 'Continue Submission';
@@ -1430,7 +1429,7 @@ export default function AdPncRespondPage() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-headline-lg text-fg mb-1">Request for {requestYear} Projects</h1>
+                  <h1 className="text-headline-lg text-fg mb-1">{requestGroupLabel(group)}</h1>
                 </div>
                 <p className="text-body-sm text-fg-muted">
                   {visibleProjects.length} project{visibleProjects.length !== 1 ? 's' : ''} · {selectedProjectIds.size} selected across tabs

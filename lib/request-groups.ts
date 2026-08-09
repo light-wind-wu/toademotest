@@ -111,6 +111,13 @@ export function requestYearLabel(
   return isNaN(year) ? new Date().getFullYear().toString() : year.toString();
 }
 
+/** Display label for a request group, shared by the AD (P&C) inbox card and the
+ *  per-request respond screen so the title stays consistent across navigation. */
+export function requestGroupLabel(group: RequestGroup): string {
+  const pc = group.requests[0]?.programmeCenter ?? 'IO Admin';
+  return `${pc}:${requestYearLabel(group, 'sentDate')} Internship Project Request`;
+}
+
 export function groupTotals(group: RequestGroup): { placements: number; uploaded: number } {
   return group.requests.reduce(
     (acc, r) => ({ placements: acc.placements + r.placements, uploaded: acc.uploaded + (r.uploaded ?? 0) }),
