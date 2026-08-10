@@ -172,6 +172,16 @@
     background-attachment: fixed;
   }
 
+  /* Clickable controls use the hand cursor (disabled → not-allowed). */
+  :where(a[href], button, [role='button'], summary):not(:disabled):not(
+      [aria-disabled='true']
+    ) {
+    cursor: pointer;
+  }
+  :where(button:disabled, [role='button'][aria-disabled='true'], a[aria-disabled='true']) {
+    cursor: not-allowed;
+  }
+
   /* PRIZM — keyboard-only focus ring. */
   :where(
     a,

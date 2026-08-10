@@ -1,7 +1,8 @@
 /* Cloud KV sync over Supabase `app_kv`.
    - Keeps existing sync localStorage API (no page rewrite)
-   - Hydrate cloud → localStorage on boot
+   - Hydrate cloud → localStorage on boot (drops shared keys missing from cloud)
    - Dual-write on localStorage.setItem for shared DATA keys only
+   - Ops delete / Realtime DELETE → removeItem for shared keys
    - Seed version stamps (*_seed_v / *_ver) stay LOCAL — syncing them caused
      clear→missing ver→reseed→dual-write to wipe cloud business data
    - localStorage.clear() must NOT wipe cloud (rehydrate; pause dual-write)
@@ -64,6 +65,28 @@ function cancelPendingUpserts() {
 function writeLocalOnly(key: string, value: string) {
   if (origSetItem) origSetItem.call(window.localStorage, key, value);
   else window.localStorage.setItem(key, value);
+}
+
+function removeLocalOnly(key: string) {
+  window.localStorage.removeItem(key);
+}
+
+function cancelPendingUpsert(key: string) {
+  const t = upsertTimers.get(key);
+  if (t) {
+    clearTimeout(t);
+    upsertTimers.delete(key);
+  }
+}
+
+/** Drop a shared key from localStorage and notify listeners (ops delete / realtime). */
+function mirrorLocalDelete(key: string) {
+  if (isSeedVersionKey(key) || !SHARED_CLOUD_KEYS.has(key)) return;
+  cancelPendingUpsert(key);
+  removeLocalOnly(key);
+  window.dispatchEvent(
+    new CustomEvent(CLOUD_UPDATED_EVENT, { detail: { key, deleted: true } }),
+  );
 }
 
 /**
@@ -159,6 +182,90 @@ export async function pushAllSharedKeys(): Promise<void> {
   if (error) console.warn('[cloud-store] pushAll failed', error.message);
 }
 
+export type CloudKvRow = {
+  key: string;
+  value: unknown;
+  updated_at: string | null;
+};
+
+/** Ops: list all `app_kv` rows (admin KV panel). */
+export async function listCloudKv(): Promise<{
+  enabled: boolean;
+  rows: CloudKvRow[];
+  error?: string;
+}> {
+  if (!isCloudSyncEnabled()) {
+    return { enabled: false, rows: [] };
+  }
+  const sb = getSupabaseBrowserClient();
+  if (!sb) return { enabled: false, rows: [] };
+
+  const { data, error } = await sb
+    .from(TABLE)
+    .select('key, value, updated_at')
+    .order('key', { ascending: true });
+
+  if (error) {
+    return { enabled: true, rows: [], error: error.message };
+  }
+
+  const rows: CloudKvRow[] = (data ?? []).map((row) => ({
+    key: String(row.key),
+    value: row.value,
+    updated_at: row.updated_at ? String(row.updated_at) : null,
+  }));
+
+  return { enabled: true, rows };
+}
+
+/** Ops: upsert one `app_kv` row (JSON value). Also mirrors into localStorage when key is shared. */
+export async function upsertCloudKv(
+  key: string,
+  value: unknown,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!isCloudSyncEnabled()) {
+    return { ok: false, error: 'Cloud sync is not configured.' };
+  }
+  const sb = getSupabaseBrowserClient();
+  if (!sb) return { ok: false, error: 'Cloud sync is not configured.' };
+
+  bumpRealtimeSuppress(2500);
+  const { error } = await sb.from(TABLE).upsert(
+    { key, value, updated_at: new Date().toISOString() },
+    { onConflict: 'key' },
+  );
+  if (error) return { ok: false, error: error.message };
+
+  if (typeof window !== 'undefined' && SHARED_CLOUD_KEYS.has(key) && !isSeedVersionKey(key)) {
+    writeLocalOnly(key, stableStringify(value));
+    window.dispatchEvent(
+      new CustomEvent(CLOUD_UPDATED_EVENT, { detail: { key } }),
+    );
+  }
+
+  return { ok: true };
+}
+
+/** Ops: delete one `app_kv` row by key. Also clears localStorage for shared keys. */
+export async function deleteCloudKv(key: string): Promise<{ ok: boolean; error?: string }> {
+  if (!isCloudSyncEnabled()) {
+    return { ok: false, error: 'Cloud sync is not configured.' };
+  }
+  const sb = getSupabaseBrowserClient();
+  if (!sb) return { ok: false, error: 'Cloud sync is not configured.' };
+
+  cancelPendingUpsert(key);
+  bumpRealtimeSuppress(2500);
+  const { error } = await sb.from(TABLE).delete().eq('key', key);
+  if (error) return { ok: false, error: error.message };
+
+  if (typeof window !== 'undefined') {
+    mirrorLocalDelete(key);
+  }
+
+  return { ok: true };
+}
+
 /**
  * Pull cloud KV into localStorage. If cloud is empty, seed it from local.
  * Call once before the rest of the app reads storage.
@@ -188,12 +295,21 @@ export async function hydrateFromCloud(): Promise<'skipped' | 'hydrated' | 'seed
 
     applyingRemote = true;
     try {
+      const cloudShared = new Set<string>();
       for (const row of data) {
         // Ignore legacy version rows in cloud — stamps are local-only now.
         if (isSeedVersionKey(row.key)) continue;
         if (!SHARED_CLOUD_KEYS.has(row.key)) continue;
+        cloudShared.add(row.key);
         const raw = stableStringify(row.value);
         writeLocalOnly(row.key, raw);
+      }
+      // Drop shared keys that no longer exist in cloud (cold-start delete sync).
+      for (const key of SHARED_CLOUD_KEYS) {
+        if (!cloudShared.has(key) && window.localStorage.getItem(key) != null) {
+          cancelPendingUpsert(key);
+          removeLocalOnly(key);
+        }
       }
       stampLocalSeedVersions();
     } finally {
@@ -256,6 +372,18 @@ export function subscribeCloudRealtime(): () => void {
       { event: '*', schema: 'public', table: TABLE },
       (payload) => {
         if (Date.now() < suppressRealtimeUntil) return;
+
+        if (payload.eventType === 'DELETE') {
+          const old = payload.old as { key?: string } | null;
+          if (!old?.key) return;
+          applyingRemote = true;
+          try {
+            mirrorLocalDelete(old.key);
+          } finally {
+            applyingRemote = false;
+          }
+          return;
+        }
 
         const row = payload.new as { key?: string; value?: unknown } | null;
         if (!row?.key || isSeedVersionKey(row.key)) return;

@@ -18,6 +18,7 @@ import PlacementSlots from '@/components/admin/placement-slots';
 import CalendarOfficer from '@/components/admin/calendar-officer';
 import Components from '@/components/admin/components';
 import Playground from '@/components/admin/playground';
+import DemoDataKvPanel from '@/components/admin/demo-data-kv';
 import { DISCIPLINE_SUBJECTS, STANDING_BANDS, DEFAULT_WEIGHTS } from '@/lib/scoring';
 import Button from '@/components/ui-legacy/button';
 import { Switch } from '@/components/ui/switch';
@@ -675,33 +676,37 @@ export default function AdminSettingsPage() {
 
         {/* ── Reset demo data panel ─────────────────────────────────────── */}
         {panel === 'reset' && (
-          <Card
-            title="Reset Demo Data"
-            description="Clears all local data and reseeds everything from the original seed files. Use this to restart the full demo flow from scratch."
-            icon={RotateCcw}
-          >
-            <div className="space-y-4">
-              <div className="flex items-start gap-2.5 px-3 py-2.5 bg-danger-bg border border-danger/30 rounded-xl">
-                <AlertTriangle size={15} className="text-danger mt-0.5 shrink-0" />
-                <p className="text-body-sm text-fg-muted">
-                  This will erase all requests, submissions, project approvals, and any changes you've made. The page will reload automatically.
-                </p>
-              </div>
-              {!confirmReset ? (
-                <Button variant="outline" onClick={() => setConfirmReset(true)} className="border-danger/40 text-danger hover:bg-danger-bg">
-                  <RotateCcw size={15} />Reset All Demo Data
-                </Button>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <span className="text-body-sm text-fg-muted">Are you sure?</span>
-                  <Button onClick={resetDemoData} className="bg-danger hover:bg-danger/90 border-danger">
-                    <RotateCcw size={15} />Yes, Reset Everything
-                  </Button>
-                  <Button variant="ghost" onClick={() => setConfirmReset(false)}>Cancel</Button>
+          <div className="space-y-4">
+            <Card
+              title="Reset Demo Data"
+              description="Clears all local data and reseeds everything from the original seed files. Use this to restart the full demo flow from scratch."
+              icon={RotateCcw}
+            >
+              <div className="space-y-4">
+                <div className="flex items-start gap-2.5 px-3 py-2.5 bg-danger-bg border border-danger/30 rounded-xl">
+                  <AlertTriangle size={15} className="text-danger mt-0.5 shrink-0" />
+                  <p className="text-body-sm text-fg-muted">
+                    This will erase all requests, submissions, project approvals, and any changes you've made. The page will reload automatically.
+                  </p>
                 </div>
-              )}
-            </div>
-          </Card>
+                {!confirmReset ? (
+                  <Button variant="outline" onClick={() => setConfirmReset(true)} className="border-danger/40 text-danger hover:bg-danger-bg">
+                    <RotateCcw size={15} />Reset All Demo Data
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <span className="text-body-sm text-fg-muted">Are you sure?</span>
+                    <Button onClick={resetDemoData} className="bg-danger hover:bg-danger/90 border-danger">
+                      <RotateCcw size={15} />Yes, Reset Everything
+                    </Button>
+                    <Button variant="ghost" onClick={() => setConfirmReset(false)}>Cancel</Button>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            <DemoDataKvPanel />
+          </div>
         )}
 
         {/* ── System configuration panel ────────────────────────────────── */}

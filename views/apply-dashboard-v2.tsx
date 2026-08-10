@@ -3,7 +3,6 @@
 /* Apply Dashboard V2 — probing B layout (forked from V1; asset variants *-v2*).
    Content max 1440; Part1 bg full-bleed of main column. */
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { Calendar } from 'lucide-react';
 import Shell from '@/components/layout/shell';
 import { useRole } from '@/lib/role';
@@ -52,7 +51,6 @@ const ACTIVITY = [
 
 export default function ApplyDashboardV2() {
   const { profile } = useRole();
-  const router = useRouter();
   const firstName = profile.name.split(' ')[0] || 'there';
   const [quizTaken, setQuizTaken] = useState(false);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
@@ -631,7 +629,7 @@ export default function ApplyDashboardV2() {
 
                 <button
                   type="button"
-                  onClick={() => router.push('/apply/project-fit')}
+                  onClick={() => setOutOfScopeOpen(true)}
                   className="absolute bottom-9 left-6 z-[1] h-8 cursor-pointer rounded-md px-3 text-[12px] font-medium leading-4 lg:bottom-6"
                   style={{
                     background: 'rgba(26, 101, 248, 1)',
