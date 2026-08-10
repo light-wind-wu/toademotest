@@ -259,6 +259,7 @@ export interface SuitabilityScore {
   skillsScore?:    number;   // raw skills component 0–100
   standingScore?:  number;   // raw academic standing component 0–100 (within-track band)
   confidence?:     'High' | 'Medium' | 'Low';  // how complete the applicant data was
+  defaultSelected?: boolean; // seed-time hint for shortlisting-review default selection
 }
 
 export interface Application {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
@@ -205,6 +205,10 @@ export default function ShortlistingReviewPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [aiPanelApp, setAiPanelApp] = useState<Application | null>(null);
 
+  // Refs to apply seed-time default selections once per intake, not on every render.
+  const defaultSelectedAppliedRef = useRef(false);
+  const prevFilteredProjectsRef = useRef<ProjectEntry[]>([]);
+
   useEffect(() => {
     setApps(loadApps());
     setProjects(loadProjects());
@@ -326,21 +330,48 @@ export default function ShortlistingReviewPage() {
     if (activeTab !== 'shortlist') {
       setSelectedByProject({});
       setDispatchProjectIds(new Set());
+      defaultSelectedAppliedRef.current = false;
+      prevFilteredProjectsRef.current = [];
       return;
     }
+
+    const filteredChanged =
+      filteredProjects.length !== prevFilteredProjectsRef.current.length ||
+      filteredProjects.some((p, i) => p.id !== prevFilteredProjectsRef.current[i]?.id);
+
+    if (filteredChanged) {
+      defaultSelectedAppliedRef.current = false;
+      prevFilteredProjectsRef.current = filteredProjects;
+    }
+
+    if (defaultSelectedAppliedRef.current) return;
+
     const next: Record<string, Set<string>> = {};
     for (const project of filteredProjects) {
       const candidates = applicationsByProject[project.id] || [];
-      const recommended = Math.min(Math.max(project.slots + 1, 2), candidates.length);
       const selected = new Set<string>();
-      for (let i = 0; i < recommended; i++) {
-        if (candidates[i]) selected.add(candidates[i].app.id);
+
+      // Prefer seed-time default selections when present.
+      for (const row of candidates) {
+        if (row.sui?.defaultSelected === true) {
+          selected.add(row.app.id);
+        }
       }
+
+      // Fall back to the original top-N auto-selection for records without defaults.
+      if (selected.size === 0) {
+        const recommended = Math.min(Math.max(project.slots + 1, 2), candidates.length);
+        for (let i = 0; i < recommended; i++) {
+          if (candidates[i]) selected.add(candidates[i].app.id);
+        }
+      }
+
       next[project.id] = selected;
     }
     setSelectedByProject(next);
     setDispatchProjectIds(new Set());
-  }, [filteredProjects, activeTab]);
+    defaultSelectedAppliedRef.current = true;
+  }, [filteredProjects, activeTab, applicationsByProject]);
 
   const viewingProject = useMemo(
     () => filteredProjects.find(p => p.id === viewingProjectId),
