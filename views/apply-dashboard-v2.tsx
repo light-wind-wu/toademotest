@@ -508,6 +508,7 @@ export default function ApplyDashboardV2() {
                     </div>
                     <button
                       type="button"
+                      onClick={() => setOutOfScopeOpen(true)}
                       className="mt-4 self-start cursor-pointer text-[14px] font-medium leading-5 text-[rgba(26,101,248,1)] lg:mt-0"
                     >
                       Mark all read
