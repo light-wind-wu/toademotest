@@ -569,7 +569,13 @@ export default function ApplyDashboardV1() {
                 </section>
               </div>
 
-              <aside className="relative mx-auto h-auto min-h-[420px] w-full shrink-0 overflow-hidden rounded-2xl p-6 max-lg:max-w-none lg:mx-0 lg:h-[423px] lg:min-h-0 lg:w-[314px] lg:max-w-[314px]">
+              <aside
+                className="relative mx-auto h-auto min-h-[420px] w-full shrink-0 overflow-hidden rounded-2xl p-6 max-lg:max-w-none lg:mx-0 lg:h-[423px] lg:min-h-0 lg:w-[314px] lg:max-w-[314px]"
+                style={{
+                  border: '1px solid rgba(231, 228, 221, 1)',
+                  boxShadow: '0px 1px 2px 0px rgba(0, 0, 0, 0.05)',
+                }}
+              >
                 <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
                   <Image
                     src={archetypeResultImage(archetype.id, 'pc')}
