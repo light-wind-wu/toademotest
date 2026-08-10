@@ -203,6 +203,8 @@ interface EditModel {
   deadline: string;
   intakeYear: number;   // calendar year the internship windows are anchored to
   lines: EditLine[];
+  emailTo?: string;
+  emailCc?: string;
 }
 
 function decodeRouteParam(value: string | string[] | undefined) {
@@ -257,6 +259,26 @@ function recipientLabel(email: string) {
 const HQ_CC_RECIPIENTS = ['Jasmine (Internship HQ)', 'Jeryn', 'Keng Yen'];
 
 const TEMPLATE_FILENAME = 'DSTA_Project_Request_Template.xlsx';
+
+function defaultDraftEmailTo(model: EditModel): string {
+  return recipientLabel(model.adpnc);
+}
+function defaultDraftEmailCc(model: EditModel): string {
+  return [model.pcHead ? recipientLabel(model.pcHead) : '', ...HQ_CC_RECIPIENTS].filter(Boolean).join(', ');
+}
+function defaultManageEmailTo(model: EditModel): string {
+  return recipientLabel(model.pcHead);
+}
+function defaultManageEmailCc(model: EditModel): string {
+  return [model.adpnc ? recipientLabel(model.adpnc) : '', ...HQ_CC_RECIPIENTS].filter(Boolean).join(', ');
+}
+function ensureEmailDefaults(model: EditModel, mode: 'draft' | 'open'): EditModel {
+  return {
+    ...model,
+    emailTo: model.emailTo || (mode === 'draft' ? defaultDraftEmailTo(model) : defaultManageEmailTo(model)),
+    emailCc: model.emailCc || (mode === 'draft' ? defaultDraftEmailCc(model) : defaultManageEmailCc(model)),
+  };
+}
 
 function parseCcList(cc: string | undefined): string[] {
   if (!cc) return [];
@@ -392,6 +414,8 @@ function modelFromRequests(requests: ProjectRequest[]): EditModel {
     deadline: first?.deadline ?? '',
     intakeYear,
     lines,
+    emailTo: first?.emailTo,
+    emailCc: first?.emailCc,
   };
 }
 
@@ -404,6 +428,8 @@ function emptyDraftModel(): EditModel {
     deadline: '',
     intakeYear: DEFAULT_INTAKE_YEAR,
     lines: [{ id: `line-${Date.now()}`, internCategory: '', calendarPeriod: '', calendarStart: '', calendarEnd: '', duration: '', placements: 1, customWindow: false }],
+    emailTo: '',
+    emailCc: '',
   };
 }
 
@@ -1672,11 +1698,7 @@ export default function ProjectRequestEditPage() {
   const [activeDraftIndex, setActiveDraftIndex] = useState(0);
   const [auditOpen, setAuditOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<'update' | 'additional' | 'combined' | null>(null);
-  const [draftPreviewModel, setDraftPreviewModel] = useState<EditModel | null>(null);
-  const [previewEmailEdits, setPreviewEmailEdits] = useState<{ to: string; cc: string }>({ to: '', cc: '' });
-  function patchPreviewEmailEdits(patch: Partial<{ to: string; cc: string }>) {
-    setPreviewEmailEdits(prev => ({ ...prev, ...patch }));
-  }
+  const [draftPreviewOpen, setDraftPreviewOpen] = useState(false);
   const [draftConfirmSendOpen, setDraftConfirmSendOpen] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [deleteDraftIndex, setDeleteDraftIndex] = useState<number | null>(null);
@@ -1865,10 +1887,7 @@ export default function ProjectRequestEditPage() {
       return;
     }
     if (model) {
-      setPreviewEmailEdits({
-        to: recipientLabel(model.pcHead),
-        cc: [model.adpnc ? recipientLabel(model.adpnc) : '', ...HQ_CC_RECIPIENTS].filter(Boolean).join(', '),
-      });
+      setModel(ensureEmailDefaults(model, 'open'));
     }
     setPreviewMode(mode);
   }
@@ -1894,6 +1913,8 @@ export default function ProjectRequestEditPage() {
       sentDate,
       deadline: item.deadline,
       status: 'pending' as RequestStatus,
+      emailTo: item.emailTo || defaultDraftEmailTo(item),
+      emailCc: item.emailCc || defaultDraftEmailCc(item),
     }));
   }
 
@@ -1946,7 +1967,7 @@ export default function ProjectRequestEditPage() {
         tier: 'action',
       });
     });
-    sessionStorage.setItem('dsta_pending_toast', 'Draft sent.');
+    sessionStorage.setItem('dsta_show_celebration', '1');
     sessionStorage.setItem('dsta_requests_target_tab', 'open');
     setDirty(false);
     router.push('/requests');
@@ -1986,6 +2007,8 @@ export default function ProjectRequestEditPage() {
       sentDate: today,
       deadline: model.deadline,
       status: 'pending',
+      emailTo: model.emailTo || defaultManageEmailTo(model),
+      emailCc: model.emailCc || defaultManageEmailCc(model),
     }));
     const next = [...additionalReqs, ...requests];
     saveRequests(next);
@@ -2027,7 +2050,13 @@ export default function ProjectRequestEditPage() {
     const next = requests.map(req => {
       const inGroup = (req.id && groupIds.has(req.id)) || (req.uploadToken && groupTokens.has(req.uploadToken));
       const matchingLine = req.id ? linesById.get(req.id) : undefined;
-      return inGroup ? { ...req, deadline: model.deadline, placements: matchingLine?.placements ?? req.placements } : req;
+      return inGroup ? {
+        ...req,
+        deadline: model.deadline,
+        placements: matchingLine?.placements ?? req.placements,
+        emailTo: model.emailTo || defaultManageEmailTo(model),
+        emailCc: model.emailCc || defaultManageEmailCc(model),
+      } : req;
     });
     saveRequests(next);
     setRequests(next);
@@ -2099,7 +2128,13 @@ export default function ProjectRequestEditPage() {
     const updatedExisting = requests.map(req => {
       const inGroup = (req.id && groupIds.has(req.id)) || (req.uploadToken && groupTokens.has(req.uploadToken));
       const matchingLine = req.id ? linesById.get(req.id) : undefined;
-      return inGroup ? { ...req, deadline: model.deadline, placements: matchingLine?.placements ?? req.placements } : req;
+      return inGroup ? {
+        ...req,
+        deadline: model.deadline,
+        placements: matchingLine?.placements ?? req.placements,
+        emailTo: model.emailTo || defaultManageEmailTo(model),
+        emailCc: model.emailCc || defaultManageEmailCc(model),
+      } : req;
     });
     // Newly-added intern categories join the existing request (same upload token /
     // group), so they update that request rather than registering as a new one.
@@ -2124,6 +2159,8 @@ export default function ProjectRequestEditPage() {
       sentDate: today,
       deadline: model.deadline,
       status: 'pending',
+      emailTo: model.emailTo || defaultManageEmailTo(model),
+      emailCc: model.emailCc || defaultManageEmailCc(model),
     }));
     saveRequests([...additionalReqs, ...updatedExisting]);
     setRequests([...additionalReqs, ...updatedExisting]);
@@ -2164,7 +2201,7 @@ export default function ProjectRequestEditPage() {
     refreshAudit();
     setPreviewMode(null);
     markCleanWith(emptyAdditional);
-    sessionStorage.setItem('dsta_pending_toast', 'Request update sent.');
+    sessionStorage.setItem('dsta_show_celebration', '1');
     sessionStorage.setItem('dsta_requests_target_tab', 'open');
     router.push('/requests');
   }
@@ -2440,13 +2477,17 @@ export default function ProjectRequestEditPage() {
                         </div>
                       </div>
                       {activeDraftModel ? (
-                        <DraftReviewDetails model={activeDraftModel} onPreview={() => {
-                          setDraftPreviewModel(activeDraftModel);
-                          setPreviewEmailEdits({
-                            to: recipientLabel(activeDraftModel.adpnc),
-                            cc: [activeDraftModel.pcHead ? recipientLabel(activeDraftModel.pcHead) : '', ...HQ_CC_RECIPIENTS].filter(Boolean).join(', '),
-                          });
-                        }} emailEdits={previewEmailEdits} />
+                        <DraftReviewDetails
+                          model={activeDraftModel}
+                          onPreview={() => {
+                            setDraftPreviewOpen(true);
+                            updateDraftModel(activeDraftIndex, ensureEmailDefaults(activeDraftModel, 'draft'));
+                          }}
+                          emailEdits={{
+                            to: activeDraftModel.emailTo || defaultDraftEmailTo(activeDraftModel),
+                            cc: activeDraftModel.emailCc || defaultDraftEmailCc(activeDraftModel),
+                          }}
+                        />
                       ) : (
                         <div className="flex min-h-72 items-center justify-center p-6 text-body-sm text-fg-muted">
                           Select a request to review.
@@ -2482,7 +2523,10 @@ export default function ProjectRequestEditPage() {
                     placementChanges={placementChanges}
                     additionalLines={completedAdditionalLines}
                     onPreview={() => openPreview('combined')}
-                    emailEdits={previewEmailEdits}
+                    emailEdits={{
+                      to: model.emailTo || defaultManageEmailTo(model),
+                      cc: model.emailCc || defaultManageEmailCc(model),
+                    }}
                   />
                   )}
               </>
@@ -2564,8 +2608,11 @@ export default function ProjectRequestEditPage() {
                 group={group}
                 placementChanges={placementChanges}
                 additionalLines={previewMode === 'additional' || previewMode === 'combined' ? completedAdditionalLines : []}
-                emailEdits={previewEmailEdits}
-                onEmailChange={patchPreviewEmailEdits}
+                emailEdits={{
+                  to: model.emailTo || defaultManageEmailTo(model),
+                  cc: model.emailCc || defaultManageEmailCc(model),
+                }}
+                onEmailChange={patch => setModel(prev => prev ? { ...prev, ...patch } : prev)}
               />
             </SheetBody>
             <SheetFooter>
@@ -2579,22 +2626,31 @@ export default function ProjectRequestEditPage() {
           </SheetContent>
         </Sheet>
       )}
-      {draftPreviewModel && (
-        <Sheet open onOpenChange={open => { if (!open) setDraftPreviewModel(null); }}>
-          <SheetContent side="right" className="w-[min(100vw,680px)] sm:max-w-none">
-            <SheetHeader>
-              <SheetTitle>Email preview</SheetTitle>
-              <SheetDescription>To {recipientLabel(draftPreviewModel.adpnc) || '-'}</SheetDescription>
-            </SheetHeader>
-            <SheetBody className="space-y-4">
-              <DraftEmailPreview model={draftPreviewModel} emailEdits={previewEmailEdits} onEmailChange={patchPreviewEmailEdits} />
-            </SheetBody>
-            <SheetFooter>
-              <Button variant="primary" size="md" onClick={() => setDraftPreviewModel(null)}>Done</Button>
-            </SheetFooter>
-          </SheetContent>
-        </Sheet>
-      )}
+      <Sheet open={draftPreviewOpen} onOpenChange={open => { if (!open) setDraftPreviewOpen(false); }}>
+        <SheetContent side="right" className="w-[min(100vw,680px)] sm:max-w-none">
+          <SheetHeader>
+            <SheetTitle>Email preview</SheetTitle>
+            {activeDraftModel && (
+              <SheetDescription>To {recipientLabel(activeDraftModel.adpnc) || '-'}</SheetDescription>
+            )}
+          </SheetHeader>
+          <SheetBody className="space-y-4">
+            {activeDraftModel && (
+              <DraftEmailPreview
+                model={activeDraftModel}
+                emailEdits={{
+                  to: activeDraftModel.emailTo || defaultDraftEmailTo(activeDraftModel),
+                  cc: activeDraftModel.emailCc || defaultDraftEmailCc(activeDraftModel),
+                }}
+                onEmailChange={patch => updateDraftModel(activeDraftIndex, { ...activeDraftModel, ...patch })}
+              />
+            )}
+          </SheetBody>
+          <SheetFooter>
+            <Button variant="primary" size="md" onClick={() => setDraftPreviewOpen(false)}>Done</Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
       <Dialog open={draftConfirmSendOpen} onOpenChange={setDraftConfirmSendOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>

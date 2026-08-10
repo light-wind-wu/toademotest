@@ -682,6 +682,7 @@ export default function RequestsPage() {
 
   const [showSubmittedDialog, setShowSubmittedDialog] = useState(false);
   const [returnUpdateSuccessOpen, setReturnUpdateSuccessOpen] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const [reqs,       setReqs]       = useState<ProjectRequest[]>(loadRequests());
   const [batches,    setBatches]    = useState<ProjectSubmissionBatch[]>([]);
@@ -1398,7 +1399,7 @@ export default function RequestsPage() {
                 {rowData.title}
               </p>
               {isRejected && rowData.remarks && (
-                <p className="text-body-sm mt-0.5 leading-snug italic text-danger truncate">
+                <p className="text-body-sm mt-0.5 leading-snug italic text-danger truncate hidden">
                   {rowData.remarks}
                 </p>
               )}
@@ -1607,7 +1608,7 @@ export default function RequestsPage() {
                 {r.title}
               </TruncatedTooltip>
               {isRejected && r.remarks && (
-                <TruncatedTooltip className="text-body-sm mt-0.5 leading-snug italic text-danger">
+                <TruncatedTooltip className="text-body-sm mt-0.5 leading-snug italic text-danger hidden">
                   <CornerDownRight size={16} className="inline" />
                   {r.remarks}
                 </TruncatedTooltip>
@@ -2167,6 +2168,12 @@ export default function RequestsPage() {
       setShowSubmittedDialog(true);
     }
 
+    const celebration = sessionStorage.getItem('dsta_show_celebration');
+    if (celebration) {
+      sessionStorage.removeItem('dsta_show_celebration');
+      setShowCelebration(true);
+    }
+
     const targetTab =
       sessionStorage.getItem('dsta_requests_target_tab') ??
       new URLSearchParams(window.location.search).get('tab');
@@ -2324,6 +2331,10 @@ export default function RequestsPage() {
 
   function doFreezeSelected() {
     const now = new Date().toISOString();
+    const frozenCount = Array.from(selectedKeys).filter(key => {
+      const [batchId, projId] = key.split('::');
+      return batches.some(b => b.id === batchId && b.projects.some(p => p.id === projId && p.status === 'pending'));
+    }).length;
     let updated = [...batches];
     Array.from(selectedKeys).forEach(key => {
       const [batchId, projId] = key.split('::');
@@ -2339,7 +2350,7 @@ export default function RequestsPage() {
     syncProjectsToRequests(updated);
     setSelectedKeys(new Set());
     setFreezeOpen(false);
-    showToast(`${selectedKeys.size} project${selectedKeys.size !== 1 ? 's' : ''} frozen for DCE review.`);
+    showToast(`${frozenCount} project${frozenCount !== 1 ? 's' : ''} frozen for DCE review.`);
   }
 
   function doDceApprove(keys?: Set<string>) {
@@ -2640,6 +2651,9 @@ export default function RequestsPage() {
   const pendingKeys    = tableRows.filter(r => r.status === 'pending' || r.status === 'returnedForUpdate').map(r => r.key);
   const allPendingSel  = pendingKeys.length > 0 && pendingKeys.every(k => selectedKeys.has(k));
   const somePendingSel = pendingKeys.some(k => selectedKeys.has(k));
+  const pendingTabSelectedPendingKeys = Array.from(selectedKeys).filter(k =>
+    tableRows.some(r => r.key === k && r.status === 'pending')
+  );
 
   const frozenKeys     = tableRows.filter(r => r.status === 'frozen').map(r => r.key);
   const allFrozenSel   = frozenKeys.length > 0 && frozenKeys.every(k => selectedKeys.has(k));
@@ -3030,7 +3044,7 @@ export default function RequestsPage() {
                 <span className="text-body-sm font-semibold flex-1">
                   {selectedKeys.size} project{selectedKeys.size !== 1 ? 's' : ''} selected
                 </span>
-                <Button size="sm" disabled={selectedKeys.size === 0} onClick={() => setFreezeOpen(true)}>
+                <Button size="sm" disabled={pendingTabSelectedPendingKeys.length === 0} onClick={() => setFreezeOpen(true)}>
                   Lock for Review
                 </Button>
               </div>
@@ -3408,8 +3422,8 @@ export default function RequestsPage() {
       >
         <DialogContent className="border-none bg-transparent p-0 shadow-none">
           <SuccessCelebration
-            title="Returned for Update"
-            message="The selected project(s) have been returned for update."
+            title="Task Completed"
+            message="You have successfully completed this test task. Your responses have been recorded."
             buttonText="Back to Tasks"
             onButtonClick={() => {
               setReturnUpdateSuccessOpen(false);
@@ -3433,6 +3447,25 @@ export default function RequestsPage() {
             buttonText="Back to Tasks"
             onButtonClick={() => {
               setShowSubmittedDialog(false);
+              router.push('/start-tasks');
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={showCelebration}
+        onOpenChange={(open) => {
+          setShowCelebration(open);
+        }}
+      >
+        <DialogContent className="border-none bg-transparent p-0 shadow-none">
+          <SuccessCelebration
+            title="Task Completed"
+            message="You have successfully completed this test task. Your responses have been recorded."
+            buttonText="Back to Tasks"
+            onButtonClick={() => {
+              setShowCelebration(false);
               router.push('/start-tasks');
             }}
           />

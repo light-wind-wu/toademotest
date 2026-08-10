@@ -445,12 +445,11 @@ export default function RequestReviewDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const [draft, setDraft] = useState<SubmittedProject | null>(null);
   const [activeTab, setActiveTab] = useState('review');
-  const [dceRejectOpen, setDceRejectOpen] = useState(false);
-  const [dceRejectRemarks, setDceRejectRemarks] = useState('');
   const [dceReturnOpen, setDceReturnOpen] = useState(false);
   const [dceReturnRemarks, setDceReturnRemarks] = useState('');
+  const [dceRejectOpen, setDceRejectOpen] = useState(false);
+  const [dceRejectRemarks, setDceRejectRemarks] = useState('');
 
-  const progMap = Object.fromEntries(DEFAULT_PROGRAMMES.map(p => [p.id, p.title]));
   const eduMap = progEducationLevelMap();
 
   useEffect(() => {
@@ -463,7 +462,6 @@ export default function RequestReviewDetail() {
   const proj = batch?.projects.find(p => p.id === projId) ?? null;
   const requestedLevels = batch?.requestedEducationLevels ?? [];
   const levelMismatch = !!proj?.educationLevel && requestedLevels.length > 0 && !requestedLevels.includes(proj.educationLevel);
-  const grammarCheck = proj ? checkGrammarTone(proj.title, proj.description) : { result: 'pass' as const, notes: [] };
   const readabilityCheck = proj ? checkReadability(proj.description, proj.educationLevel) : { result: 'pass' as const, notes: [] };
   const scopeCheck = proj ? checkScopeAlignment(proj.description, proj.educationLevel, proj.skills) : null;
   const descriptionResult =
@@ -472,6 +470,19 @@ export default function RequestReviewDetail() {
       : readabilityCheck.result === 'warn' || scopeCheck?.result === 'warn'
         ? 'warn'
         : 'pass';
+
+  const submittedBy = proj?.submittedBy || batch?.submittedBy || 'AD (P&C)';
+  const submittedOn = formatDateTime(proj?.submittedAt || batch?.uploadedAt);
+  const lastUpdated = formatDateTime(proj?.reviewedAt || proj?.resubmittedAt || proj?.submittedAt || batch?.uploadedAt);
+  const versionLabel = proj?.resubmittedAt ? 'Resubmitted version' : 'Submitted version';
+  const reviewingLabel = `Reviewing ${versionLabel} · Submitted by ${submittedBy}`;
+
+  const activities = proj ? [
+    { date: submittedOn, title: `Project submitted by ${submittedBy}` },
+    ...(proj.resubmittedAt ? [{ date: formatDateTime(proj.resubmittedAt), title: 'Project resubmitted', actor: submittedBy }] : []),
+    ...(proj.frozenAt ? [{ date: formatDateTime(proj.frozenAt), title: 'Project locked for DCE review', actor: proj.frozenBy }] : []),
+    ...(proj.reviewedAt ? [{ date: formatDateTime(proj.reviewedAt), title: `Project ${proj.status}`, actor: proj.reviewedBy }] : []),
+  ] : [];
 
   const isDsoCsit = ['DSO', 'CSIT'].includes((proj?.pc || '').trim().toUpperCase());
   const periodStartLabel = periodDisplay(proj?.internshipPeriodStart);
@@ -483,14 +494,14 @@ export default function RequestReviewDetail() {
     ? `${proj.internshipDuration} Month${proj.internshipDuration === '1' ? '' : 's'}`
     : '—';
   const metaItems = proj && batch ? ([
-    { label: 'Project Title', value: proj.title },
+    { label: 'Project Title', value: proj.title || '—' },
     { label: 'Programme Centre', value: proj.pc || batch.pc || '—' },
     { label: 'Intern Category', value: proj.educationLevel || batchEducationLevel(batch, eduMap) || '—' },
     { label: isDsoCsit ? 'Tech Competency (optional)' : 'Tech Competency', value: proj.techDomain || '—' },
     { label: 'Discipline of Study', value: parseDisciplines(proj.discipline).join(' / ') || '—' },
     { label: 'No. of Placements', value: String(proj.slots) },
-    { label: 'Project Duration', value: durationLabel },
     { label: 'Internship Window', value: periodLabel },
+    { label: 'Project Duration', value: durationLabel },
     { label: 'Primary Mentor Name', value: proj.mentor || '—' },
     { label: 'Primary Mentor Appointment', value: proj.mentorAppointment || '—' },
     { label: 'Primary Mentor Email', value: proj.mentorEmail || proj.mentorUserId || '—' },
@@ -499,33 +510,13 @@ export default function RequestReviewDetail() {
     { label: 'Secondary Mentor Email', value: proj.secondaryMentorEmail || '—' },
   ] as { label: string; value: string }[]) : [];
 
-  const submittedBy = proj?.submittedBy || batch?.submittedBy || 'AD (P&C)';
-  const submittedOn = formatDateTime(proj?.submittedAt || batch?.uploadedAt);
-  const lastUpdated = formatDateTime(proj?.reviewedAt || proj?.resubmittedAt || proj?.submittedAt || batch?.uploadedAt);
-  const versionLabel = `Version ${batch?.id ? (Number(batch.id.split('-').pop()?.slice(-1)) || 2) : 2}`;
-  const reviewingLabel = `Reviewing ${versionLabel} · Submitted by ${submittedBy}`;
-
-  const activities = proj ? [
-    {
-      date: proj.submittedAt
-        ? new Date(new Date(proj.submittedAt).getTime() + 2 * 60 * 1000).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-        : '—',
-      title: 'AI check flagged Project Scope for review',
-      actor: 'System',
-    },
-    {
-      date: submittedOn,
-      title: `Project submitted by ${submittedBy} (AD (P&C))`,
-    },
-  ] : [];
-
   /* ── Sync approved project entries back to requests ──────────────────── */
   function syncProjectsToRequests(updatedBatches: ProjectSubmissionBatch[]) {
     const currentReqs = loadRequests();
     const updated = currentReqs.map((r) => {
       const allProjs = updatedBatches.flatMap(b => b.projects).filter(project => projectMatchesRequest(project, r));
-      const submitted = allProjs.filter(p => p.status !== 'rejected' && p.status !== 'returnedForUpdate' && p.status !== 'withdrawn').reduce((s, p) => s + p.slots, 0);
-      const created = allProjs.filter(p => p.status !== 'rejected' && p.status !== 'returnedForUpdate' && p.status !== 'withdrawn').length;
+      const submitted = allProjs.filter(p => p.status !== 'rejected' && p.status !== 'withdrawn').reduce((s, p) => s + p.slots, 0);
+      const created = allProjs.filter(p => p.status !== 'rejected' && p.status !== 'withdrawn').length;
       return { ...r, uploaded: submitted, created };
     });
     saveRequests(updated);
@@ -548,48 +539,32 @@ export default function RequestReviewDetail() {
   const setD = (patch: Partial<SubmittedProject>) => setDraft(d => d ? { ...d, ...patch } : d);
 
   function doLockForReview() {
-    if (!canReviewProjects) return;
-    if (!proj || !batch) return;
-    if (proj.status !== 'pending') return;
+    if (!canReviewProjects || !proj || !batch || proj.status !== 'pending') return;
     const now = new Date().toISOString();
     const updated = batches.map(b => b.id !== batchId ? b : {
       ...b,
-      projects: b.projects.map(p =>
-        p.id !== projId || p.status !== 'pending' ? p : { ...p, status: 'frozen' as const, frozenAt: now, frozenBy: profile.name }
-      ),
+      projects: b.projects.map(p => p.id !== projId ? p : { ...p, status: 'frozen' as const, frozenAt: now, frozenBy: profile.name }),
     });
     setBatches(updated);
     saveSubmissions(updated);
     syncProjectsToRequests(updated);
-    showToast(`Project locked for review.`);
-    sessionStorage.setItem('dsta_requests_target_tab', 'pendingDce');
-    router.push('/requests');
+    showToast('Project locked for review.');
   }
 
   function doDceApprove() {
-    if (!proj || !batch) return;
-    const existingProjs = loadProjects();
-    const nums = existingProjs.map(p => parseInt(p.id.replace(/^PROJ-/, ''), 10)).filter(n => !isNaN(n));
+    if (!canReviewProjects || !proj || !batch || proj.status !== 'frozen') return;
+    const projs = loadProjects();
+    const nums = projs.map(p => parseInt(p.id.replace(/^PROJ-/, ''), 10)).filter(n => !isNaN(n));
     const nextNum = (nums.length > 0 ? Math.max(...nums) : 0) + 1;
     const newId = `PROJ-${String(nextNum).padStart(4, '0')}`;
     const newProj: ProjectEntry = {
-      id: newId,
-      title: proj.title,
-      description: proj.description,
-      mentor: proj.mentor,
-      mentorAppointment: proj.mentorAppointment,
-      mentorUserId: proj.mentorUserId,
-      mentorBio: proj.mentorBio,
-      skills: proj.skills,
-      discipline: proj.discipline,
-      slots: proj.slots,
-      matched: 0,
-      status: 'open',
-      programme: '',
-      pc: proj.pc,
-      techDomain: proj.techDomain,
-      emergingArea: proj.emergingArea,
-      educationLevel: proj.educationLevel,
+      id: newId, title: proj.title, description: proj.description,
+      mentor: proj.mentor, mentorAppointment: proj.mentorAppointment,
+      mentorUserId: proj.mentorUserId, mentorBio: proj.mentorBio,
+      skills: proj.skills, discipline: proj.discipline,
+      slots: proj.slots, matched: 0, status: 'open',
+      programme: '', techDomain: proj.techDomain,
+      emergingArea: proj.emergingArea, educationLevel: proj.educationLevel,
       internshipDuration: proj.internshipDuration,
       internshipPeriodStart: proj.internshipPeriodStart,
       internshipPeriodEnd: proj.internshipPeriodEnd,
@@ -597,50 +572,54 @@ export default function RequestReviewDetail() {
     };
     const updated = batches.map(b => b.id !== batchId ? b : {
       ...b,
-      projects: b.projects.map(p => p.id !== projId || p.status !== 'frozen' ? p : { ...p, status: 'approved' as const }),
+      projects: b.projects.map(p => p.id !== projId ? p : { ...p, status: 'approved' as const }),
     });
     setBatches(updated);
     saveSubmissions(updated);
-    saveProjects([...existingProjs, newProj]);
+    saveProjects([...projs, newProj]);
     syncProjectsToRequests(updated);
-    addNotification({ forRole: 'ad-pnc', title: `Project approved by DCE — ${batchEducationLevel(batch, eduMap)}`, body: `Your project submission for ${batchEducationLevel(batch, eduMap)} has been approved by the DCE.`, href: '/submissions', tier: 'info' });
+    addNotification({ forRole: 'ad-pnc', title: `Project approved — ${proj.title}`, body: `Your project "${proj.title}" (${batchEducationLevel(batch, eduMap)}) has been approved by the DCE.`, href: '/submissions', tier: 'info' });
     addNotification({ forRole: 'mentor', ...(proj.mentorUserId ? { forMentorId: proj.mentorUserId } : {}), title: `Your project has been approved — ${proj.title}`, body: `"${proj.title}" has been approved by the DCE and is now open for applicants.`, href: '/mentor/projects', tier: 'info' });
-    showToast(`Project approved by DCE.`);
+    sessionStorage.setItem('dsta_pending_toast', `"${proj.title}" approved and added to Projects.`);
     sessionStorage.setItem('dsta_requests_target_tab', 'approved');
     router.push('/requests');
   }
 
-  function doDceReject() {
-    if (!proj || !batch || !dceRejectRemarks.trim()) return;
+  function doDceReturnForUpdate() {
+    if (!canReviewProjects || !proj || !batch || proj.status !== 'frozen') return;
+    const remarks = dceReturnRemarks.trim();
+    if (!remarks) return;
     const updated = batches.map(b => b.id !== batchId ? b : {
       ...b,
-      projects: b.projects.map(p => p.id !== projId || p.status !== 'frozen' ? p : { ...p, status: 'rejected' as const, remarks: dceRejectRemarks.trim() }),
+      projects: b.projects.map(p => p.id !== projId ? p : { ...p, status: 'returnedForUpdate' as const, remarks }),
     });
     setBatches(updated);
     saveSubmissions(updated);
     syncProjectsToRequests(updated);
-    addNotification({ forRole: 'ad-pnc', title: `Project rejected by DCE — ${proj.title}`, body: `Your project "${proj.title}" has been rejected by the DCE. See the rejection remarks for details.`, href: '/submissions', tier: 'action' });
-    setDceRejectOpen(false);
-    setDceRejectRemarks('');
-    showToast(`Project rejected by DCE.`);
+    addNotification({ forRole: 'ad-pnc', title: `Project returned for update — ${proj.title}`, body: `Your project "${proj.title}" has been returned for update. Reason: ${remarks}`, href: '/submissions', tier: 'action' });
+    setDceReturnOpen(false);
+    setDceReturnRemarks('');
+    sessionStorage.setItem('dsta_pending_toast', `"${proj.title}" returned for update.`);
     sessionStorage.setItem('dsta_requests_target_tab', 'rejected');
     router.push('/requests');
   }
 
-  function doDceReturnForUpdate() {
-    if (!proj || !batch || !dceReturnRemarks.trim()) return;
+  function doDceReject() {
+    if (!canReviewProjects || !proj || !batch || proj.status !== 'frozen') return;
+    const remarks = dceRejectRemarks.trim();
+    if (!remarks) return;
     const updated = batches.map(b => b.id !== batchId ? b : {
       ...b,
-      projects: b.projects.map(p => p.id !== projId || p.status !== 'frozen' ? p : { ...p, status: 'returnedForUpdate' as const, remarks: dceReturnRemarks.trim() }),
+      projects: b.projects.map(p => p.id !== projId ? p : { ...p, status: 'rejected' as const, remarks }),
     });
     setBatches(updated);
     saveSubmissions(updated);
     syncProjectsToRequests(updated);
-    addNotification({ forRole: 'ad-pnc', title: `Project returned for update by DCE — ${proj.title}`, body: `Your project "${proj.title}" has been returned for update by the DCE. Reason: ${dceReturnRemarks.trim()}`, href: '/submissions', tier: 'action' });
-    setDceReturnOpen(false);
-    setDceReturnRemarks('');
-    showToast(`Project returned for update by DCE.`);
-    sessionStorage.setItem('dsta_requests_target_tab', 'pending');
+    addNotification({ forRole: 'ad-pnc', title: `Project rejected — ${proj.title}`, body: `Your project "${proj.title}" has been rejected by the DCE. See the rejection remarks for details.`, href: '/submissions', tier: 'action' });
+    setDceRejectOpen(false);
+    setDceRejectRemarks('');
+    sessionStorage.setItem('dsta_pending_toast', `"${proj.title}" rejected.`);
+    sessionStorage.setItem('dsta_requests_target_tab', 'rejected');
     router.push('/requests');
   }
 
@@ -660,6 +639,8 @@ export default function RequestReviewDetail() {
       </Shell>
     );
   }
+
+  const canEditProject = canReviewProjects && !['pending', 'approved', 'rejected'].includes(proj.status);
 
   return (
     <Shell activeRoute="/requests">
@@ -701,7 +682,7 @@ export default function RequestReviewDetail() {
               </Badge>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
-              {canReviewProjects && (
+              {canEditProject && (
                 <Button variant="outline" size="md" onClick={() => router.push(`/requests/project/${encodeURIComponent(batchId)}/${encodeURIComponent(projId)}/edit`)}>
                   Edit Project
                 </Button>

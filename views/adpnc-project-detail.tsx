@@ -187,6 +187,8 @@ export default function AdPncProjectDetailPage() {
     router.push(`/submissions/respond?token=${encodeURIComponent(batch.uploadToken)}&mode=view`);
   }
 
+  const canSubmitProject = project.status === 'draft' || project.status === 'returnedForUpdate';
+
   return (
     <Shell activeRoute="/submissions" hideNavigation>
       <nav className="mb-5 flex items-center gap-2 text-body-sm text-fg-muted">
@@ -326,9 +328,11 @@ export default function AdPncProjectDetailPage() {
           <Button variant="outline" onClick={() => router.push(backHref)}>
             Cancel
           </Button>
-          <Button onClick={() => setConfirmSubmitOpen(true)}>
-            Submit
-          </Button>
+          {canSubmitProject && (
+            <Button onClick={() => setConfirmSubmitOpen(true)}>
+              Submit
+            </Button>
+          )}
           <Button variant="danger" onClick={handleWithdraw}>
             Withdraw Project
           </Button>

@@ -340,6 +340,8 @@ export default function AdPncEditSubmissionPage() {
 
   if (!proj || !edit) return null;
 
+  const canSubmit = proj.status === 'draft' || proj.status === 'returnedForUpdate';
+
   return (
     <Shell activeRoute="/submissions" hideNavigation>
       <div className="mx-auto max-w-1xl">
@@ -576,13 +578,15 @@ export default function AdPncEditSubmissionPage() {
           <Button variant="outline" size="md" onClick={() => router.push('/submissions')}>
             Cancel
           </Button>
-          <Button size="md" disabled={saving} onClick={() => {
-            const validationErrors = validate(edit);
-            setErrors(validationErrors);
-            if (Object.keys(validationErrors).length === 0) setConfirmSaveOpen(true);
-          }}>
-            {saving ? 'Saving…' : 'Submit'}
-          </Button>
+          {canSubmit && (
+            <Button size="md" disabled={saving} onClick={() => {
+              const validationErrors = validate(edit);
+              setErrors(validationErrors);
+              if (Object.keys(validationErrors).length === 0) setConfirmSaveOpen(true);
+            }}>
+              {saving ? 'Saving…' : 'Submit'}
+            </Button>
+          )}
         </div>
       </div>
 
