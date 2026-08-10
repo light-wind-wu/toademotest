@@ -266,6 +266,52 @@ export async function deleteCloudKv(key: string): Promise<{ ok: boolean; error?:
   return { ok: true };
 }
 
+/** Ops: wipe every `app_kv` row.
+ *  Pass `mirrorLocal: true` to also remove shared keys from this browser
+ *  (needed for KV “Delete All”; Reset Demo Data reseeds without it). */
+export async function clearAllCloudKv(opts?: {
+  mirrorLocal?: boolean;
+}): Promise<{
+  ok: boolean;
+  cleared: boolean;
+  error?: string;
+}> {
+  if (!isCloudSyncEnabled()) {
+    return { ok: true, cleared: false };
+  }
+  const sb = getSupabaseBrowserClient();
+  if (!sb) return { ok: true, cleared: false };
+
+  cancelPendingUpserts();
+  dualWritePaused = true;
+  bumpRealtimeSuppress(8000);
+
+  try {
+    // PostgREST requires a filter; neq '' matches every non-empty key.
+    const { error } = await sb.from(TABLE).delete().neq('key', '');
+    if (error) return { ok: false, cleared: false, error: error.message };
+
+    if (opts?.mirrorLocal && typeof window !== 'undefined') {
+      applyingRemote = true;
+      try {
+        for (const key of SHARED_CLOUD_KEYS) {
+          cancelPendingUpsert(key);
+          removeLocalOnly(key);
+        }
+        window.dispatchEvent(
+          new CustomEvent(CLOUD_UPDATED_EVENT, { detail: { deleted: true, all: true } }),
+        );
+      } finally {
+        applyingRemote = false;
+      }
+    }
+
+    return { ok: true, cleared: true };
+  } finally {
+    dualWritePaused = false;
+  }
+}
+
 /**
  * Pull cloud KV into localStorage. If cloud is empty, seed it from local.
  * Call once before the rest of the app reads storage.

@@ -19,6 +19,8 @@ import CalendarOfficer from '@/components/admin/calendar-officer';
 import Components from '@/components/admin/components';
 import Playground from '@/components/admin/playground';
 import DemoDataKvPanel from '@/components/admin/demo-data-kv';
+import { clearAllCloudKv, pushAllSharedKeys } from '@/lib/cloud-store';
+import { ensureCloudConfig } from '@/lib/supabase/client';
 import { DISCIPLINE_SUBJECTS, STANDING_BANDS, DEFAULT_WEIGHTS } from '@/lib/scoring';
 import Button from '@/components/ui-legacy/button';
 import { Switch } from '@/components/ui/switch';
@@ -161,6 +163,8 @@ export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<AdminSettings>(DEFAULTS);
   const [saved, setSaved] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
   // Active settings area — 'home' is the hub; otherwise an area id from lib/admin-ia.
   const [area, setArea] = useState<string>('home');
   useEffect(() => { const a = searchParams?.get('area'); if (a && findAdminArea(a)) setArea(a); }, [searchParams]);
@@ -179,38 +183,57 @@ export default function AdminSettingsPage() {
   const [inviteDept,  setInviteDept]  = useState('');
   const [inviteRole,  setInviteRole]  = useState<IORole>('io');
 
-  function resetDemoData() {
-    // Clear all dsta_ keys first
-    Object.keys(localStorage).filter(k => k.startsWith('dsta_')).forEach(k => localStorage.removeItem(k));
+  async function resetDemoData() {
+    setResetting(true);
+    setResetError(null);
+    try {
+      // 1) Wipe shared cloud KV first so other browsers / next hydrate start empty.
+      await ensureCloudConfig();
+      const wipe = await clearAllCloudKv();
+      if (!wipe.ok) {
+        setResetError(wipe.error ?? 'Failed to clear cloud KV');
+        setResetting(false);
+        return;
+      }
 
-    // Write all seed data back immediately. Reference stores (projects,
-    // requests, submissions, programmes) reseed through @/lib/storage so their
-    // version stamps stay in sync with the central source of truth.
-    saveProjects(ALL_PROJECTS);
-    localStorage.setItem(STORAGE_KEYS.projects.verKey,    SEED_VERSIONS.projects);
-    saveRequests(ALL_REQUESTS);
-    localStorage.setItem(STORAGE_KEYS.requests.verKey,    SEED_VERSIONS.requests);
-    saveSubmissions(SUBMISSION_SEED);
-    localStorage.setItem(STORAGE_KEYS.submissions.verKey, SEED_VERSIONS.submissions);
-    localStorage.setItem('dsta_proj_template_columns',     JSON.stringify(PROJECT_SUBMISSION_COLUMNS));
-    localStorage.setItem('dsta_proj_template_columns_seed_v', '13');
-    localStorage.setItem('dsta_app_form_templates',        JSON.stringify(appFormSeed));
-    localStorage.setItem('dsta_app_form_templates_seed_v', '23');
-    localStorage.setItem('dsta_email_templates',           JSON.stringify(emailSeed));
-    localStorage.setItem('dsta_email_templates_seed_v',    '9');
-    saveProgrammes(DEFAULT_PROGRAMMES);
-    localStorage.setItem(STORAGE_KEYS.programmes.verKey,  SEED_VERSIONS.programmes);
-    localStorage.setItem('dsta_role',                      'io-admin');
-    // Applications (IO pipeline) — seeded from file; new applicants start fresh
-    localStorage.setItem('dsta_applications',              JSON.stringify(appsSeed));
-    localStorage.setItem('dsta_applications_seed_v',       '30');
-    // Applicant submissions — intentionally empty; populated only by the apply form
-    localStorage.setItem('dsta_my_applications',           JSON.stringify([]));
+      // 2) Clear all dsta_ keys, then write seed data back.
+      Object.keys(localStorage).filter(k => k.startsWith('dsta_')).forEach(k => localStorage.removeItem(k));
 
-    // Notify ProgrammeContext to refresh from localStorage immediately
-    window.dispatchEvent(new Event(PROGRAMMES_CHANGED_EVENT));
+      // Write all seed data back immediately. Reference stores (projects,
+      // requests, submissions, programmes) reseed through @/lib/storage so their
+      // version stamps stay in sync with the central source of truth.
+      saveProjects(ALL_PROJECTS);
+      localStorage.setItem(STORAGE_KEYS.projects.verKey,    SEED_VERSIONS.projects);
+      saveRequests(ALL_REQUESTS);
+      localStorage.setItem(STORAGE_KEYS.requests.verKey,    SEED_VERSIONS.requests);
+      saveSubmissions(SUBMISSION_SEED);
+      localStorage.setItem(STORAGE_KEYS.submissions.verKey, SEED_VERSIONS.submissions);
+      localStorage.setItem('dsta_proj_template_columns',     JSON.stringify(PROJECT_SUBMISSION_COLUMNS));
+      localStorage.setItem('dsta_proj_template_columns_seed_v', '13');
+      localStorage.setItem('dsta_app_form_templates',        JSON.stringify(appFormSeed));
+      localStorage.setItem('dsta_app_form_templates_seed_v', '23');
+      localStorage.setItem('dsta_email_templates',           JSON.stringify(emailSeed));
+      localStorage.setItem('dsta_email_templates_seed_v',    '9');
+      saveProgrammes(DEFAULT_PROGRAMMES);
+      localStorage.setItem(STORAGE_KEYS.programmes.verKey,  SEED_VERSIONS.programmes);
+      localStorage.setItem('dsta_role',                      'io-admin');
+      // Applications (IO pipeline) — seeded from file; new applicants start fresh
+      localStorage.setItem('dsta_applications',              JSON.stringify(appsSeed));
+      localStorage.setItem('dsta_applications_seed_v',       '30');
+      // Applicant submissions — intentionally empty; populated only by the apply form
+      localStorage.setItem('dsta_my_applications',           JSON.stringify([]));
 
-    window.location.reload();
+      // 3) Push fresh seeds to cloud before reload (debounce would die on reload).
+      await pushAllSharedKeys();
+
+      // Notify ProgrammeContext to refresh from localStorage immediately
+      window.dispatchEvent(new Event(PROGRAMMES_CHANGED_EVENT));
+
+      window.location.reload();
+    } catch (err) {
+      setResetError(err instanceof Error ? err.message : 'Reset failed');
+      setResetting(false);
+    }
   }
 
   useEffect(() => {
@@ -679,27 +702,53 @@ export default function AdminSettingsPage() {
           <div className="space-y-4">
             <Card
               title="Reset Demo Data"
-              description="Clears all local data and reseeds everything from the original seed files. Use this to restart the full demo flow from scratch."
+              description="Clears cloud KV and local data, then reseeds everything from the original seed files. Use this to restart the full demo flow from scratch."
               icon={RotateCcw}
             >
               <div className="space-y-4">
                 <div className="flex items-start gap-2.5 px-3 py-2.5 bg-danger-bg border border-danger/30 rounded-xl">
                   <AlertTriangle size={15} className="text-danger mt-0.5 shrink-0" />
                   <p className="text-body-sm text-fg-muted">
-                    This will erase all requests, submissions, project approvals, and any changes you've made. The page will reload automatically.
+                    This wipes the Supabase <code className="text-[12px]">app_kv</code> list first, then erases
+                    local requests, submissions, project approvals, and any changes you&apos;ve made. Fresh seed
+                    data is written back to local storage and cloud. The page will reload automatically.
                   </p>
                 </div>
+                {resetError && (
+                  <div className="flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger-bg px-3 py-2.5">
+                    <AlertTriangle size={15} className="mt-0.5 shrink-0 text-danger" />
+                    <p className="text-body-sm text-fg-muted">{resetError}</p>
+                  </div>
+                )}
                 {!confirmReset ? (
-                  <Button variant="outline" onClick={() => setConfirmReset(true)} className="border-danger/40 text-danger hover:bg-danger-bg">
+                  <Button
+                    variant="outline"
+                    onClick={() => { setConfirmReset(true); setResetError(null); }}
+                    disabled={resetting}
+                    className="border-danger/40 text-danger hover:bg-danger-bg"
+                  >
                     <RotateCcw size={15} />Reset All Demo Data
                   </Button>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <span className="text-body-sm text-fg-muted">Are you sure?</span>
-                    <Button onClick={resetDemoData} className="bg-danger hover:bg-danger/90 border-danger">
-                      <RotateCcw size={15} />Yes, Reset Everything
+                    <span className="text-body-sm text-fg-muted">
+                      {resetting ? 'Resetting…' : 'Are you sure?'}
+                    </span>
+                    <Button
+                      onClick={() => void resetDemoData()}
+                      disabled={resetting}
+                      className="bg-danger hover:bg-danger/90 border-danger"
+                    >
+                      <RotateCcw size={15} className={cn(resetting && 'animate-spin')} />
+                      Yes, Reset Everything
                     </Button>
-                    <Button variant="ghost" onClick={() => setConfirmReset(false)}>Cancel</Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setConfirmReset(false)}
+                      disabled={resetting}
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 )}
               </div>

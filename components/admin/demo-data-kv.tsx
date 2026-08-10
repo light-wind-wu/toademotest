@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import Button from '@/components/ui-legacy/button';
 import {
+  clearAllCloudKv,
   deleteCloudKv,
   listCloudKv,
   upsertCloudKv,
@@ -67,6 +68,8 @@ export default function DemoDataKvPanel() {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [parseError, setParseError] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [savedKey, setSavedKey] = useState<string | null>(null);
 
@@ -155,6 +158,28 @@ export default function DemoDataKvPanel() {
     }
   }
 
+  async function handleDeleteAll() {
+    setDeletingAll(true);
+    setError(null);
+    try {
+      await ensureCloudConfig();
+      const result = await clearAllCloudKv({ mirrorLocal: true });
+      if (!result.ok) {
+        setError(result.error ?? 'Delete all failed');
+        return;
+      }
+      setConfirmDeleteAll(false);
+      setPendingDelete(null);
+      setExpanded(null);
+      setDrafts({});
+      setParseError(null);
+      setSavedKey(null);
+      await refresh();
+    } finally {
+      setDeletingAll(false);
+    }
+  }
+
   return (
     <div className="card p-6">
       <div className="mb-1 flex items-center gap-3">
@@ -165,7 +190,7 @@ export default function DemoDataKvPanel() {
       </div>
       <p className="mb-5 ml-11 text-body-sm text-fg-muted">
         Ops view of the Supabase <code className="text-[12px]">app_kv</code> table. Expand a key to
-        edit its JSON, save, or delete the row. Delete also clears that shared key from this
+        edit its JSON, save, or delete the row. Delete / Delete All also clears shared keys from this
         browser and from other open sessions via Realtime.
       </p>
 
@@ -175,11 +200,47 @@ export default function DemoDataKvPanel() {
             type="button"
             variant="outline"
             onClick={() => void refresh()}
-            disabled={loading}
+            disabled={loading || deletingAll}
           >
             <RefreshCw size={15} className={cn(loading && 'animate-spin')} />
             Refresh
           </Button>
+          {enabled && !confirmDeleteAll && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmDeleteAll(true)}
+              disabled={loading || deletingAll || rows.length === 0}
+              className="border-danger/40 text-danger hover:bg-danger-bg"
+            >
+              <Trash2 size={15} />
+              Delete All
+            </Button>
+          )}
+          {enabled && confirmDeleteAll && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-body-sm text-fg-muted">
+                {deletingAll ? 'Deleting all…' : 'Delete every KV row?'}
+              </span>
+              <Button
+                type="button"
+                onClick={() => void handleDeleteAll()}
+                disabled={deletingAll}
+                className="bg-danger hover:bg-danger/90 border-danger"
+              >
+                <Trash2 size={15} className={cn(deletingAll && 'animate-spin')} />
+                Confirm Delete All
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setConfirmDeleteAll(false)}
+                disabled={deletingAll}
+              >
+                Cancel
+              </Button>
+            </div>
+          )}
           <span className="text-[12px] text-fg-subtle">
             {isCloudSyncEnabled() || enabled
               ? `${rows.length} key${rows.length === 1 ? '' : 's'}`
