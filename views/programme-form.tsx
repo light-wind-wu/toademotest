@@ -61,7 +61,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import EmptyState from '@/components/ui-legacy/empty-state';
-import { SuccessCelebration } from '@/components/ui-legacy/success-celebration';
 import { TruncatedTooltip } from '@/components/ui-legacy/truncated-tooltip';
 import { Spinner } from '@/components/ui/spinner';
 import {
@@ -1513,7 +1512,6 @@ export default function ProgrammeFormPage() {
   const [isEdit, setIsEdit]             = useState(false);
   const [editingId, setEditingId]       = useState<string | null>(null);
   const [step, setStep]                 = useState(1);
-  const [showSuccess, setShowSuccess]   = useState(false);
 
   const [cpTitle, setCpTitle]           = useState('');
   const [cpCategory, setCpCategory]     = useState<string[]>([]);
@@ -2356,7 +2354,10 @@ export default function ProgrammeFormPage() {
       };
       saveProgs([newProg, ...progs]);
       attachSelectedProjects(newProg.id);
-      setShowSuccess(true);
+      try {
+        sessionStorage.setItem('dsta_programme_success_dialog', '1');
+      } catch {}
+      router.push('/programmes');
     }
   }
 
@@ -2397,21 +2398,6 @@ export default function ProgrammeFormPage() {
 
   // Single source of truth for step labels (stepper, card header, Next button).
   const stepTitle = STEP_DEFS[step - 1].label;
-
-  if (showSuccess) {
-    return (
-      <Shell activeRoute="/programmes">
-        <div className="flex min-h-[calc(100vh-96px)] flex-col items-center justify-center">
-          <SuccessCelebration
-            title="Task Completed"
-            message="You have successfully completed this test task. Your responses have been recorded."
-            buttonText="Back to Tasks"
-            onButtonClick={() => router.push('/start-tasks')}
-          />
-        </div>
-      </Shell>
-    );
-  }
 
   return (
     <Shell activeRoute="/programmes">

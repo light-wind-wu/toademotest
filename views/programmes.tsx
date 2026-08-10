@@ -24,6 +24,7 @@ import {
 } from '@/components/ui-legacy/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import EmptyState from '@/components/ui-legacy/empty-state';
+import { SuccessCelebration } from '@/components/ui-legacy/success-celebration';
 import {
   Pagination,
   PaginationContent,
@@ -132,6 +133,8 @@ export default function ProgrammesPage() {
 
   const { toast, showToast } = useToast();
 
+  const [createdDialogOpen, setCreatedDialogOpen] = useState(false);
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem(COLS_STORAGE_KEY);
@@ -141,6 +144,11 @@ export default function ProgrammesPage() {
     setProjects(loadProjects());
     const msg = sessionStorage.getItem('dsta_pending_toast');
     if (msg) { sessionStorage.removeItem('dsta_pending_toast'); showToast(msg); }
+    const created = sessionStorage.getItem('dsta_programme_success_dialog');
+    if (created) {
+      sessionStorage.removeItem('dsta_programme_success_dialog');
+      setCreatedDialogOpen(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -812,6 +820,25 @@ export default function ProgrammesPage() {
             <Button variant="outline" onClick={() => setDeleteProg(null)}>Cancel</Button>
             <Button variant="danger" onClick={confirmDelete}><Trash2 size={16} />Delete</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={createdDialogOpen}
+        onOpenChange={(open) => {
+          setCreatedDialogOpen(open);
+        }}
+      >
+        <DialogContent className="border-none bg-transparent p-0 shadow-none">
+          <SuccessCelebration
+            title="Task Completed"
+            message="You have successfully completed this test task. Your responses have been recorded."
+            buttonText="Back to Tasks"
+            onButtonClick={() => {
+              setCreatedDialogOpen(false);
+              router.push('/start-tasks');
+            }}
+          />
         </DialogContent>
       </Dialog>
 
