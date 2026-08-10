@@ -126,6 +126,10 @@ export interface ArchetypeInfo {
   name: string;
   tagline: string;
   description: string;
+  /** Mobile quiz-result body — hard line breaks so copy clears the corner art. */
+  descriptionMobile: string;
+  /** Optional mobile tagline breaks (omit = use tagline). */
+  taglineMobile?: string;
   fits: string[];
   /** Title + tagline colour from C-end comps */
   color: string;
@@ -139,17 +143,20 @@ export const ARCHETYPES: Record<ArchetypeId, ArchetypeInfo> = {
     tagline: 'You turn bold ideas into real-world possibilities.',
     description:
       'You enjoy experimenting, prototyping, and exploring emerging technologies. By combining robotics, embedded systems, and hands-on problem-solving, you create solutions that push boundaries.',
+    descriptionMobile:
+      'You enjoy experimenting, prototyping, and\nexploring emerging technologies. By\ncombining robotics, embedded systems, and\nhands-on problem-solving, you create\nsolutions that push boundaries.',
     fits: ['Robotics & UAV', 'Rapid Prototyping', 'IoT & Embedded', 'Emerging Tech'],
     color: 'rgba(193, 0, 7, 1)',
   },
   architect: {
     id: 'architect',
     name: 'The Architect',
-    tagline:
-      'You design the systems that bring intelligence, connectivity, and devices into one coherent whole.',
+    tagline: 'You design the systems that bring intelligence, connectivity, and devices into one coherent whole.',
     description:
       'You think in structures, platforms, and possibilities. By shaping communications, connected devices, and AI-enabled systems together, you create the foundations that others build on. If you enjoy turning complexity into elegant solutions, this is where you belong.',
-    fits: ['Robotics & UAV', 'Rapid Prototyping', 'IoT & Embedded'],
+    descriptionMobile:
+      'You think in structures, platforms, and\npossibilities. By shaping\ncommunications, connected devices,\nand AI-enabled systems together, you\ncreate the foundations that others build\non. If you enjoy turning complexity into\nelegant solutions, this is where you\nbelong.',
+    fits: ['Cellular Networks 0.6', 'Internet of Things 0.5', 'Artificial Intelligence 0.4'],
     color: 'rgba(0, 130, 54, 1)',
   },
   pathfinder: {
@@ -158,6 +165,8 @@ export const ARCHETYPES: Record<ArchetypeId, ArchetypeInfo> = {
     tagline: 'You discover new possibilities by connecting intelligence with the world around you.',
     description:
       'You explore data to uncover insights others miss. You connect smart systems and the physical world to solve real problems. You thrive on curiosity, experimentation, and learning by doing—turning possibilities into progress.',
+    descriptionMobile:
+      'You explore data to uncover insights\nothers miss. You connect smart systems\nand the physical world to solve real\nproblems. You thrive on curiosity\nexperimentation, and learning by doing-\nturning possibilities into progress.',
     fits: ['Artificial Intelligence 1.0', 'Internet of Things 0.4'],
     color: 'rgba(0, 105, 168, 1)',
   },
@@ -165,12 +174,26 @@ export const ARCHETYPES: Record<ArchetypeId, ArchetypeInfo> = {
     id: 'sentinel',
     name: 'The Sentinel',
     tagline: 'You protect what matters with intelligence and precision.',
+    taglineMobile:
+      'You protect what matters with intelligence\nand precision.',
     description:
       'You leverage AI-enabled monitoring and resilient communications to detect threats, analyze signals and act with confidence. From the edge to the cloud, you ensure critical systems stay secure, connected, and mission-ready.',
+    descriptionMobile:
+      'You leverage AI-enabled monitoring and\nresilient communications to detect\nthreats, analyze signals and act with\nconfidence. From the edge to the cloud,\nyou ensure critical systems stay secure,\nconnected, and mission-ready.',
     fits: ['Artificial Intelligence 0.4', 'Cellular Networks 0.3'],
     color: 'rgba(187, 77, 0, 1)',
   },
 };
+
+/** Dashboard / result-card art — PC full card + mobile companion (jpg). */
+export function archetypeResultImage(
+  id: ArchetypeId,
+  viewport: 'pc' | 'mobile' = 'pc',
+): string {
+  return viewport === 'mobile'
+    ? `/images/test-result-${id}-m.jpg`
+    : `/images/test-result-${id}.jpg`;
+}
 
 /** Six questions × four options (Sentinel → Pathfinder → Architect → Pioneer). */
 export const QUIZ_QUESTIONS: QuizQuestion[] = [

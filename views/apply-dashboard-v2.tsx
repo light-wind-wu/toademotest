@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Calendar } from 'lucide-react';
 import Shell from '@/components/layout/shell';
 import { useRole } from '@/lib/role';
-import { resolveArchetype } from '@/lib/apply-project-fit';
+import { resolveArchetype, archetypeResultImage } from '@/lib/apply-project-fit';
 import { loadApplyDraft, programmeTitleForVariant } from '@/lib/apply-application';
 import { loadUtApplicantVariant } from '@/lib/ut-track';
 import { cn } from '@/lib/utils';
@@ -584,24 +584,21 @@ export default function ApplyDashboardV2() {
                 </section>
               </div>
 
-              <aside className="relative mx-auto h-auto min-h-[420px] w-full shrink-0 overflow-hidden rounded-2xl border border-border bg-white p-6 max-lg:max-w-none lg:mx-0 lg:h-[423px] lg:min-h-0 lg:w-[314px] lg:max-w-[314px]">
-                <div
-                  className="pointer-events-none absolute bottom-0 right-0 z-0 h-[255px] w-[244px] max-lg:h-[312px] max-lg:w-[298px]"
-                  aria-hidden
-                >
+              <aside className="relative mx-auto h-auto min-h-[420px] w-full shrink-0 overflow-hidden rounded-2xl p-6 max-lg:max-w-none lg:mx-0 lg:h-[423px] lg:min-h-0 lg:w-[314px] lg:max-w-[314px]">
+                <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
                   <Image
-                    src="/images/test-result-v2.png"
+                    src={archetypeResultImage(archetype.id, 'pc')}
                     alt=""
-                    width={244}
-                    height={255}
-                    className="h-[255px] w-[244px] max-w-none object-contain object-right-bottom max-lg:hidden"
+                    fill
+                    className="object-cover object-bottom max-lg:hidden"
+                    sizes="314px"
                   />
                   <Image
-                    src="/images/test-result-v2-m.png"
+                    src={archetypeResultImage(archetype.id, 'mobile')}
                     alt=""
-                    width={298}
-                    height={312}
-                    className="hidden h-[312px] w-[298px] max-w-none object-contain object-right-bottom max-lg:block"
+                    fill
+                    className="object-cover object-bottom lg:hidden"
+                    sizes="100vw"
                   />
                 </div>
 

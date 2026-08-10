@@ -1290,8 +1290,8 @@ function ArchetypeResultPhase({
               </div>
             </div>
 
-            {/* Mobile copy — full width, wrap naturally */}
-            <div className="w-full lg:hidden">
+            {/* Mobile copy — fixed line breaks so body clears corner art */}
+            <div className="relative z-[1] w-full lg:hidden">
               <h2
                 className="w-full break-words"
                 style={{
@@ -1307,32 +1307,28 @@ function ArchetypeResultPhase({
                 {archetype.name}
               </h2>
               <p
-                className="w-full break-words"
+                className="whitespace-pre-line"
                 style={{
                   marginTop: 4,
                   fontWeight: 400,
                   fontSize: 14,
-                  lineHeight: '100%',
+                  lineHeight: '20px',
                   color: accent,
-                  overflowWrap: 'break-word',
-                  wordBreak: 'normal',
                 }}
               >
-                {archetype.tagline}
+                {archetype.taglineMobile ?? archetype.tagline}
               </p>
               <p
-                className="w-full break-words"
+                className="whitespace-pre-line"
                 style={{
                   marginTop: 24,
                   fontWeight: 400,
                   fontSize: 14,
                   lineHeight: '22px',
                   color: 'rgba(69, 85, 108, 1)',
-                  overflowWrap: 'break-word',
-                  wordBreak: 'normal',
                 }}
               >
-                {archetype.description}
+                {archetype.descriptionMobile}
               </p>
               <div className="mt-6 flex w-full flex-col items-start gap-2">
                 {archetype.fits.map((tag) => (
