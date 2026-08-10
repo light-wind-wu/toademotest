@@ -7,11 +7,14 @@ import { cn } from '@/lib/utils';
    The ⋮ trigger. Place inside a <td> that has onClick={e=>e.stopPropagation()}.
    The parent <tr> must have className="group" for hover-reveal to work.
 ──────────────────────────────────────────────────────────────────────────── */
-export function RowMenuButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
+export function RowMenuButton({ onClick, alwaysVisible }: { onClick: (e: React.MouseEvent) => void; alwaysVisible?: boolean }) {
   return (
     <button
       onClick={onClick}
-      className="p-2 rounded-full hover:bg-bg-subtle text-fg-muted transition-colors opacity-0 group-hover:opacity-100"
+      className={cn(
+        'p-2 rounded-full hover:bg-bg-subtle text-fg-muted transition-colors',
+        alwaysVisible ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+      )}
     >
       <MoreVertical size={16} />
     </button>

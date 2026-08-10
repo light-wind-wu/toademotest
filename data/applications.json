@@ -36,7 +36,8 @@
         "confidence": "High",
         "defaultSelected": false
       }
-    ]
+    ],
+    "summary": "Solid programming fundamentals with data analysis experience."
   },
   {
     "id": "amelia",
@@ -75,7 +76,8 @@
         "confidence": "High",
         "defaultSelected": true
       }
-    ]
+    ],
+    "summary": "Strong background in robotics and simulation with practical project experience."
   },
   {
     "id": "arjun",
@@ -114,7 +116,8 @@
         "confidence": "High",
         "defaultSelected": false
       }
-    ]
+    ],
+    "summary": "Top-ranked for autonomy work; published undergraduate research on swarm coordination."
   },
   {
     "id": "bala",
@@ -149,7 +152,8 @@
         "confidence": "High",
         "defaultSelected": false
       }
-    ]
+    ],
+    "summary": "Returning talent -- completed a 10-week organization attachment last cycle."
   },
   {
     "id": "divya",
@@ -199,7 +203,8 @@
         "confidence": "High",
         "defaultSelected": true
       }
-    ]
+    ],
+    "summary": "Returning talent -- completed a 10-week organization attachment last cycle."
   },
   {
     "id": "farah",
@@ -238,7 +243,8 @@
         "confidence": "High",
         "defaultSelected": true
       }
-    ]
+    ],
+    "summary": "Strong mathematics and signal processing background with research experience."
   },
   {
     "id": "kenji",
@@ -277,7 +283,8 @@
         "confidence": "High",
         "defaultSelected": true
       }
-    ]
+    ],
+    "summary": "Experienced in embedded systems and control systems with hands-on prototyping skills."
   },
   {
     "id": "lena",
@@ -327,7 +334,8 @@
         "confidence": "High",
         "defaultSelected": false
       }
-    ]
+    ],
+    "summary": "Returning talent -- completed a 10-week organization attachment last cycle."
   },
   {
     "id": "marcus",
@@ -378,7 +386,8 @@
         "defaultSelected": false
       }
     ],
-    "shortlistedFor": "swarm"
+    "shortlistedFor": "swarm",
+    "summary": "Strong engineering fundamentals with a standout internship reference."
   },
   {
     "id": "nurul",
@@ -417,7 +426,8 @@
         "confidence": "High",
         "defaultSelected": true
       }
-    ]
+    ],
+    "summary": "Electrical engineering background with MATLAB and signal processing experience."
   },
   {
     "id": "priya",
@@ -456,7 +466,8 @@
         "confidence": "High",
         "defaultSelected": true
       }
-    ]
+    ],
+    "summary": "Strong engineering fundamentals with a standout internship reference."
   },
   {
     "id": "rachel",
@@ -506,7 +517,8 @@
         "confidence": "High",
         "defaultSelected": false
       }
-    ]
+    ],
+    "summary": "Top-ranked for autonomy work; published undergraduate research on swarm coordination."
   },
   {
     "id": "wei",
@@ -556,6 +568,7 @@
         "confidence": "High",
         "defaultSelected": true
       }
-    ]
+    ],
+    "summary": "Exceptional cyber skills with a strong prior competition record."
   }
 ]

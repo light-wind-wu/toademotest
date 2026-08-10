@@ -15,6 +15,7 @@ export interface UnderlineTabsProps {
   tabs: UnderlineTabItem[];
   ariaLabel?: string;
   className?: string;
+  size?: 'sm' | 'md';
 }
 
 export function UnderlineTabs({
@@ -23,7 +24,9 @@ export function UnderlineTabs({
   tabs,
   ariaLabel,
   className,
+  size = 'md',
 }: UnderlineTabsProps) {
+  const isSm = size === 'sm';
   return (
     <BaseTabs.Root value={value} onValueChange={onValueChange} className={className}>
       <BaseTabs.List
@@ -33,11 +36,12 @@ export function UnderlineTabs({
         {tabs.map((tab) => {
           const selected = tab.value === value;
           return (
-            <BaseTabs.Tab
+              <BaseTabs.Tab
               key={tab.value}
               value={tab.value}
               className={cn(
-                'relative whitespace-nowrap px-3 py-2 text-sm transition-colors',
+                'relative whitespace-nowrap px-3 transition-colors',
+                isSm ? 'py-2.5 text-[12px]' : 'py-2 text-sm',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2',
                 selected ? 'font-semibold text-accent' : 'font-normal text-fg-muted hover:text-fg',
                 'after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-0.5 after:rounded-t-full after:transition-colors',
@@ -49,7 +53,8 @@ export function UnderlineTabs({
                 {tab.count != null && (
                   <span
                     className={cn(
-                      'text-sm font-normal transition-colors',
+                      'font-normal transition-colors',
+                      isSm ? 'text-[12px]' : 'text-sm',
                       selected ? 'text-accent' : 'text-fg-subtle',
                     )}
                   >

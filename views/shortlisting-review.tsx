@@ -9,6 +9,7 @@ import { Toast, useToast } from '@/components/ui-legacy/toast';
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui-legacy/tooltip';
 import AiSummaryCard from '@/components/ui-legacy/ai-summary-card';
+import AiSummaryPreview from '@/components/ui-legacy/ai-summary-preview';
 import {
   RowMenuButton,
   RowDropdown,
@@ -66,7 +67,7 @@ function saveApps(apps: Application[]) {
 const TABS = [
   { key: 'shortlist',          label: 'Shortlist' },
   { key: 'interview-outcomes', label: 'Interview Outcomes' },
-  { key: 'offers-extended',    label: 'Offers Extended' },
+  { key: 'offers-extended',    label: 'Offer Extended' },
   { key: 'fully-placed',       label: 'Fully Placed' },
 ] as const;
 
@@ -386,8 +387,11 @@ export default function ShortlistingReviewPage() {
       'fully-placed': 0,
     };
     if (!selectedIntake) return counts;
+    // Shortlist tab counts projects (matching prototype), other stages count applicants.
+    counts.shortlist = filteredProjects.length;
     for (const app of apps) {
       for (const key of TABS.map(t => t.key)) {
+        if (key === 'shortlist') continue;
         if (STATUS_BY_TAB[key].has(app.status)) {
           const inIntake = app.programmeId === selectedIntake.programmeId
             && (!app.intakeId || app.intakeId === selectedIntake.intakeId);
@@ -397,7 +401,7 @@ export default function ShortlistingReviewPage() {
       }
     }
     return counts;
-  }, [apps, selectedIntake]);
+  }, [apps, selectedIntake, filteredProjects]);
 
   const dispatchEnabled = activeTab === 'shortlist' && selectedIntake != null;
   const dispatchSummary = useMemo(() => {
@@ -521,38 +525,6 @@ export default function ShortlistingReviewPage() {
     setWindowValue('');
   };
 
-  const allSelected = useMemo(() => {
-    if (!viewingProject) return false;
-    const rows = applicationsByProject[viewingProject.id] || [];
-    const selected = selectedByProject[viewingProject.id] || new Set();
-    const selectableRows = rows.filter(r => {
-      const app = r.app;
-      if (selected.has(app.id)) return true;
-      if (dispatchedIds.has(app.id)) return false;
-      if (app.shortlistedFor && app.shortlistedFor !== viewingProject.id) return false;
-      return true;
-    });
-    return selectableRows.length > 0 && selectableRows.every(r => selected.has(r.app.id));
-  }, [viewingProject, applicationsByProject, selectedByProject, dispatchedIds]);
-
-  function toggleSelectAll() {
-    if (!viewingProject) return;
-    const rows = applicationsByProject[viewingProject.id] || [];
-    setSelectedByProject(prev => {
-      if (allSelected) {
-        return { ...prev, [viewingProject.id]: new Set<string>() };
-      }
-      const next = new Set<string>();
-      for (const row of rows) {
-        const app = row.app;
-        if (dispatchedIds.has(app.id)) continue;
-        if (app.shortlistedFor && app.shortlistedFor !== viewingProject.id) continue;
-        next.add(app.id);
-      }
-      return { ...prev, [viewingProject.id]: next };
-    });
-  }
-
   return (
     <Shell activeRoute="/shortlisting-review">
       <div className="mb-1">
@@ -562,14 +534,14 @@ export default function ShortlistingReviewPage() {
         </p>
       </div>
 
-      <div className="card p-5 mb-5">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="card px-[18px] py-4 mb-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
           <div>
-            <label className="block text-body-sm font-medium text-fg mb-1.5">
+            <label className="block text-[12px] font-medium text-fg mb-1.5">
               Year <span className="text-danger">*</span>
             </label>
             <Select value={year} onValueChange={v => handleYearChange(v ?? '')}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-[38px] text-[12px]">
                 <SelectValue placeholder="Select year" />
               </SelectTrigger>
               <SelectContent>
@@ -581,11 +553,11 @@ export default function ShortlistingReviewPage() {
           </div>
 
           <div>
-            <label className="block text-body-sm font-medium text-fg mb-1.5">
+            <label className="block text-[12px] font-medium text-fg mb-1.5">
               Intern category <span className="text-danger">*</span>
             </label>
             <Select value={category} onValueChange={v => handleCategoryChange(v ?? '')} disabled={!year}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-[38px] text-[12px]">
                 <SelectValue placeholder={year ? 'Select category' : 'Select a year first'} />
               </SelectTrigger>
               <SelectContent className="max-w-[min(28rem,var(--available-width))]">
@@ -597,12 +569,12 @@ export default function ShortlistingReviewPage() {
           </div>
 
           <div>
-            <label className="block text-body-sm font-medium text-fg mb-1.5">
+            <label className="block text-[12px] font-medium text-fg mb-1.5">
               Internship window <span className="text-danger">*</span>
             </label>
             <Select value={windowValue} onValueChange={v => setWindowValue(v ?? '')} disabled={!category}>
-              <SelectTrigger className="w-full">
-                <span className={cn('flex-1 text-left text-body-sm', !windowValue && 'text-fg-subtle')}>
+              <SelectTrigger className="w-full h-[38px] text-[12px]">
+                <span className={cn('flex-1 text-left text-[12px]', !windowValue && 'text-fg-subtle')}>
                   {windowValue
                     ? windowOptions.find(w => w.value === windowValue)?.label
                     : category ? 'Select window' : 'Select an intern category first'}
@@ -615,11 +587,6 @@ export default function ShortlistingReviewPage() {
               </SelectContent>
             </Select>
           </div>
-        </div>
-
-        <div className="flex items-start gap-2 mt-4 text-body-sm text-fg-muted">
-          <Info size={16} className="shrink-0 mt-0.5" />
-          Projects are loaded only after all three intake fields are selected.
         </div>
       </div>
 
@@ -635,63 +602,50 @@ export default function ShortlistingReviewPage() {
         </div>
       ) : (
         <>
-          <div className="mb-4">
+          <div className="mb-3">
             <UnderlineTabs
               ariaLabel="Shortlisting stage"
               value={activeTab}
               onValueChange={(v) => setActiveTab(v as TabKey)}
               tabs={TABS.map(t => ({ value: t.key, label: t.label, count: tabCounts[t.key] }))}
+              size="sm"
             />
           </div>
 
-          {activeTab === 'shortlist' && (
-            <div className="bg-[#F3EFE5] border border-[#E6E1D8] rounded-xl p-4 mb-5">
-              <h2 className="text-body-md font-semibold text-fg mb-1">Candidates are shortlisted and ranked based on matching their discipline of studies, skills and project preference.</h2>
-              <p className="text-body-sm text-fg-muted mb-3">
-                Applicants are ranked by fit and the top few are pre-selected for each project. No one is shortlisted for more than one project at a time.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1 text-[12px] font-medium px-2.5 py-1 rounded-full bg-surface border border-border text-fg">
-                  Seats + adaptive buffer
-                </span>
-                <span className="inline-flex items-center gap-1 text-[12px] font-medium px-2.5 py-1 rounded-full bg-surface border border-border text-fg">
-                  One applicant, one project
-                </span>
-                <span className="inline-flex items-center gap-1 text-[12px] font-medium px-2.5 py-1 rounded-full bg-surface border border-border text-fg">
-                  IO has final say
-                </span>
-              </div>
-            </div>
-          )}
-
-          <div className="grid min-h-[calc(100vh-380px)] min-w-0 overflow-hidden rounded-xl border border-border bg-surface shadow-sm lg:grid-cols-[minmax(260px,360px)_minmax(0,1fr)]">
+          <div className="grid min-h-[calc(100vh-360px)] min-w-0 overflow-hidden rounded-xl border border-border bg-surface lg:grid-cols-[minmax(260px,360px)_minmax(0,1fr)]">
             <aside className="relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-border bg-surface shadow-lg lg:overflow-visible lg:border-b-0 lg:border-r">
-              <div className="px-4 py-7 border-b border-border bg-[#FDFCFA] flex items-center justify-between">
-                <span className="text-body-sm font-semibold text-fg">Projects for shortlisting</span>
-                <span className="text-body-sm text-fg-muted">{filteredProjects.length} projects</span>
+              <div className="px-3 py-3 border-b border-border bg-[#FDFCFA] flex items-center justify-between">
+                <span className="text-[12px] font-semibold text-fg">Projects ({filteredProjects.length})</span>
+                <span className="inline-flex items-center gap-1 text-[12px] text-fg-muted">
+                  Status
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info size={13} className="text-fg-muted" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Project shortlist status</TooltipContent>
+                  </Tooltip>
+                </span>
               </div>
               <div className="flex min-w-0 flex-col">
                 {filteredProjects.map(project => {
                   const candidates = applicationsByProject[project.id] || [];
-                  const selected = selectedByProject[project.id] || new Set<string>();
                   const isViewing = project.id === viewingProjectId;
                   const dispatchedCount = apps.filter(a => a.shortlistedFor === project.id && a.status === 'Shortlisted for Interview').length;
                   const isDispatched = dispatchedCount > 0;
                   const isDispatchSelected = dispatchProjectIds.has(project.id);
-                  const selectedCount = selected.size;
                   const recommendedMin = Math.min(project.slots + 1, candidates.length) || project.slots + 1;
                   const recommendedMax = Math.min(project.slots + 2, candidates.length) || project.slots + 2;
                   return (
                     <div
                       key={project.id}
                       className={cn(
-                        'group relative box-border w-full min-w-0 border-b px-4 py-3 text-left transition-colors',
+                        'group relative box-border w-full min-w-0 border-b px-3 py-2.5 text-left transition-colors',
                         isViewing
                           ? 'z-10 border-y border-[#E7E4DD] bg-[#F4F2EC]'
                           : 'border-border bg-surface hover:bg-bg-muted'
                       )}
                     >
-                      <div className="flex items-start gap-2.5">
+                      <div className="flex items-start gap-2">
                         <div className="pt-0.5">
                           <Checkbox
                             checked={isDispatched ? false : isDispatchSelected}
@@ -704,42 +658,36 @@ export default function ShortlistingReviewPage() {
                         <button
                           type="button"
                           onClick={() => setViewingProjectId(project.id)}
-                          className="flex-1 text-left min-w-0 pr-4"
+                          className="flex-1 text-left min-w-0 pr-3"
                         >
-                          <p className={cn('text-body-sm font-semibold leading-snug', isViewing ? 'text-accent' : 'text-fg')}>
+                          <p className={cn('text-[12px] font-semibold leading-snug text-fg truncate')}>
                             {project.title}
                           </p>
-                          <p className="text-[12px] text-fg-muted mt-0.5">
+                          <p className="text-[10px] text-fg-muted mt-0.5">
                             {project.slots} placement{project.slots !== 1 ? 's' : ''}
-                            {' · recommended '}{recommendedMin}–{recommendedMax} candidates
-                          </p>
-                          <p className={cn('text-[12px] mt-0.5', isDispatched ? 'text-success' : 'text-fg-muted')}>
-                            {isDispatched
-                              ? `${dispatchedCount} candidate${dispatchedCount !== 1 ? 's' : ''} sent · ${project.slots - dispatchedCount} seat${project.slots - dispatchedCount !== 1 ? 's' : ''} remaining`
-                              : `${selectedCount} candidate${selectedCount !== 1 ? 's' : ''} shortlisted`}
+                            {' · recommended '}{recommendedMin}–{recommendedMax}
                           </p>
                         </button>
                         <div className="pt-0.5 shrink-0">
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <span className="inline-flex cursor-help">
-                              {isDispatched ? (
-                                <Check size={16} className="text-success" />
-                              ) : (
-                                <Info size={16} className="text-warning" />
-                              )}
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent side="right">
-                            {isDispatched ? 'Shortlist sent to mentor' : 'Need shortlist review'}
-                          </TooltipContent>
-                        </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <span className="inline-flex cursor-help">
+                                {isDispatched ? (
+                                  <Check size={15} className="text-success" />
+                                ) : (
+                                  <Info size={15} className="text-warning" />
+                                )}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                              {isDispatched ? 'Shortlist sent to mentor' : 'Need shortlist review'}
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       </div>
                       {isViewing && (
                         <span
-                          className="absolute right-[-11px] top-1/2 z-10 h-full w-[11px] -translate-y-1/2 bg-[length:auto_100%] bg-right bg-no-repeat"
-                          style={{ backgroundImage: 'url(/assets/request-arrow.svg)' }}
+                          className="absolute right-[-10px] top-1/2 z-10 h-[18px] w-[18px] -translate-y-1/2 rotate-45 border-t border-r border-[#E7E4DD] bg-[#F4F2EC]"
                           aria-hidden="true"
                         />
                       )}
@@ -752,18 +700,18 @@ export default function ShortlistingReviewPage() {
             <div className="flex min-h-0 min-w-0 flex-col bg-surface">
               {viewingProject ? (
                 <>
-                  <div className="px-5 py-4 border-b border-border bg-[#F9F8F4] flex items-start justify-between gap-4">
+                  <div className="px-4 py-3 border-b border-border bg-[#F9F8F4] flex items-start justify-between gap-4">
                     <div className="min-w-0">
-                      <h2 className="text-body-lg font-semibold text-fg">{viewingProject.title}</h2>
-                      <p className="text-body-sm text-fg-muted">
+                      <h2 className="text-[15px] font-semibold text-fg">{viewingProject.title}</h2>
+                      <p className="text-[10px] text-fg-muted">
                         {viewingProject.slots} placement{viewingProject.slots !== 1 ? 's' : ''}
-                        {' · Recommended shortlist: '}{Math.min(viewingProject.slots + 1, (applicationsByProject[viewingProject.id] || []).length) || viewingProject.slots + 1}–{Math.min(viewingProject.slots + 2, (applicationsByProject[viewingProject.id] || []).length) || viewingProject.slots + 2} candidates
+                        {' · Recommended shortlist: '}{Math.min(viewingProject.slots + 1, (applicationsByProject[viewingProject.id] || []).length) || viewingProject.slots + 1}–{Math.min(viewingProject.slots + 2, (applicationsByProject[viewingProject.id] || []).length) || viewingProject.slots + 2}
                       </p>
                       {(() => {
                         const dispatchedCount = apps.filter(a => a.shortlistedFor === viewingProject.id && a.status === 'Shortlisted for Interview').length;
                         if (dispatchedCount > 0) {
                           return (
-                            <p className="text-body-sm text-success mt-0.5">
+                            <p className="text-[10px] text-success font-semibold mt-0.5">
                               {dispatchedCount} candidate{dispatchedCount !== 1 ? 's' : ''} sent · {viewingProject.slots - dispatchedCount} seat{viewingProject.slots - dispatchedCount !== 1 ? 's' : ''} remaining
                             </p>
                           );
@@ -771,14 +719,14 @@ export default function ShortlistingReviewPage() {
                         return null;
                       })()}
                     </div>
-                    <div className="text-body-sm font-medium text-fg shrink-0">
+                    <div className="inline-flex items-center gap-1 border border-border rounded-full px-2 py-1 text-[10px] font-medium text-fg bg-surface shrink-0">
                       {activeTab === 'shortlist'
                         ? `${(selectedByProject[viewingProject.id] || new Set()).size} candidate${((selectedByProject[viewingProject.id] || new Set()).size !== 1) ? 's' : ''} selected`
                         : `${(applicationsByProject[viewingProject.id] || []).length} candidate${((applicationsByProject[viewingProject.id] || []).length !== 1) ? 's' : ''}`}
                     </div>
                   </div>
 
-                  <div className="flex-1 p-5">
+                  <div className="flex-1 p-4">
                     {(applicationsByProject[viewingProject.id] || []).length === 0 ? (
                       <div className="text-center py-12 text-body-md text-fg-muted">
                         No applicants in this stage for the selected project.
@@ -791,8 +739,6 @@ export default function ShortlistingReviewPage() {
                         expanded={expandedEligible.has(viewingProject.id)}
                         onToggleExpanded={() => toggleEligibleExpanded(viewingProject.id)}
                         activeTab={activeTab}
-                        allSelected={allSelected}
-                        onToggleAll={toggleSelectAll}
                         onView360={(app) => window.open(`/candidate360/${app.id}?from=shortlisting-review`, '_blank')}
                         onAiSummary={setAiPanelApp}
                         viewingProjectId={viewingProject.id}
@@ -811,17 +757,18 @@ export default function ShortlistingReviewPage() {
             </div>
           </div>
 
-          <div className="sticky bottom-0 -mb-8 z-20 bg-surface border-t border-border py-3.5 flex items-center justify-between gap-4 -mx-[clamp(24px,2.6vw,40px)] px-[clamp(24px,2.6vw,40px)]">
-            <p className="text-body-sm text-fg">
+          <div className="sticky bottom-0 z-20 bg-surface/95 backdrop-blur-md border-t border-border py-2 px-7 min-h-[58px] flex items-center justify-between gap-4 shadow-[0_-8px_24px_rgba(16,24,40,.06)]">
+            <p className="text-[12px] text-fg">
               {dispatchSummary && dispatchSummary.total > 0
                 ? `${dispatchSummary.total} candidate${dispatchSummary.total !== 1 ? 's' : ''} in ${dispatchSummary.projectCount} project${dispatchSummary.projectCount !== 1 ? 's' : ''} ready for submission to respective mentors`
-                : 'Select applicants to dispatch shortlists.'}
+                : 'No projects selected for dispatch.'}
             </p>
             <Button
               disabled={!dispatchEnabled || !dispatchSummary || dispatchSummary.total === 0}
               onClick={openDispatchReview}
+              className="h-[34px] text-[12px]"
             >
-              <Send size={14} /> Dispatch Shortlist
+              <Check size={14} /> Dispatch selected applicants
             </Button>
           </div>
         </>
@@ -946,8 +893,6 @@ function CandidateList({
   expanded,
   onToggleExpanded,
   activeTab,
-  allSelected,
-  onToggleAll,
   onView360,
   onAiSummary,
   viewingProjectId,
@@ -960,8 +905,6 @@ function CandidateList({
   expanded: boolean;
   onToggleExpanded: () => void;
   activeTab: TabKey;
-  allSelected: boolean;
-  onToggleAll: () => void;
   onView360: (app: Application) => void;
   onAiSummary: (app: Application) => void;
   viewingProjectId: string;
@@ -971,8 +914,8 @@ function CandidateList({
   const [menuApp, setMenuApp] = useState<Application | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
 
-  const selectedRows = rows.filter(r => selected.has(r.app.id));
-  const eligibleRows = rows;
+  const selectedRows = rows.filter(r => selected.has(r.app.id) && !dispatchedIds.has(r.app.id));
+  const eligibleRows = rows.filter(r => !selected.has(r.app.id) || dispatchedIds.has(r.app.id));
 
   function openMenu(e: React.MouseEvent, app: Application) {
     e.stopPropagation();
@@ -998,65 +941,53 @@ function CandidateList({
       const title = projectTitles[app.shortlistedFor] || 'another project';
       return { disabled: true, label: `selected for ${title}`, variant: 'warning' };
     }
-    return { disabled: false };
+    return { disabled: false, label: 'not shortlisted', variant: 'muted' };
   }
 
   return (
     <div className="space-y-4">
       {activeTab === 'shortlist' && (
         <>
-          <div className="border border-border rounded-xl overflow-hidden">
+          <div className="border border-border rounded-lg overflow-hidden bg-surface">
             <div className="px-4 py-3 bg-bg-subtle/50 border-b border-border">
-              <h3 className="text-body-sm font-semibold text-fg">Selected shortlist</h3>
+              <h3 className="text-[13px] font-semibold text-fg">Selected for dispatch</h3>
             </div>
-            <div className="p-3 space-y-2">
+            <div>
               {selectedRows.length === 0 ? (
-                <p className="text-body-sm text-fg-muted py-2">No candidates selected yet.</p>
+                <p className="text-[12px] text-fg-muted px-4 py-3">No candidates selected yet.</p>
               ) : (
-                selectedRows.map(row => {
-                  const isDispatched = dispatchedIds.has(row.app.id);
-                  return (
-                    <CandidateRowCard
-                      key={row.app.id}
-                      row={row}
-                      checked={!isDispatched}
-                      disabled={isDispatched}
-                      onToggle={() => !isDispatched && onToggle(row.app.id)}
-                      statusLabel={isDispatched ? 'sent' : undefined}
-                      statusVariant="success"
-                      onMenu={openMenu}
-                      hideCheckbox={isDispatched}
-                    />
-                  );
-                })
+                selectedRows.map((row, i) => (
+                  <CandidateRowCard
+                    key={row.app.id}
+                    row={row}
+                    checked={true}
+                    disabled={false}
+                    onToggle={() => onToggle(row.app.id)}
+                    statusLabel={undefined}
+                    statusVariant={undefined}
+                    onMenu={openMenu}
+                    isLast={i === selectedRows.length - 1}
+                  />
+                ))
               )}
             </div>
           </div>
 
-          <div className="border border-border rounded-xl overflow-hidden">
+          <div className="border border-border rounded-lg overflow-hidden bg-surface">
             <div className="px-4 py-3 bg-bg-subtle/50 border-b border-border flex items-center justify-between">
-              <h3 className="text-body-sm font-semibold text-fg">Eligible applicants</h3>
+              <h3 className="text-[13px] font-semibold text-fg">Other eligible applicants ({eligibleRows.length})</h3>
               <button
                 type="button"
                 onClick={onToggleExpanded}
-                className="flex items-center gap-1 text-body-sm font-medium text-accent hover:underline"
+                className="flex items-center gap-1 text-[12px] font-medium text-accent hover:underline"
               >
-                <ChevronDown size={16} className={cn('transition-transform', expanded && 'rotate-180')} />
+                {expanded ? 'Hide' : 'Show'}
+                <ChevronDown size={14} className={cn('transition-transform', expanded && 'rotate-180')} />
               </button>
             </div>
             {expanded && (
-              <div className="p-3 space-y-2">
-                {activeTab === 'shortlist' && eligibleRows.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={onToggleAll}
-                    className="flex items-center gap-2 text-body-sm font-medium text-accent hover:underline mb-1"
-                  >
-                    <Checkbox checked={allSelected} onCheckedChange={onToggleAll} />
-                    {allSelected ? 'Deselect all' : 'Select all'}
-                  </button>
-                )}
-                {eligibleRows.map(row => {
+              <div>
+                {eligibleRows.map((row, i) => {
                   const status = candidateStatus(row);
                   return (
                     <CandidateRowCard
@@ -1068,6 +999,7 @@ function CandidateList({
                       statusLabel={status.label}
                       statusVariant={status.variant}
                       onMenu={openMenu}
+                      isLast={i === eligibleRows.length - 1}
                     />
                   );
                 })}
@@ -1078,8 +1010,8 @@ function CandidateList({
       )}
 
       {activeTab !== 'shortlist' && (
-        <div className="space-y-3">
-          {rows.map(row => (
+        <div className="border border-border rounded-lg overflow-hidden bg-surface">
+          {rows.map((row, i) => (
             <CandidateRowCard
               key={row.app.id}
               row={row}
@@ -1090,6 +1022,7 @@ function CandidateList({
               statusVariant="muted"
               onMenu={openMenu}
               hideCheckbox
+              isLast={i === rows.length - 1}
             />
           ))}
         </div>
@@ -1121,6 +1054,7 @@ function CandidateRowCard({
   statusVariant,
   onMenu,
   hideCheckbox,
+  isLast,
 }: {
   row: CandidateRow;
   checked: boolean;
@@ -1130,15 +1064,16 @@ function CandidateRowCard({
   statusVariant?: 'muted' | 'warning' | 'success';
   onMenu: (e: React.MouseEvent, app: Application) => void;
   hideCheckbox?: boolean;
+  isLast?: boolean;
 }) {
   const app = row.app;
-  const summary = app.summary || app.notes || buildFallbackSummary(row);
 
   return (
     <div
       className={cn(
-        'group flex items-start gap-3 px-4 py-3 border border-border rounded-xl bg-surface transition-colors',
-        disabled ? 'opacity-70' : 'hover:border-accent/30'
+        'group flex items-start gap-3 px-4 py-3 bg-surface transition-colors',
+        !isLast && 'border-b border-border',
+        disabled ? 'opacity-70' : 'hover:bg-bg-subtle/30'
       )}
     >
       {!hideCheckbox && (
@@ -1148,10 +1083,10 @@ function CandidateRowCard({
       )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-body-md font-semibold text-fg">{app.name}</span>
+          <span className="text-[12px] font-semibold text-fg">{app.name}</span>
           {statusLabel && (
             <span className={cn(
-              'text-body-sm',
+              'text-[10px]',
               statusVariant === 'success' ? 'text-success'
                 : statusVariant === 'warning' ? 'text-warning'
                 : 'text-fg-muted'
@@ -1160,34 +1095,18 @@ function CandidateRowCard({
             </span>
           )}
         </div>
-        {summary && (
-          <p className="text-body-sm text-fg-muted mt-0.5 flex items-center gap-1">
-            <Sparkles size={12} className="shrink-0" />
-            {summary}
-          </p>
-        )}
-        <div className="flex items-center gap-2 mt-2">
-          <span className={cn(
-            'inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border',
-            row.disciplineMatch
-              ? 'bg-success-bg text-success border-success/30'
-              : 'bg-danger-bg text-danger border-danger/30'
-          )}>
-            {row.disciplineMatch ? <Check size={10} /> : <span className="text-[10px]">×</span>}
-            {row.disciplineMatch ? 'Discipline of Study' : 'Discipline mismatch'}
-          </span>
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-bg-subtle text-fg-muted border border-border">
-            {row.skillsMatched} / {row.skillsTotal} skills
-          </span>
-          {row.rank && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-bg-subtle text-fg-muted border border-border">
-              #{row.rank}
-            </span>
-          )}
+        <div className="mt-0.5 text-[11px] text-fg-muted">
+          <AiSummaryPreview
+            app={app}
+            disciplineMatch={row.disciplineMatch}
+            skillsMatched={row.skillsMatched}
+            skillsTotal={row.skillsTotal}
+            rank={row.rank}
+          />
         </div>
       </div>
 
-      <RowMenuButton onClick={(e) => onMenu(e, app)} />
+      <RowMenuButton onClick={(e) => onMenu(e, app)} alwaysVisible />
     </div>
   );
 }
