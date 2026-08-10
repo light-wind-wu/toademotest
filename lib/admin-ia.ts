@@ -12,7 +12,7 @@
 import {
   Users, ShieldCheck, List, Mail, FileText, Bell, Send, ExternalLink,
   ClipboardList, Repeat, Sparkles, LayoutGrid, Calendar, Settings, RotateCcw,
-  BookOpen, Wand2,
+  BookOpen, Wand2, Database,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -24,7 +24,7 @@ export type AreaDest =
 
 /** Built-in panels backed by existing functionality. */
 export type AdminPanel =
-  | 'users' | 'scoring' | 'automation' | 'reset' | 'sysconfig' | 'dropdowns'
+  | 'users' | 'scoring' | 'automation' | 'reset' | 'kv' | 'sysconfig' | 'dropdowns'
   | 'menu' | 'edm' | 'microsite' | 'forms' | 'formbuilder' | 'placement' | 'calendar' | 'taxonomy' | 'components' | 'playground';
 
 export interface AdminArea {
@@ -73,7 +73,8 @@ export const ADMIN_CATEGORIES: AdminCategory[] = [
     { id: 'config',    label: 'System configuration', desc: 'Global parameters and feature switches.',                     icon: Settings,  dest: { kind: 'panel', panel: 'sysconfig' } },
     { id: 'components',     label: 'PRIZM components',      desc: 'A live gallery of every component used in this project.', meta: 'Utility', icon: RotateCcw, dest: { kind: 'panel', panel: 'components' } },
     { id: 'playground',     label: 'Playground',      desc: 'A sandbox for building and testing your own components.', meta: 'Utility', icon: RotateCcw, dest: { kind: 'panel', panel: 'playground' } },
-    { id: 'reset',     label: 'Reset demo data',      desc: 'Clear local data and reseed everything from the seed files.', meta: 'Utility', icon: RotateCcw, dest: { kind: 'panel', panel: 'reset' } },
+    { id: 'reset',     label: 'Reset demo data',      desc: 'Clear cloud KV and local data, then reseed everything from the seed files.', meta: 'Utility', icon: RotateCcw, dest: { kind: 'panel', panel: 'reset' } },
+    { id: 'kv',        label: 'Demo data KV list',    desc: 'View, edit, or delete rows in the Supabase app_kv cloud store.', meta: 'Utility', icon: Database, dest: { kind: 'panel', panel: 'kv' } },
   ] },
 ];
 

@@ -699,64 +699,63 @@ export default function AdminSettingsPage() {
 
         {/* ── Reset demo data panel ─────────────────────────────────────── */}
         {panel === 'reset' && (
-          <div className="space-y-4">
-            <Card
-              title="Reset Demo Data"
-              description="Clears cloud KV and local data, then reseeds everything from the original seed files. Use this to restart the full demo flow from scratch."
-              icon={RotateCcw}
-            >
-              <div className="space-y-4">
-                <div className="flex items-start gap-2.5 px-3 py-2.5 bg-danger-bg border border-danger/30 rounded-xl">
-                  <AlertTriangle size={15} className="text-danger mt-0.5 shrink-0" />
-                  <p className="text-body-sm text-fg-muted">
-                    This wipes the Supabase <code className="text-[12px]">app_kv</code> list first, then erases
-                    local requests, submissions, project approvals, and any changes you&apos;ve made. Fresh seed
-                    data is written back to local storage and cloud. The page will reload automatically.
-                  </p>
-                </div>
-                {resetError && (
-                  <div className="flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger-bg px-3 py-2.5">
-                    <AlertTriangle size={15} className="mt-0.5 shrink-0 text-danger" />
-                    <p className="text-body-sm text-fg-muted">{resetError}</p>
-                  </div>
-                )}
-                {!confirmReset ? (
-                  <Button
-                    variant="outline"
-                    onClick={() => { setConfirmReset(true); setResetError(null); }}
-                    disabled={resetting}
-                    className="border-danger/40 text-danger hover:bg-danger-bg"
-                  >
-                    <RotateCcw size={15} />Reset All Demo Data
-                  </Button>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <span className="text-body-sm text-fg-muted">
-                      {resetting ? 'Resetting…' : 'Are you sure?'}
-                    </span>
-                    <Button
-                      onClick={() => void resetDemoData()}
-                      disabled={resetting}
-                      className="bg-danger hover:bg-danger/90 border-danger"
-                    >
-                      <RotateCcw size={15} className={cn(resetting && 'animate-spin')} />
-                      Yes, Reset Everything
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => setConfirmReset(false)}
-                      disabled={resetting}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                )}
+          <Card
+            title="Reset Demo Data"
+            description="Clears cloud KV and local data, then reseeds everything from the original seed files. Use this to restart the full demo flow from scratch."
+            icon={RotateCcw}
+          >
+            <div className="space-y-4">
+              <div className="flex items-start gap-2.5 px-3 py-2.5 bg-danger-bg border border-danger/30 rounded-xl">
+                <AlertTriangle size={15} className="text-danger mt-0.5 shrink-0" />
+                <p className="text-body-sm text-fg-muted">
+                  This wipes the Supabase <code className="text-[12px]">app_kv</code> list first, then erases
+                  local requests, submissions, project approvals, and any changes you&apos;ve made. Fresh seed
+                  data is written back to local storage and cloud. The page will reload automatically.
+                </p>
               </div>
-            </Card>
-
-            <DemoDataKvPanel />
-          </div>
+              {resetError && (
+                <div className="flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger-bg px-3 py-2.5">
+                  <AlertTriangle size={15} className="mt-0.5 shrink-0 text-danger" />
+                  <p className="text-body-sm text-fg-muted">{resetError}</p>
+                </div>
+              )}
+              {!confirmReset ? (
+                <Button
+                  variant="outline"
+                  onClick={() => { setConfirmReset(true); setResetError(null); }}
+                  disabled={resetting}
+                  className="border-danger/40 text-danger hover:bg-danger-bg"
+                >
+                  <RotateCcw size={15} />Reset All Demo Data
+                </Button>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <span className="text-body-sm text-fg-muted">
+                    {resetting ? 'Resetting…' : 'Are you sure?'}
+                  </span>
+                  <Button
+                    onClick={() => void resetDemoData()}
+                    disabled={resetting}
+                    className="bg-danger hover:bg-danger/90 border-danger"
+                  >
+                    <RotateCcw size={15} className={cn(resetting && 'animate-spin')} />
+                    Yes, Reset Everything
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setConfirmReset(false)}
+                    disabled={resetting}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Card>
         )}
+
+        {/* ── Demo data KV list panel ───────────────────────────────────── */}
+        {panel === 'kv' && <DemoDataKvPanel />}
 
         {/* ── System configuration panel ────────────────────────────────── */}
         {panel === 'sysconfig' && <SystemConfig />}
