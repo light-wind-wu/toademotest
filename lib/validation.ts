@@ -146,12 +146,6 @@ export const programmeStep2Schema = (isEdit: boolean, today: string) =>
               message: 'Application Open Date cannot be in the past.',
               path: ['intakes', i, 'appOpen'],
             });
-          } else if (intake.start && intake.appOpen < intake.start) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: 'Application Open Date cannot be before the Internship Start Date.',
-              path: ['intakes', i, 'appOpen'],
-            });
           }
         }
 
@@ -196,12 +190,6 @@ export const programmeStep2Schema = (isEdit: boolean, today: string) =>
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               message: 'Internship Start Month cannot be in the past.',
-              path: ['intakes', i, 'start'],
-            });
-          } else if (intake.appOpen && intake.start.slice(0, 7) < intake.appOpen.slice(0, 7)) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: 'Internship Start Month cannot be before the Application Open month.',
               path: ['intakes', i, 'start'],
             });
           }

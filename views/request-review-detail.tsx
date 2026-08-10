@@ -600,7 +600,7 @@ export default function RequestReviewDetail() {
     setDceReturnOpen(false);
     setDceReturnRemarks('');
     sessionStorage.setItem('dsta_pending_toast', `"${proj.title}" returned for update.`);
-    sessionStorage.setItem('dsta_requests_target_tab', 'rejected');
+    sessionStorage.setItem('dsta_requests_target_tab', 'pending');
     sessionStorage.setItem('dsta_show_celebration', '1');
     router.push('/requests');
   }

@@ -2782,7 +2782,7 @@ export default function ProgrammeFormPage() {
                                     }}
                                     placeholder="Pick the application dates"
                                     lockStart={isEdit && selectedIndex === 0}
-                                    minDate={selectedIntake.start || sgToday()}
+                                    minDate={sgToday()}
                                     maxDate={selectedIntake.end}
                                     error={isFieldTouched(`intake_${selectedIndex}_appOpen`) && Boolean(cpErrors[`intake_${selectedIndex}_appOpen`] || cpErrors[`intake_${selectedIndex}_appClose`])}
                                   />

@@ -219,7 +219,7 @@ export default function RequestProjectEditPage() {
         <div className="flex flex-col items-center justify-center py-32 gap-3">
           <p className="text-body-lg text-fg-muted">Project not found.</p>
           <Button variant="ghost" onClick={() => {
-            sessionStorage.setItem('dsta_requests_target_tab', 'pending');
+            sessionStorage.setItem('dsta_requests_target_tab', 'submissions');
             router.push('/requests');
           }}>
             <ChevronLeft size={14} />Back to Requests
