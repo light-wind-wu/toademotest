@@ -215,7 +215,14 @@ export default function ApplyDashboardV2() {
                   className="mt-2 hidden items-center gap-1.5 text-[14px] font-normal leading-5 lg:inline-flex"
                   style={{ color: 'rgba(69, 85, 108, 1)' }}
                 >
-                  <Calendar className="size-3.5 shrink-0" strokeWidth={1.5} aria-hidden />
+                  <Image
+                    src="/images/calendar-days.svg"
+                    alt=""
+                    width={14}
+                    height={14}
+                    className="size-3.5 shrink-0"
+                    aria-hidden
+                  />
                   Submitted 24 Jul 2026
                 </p>
 
@@ -230,7 +237,14 @@ export default function ApplyDashboardV2() {
                   className="mt-0.5 inline-flex items-center gap-1.5 text-[12px] font-normal leading-5 lg:hidden"
                   style={{ color: 'rgba(69, 85, 108, 1)' }}
                 >
-                  <Calendar className="size-3.5 shrink-0" strokeWidth={1.5} aria-hidden />
+                  <Image
+                    src="/images/calendar-days.svg"
+                    alt=""
+                    width={14}
+                    height={14}
+                    className="size-3.5 shrink-0"
+                    aria-hidden
+                  />
                   Submitted 24 Jul 2026
                 </p>
                 <span
