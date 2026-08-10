@@ -10,7 +10,7 @@ import { loadRequests, loadSubmissions, saveSubmissions, saveRequests } from '@/
 import { addNotification } from '@/lib/notifications';
 import { findGroup, projectMatchesRequest, requestRawCategory } from '@/lib/request-groups';
 import { periodLabelToMMMYY } from '@/lib/internship-period';
-import { STATUS_COLOURS } from '@/lib/data';
+import { ITEM_STATUS_COLOURS, STATUS_COLOURS } from '@/lib/data';
 import RequestContextTable from '@/components/ui-legacy/request-context-table';
 import {
   Dialog,
@@ -23,13 +23,23 @@ import {
 import type { ProjectRequest, ProjectSubmissionBatch, RequestStatus, SubmittedProject } from '@/lib/types';
 
 const STATUS_LABELS: Record<SubmittedProject['status'], string> = {
-  draft: 'Draft',
-  pending: 'Pending Review',
+  draft: 'Not submitted',
+  pending: 'Pending',
   frozen: 'Frozen',
   approved: 'Approved',
   rejected: 'Rejected',
   returnedForUpdate: 'Returned for Update',
   withdrawn: 'Withdrawn',
+};
+
+const PROJECT_STATUS_TO_ITEM_KEY: Record<SubmittedProject['status'], keyof typeof ITEM_STATUS_COLOURS> = {
+  draft: 'notSubmitted',
+  pending: 'pendingReview',
+  frozen: 'pendingDceApproval',
+  approved: 'approved',
+  rejected: 'rejected',
+  returnedForUpdate: 'returnedForUpdate',
+  withdrawn: 'notSubmitted',
 };
 
 function fmtValue(value: string | number | undefined | null) {
@@ -120,6 +130,7 @@ export default function AdPncProjectDetailPage() {
 
   const statusLabel = STATUS_LABELS[project.status] ?? STATUS_LABELS.pending;
   const statusCls = STATUS_COLOURS[project.status] ?? STATUS_COLOURS.pending;
+  const itemStatusCls = ITEM_STATUS_COLOURS[PROJECT_STATUS_TO_ITEM_KEY[project.status]];
 
   function handleWithdraw() {
     if (!batch || !project) return;
@@ -207,7 +218,7 @@ export default function AdPncProjectDetailPage() {
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <h1 className="text-headline-lg text-fg">{project.title || 'Untitled project'}</h1>
-            <span className={cn('badge text-caption font-normal', statusCls)}>{statusLabel}</span>
+            <span className={cn('text-caption font-normal', itemStatusCls)}>{statusLabel}</span>
           </div>
           <p className="text-body-sm text-fg-muted">
             Submitted by {batch.submittedBy || batch.pcHead || 'AD (P&C)'}
@@ -342,9 +353,9 @@ export default function AdPncProjectDetailPage() {
       <Dialog open={confirmSubmitOpen} onOpenChange={setConfirmSubmitOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Send project?</DialogTitle>
+            <DialogTitle>Submit project response?</DialogTitle>
             <DialogDescription>
-              Your project will be sent to the IO review.
+              This will submit 1 project for IO review.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -352,7 +363,7 @@ export default function AdPncProjectDetailPage() {
               Cancel
             </Button>
             <Button onClick={() => { setConfirmSubmitOpen(false); handleSubmit(); }}>
-              Confirm
+              Submit
             </Button>
           </DialogFooter>
         </DialogContent>

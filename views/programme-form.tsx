@@ -64,7 +64,7 @@ import EmptyState from '@/components/ui-legacy/empty-state';
 import { TruncatedTooltip } from '@/components/ui-legacy/truncated-tooltip';
 import { Spinner } from '@/components/ui/spinner';
 import {
-  AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2,
+  AlertCircle, ArrowLeft, ArrowRight, Check, CheckCircle2,
   ChevronRight, Eye, FileInput, FileOutput, Folder, Info, Pencil, Plus, Save, ShieldCheck, Sparkles, Trash2, X,
 } from 'lucide-react';
 import { REQ_TYPES, REQ_TIER_LABELS, EDUCATION_LEVELS, OPS, loadSubjectTaxonomy, toEducationLevel, internCategoriesForLevel } from '@/lib/data';
@@ -2828,14 +2828,7 @@ export default function ProgrammeFormPage() {
                           <div className="border-border px-4 py-3">
                             <Tabs value={assignFilter} onValueChange={value => setAssignFilter(value as 'assigned' | 'unassigned')}>
                               <TabsList aria-label="Filter projects for this intake">
-                                <TabsTrigger
-                                  value="unassigned"
-                                  className={cn(
-                                    'gap-1.5',
-                                    notAssignedProjects.length > 0 && 'text-warning hover:text-warning data-[active]:text-warning',
-                                  )}
-                                >
-                                  {notAssignedProjects.length > 0 && <AlertTriangle size={13} />}
+                                <TabsTrigger value="unassigned" className="gap-1.5">
                                   Not assigned ({notAssignedProjects.length})
                                 </TabsTrigger>
                                 <TabsTrigger value="assigned">Assigned ({assignedProjects.length})</TabsTrigger>

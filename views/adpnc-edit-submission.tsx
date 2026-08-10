@@ -11,7 +11,7 @@ import Combobox from '@/components/ui-legacy/combobox';
 import FieldRequired from '@/components/ui-legacy/field-required';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronRight, ChevronLeft, Check, AlertTriangle, Clock, History, Minus, Plus, FileClock } from 'lucide-react';
-import { PROJECT_SUBMISSION_COLUMNS, loadLiveProgrammeOptions, toEducationLevel, type ProjectSubmissionColumn } from '@/lib/data';
+import { ITEM_STATUS_COLOURS, PROJECT_SUBMISSION_COLUMNS, loadLiveProgrammeOptions, toEducationLevel, type ProjectSubmissionColumn } from '@/lib/data';
 import { DISCIPLINE_OPTIONS, parseDisciplines, toggleDiscipline } from '@/lib/disciplines';
 import { useToast, Toast } from '@/components/ui-legacy/toast';
 import { addNotification } from '@/lib/notifications';
@@ -118,6 +118,26 @@ const INPUT_CLS    = 'w-full rounded-lg border border-border bg-bg-subtle px-3 p
 const TEXTAREA_CLS = INPUT_CLS + ' resize-none';
 const ERROR_CLS = 'border-danger ring-1 ring-danger/30';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const STATUS_LABELS: Record<SubmittedProject['status'], string> = {
+  draft: 'Not submitted',
+  pending: 'Pending',
+  frozen: 'Frozen',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  returnedForUpdate: 'Returned for Update',
+  withdrawn: 'Withdrawn',
+};
+
+const PROJECT_STATUS_TO_ITEM_KEY: Record<SubmittedProject['status'], keyof typeof ITEM_STATUS_COLOURS> = {
+  draft: 'notSubmitted',
+  pending: 'pendingReview',
+  frozen: 'pendingDceApproval',
+  approved: 'approved',
+  rejected: 'rejected',
+  returnedForUpdate: 'returnedForUpdate',
+  withdrawn: 'notSubmitted',
+};
 
 function getDropdown(colName: string): string[] {
   return PROJECT_SUBMISSION_COLUMNS.find(column => column.name === colName)?.dropdownValues ?? [];
@@ -340,6 +360,9 @@ export default function AdPncEditSubmissionPage() {
 
   if (!proj || !edit) return null;
 
+  const statusLabel = STATUS_LABELS[proj.status] ?? STATUS_LABELS.pending;
+  const itemStatusCls = ITEM_STATUS_COLOURS[PROJECT_STATUS_TO_ITEM_KEY[proj.status]];
+
   const canSubmit = proj.status === 'draft' || proj.status === 'returnedForUpdate';
 
   return (
@@ -359,7 +382,7 @@ export default function AdPncEditSubmissionPage() {
         {/* Header */}
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <h1 className="text-headline-lg text-fg">{proj.title}</h1>
-          <Badge variant="warning">Returned for Update</Badge>
+          <span className={cn('text-caption font-normal', itemStatusCls)}>{statusLabel}</span>
         </div>
 
         {group && group.requests.length > 0 && (
@@ -593,17 +616,17 @@ export default function AdPncEditSubmissionPage() {
       <Dialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Send project?</DialogTitle>
+            <DialogTitle>Submit project response?</DialogTitle>
             <DialogDescription>
-              Your projects will be sent to the IO review.
+              This will submit 1 project for IO review.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmSaveOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => { setConfirmSaveOpen(false); handleSave(); }}>
-              Confirm
+            <Button disabled={saving} onClick={() => { setConfirmSaveOpen(false); handleSave(); }}>
+              Submit
             </Button>
           </DialogFooter>
         </DialogContent>

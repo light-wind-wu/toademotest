@@ -543,8 +543,8 @@ function RequestCard({
             </AlertTitle>
             <AlertDescription>
               {returnedForUpdate.length === 1
-                ? `Please clarify the placement duration for “${returnedForUpdate[0].remarks || returnedForUpdate[0].title || 'Untitled project'}”.`
-                : returnedForUpdate.map(p => p.remarks || `Please review "${p.title || 'Untitled project'}".`).join(' ')}
+                ? 'Please narrow the scope to one equipment category, use only anonymised data, and include a baseline comparison for model evaluation.'
+                : returnedForUpdate.map(p => p.remarks || 'Please narrow the scope to one equipment category, use only anonymised data, and include a baseline comparison for model evaluation.').join(' ')}
             </AlertDescription>
           </Alert>
         )}
