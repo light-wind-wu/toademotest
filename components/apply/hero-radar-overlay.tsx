@@ -51,10 +51,13 @@ function containRight(boxW: number, boxH: number): Frame {
   const scale = Math.min(boxW / ART_W, boxH / ART_H);
   const width = ART_W * scale;
   const height = ART_H * scale;
+  /* Prefer a 40px mast nudge, but never push past the hero box — otherwise
+     Part2 (z-20, top 298) clips the hull. At wide / zoomed-out viewports the
+     frame is height-bound (scale≈1); a fixed top:40 would overflow by 40px. */
+  const top = Math.min(40, Math.max(0, boxH - height));
   return {
     left: boxW - width,
-    /* Nudge ship + radar down for mast alignment under copy */
-    top: 40,
+    top,
     width,
     height,
   };
