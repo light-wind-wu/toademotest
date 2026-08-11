@@ -280,7 +280,7 @@ export default function ShortlistingReviewPage() {
     });
   }, [intakeOptions, year, category, selectedWindow, utSession, selectedUtCategory]);
 
-  const filteredProjects = useMemo(() => {
+  const intakeProjects = useMemo(() => {
     if (!selectedIntake) return [];
     return projects
       .filter(p => {
@@ -302,6 +302,15 @@ export default function ShortlistingReviewPage() {
       })
       .sort((a, b) => a.title.localeCompare(b.title));
   }, [projects, selectedIntake, utSession]);
+
+  const filteredProjects = useMemo(() => {
+    if (activeTab === 'shortlist') return intakeProjects;
+    const statusSet = STATUS_BY_TAB[activeTab];
+    return intakeProjects.filter(project => apps.some(app => {
+      if (utSession?.active && !utSession.applicantIds.includes(app.id)) return false;
+      return app.shortlistedFor === project.id && statusSet.has(app.status);
+    }));
+  }, [activeTab, intakeProjects, apps, utSession]);
 
   useEffect(() => {
     if (filteredProjects.length === 0) {
@@ -442,7 +451,7 @@ export default function ShortlistingReviewPage() {
     };
     if (!selectedIntake) return counts;
     // Shortlist tab counts projects (matching prototype), other stages count applicants.
-    counts.shortlist = filteredProjects.length;
+    counts.shortlist = intakeProjects.length;
     for (const app of apps) {
       for (const key of TABS.map(t => t.key)) {
         if (key === 'shortlist') continue;
@@ -455,7 +464,7 @@ export default function ShortlistingReviewPage() {
       }
     }
     return counts;
-  }, [apps, selectedIntake, filteredProjects]);
+  }, [apps, selectedIntake, intakeProjects]);
 
   const dispatchEnabled = activeTab === 'shortlist' && selectedIntake != null;
   const dispatchSummary = useMemo(() => {
