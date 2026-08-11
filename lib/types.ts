@@ -543,6 +543,9 @@ export interface ProjectEntry {
   description?: string;
   slots:       number;
   matched:     number;
+  /** Optional UT/product guidance for how many candidates should be dispatched. */
+  recommendedShortlistMin?: number;
+  recommendedShortlistMax?: number;
   status:      'confirmed' | 'in-progress' | 'open';
   archived?:      boolean;  // IO archived the project — no longer required, hidden from applicants
   archiveRemark?: string;   // reason captured when archiving

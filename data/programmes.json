@@ -198,5 +198,55 @@
         "end": "2026-12-31"
       }
     ]
+  },
+  {
+    "id": "PROG-0010",
+    "title": "Tech UP Internship 2026",
+    "educationLevel": "Tech UP",
+    "status": "Active",
+    "appOpen": "2026-02-01",
+    "appDeadline": "2026-06-30",
+    "start": "2026-05-01",
+    "end": "2026-09-30",
+    "timeline": "May – Sep 2026",
+    "daysLeft": 37,
+    "description": "Tech UP internship intake used for the IO shortlisting usability test.",
+    "formTemplate": "UG Intern Application Form",
+    "requirements": [],
+    "intakeWindows": [
+      {
+        "id": "INT-0010-2",
+        "intakeTitle": "Tech UP 2026 (May – Sep)",
+        "appOpen": "2026-02-01",
+        "appClose": "2026-06-30",
+        "start": "2026-05-01",
+        "end": "2026-09-30"
+      }
+    ]
+  },
+  {
+    "id": "PROG-0011",
+    "title": "Polytechnic Internship 2026",
+    "educationLevel": "Polytechnic Scholar/Polytechnic Student",
+    "status": "Active",
+    "appOpen": "2026-01-05",
+    "appDeadline": "2026-05-31",
+    "start": "2026-03-01",
+    "end": "2026-08-31",
+    "timeline": "Mar – Aug 2026",
+    "daysLeft": 28,
+    "description": "Polytechnic internship intake used for the IO shortlisting usability test.",
+    "formTemplate": "UG Intern Application Form",
+    "requirements": [],
+    "intakeWindows": [
+      {
+        "id": "INT-0011-1",
+        "intakeTitle": "Polytechnic 2026 (Mar – Aug)",
+        "appOpen": "2026-01-05",
+        "appClose": "2026-05-31",
+        "start": "2026-03-01",
+        "end": "2026-08-31"
+      }
+    ]
   }
 ]
