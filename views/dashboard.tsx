@@ -4,37 +4,29 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Settings,
-  TrendingUp,
   CheckCircle,
   Clock,
   UserCheck,
   X,
   Users,
-  History,
   Repeat,
   UserPlus,
   Mail,
   MessageSquare,
   Inbox,
-  FileCheck2,
-  AlertTriangle,
+  FileBarChart2,
   Send,
   BookOpen,
   ChevronDown,
+  ShieldAlert,
   type LucideIcon,
 } from "lucide-react";
 import Shell from "@/components/layout/shell";
 import OutOfScopeDialog from "@/components/apply/out-of-scope-dialog";
-import { COHORT_DATA, WIDGET_DEFS, INTERN_CATEGORIES } from "@/lib/data";
-import { loadSubmissions, loadProgrammes, loadRequests } from "@/lib/storage";
+import { COHORT_DATA, WIDGET_DEFS, STATUS_COLOURS } from "@/lib/data";
 import DashboardCards from "@/components/ui-legacy/dashboard-cards";
 import { useRole } from "@/lib/role";
-import { cn, deriveAppStatus } from "@/lib/utils";
-import type {
-  ProjectSubmissionBatch,
-  ProjectRequest,
-  Programme,
-} from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 
 function loadWidgetState(): Record<string, boolean> {
@@ -69,14 +61,14 @@ type LiveFunnel = {
   accepted: number;
   rejected: number;
 };
-const EMPTY_FUNNEL: LiveFunnel = {
-  total: 0,
-  eligible: 0,
-  inProgress: 0,
-  interviewCompleted: 0,
-  offerExtended: 0,
+const MOCK_FUNNEL: LiveFunnel = {
+  total: 29,
+  eligible: 7,
+  inProgress: 10,
+  interviewCompleted: 6,
+  offerExtended: 1,
   accepted: 0,
-  rejected: 0,
+  rejected: 5,
 };
 
 export default function DashboardPage() {
@@ -88,8 +80,9 @@ export default function DashboardPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [newMenuOpen, setNewMenuOpen] = useState(false);
   const newMenuRef = useRef<HTMLDivElement>(null);
-  const [liveFunnel, setLiveFunnel] = useState<LiveFunnel>(EMPTY_FUNNEL);
+  const [liveFunnel, setLiveFunnel] = useState<LiveFunnel>(MOCK_FUNNEL);
   const [exploreOpen, setExploreOpen] = useState(false);
+  const [scopeDialogOpen, setScopeDialogOpen] = useState(false);
 
   type LiveTask = {
     icon: LucideIcon;
@@ -126,98 +119,41 @@ export default function DashboardPage() {
     { label: "Create Programme", icon: BookOpen, href: "/programmes/new" },
   ];
 
+  // Dashboard Application Overview 使用固定演示数据，不从 localStorage 实时计算。
+  // 如需恢复真实数据，请把 liveFunnel 初始值改回 EMPTY_FUNNEL 并恢复下方的 useEffect。
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("dsta_applications");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const all: any[] = raw ? JSON.parse(raw) : [];
-      const apps =
-        cohort === "all" ? all : all.filter((a) => a.internCategory === cohort);
-      setLiveFunnel({
-        total: apps.length,
-        eligible: apps.filter(
-          (a) => a.status === "Pending Review" && a.eligibilityPass,
-        ).length,
-        inProgress: apps.filter(
-          (a) =>
-            a.status === "Shortlisted for Interview" ||
-            a.status === "Interview Scheduled",
-        ).length,
-        interviewCompleted: apps.filter(
-          (a) => a.status === "Interview Completed",
-        ).length,
-        offerExtended: apps.filter((a) => a.status === "Offer Extended").length,
-        accepted: apps.filter((a) => a.status === "Accepted").length,
-        rejected: apps.filter(
-          (a) => a.status === "Rejected" || a.status === "Auto-rejected",
-        ).length,
-      });
-    } catch {
-      setLiveFunnel(EMPTY_FUNNEL);
-    }
+    setLiveFunnel(MOCK_FUNNEL);
   }, [cohort]);
 
-  function goToApps(filter: string) {
-    localStorage.setItem("dsta_app_pending_filter", filter);
-    router.push("/applications");
+  // Application Overview / Tasks 使用固定演示数据，点击统一弹出 OutOfScopeDialog。
+  function showScopeDialog() {
+    setScopeDialogOpen(true);
   }
 
+  // Tasks 使用固定演示数据，不走 seed/localStorage 的真实项目提交和请求。
   useEffect(() => {
-    const tasks: LiveTask[] = [];
-    try {
-      const subs: ProjectSubmissionBatch[] = loadSubmissions();
-      const pendingProjects = subs.reduce(
-        (n, b) => n + b.projects.filter((p) => p.status === "pending").length,
-        0,
-      );
-      if (pendingProjects > 0) {
-        tasks.push({
-          icon: FileCheck2,
-          color: "text-warning",
-          bg: "hover:bg-warning/5",
-          label: `${pendingProjects} project submission${pendingProjects > 1 ? "s" : ""} awaiting review`,
-          sub: "Approve or reject from Project Requests → Project Submissions",
-          tag: `${pendingProjects} pending`,
-          tagCls: "bg-warning-bg text-warning",
-          href: "/requests?tab=submissions",
-        });
-      }
-
-      const progs: Programme[] = loadProgrammes();
-      const reqs: ProjectRequest[] = loadRequests();
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      progs
-        .filter((p) => p.status === "Active" && p.appOpen)
-        .forEach((p) => {
-          const daysUntilOpen = Math.ceil(
-            (new Date(p.appOpen).getTime() - today.getTime()) / 86_400_000,
-          );
-          if (daysUntilOpen > 14 || daysUntilOpen < 0) return;
-          const progLevel = p.educationLevel;
-          const unresolved = reqs.filter(
-            (r) =>
-              r.educationLevel === progLevel &&
-              ["pending", "partial", "overdue"].includes(r.status),
-          ).length;
-          if (unresolved === 0) return;
-          const urgent = daysUntilOpen <= 3;
-          tasks.push({
-            icon: AlertTriangle,
-            color: urgent ? "text-danger" : "text-warning",
-            bg: urgent ? "hover:bg-danger/5" : "hover:bg-warning/5",
-            label: `${p.title} — ${unresolved} unresolved request${unresolved > 1 ? "s" : ""}`,
-            sub: `App window opens in ${daysUntilOpen === 0 ? "today" : `${daysUntilOpen} day${daysUntilOpen > 1 ? "s" : ""}`}`,
-            tag: daysUntilOpen === 0 ? "Today" : `${daysUntilOpen}d`,
-            tagCls: urgent
-              ? "bg-danger/10 text-danger"
-              : "bg-warning-bg text-warning",
-            href: `/programmes/${p.id}`,
-          });
-        });
-    } catch {}
-    setLiveTasks(tasks);
+    setLiveTasks([
+      {
+        icon: FileBarChart2,
+        color: "text-warning",
+        bg: "hover:bg-warning/5",
+        label: "1 project submission awaiting review",
+        sub: "Approve or reject from Project Requests → Project Submissions",
+        tag: "1 pending",
+        tagCls: STATUS_COLOURS.pending,
+        href: "/requests?tab=submissions",
+      },
+      {
+        icon: ShieldAlert,
+        color: "text-warning",
+        bg: "hover:bg-warning/5",
+        label: "3 projects awaiting shortlisting",
+        sub: "Review the eligible applicants and confirm the shortlist.",
+        tag: "1 pending",
+        tagCls: STATUS_COLOURS.pending,
+        href: "/applications",
+      },
+    ]);
   }, []);
 
   const EMPTY_DATA = {
@@ -261,7 +197,7 @@ export default function DashboardPage() {
   const maxSchool = Math.max(...data.schools.map((s) => s.count), 1);
 
   // Temporary: force both cards to render their empty-state placeholder on entry.
-  const SHOW_EMPTY_STATE = true;
+  const SHOW_EMPTY_STATE = false;
 
   const hasData = !SHOW_EMPTY_STATE && liveFunnel.total > 0;
 
@@ -282,6 +218,7 @@ export default function DashboardPage() {
             <ChevronDown className="h-4 w-4 text-fg-muted" />
           </button>
           <OutOfScopeDialog open={exploreOpen} onOpenChange={setExploreOpen} />
+          <OutOfScopeDialog open={scopeDialogOpen} onOpenChange={setScopeDialogOpen} />
 
           {(role === "io-admin" || role === "io") && (
             <div className="relative" ref={newMenuRef}>
@@ -373,17 +310,17 @@ export default function DashboardPage() {
                 <div className="space-y-5">
                   <div className="pb-5 border-b border-border">
                     <p className="text-[14px] font-normal text-fg">
-                      Total Applications <span className="font-semibold text-accent ml-2">{liveFunnel.total}</span>
+                      Total Applications <span className="text-[20px] font-semibold text-accent ml-2">{liveFunnel.total}</span>
                     </p>
                   </div>
                   <div className="space-y-3">
                     {ROWS.map((r) => (
                       <button
                         key={r.label}
-                        onClick={() => goToApps(r.label)}
+                        onClick={showScopeDialog}
                         className="w-full flex items-center gap-4 group text-left"
                       >
-                        <span className="text-[13px] text-fg-muted w-36 shrink-0">
+                        <span className="text-[13px] text-[rgba(69,85,108,1)] w-36 shrink-0">
                           {r.label}
                         </span>
                         <div className="flex-1 bg-[#F4F2EC] rounded-full h-2.5 overflow-hidden">
@@ -392,7 +329,7 @@ export default function DashboardPage() {
                             style={{ width: `${Math.max((r.val / barMax) * 100, r.val > 0 ? 3 : 0)}%` }}
                           />
                         </div>
-                        <span className="text-[13px] font-semibold text-fg w-6 text-right shrink-0">
+                        <span className="text-[13px] font-semibold text-[rgba(69,85,108,1)] w-6 text-right shrink-0">
                           {r.val}
                         </span>
                       </button>
@@ -407,7 +344,7 @@ export default function DashboardPage() {
         {/* Tasks */}
         <div className="col-span-12 lg:col-span-6 card p-5 flex flex-col gap-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-[18px] font-semibold text-fg">Tasks {liveTasks.length > 0 && <span className="text-fg-muted hidden">({liveTasks.length})</span>}</h2>
+            <h2 className="text-[18px] font-semibold text-fg">Tasks {liveTasks.length > 0 && <span className="text-fg-muted">({liveTasks.length})</span>}</h2>
           </div>
           {liveTasks.length === 0 || SHOW_EMPTY_STATE ? (
             <div className="flex flex-col items-center justify-center py-8 text-center gap-3 flex-1">
@@ -430,6 +367,10 @@ export default function DashboardPage() {
                 <a
                   key={i}
                   href={t.href}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    showScopeDialog();
+                  }}
                   className="flex items-center gap-4 p-4 rounded-xl bg-surface border border-border cursor-pointer transition-colors no-underline hover:border-accent/30"
                 >
                   <t.icon size={20} className={`${t.color} shrink-0`} />
@@ -440,7 +381,10 @@ export default function DashboardPage() {
                     <p className="text-body-sm text-fg-muted mt-0.5">{t.sub}</p>
                   </div>
                   <span
-                    className="text-body-sm font-medium px-3 py-1 rounded-full shrink-0 bg-warning-bg text-warning"
+                    className={cn(
+                      "text-[12px] font-medium px-3 py-1 rounded-full shrink-0",
+                      t.tagCls,
+                    )}
                   >
                     {t.tag}
                   </span>
