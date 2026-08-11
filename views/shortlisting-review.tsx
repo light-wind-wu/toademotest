@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Info, Inbox, ChevronDown, Check, Send, Sparkles, X,
+  Info, Inbox, ChevronDown, Check, Send, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { loadWeights, reweightScore, scoreSuitability } from '@/lib/scoring';
@@ -1085,7 +1085,6 @@ function CandidateList({
                 onClick={onToggleExpanded}
                 className="flex items-center gap-1 text-[12px] font-medium text-accent hover:underline"
               >
-                {expanded ? 'Hide' : 'Show'}
                 <ChevronDown size={14} className={cn('transition-transform', expanded && 'rotate-180')} />
               </button>
             </div>
@@ -1137,11 +1136,7 @@ function CandidateList({
           <div className="px-4 py-2 text-[12px] font-semibold text-fg-muted uppercase tracking-wider">Actions</div>
           <DropdownItem
             label="View 360 candidate"
-            onClick={() => { onView360(menuApp); setMenuApp(null); }}
-          />
-          <DropdownItem
-            label="AI Summary"
-            onClick={() => { onAiSummary(menuApp); setMenuApp(null); }}
+            onClick={() => { setMenuApp(null); }}
           />
         </RowDropdown>
       )}

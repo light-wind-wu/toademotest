@@ -1,6 +1,7 @@
 'use client';
 
-import { Sparkles, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
+import AiSparkleIcon from './ai-sparkle-icon';
 import { cn } from '@/lib/utils';
 import type { Application } from '@/lib/types';
 
@@ -26,7 +27,7 @@ export default function AiSummaryPreview({
 
   return (
     <span className={cn('group/summary relative inline-flex items-center gap-1', className)}>
-      <Sparkles size={11} className="shrink-0 text-accent" />
+      <AiSparkleIcon size={11} className="shrink-0" />
       <span className="truncate">{summary}</span>
 
       <span
@@ -35,7 +36,7 @@ export default function AiSummaryPreview({
       >
         <span className="block rounded-lg border border-border bg-surface p-3 shadow-md">
           <span className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold text-accent">
-            <Sparkles size={11} />
+            <AiSparkleIcon size={11} className="shrink-0" />
             AI Summary
           </span>
           <span className="block text-[11px] leading-relaxed text-fg-muted">{summary}</span>
