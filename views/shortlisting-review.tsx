@@ -4,8 +4,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
-import Modal from '@/components/ui-legacy/modal';
 import { Toast, useToast } from '@/components/ui-legacy/toast';
+import { SuccessCelebration } from '@/components/ui-legacy/success-celebration';
+import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog';
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui-legacy/tooltip';
 import AiSummaryCard from '@/components/ui-legacy/ai-summary-card';
@@ -15,6 +19,7 @@ import {
   RowDropdown,
   DropdownItem,
 } from '@/components/ui-legacy/row-actions';
+import Modal from '@/components/ui-legacy/modal';
 import {
   Select,
   SelectValue,
@@ -38,6 +43,8 @@ import {
   INTERNSHIP_WINDOWS,
   shiftMMMYY,
   toMonthIndex,
+  mmmyyToISO,
+  mmmyyToISOEnd,
 } from '@/lib/internship-period';
 import { addNotification } from '@/lib/notifications';
 import { useRole } from '@/lib/role';
@@ -51,6 +58,12 @@ import {
 const APP_KEY      = 'dsta_applications';
 const APP_VER_KEY  = 'dsta_applications_seed_v';
 const APP_SEED_VER = '31';
+
+const ENABLED_SHORTLIST_CATEGORIES = [
+  'Tech UP',
+  'Undergraduate Student',
+  'Polytechnic Scholar/Polytechnic Student',
+] as const;
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
 
@@ -158,7 +171,7 @@ function buildWindowOptions(category: string, year: number): WindowOption[] {
     const start = shiftMMMYY(p.start, shift);
     const end = shiftMMMYY(p.end, shift);
     return {
-      label: formatWindowLabel(p.label, start, end),
+      label: formatWindowLabelDate(start, end),
       value: `${category}-${year}-${idx}`,
       start,
       end,
@@ -166,16 +179,16 @@ function buildWindowOptions(category: string, year: number): WindowOption[] {
   });
 }
 
-function formatWindowLabel(baseLabel: string, start: string, end: string): string {
-  const sIdx = toMonthIndex(start);
-  const eIdx = toMonthIndex(end);
-  if (sIdx === null || eIdx === null) return baseLabel;
-  const sYear = Math.floor(sIdx / 12);
-  const eYear = Math.floor(eIdx / 12);
-  const sMonth = MONTHS[sIdx % 12];
-  const eMonth = MONTHS[eIdx % 12];
-  if (sYear === eYear) return `${sMonth} – ${eMonth} ${sYear}`;
-  return `${sMonth} ${sYear} – ${eMonth} ${eYear}`;
+function formatISODate(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${d} ${MONTHS[m - 1]} ${y}`;
+}
+
+function formatWindowLabelDate(start: string, end: string): string {
+  const startIso = mmmyyToISO(start);
+  const endIso = mmmyyToISOEnd(end);
+  if (!startIso || !endIso) return `${start} – ${end}`;
+  return `${formatISODate(startIso)} – ${formatISODate(endIso)}`;
 }
 
 interface CandidateRow {
@@ -219,11 +232,11 @@ export default function ShortlistingReviewPage() {
   const [windowValue, setWindowValue] = useState<string>('');
   const [activeTab, setActiveTab]     = useState<TabKey>('shortlist');
   const [viewingProjectId, setViewingProjectId] = useState<string>('');
-  const [dispatchProjectIds, setDispatchProjectIds] = useState<Set<string>>(new Set());
   const [selectedByProject, setSelectedByProject] = useState<Record<string, Set<string>>>({});
   const [expandedEligible, setExpandedEligible]   = useState<Set<string>>(new Set());
   const [reviewOpen, setReviewOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [dispatchSuccessOpen, setDispatchSuccessOpen] = useState(false);
   const [aiPanelApp, setAiPanelApp] = useState<Application | null>(null);
   const [utSession, setUtSession] = useState<IoShortlistTask1Session | null>(null);
 
@@ -240,8 +253,6 @@ export default function ShortlistingReviewPage() {
     setWeights(loadWeights());
     if (scenario?.active) {
       setYear(scenario.year);
-      setCategory(scenario.category);
-      setWindowValue(scenario.windowValue);
     }
   }, []);
 
@@ -382,7 +393,6 @@ export default function ShortlistingReviewPage() {
   useEffect(() => {
     if (activeTab !== 'shortlist') {
       setSelectedByProject({});
-      setDispatchProjectIds(new Set());
       defaultSelectedAppliedRef.current = false;
       prevFilteredProjectsRef.current = [];
       return;
@@ -425,7 +435,6 @@ export default function ShortlistingReviewPage() {
       next[project.id] = selected;
     }
     setSelectedByProject(next);
-    setDispatchProjectIds(new Set());
     defaultSelectedAppliedRef.current = true;
   }, [filteredProjects, activeTab, applicationsByProject]);
 
@@ -471,18 +480,17 @@ export default function ShortlistingReviewPage() {
     if (!dispatchEnabled) return null;
     let total = 0;
     const projectsToDispatch: string[] = [];
-    for (const pid of dispatchProjectIds) {
-      const project = projects.find(item => item.id === pid);
-      if (!project || remainingPlacements(project) === 0) continue;
-      const ids = selectedByProject[pid];
-      if (ids && ids.size > 0) {
-        const newIds = Array.from(ids).filter(id => !dispatchedIds.has(id));
-        total += newIds.length;
-        if (newIds.length > 0) projectsToDispatch.push(pid);
-      }
+    for (const project of filteredProjects) {
+      if (remainingPlacements(project) === 0) continue;
+      const ids = selectedByProject[project.id];
+      if (!ids || ids.size === 0) continue;
+      const newIds = Array.from(ids).filter(id => !dispatchedIds.has(id));
+      if (newIds.length === 0) continue;
+      total += newIds.length;
+      projectsToDispatch.push(project.id);
     }
     return { total, projectCount: projectsToDispatch.length, projectIds: projectsToDispatch };
-  }, [dispatchEnabled, dispatchProjectIds, selectedByProject, dispatchedIds]);
+  }, [dispatchEnabled, filteredProjects, selectedByProject, dispatchedIds]);
 
   const projectTitles = useMemo(() => {
     const map: Record<string, string> = {};
@@ -521,12 +529,32 @@ export default function ShortlistingReviewPage() {
   function toggleDispatchProject(projectId: string) {
     const project = projects.find(item => item.id === projectId);
     if (!project || remainingPlacements(project) === 0) return;
-    setDispatchProjectIds(prev => {
-      const next = new Set(prev);
-      if (next.has(projectId)) next.delete(projectId);
-      else next.add(projectId);
-      return next;
+    setSelectedByProject(prev => {
+      const current = prev[projectId] || new Set<string>();
+      if (current.size > 0) {
+        return { ...prev, [projectId]: new Set<string>() };
+      }
+      const candidates = applicationsByProject[projectId] || [];
+      const selected = new Set<string>();
+      const recommended = Math.min(Math.max(project.slots + 1, 2), candidates.length);
+      const selectedElsewhere = new Set<string>();
+      for (const [pid, ids] of Object.entries(prev)) {
+        if (pid !== projectId) ids.forEach(id => selectedElsewhere.add(id));
+      }
+      for (let i = 0; i < recommended; i++) {
+        const candidate = candidates[i];
+        if (!candidate) continue;
+        if (dispatchedIds.has(candidate.app.id)) continue;
+        if (selectedElsewhere.has(candidate.app.id)) continue;
+        selected.add(candidate.app.id);
+      }
+      return { ...prev, [projectId]: selected };
     });
+  }
+
+  function getNewSelectedCount(projectId: string): number {
+    const ids = selectedByProject[projectId] || new Set<string>();
+    return Array.from(ids).filter(id => !dispatchedIds.has(id)).length;
   }
 
   function openDispatchReview() {
@@ -583,12 +611,12 @@ export default function ShortlistingReviewPage() {
     });
 
     setConfirmOpen(false);
-    setDispatchProjectIds(new Set());
     showToast(
       `${dispatchSummary.total} candidate${dispatchSummary.total !== 1 ? 's have' : ' has'} been sent across ${dispatchSummary.projectCount} project${dispatchSummary.projectCount !== 1 ? 's' : ''}. Projects with remaining seats stay open.`,
       'success',
       'Candidates dispatched'
     );
+    setDispatchSuccessOpen(true);
   }
 
   const handleYearChange = (value: string) => {
@@ -599,10 +627,7 @@ export default function ShortlistingReviewPage() {
 
   const handleCategoryChange = (value: string) => {
     setCategory(value);
-    const fixture = utSession?.categories?.find(item =>
-      item.year === year && item.category === value,
-    );
-    setWindowValue(fixture?.windowValue ?? '');
+    setWindowValue('');
   };
 
   return (
@@ -641,9 +666,14 @@ export default function ShortlistingReviewPage() {
                 <SelectValue placeholder={year ? 'Select category' : 'Select a year first'} />
               </SelectTrigger>
               <SelectContent className="max-w-[min(28rem,var(--available-width))]">
-                {categoryOptions.map(c => (
-                  <SelectItem key={c} value={c} className="whitespace-normal leading-snug">{c}</SelectItem>
-                ))}
+                {categoryOptions.map(c => {
+                  const enabled = ENABLED_SHORTLIST_CATEGORIES.includes(c as typeof ENABLED_SHORTLIST_CATEGORIES[number]);
+                  return (
+                    <SelectItem key={c} value={c} disabled={!enabled} className="whitespace-normal leading-snug">
+                      {c}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
@@ -712,8 +742,18 @@ export default function ShortlistingReviewPage() {
                   const isViewing = project.id === viewingProjectId;
                   const remaining = remainingPlacements(project);
                   const isFull = remaining === 0;
-                  const isDispatchSelected = dispatchProjectIds.has(project.id);
+                  const selectedCount = getNewSelectedCount(project.id);
                   const [recommendedMin, recommendedMax] = recommendedShortlist(project, candidates.length);
+                  const isInRange = selectedCount >= recommendedMin && selectedCount <= recommendedMax;
+                  const isValid = isFull || isInRange;
+                  const isAbove = !isFull && selectedCount > recommendedMax;
+                  const statusTooltip = isFull
+                    ? 'All placements filled'
+                    : isInRange
+                      ? `Ready to shortlist · ${selectedCount} applicant${selectedCount !== 1 ? 's' : ''} selected`
+                      : isAbove
+                        ? `Above recommended shortlist · ${selectedCount} selected`
+                        : `Select ${recommendedMin}–${recommendedMax} applicants to continue`;
                   return (
                     <div
                       key={project.id}
@@ -727,7 +767,7 @@ export default function ShortlistingReviewPage() {
                       <div className="flex items-start gap-2">
                         <div className="pt-0.5">
                           <Checkbox
-                            checked={isFull ? false : isDispatchSelected}
+                            checked={!isFull && selectedCount > 0}
                             disabled={isFull}
                             onCheckedChange={() => toggleDispatchProject(project.id)}
                             className={cn(isFull && 'bg-bg-muted border-border opacity-60')}
@@ -751,7 +791,7 @@ export default function ShortlistingReviewPage() {
                           <Tooltip>
                             <TooltipTrigger>
                               <span className="inline-flex cursor-help">
-                                {isFull ? (
+                                {isValid ? (
                                   <Check size={15} className="text-success" />
                                 ) : (
                                   <Info size={15} className="text-warning" />
@@ -759,11 +799,7 @@ export default function ShortlistingReviewPage() {
                               </span>
                             </TooltipTrigger>
                             <TooltipContent side="right">
-                              {isFull
-                                ? 'All placements filled'
-                                : project.matched > 0
-                                  ? `${project.matched} placement filled; ${remaining} remaining`
-                                  : 'Need shortlist review'}
+                              {statusTooltip}
                             </TooltipContent>
                           </Tooltip>
                         </div>
@@ -944,6 +980,20 @@ export default function ShortlistingReviewPage() {
           </Button>
         </div>
       </Modal>
+
+      <Dialog open={dispatchSuccessOpen} onOpenChange={setDispatchSuccessOpen}>
+        <DialogContent className="border-none bg-transparent p-0 shadow-none">
+          <SuccessCelebration
+            title="Task Completed"
+            message="You have successfully completed this test task. Your responses have been recorded."
+            buttonText="Back to Tasks"
+            onButtonClick={() => {
+              setDispatchSuccessOpen(false);
+              router.push('/start-tasks');
+            }}
+          />
+        </DialogContent>
+      </Dialog>
 
       {aiPanelApp && (
         <>
