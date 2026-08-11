@@ -15,6 +15,9 @@ import {
   removeProjectResponseDraftsByTokens,
   removeSubmissionsByTokens,
   setSessionJSON,
+  upsertApplications,
+  upsertProgrammes,
+  upsertProjects,
   upsertRequests,
   upsertSubmissions,
 } from './utils';
@@ -29,9 +32,30 @@ import {
   TASK_2_OPEN_TOKEN,
   TASK_2_TOKENS,
 } from './fixtures/adpnc';
+import {
+  IO_SHORTLIST_APPLICANT_IDS,
+  IO_SHORTLIST_CATEGORIES,
+  IO_SHORTLIST_PROJECT_IDS,
+  ioShortlistApplications,
+  ioShortlistProgrammes,
+  ioShortlistProjects,
+  type IoShortlistCategoryFixture,
+} from './fixtures/io-shortlist';
+import { loadNotifications, NOTIF_CHANGED_EVENT } from '@/lib/notifications';
 
 const AD_PNC_TASK_1_ALLOWLIST_KEY = 'dsta_ut_adpnc_allowlist';
 const AD_PNC_TASK_2_CLOSED_REQUESTS_KEY = 'dsta_ut_adpnc_task2_closed_requests';
+const IO_SHORTLIST_TASK_1_SESSION_KEY = 'dsta_ut_io_shortlist_task1';
+
+export type IoShortlistTask1Session = {
+  active: true;
+  projectIds: string[];
+  applicantIds: string[];
+  year: string;
+  category: string;
+  windowValue: string;
+  categories: IoShortlistCategoryFixture[];
+};
 
 export function getAdPncTask1Allowlist(): string[] {
   return loadSessionJSON(AD_PNC_TASK_1_ALLOWLIST_KEY, []);
@@ -45,6 +69,39 @@ export function getAdPncTask2RespondHref(): string {
   const token = TASK_2_OPEN_TOKEN;
   return `/submissions?token=${encodeURIComponent(token)}&mode=upload`;
 }
+
+export function getIoShortlistTask1Session(): IoShortlistTask1Session | null {
+  return loadSessionJSON<IoShortlistTask1Session | null>(IO_SHORTLIST_TASK_1_SESSION_KEY, null);
+}
+
+const resetIoShortlistTask1: UtResetHandler = () => {
+  const projects = ioShortlistProjects();
+  upsertProgrammes(ioShortlistProgrammes());
+  upsertProjects(projects);
+  upsertApplications(ioShortlistApplications());
+
+  // Remove only notifications produced by a previous run of this shortlist fixture.
+  const ownedTitles = new Set(projects.map(project => project.title));
+  const notifications = loadNotifications().filter(notification =>
+    !Array.from(ownedTitles).some(title =>
+      notification.title.includes(title) || notification.body.includes(title),
+    ),
+  );
+  localStorage.setItem('dsta_notifications', JSON.stringify(notifications));
+  window.dispatchEvent(new Event(NOTIF_CHANGED_EVENT));
+
+  const defaultCategory = IO_SHORTLIST_CATEGORIES[0];
+  setSessionJSON<IoShortlistTask1Session>(IO_SHORTLIST_TASK_1_SESSION_KEY, {
+    active: true,
+    projectIds: [...IO_SHORTLIST_PROJECT_IDS],
+    applicantIds: [...IO_SHORTLIST_APPLICANT_IDS],
+    year: defaultCategory.year,
+    category: defaultCategory.category,
+    windowValue: defaultCategory.windowValue,
+    categories: IO_SHORTLIST_CATEGORIES,
+  });
+  clearSessionState(COMMON_TRANSIENT_KEYS);
+};
 
 const resetAdPncTask1: UtResetHandler = () => {
   // Remove every AD (P&C) fixture batch first so a previous Task 2 run does not leak into Task 1.
@@ -79,7 +136,7 @@ const HANDLERS: Record<import('./types').UtCatalogPath, Partial<Record<number, U
     // TODO: Create Programme fixtures.
   },
   'io-shortlist': {
-    // TODO: Shortlist Applicants fixtures.
+    1: resetIoShortlistTask1,
   },
   'ad-pnc': {
     1: resetAdPncTask1,
@@ -95,6 +152,10 @@ const HANDLERS: Record<import('./types').UtCatalogPath, Partial<Record<number, U
 
 export function resetUtScenario(context: UtScenarioContext): void {
   if (typeof window === 'undefined') return;
+
+  if (context.path !== 'io-shortlist') {
+    sessionStorage.removeItem(IO_SHORTLIST_TASK_1_SESSION_KEY);
+  }
 
   const handler = HANDLERS[context.path]?.[context.taskId];
   if (handler) {

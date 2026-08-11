@@ -43,6 +43,10 @@ import { addNotification } from '@/lib/notifications';
 import { useRole } from '@/lib/role';
 import { logAccess } from '@/lib/audit';
 import { getEngagements } from '@/lib/participants';
+import {
+  getIoShortlistTask1Session,
+  type IoShortlistTask1Session,
+} from '@/lib/ut-scenarios';
 
 const APP_KEY      = 'dsta_applications';
 const APP_VER_KEY  = 'dsta_applications_seed_v';
@@ -184,6 +188,22 @@ interface CandidateRow {
   skillsTotal: number;
 }
 
+function remainingPlacements(project: ProjectEntry): number {
+  return Math.max(project.slots - project.matched, 0);
+}
+
+function recommendedShortlist(project: ProjectEntry, candidateCount: number): [number, number] {
+  if (project.recommendedShortlistMin != null && project.recommendedShortlistMax != null) {
+    return [project.recommendedShortlistMin, project.recommendedShortlistMax];
+  }
+  const remaining = remainingPlacements(project);
+  if (remaining === 0) return [0, 0];
+  return [
+    Math.min(remaining + 1, candidateCount) || remaining + 1,
+    Math.min(remaining + 2, candidateCount) || remaining + 2,
+  ];
+}
+
 export default function ShortlistingReviewPage() {
   const router = useRouter();
   const { profile } = useRole();
@@ -205,16 +225,24 @@ export default function ShortlistingReviewPage() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [aiPanelApp, setAiPanelApp] = useState<Application | null>(null);
+  const [utSession, setUtSession] = useState<IoShortlistTask1Session | null>(null);
 
   // Refs to apply seed-time default selections once per intake, not on every render.
   const defaultSelectedAppliedRef = useRef(false);
   const prevFilteredProjectsRef = useRef<ProjectEntry[]>([]);
 
   useEffect(() => {
+    const scenario = getIoShortlistTask1Session();
+    setUtSession(scenario);
     setApps(loadApps());
     setProjects(loadProjects());
     setProgrammes(loadProgrammes());
     setWeights(loadWeights());
+    if (scenario?.active) {
+      setYear(scenario.year);
+      setCategory(scenario.category);
+      setWindowValue(scenario.windowValue);
+    }
   }, []);
 
   const intakeOptions = useMemo(() => buildIntakeOptions(programmes), [programmes]);
@@ -228,9 +256,20 @@ export default function ShortlistingReviewPage() {
 
   const selectedWindow = useMemo(() => windowOptions.find(w => w.value === windowValue), [windowOptions, windowValue]);
 
+  const selectedUtCategory = useMemo(
+    () => utSession?.categories?.find(fixture =>
+      fixture.year === year && fixture.category === category,
+    ),
+    [utSession, year, category],
+  );
+
   const selectedIntake = useMemo(() => {
     if (!year || !category || !selectedWindow) return undefined;
     return intakeOptions.find(o => {
+      if (utSession?.active && (!selectedUtCategory || (
+        o.programmeId !== selectedUtCategory.programmeId ||
+        o.intakeId !== selectedUtCategory.intakeId
+      ))) return false;
       if (o.year !== year || o.category !== category) return false;
       const optStart = toMonthIndex(o.start);
       const optEnd = toMonthIndex(o.end);
@@ -239,12 +278,13 @@ export default function ShortlistingReviewPage() {
       if (optStart === null || optEnd === null || winStart === null || winEnd === null) return false;
       return optStart <= winEnd && winStart <= optEnd;
     });
-  }, [intakeOptions, year, category, selectedWindow]);
+  }, [intakeOptions, year, category, selectedWindow, utSession, selectedUtCategory]);
 
   const filteredProjects = useMemo(() => {
     if (!selectedIntake) return [];
     return projects
       .filter(p => {
+        if (utSession?.active && !utSession.projectIds.includes(p.id)) return false;
         if (p.archived) return false;
         if (!p.programme || p.programme === 'unassigned') return false;
         if (p.programme !== selectedIntake.programmeId) return false;
@@ -261,7 +301,7 @@ export default function ShortlistingReviewPage() {
         return true;
       })
       .sort((a, b) => a.title.localeCompare(b.title));
-  }, [projects, selectedIntake]);
+  }, [projects, selectedIntake, utSession]);
 
   useEffect(() => {
     if (filteredProjects.length === 0) {
@@ -301,6 +341,7 @@ export default function ShortlistingReviewPage() {
     for (const project of filteredProjects) {
       const rows: CandidateRow[] = [];
       for (const app of apps) {
+        if (utSession?.active && !utSession.applicantIds.includes(app.id)) continue;
         if (!statusSet.has(app.status)) continue;
         if (activeTab === 'shortlist') {
           if (app.programmeId !== selectedIntake.programmeId) continue;
@@ -310,7 +351,9 @@ export default function ShortlistingReviewPage() {
           if (app.shortlistedFor !== project.id) continue;
         }
 
-        const sui = app.suitabilityScores.find(s => s.projectId === project.id) ?? scoreSuitability(app, project);
+        const explicitSuitability = app.suitabilityScores.find(s => s.projectId === project.id);
+        if (utSession?.active && !explicitSuitability) continue;
+        const sui = explicitSuitability ?? scoreSuitability(app, project);
         const score = sui ? Math.round(reweightScore(sui, weights)) : null;
         const disciplineMatch = sui?.disciplineScore != null ? sui.disciplineScore >= 68 : false;
         const skillsTotal = project.skills?.length || 0;
@@ -325,7 +368,7 @@ export default function ShortlistingReviewPage() {
       map[project.id] = rows;
     }
     return map;
-  }, [apps, filteredProjects, selectedIntake, activeTab, weights]);
+  }, [apps, filteredProjects, selectedIntake, activeTab, weights, utSession]);
 
   useEffect(() => {
     if (activeTab !== 'shortlist') {
@@ -351,6 +394,9 @@ export default function ShortlistingReviewPage() {
     for (const project of filteredProjects) {
       const candidates = applicationsByProject[project.id] || [];
       const selected = new Set<string>();
+      const hasExplicitSelectionHints = candidates.some(
+        row => row.sui?.defaultSelected !== undefined,
+      );
 
       // Prefer seed-time default selections when present.
       for (const row of candidates) {
@@ -360,7 +406,7 @@ export default function ShortlistingReviewPage() {
       }
 
       // Fall back to the original top-N auto-selection for records without defaults.
-      if (selected.size === 0) {
+      if (!hasExplicitSelectionHints && selected.size === 0) {
         const recommended = Math.min(Math.max(project.slots + 1, 2), candidates.length);
         for (let i = 0; i < recommended; i++) {
           if (candidates[i]) selected.add(candidates[i].app.id);
@@ -378,6 +424,14 @@ export default function ShortlistingReviewPage() {
     () => filteredProjects.find(p => p.id === viewingProjectId),
     [filteredProjects, viewingProjectId]
   );
+
+  const selectedProjectByApplicant = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const [projectId, applicantIds] of Object.entries(selectedByProject)) {
+      for (const applicantId of applicantIds) map[applicantId] = projectId;
+    }
+    return map;
+  }, [selectedByProject]);
 
   const tabCounts = useMemo(() => {
     const counts: Record<TabKey, number> = {
@@ -409,6 +463,8 @@ export default function ShortlistingReviewPage() {
     let total = 0;
     const projectsToDispatch: string[] = [];
     for (const pid of dispatchProjectIds) {
+      const project = projects.find(item => item.id === pid);
+      if (!project || remainingPlacements(project) === 0) continue;
       const ids = selectedByProject[pid];
       if (ids && ids.size > 0) {
         const newIds = Array.from(ids).filter(id => !dispatchedIds.has(id));
@@ -426,10 +482,20 @@ export default function ShortlistingReviewPage() {
   }, [projects]);
 
   function toggleCandidate(projectId: string, appId: string) {
+    const project = projects.find(item => item.id === projectId);
+    if (!project || remainingPlacements(project) === 0) return;
     setSelectedByProject(prev => {
       const set = new Set(prev[projectId] || []);
-      if (set.has(appId)) set.delete(appId);
-      else set.add(appId);
+      if (set.has(appId)) {
+        set.delete(appId);
+      } else {
+        const selectedElsewhere = Object.entries(prev).some(
+          ([otherProjectId, applicantIds]) =>
+            otherProjectId !== projectId && applicantIds.has(appId),
+        );
+        if (selectedElsewhere) return prev;
+        set.add(appId);
+      }
       return { ...prev, [projectId]: set };
     });
   }
@@ -444,6 +510,8 @@ export default function ShortlistingReviewPage() {
   }
 
   function toggleDispatchProject(projectId: string) {
+    const project = projects.find(item => item.id === projectId);
+    if (!project || remainingPlacements(project) === 0) return;
     setDispatchProjectIds(prev => {
       const next = new Set(prev);
       if (next.has(projectId)) next.delete(projectId);
@@ -522,7 +590,10 @@ export default function ShortlistingReviewPage() {
 
   const handleCategoryChange = (value: string) => {
     setCategory(value);
-    setWindowValue('');
+    const fixture = utSession?.categories?.find(item =>
+      item.year === year && item.category === value,
+    );
+    setWindowValue(fixture?.windowValue ?? '');
   };
 
   return (
@@ -630,11 +701,10 @@ export default function ShortlistingReviewPage() {
                 {filteredProjects.map(project => {
                   const candidates = applicationsByProject[project.id] || [];
                   const isViewing = project.id === viewingProjectId;
-                  const dispatchedCount = apps.filter(a => a.shortlistedFor === project.id && a.status === 'Shortlisted for Interview').length;
-                  const isDispatched = dispatchedCount > 0;
+                  const remaining = remainingPlacements(project);
+                  const isFull = remaining === 0;
                   const isDispatchSelected = dispatchProjectIds.has(project.id);
-                  const recommendedMin = Math.min(project.slots + 1, candidates.length) || project.slots + 1;
-                  const recommendedMax = Math.min(project.slots + 2, candidates.length) || project.slots + 2;
+                  const [recommendedMin, recommendedMax] = recommendedShortlist(project, candidates.length);
                   return (
                     <div
                       key={project.id}
@@ -648,10 +718,10 @@ export default function ShortlistingReviewPage() {
                       <div className="flex items-start gap-2">
                         <div className="pt-0.5">
                           <Checkbox
-                            checked={isDispatched ? false : isDispatchSelected}
-                            disabled={isDispatched}
+                            checked={isFull ? false : isDispatchSelected}
+                            disabled={isFull}
                             onCheckedChange={() => toggleDispatchProject(project.id)}
-                            className={cn(isDispatched && 'bg-bg-muted border-border opacity-60')}
+                            className={cn(isFull && 'bg-bg-muted border-border opacity-60')}
                             aria-label={`Include ${project.title} in dispatch`}
                           />
                         </div>
@@ -664,15 +734,15 @@ export default function ShortlistingReviewPage() {
                             {project.title}
                           </p>
                           <p className="text-[10px] text-fg-muted mt-0.5">
-                            {project.slots} placement{project.slots !== 1 ? 's' : ''}
-                            {' · recommended '}{recommendedMin}–{recommendedMax}
+                            {project.matched} of {project.slots} placement{project.slots !== 1 ? 's' : ''} filled
+                            {!isFull && <> · recommended {recommendedMin}–{recommendedMax}</>}
                           </p>
                         </button>
                         <div className="pt-0.5 shrink-0">
                           <Tooltip>
                             <TooltipTrigger>
                               <span className="inline-flex cursor-help">
-                                {isDispatched ? (
+                                {isFull ? (
                                   <Check size={15} className="text-success" />
                                 ) : (
                                   <Info size={15} className="text-warning" />
@@ -680,7 +750,11 @@ export default function ShortlistingReviewPage() {
                               </span>
                             </TooltipTrigger>
                             <TooltipContent side="right">
-                              {isDispatched ? 'Shortlist sent to mentor' : 'Need shortlist review'}
+                              {isFull
+                                ? 'All placements filled'
+                                : project.matched > 0
+                                  ? `${project.matched} placement filled; ${remaining} remaining`
+                                  : 'Need shortlist review'}
                             </TooltipContent>
                           </Tooltip>
                         </div>
@@ -704,30 +778,37 @@ export default function ShortlistingReviewPage() {
                     <div className="min-w-0">
                       <h2 className="text-[15px] font-semibold text-fg">{viewingProject.title}</h2>
                       <p className="text-[10px] text-fg-muted">
-                        {viewingProject.slots} placement{viewingProject.slots !== 1 ? 's' : ''}
-                        {' · Recommended shortlist: '}{Math.min(viewingProject.slots + 1, (applicationsByProject[viewingProject.id] || []).length) || viewingProject.slots + 1}–{Math.min(viewingProject.slots + 2, (applicationsByProject[viewingProject.id] || []).length) || viewingProject.slots + 2}
-                      </p>
-                      {(() => {
-                        const dispatchedCount = apps.filter(a => a.shortlistedFor === viewingProject.id && a.status === 'Shortlisted for Interview').length;
-                        if (dispatchedCount > 0) {
-                          return (
-                            <p className="text-[10px] text-success font-semibold mt-0.5">
-                              {dispatchedCount} candidate{dispatchedCount !== 1 ? 's' : ''} sent · {viewingProject.slots - dispatchedCount} seat{viewingProject.slots - dispatchedCount !== 1 ? 's' : ''} remaining
-                            </p>
+                        {viewingProject.matched} of {viewingProject.slots} placement{viewingProject.slots !== 1 ? 's' : ''} filled
+                        {remainingPlacements(viewingProject) > 0 && (() => {
+                          const [min, max] = recommendedShortlist(
+                            viewingProject,
+                            (applicationsByProject[viewingProject.id] || []).length,
                           );
-                        }
-                        return null;
-                      })()}
+                          return <> · Recommended shortlist: {min}–{max}</>;
+                        })()}
+                      </p>
+                      <p className="text-[10px] text-success font-semibold mt-0.5">
+                        {remainingPlacements(viewingProject) === 0
+                          ? 'All placements are filled'
+                          : `${remainingPlacements(viewingProject)} placement${remainingPlacements(viewingProject) !== 1 ? 's' : ''} remaining`}
+                      </p>
                     </div>
                     <div className="inline-flex items-center gap-1 border border-border rounded-full px-2 py-1 text-[10px] font-medium text-fg bg-surface shrink-0">
                       {activeTab === 'shortlist'
-                        ? `${(selectedByProject[viewingProject.id] || new Set()).size} candidate${((selectedByProject[viewingProject.id] || new Set()).size !== 1) ? 's' : ''} selected`
+                        ? remainingPlacements(viewingProject) === 0
+                          ? 'Fully filled'
+                          : `${(selectedByProject[viewingProject.id] || new Set()).size} candidate${((selectedByProject[viewingProject.id] || new Set()).size !== 1) ? 's' : ''} selected`
                         : `${(applicationsByProject[viewingProject.id] || []).length} candidate${((applicationsByProject[viewingProject.id] || []).length !== 1) ? 's' : ''}`}
                     </div>
                   </div>
 
                   <div className="flex-1 p-4">
-                    {(applicationsByProject[viewingProject.id] || []).length === 0 ? (
+                    {remainingPlacements(viewingProject) === 0 && activeTab === 'shortlist' ? (
+                      <div className="text-center py-12 text-body-md text-fg-muted">
+                        <p className="font-semibold text-fg">All placements are filled</p>
+                        <p>This project is complete and cannot receive another shortlist.</p>
+                      </div>
+                    ) : (applicationsByProject[viewingProject.id] || []).length === 0 ? (
                       <div className="text-center py-12 text-body-md text-fg-muted">
                         No applicants in this stage for the selected project.
                       </div>
@@ -744,6 +825,7 @@ export default function ShortlistingReviewPage() {
                         viewingProjectId={viewingProject.id}
                         projectTitles={projectTitles}
                         dispatchedIds={dispatchedIds}
+                        selectedProjectByApplicant={selectedProjectByApplicant}
                       />
                     )}
                   </div>
@@ -783,8 +865,9 @@ export default function ShortlistingReviewPage() {
             const proj = projects.find(p => p.id === pid);
             const selectedIds = selectedByProject[pid] || new Set<string>();
             const newIds = Array.from(selectedIds).filter(id => !dispatchedIds.has(id));
-            const recommendedMin = Math.min((proj?.slots || 0) + 1, (applicationsByProject[pid] || []).length) || (proj?.slots || 0) + 1;
-            const recommendedMax = Math.min((proj?.slots || 0) + 2, (applicationsByProject[pid] || []).length) || (proj?.slots || 0) + 2;
+            const [recommendedMin, recommendedMax] = proj
+              ? recommendedShortlist(proj, (applicationsByProject[pid] || []).length)
+              : [0, 0];
             const belowRecommended = newIds.length < recommendedMin;
             return (
               <div key={pid} className="border border-border rounded-xl p-3">
@@ -823,7 +906,9 @@ export default function ShortlistingReviewPage() {
           const belowRecommendedProjects = (dispatchSummary?.projectIds || []).filter(pid => {
             const proj = projects.find(p => p.id === pid);
             const newIds = Array.from(selectedByProject[pid] || new Set<string>()).filter(id => !dispatchedIds.has(id));
-            const recommendedMin = Math.min((proj?.slots || 0) + 1, (applicationsByProject[pid] || []).length) || (proj?.slots || 0) + 1;
+            const [recommendedMin] = proj
+              ? recommendedShortlist(proj, (applicationsByProject[pid] || []).length)
+              : [0, 0];
             return newIds.length < recommendedMin;
           });
           return (
@@ -898,6 +983,7 @@ function CandidateList({
   viewingProjectId,
   projectTitles,
   dispatchedIds,
+  selectedProjectByApplicant,
 }: {
   rows: CandidateRow[];
   selected: Set<string>;
@@ -910,6 +996,7 @@ function CandidateList({
   viewingProjectId: string;
   projectTitles: Record<string, string>;
   dispatchedIds: Set<string>;
+  selectedProjectByApplicant: Record<string, string>;
 }) {
   const [menuApp, setMenuApp] = useState<Application | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
@@ -928,6 +1015,14 @@ function CandidateList({
     const app = row.app;
     if (selected.has(app.id)) {
       return { disabled: true, label: undefined };
+    }
+    const selectedProjectId = selectedProjectByApplicant[app.id];
+    if (selectedProjectId && selectedProjectId !== viewingProjectId) {
+      return {
+        disabled: true,
+        label: `selected for ${projectTitles[selectedProjectId] || 'another project'}`,
+        variant: 'warning',
+      };
     }
     if (dispatchedIds.has(app.id)) {
       const title = app.shortlistedFor ? projectTitles[app.shortlistedFor] || 'another project' : 'another project';
