@@ -34,8 +34,8 @@ export const APPLICATION_STEPS: ApplicationNavStep[] = [
   { id: 'availability', label: 'Availability', mobileLabel: 'Availability' },
   {
     id: 'project-fit',
-    label: 'Find Your Project Fit',
-    mobileLabel: 'Find Your Project Fit',
+    label: 'Find Projects',
+    mobileLabel: 'Find Projects',
   },
   {
     id: 'additional',

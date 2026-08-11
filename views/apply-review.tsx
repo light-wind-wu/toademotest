@@ -298,7 +298,7 @@ export default function ApplyReviewPage() {
             />
             {draft.creditBearing && (
               <div className="mt-3">
-                <Field label="Module code" value={draft.creditModuleCode || '—'} />
+                <Field label="Remark" value={draft.creditModuleCode || '—'} />
               </div>
             )}
           </div>

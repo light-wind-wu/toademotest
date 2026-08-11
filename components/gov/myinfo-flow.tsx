@@ -237,7 +237,7 @@ export default function MyinfoFlow({ open, profile, onCancel, onContinue }: Myin
                   className="mt-6 flex h-12 w-full cursor-pointer items-center justify-center rounded-lg text-[14px] font-medium leading-5 text-white transition-opacity hover:opacity-90"
                   style={{ background: CTA_BG }}
                 >
-                  Looks good — start my application
+                  Looks good — continue
                 </button>
               </>
             )}

@@ -263,7 +263,7 @@ export default function ApplyAccountSetup() {
           color: 'rgba(74, 85, 104, 1)',
         }}
       >
-        Welcome back, {greetName}. Follow your application, clear your next tasks and revisit the
+        Welcome, {greetName}. Follow your application, clear your next tasks and revisit the
         quiz whenever curiosity strikes.
       </p>
     </>
@@ -307,7 +307,7 @@ export default function ApplyAccountSetup() {
           color: 'rgba(69, 85, 108, 1)',
         }}
       >
-        Welcome back, {greetName}. Follow your application, clear your next
+        Welcome, {greetName}. Follow your application, clear your next
         <br />
         tasks and revisit the quiz whenever curiosity strikes.
       </p>

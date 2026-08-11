@@ -9,7 +9,7 @@ import Image from 'next/image';
 import { Calendar } from 'lucide-react';
 import Shell from '@/components/layout/shell';
 import { useRole } from '@/lib/role';
-import { resolveArchetype, archetypeResultImage } from '@/lib/apply-project-fit';
+import { PROJECT_MATCHES, resolveArchetype, archetypeResultImage } from '@/lib/apply-project-fit';
 import { loadApplyDraft, programmeTitleForVariant } from '@/lib/apply-application';
 import { loadUtApplicantVariant } from '@/lib/ut-track';
 import { cn } from '@/lib/utils';
@@ -31,10 +31,12 @@ const STEPS: {
   { id: 4, label: 'Outcome', done: false },
 ];
 
+const INTERVIEW_PROJECT_NAME = PROJECT_MATCHES[0].name;
+
 const ACTIVITY = [
   {
-    title: 'Review started',
-    body: 'The team is assessing your profile and project choices.',
+    title: 'Interview invitation received',
+    body: `Aisha Rahman invited you to interview for ${INTERVIEW_PROJECT_NAME}.`,
     date: '26 Jul 2026',
     tone: 'accent' as const,
   },
@@ -114,9 +116,9 @@ export default function ApplyDashboardV1() {
                   className="mt-2 text-[14px] font-normal leading-[100%] lg:mt-4 lg:text-[16px]"
                   style={{ color: 'rgba(74, 85, 104, 1)' }}
                 >
-                  Welcome back, {firstName}. Follow your application, clear your next tasks
+                  Welcome back, {firstName}. You’ve received an interview invitation.
                   <br className="hidden lg:block" />
-                  {' '}and revisit the quiz whenever curiosity strikes.
+                  {' '}Choose a timeslot to continue.
                 </p>
                 <span
                   className="mt-6 inline-flex h-[22px] items-center gap-1.5 rounded-full px-2.5 text-[12px] font-normal leading-4 lg:mt-4"
@@ -235,17 +237,13 @@ export default function ApplyDashboardV1() {
                     className="mt-0.5 text-[14px] font-normal leading-[120%] lg:mt-2"
                     style={{ color: 'rgba(74, 85, 104, 1)' }}
                   >
-                    Your application and ranked project preferences are now with the review team.
+                    You’ve been shortlisted for an interview for the {INTERVIEW_PROJECT_NAME} project under the {programmeTitle}.
                   </p>
                   <p
                     className="mt-6 text-[14px] font-medium leading-[120%] lg:mt-8"
                     style={{ color: 'rgba(74, 85, 104, 1)' }}
                   >
-                    Please confirm your availability for the interview by selecting a day/time slot.
-                    First come
-                    <br className="hidden lg:block" />
-                    {' '}
-                    first served!
+                    Choose a timeslot by 30 Jul 2026.
                   </p>
                   <div className="relative z-10 mt-6 flex gap-2">
                     <button
@@ -632,7 +630,11 @@ export default function ApplyDashboardV1() {
           </div>
       </div>
 
-      <InterviewTimeslotSheet open={timeslotOpen} onOpenChange={setTimeslotOpen} />
+      <InterviewTimeslotSheet
+        open={timeslotOpen}
+        onOpenChange={setTimeslotOpen}
+        projectName={INTERVIEW_PROJECT_NAME}
+      />
       <OutOfScopeDialog open={outOfScopeOpen} onOpenChange={setOutOfScopeOpen} />
     </Shell>
   );
@@ -731,8 +733,7 @@ function InterviewInvitationCard({
             className="mt-1.5 text-[18px] font-semibold leading-6"
             style={{ color: 'rgba(10, 22, 40, 1)' }}
           >
-            Please confirm your availability for the interview by selecting a day/time slot. First
-            come first served!
+            Choose a timeslot to confirm your interview.
           </p>
           <div className="mt-3">
             <RespondBy />
@@ -753,9 +754,7 @@ function InterviewInvitationCard({
             className="mt-1.5 text-[18px] font-semibold tracking-[-0.45px] leading-6"
             style={{ color: 'rgba(15, 23, 43, 1)' }}
           >
-            Please confirm your availability for the interview by selecting a
-            <br />
-            day/time slot. First come first served!
+            Choose a timeslot to confirm your interview.
           </p>
         </>
       )}
@@ -796,13 +795,13 @@ function InterviewInvitationCard({
             className="text-[14px] font-normal leading-5"
             style={{ color: 'rgba(69, 85, 108, 1)' }}
           >
-            Language
+            Format
           </p>
           <p
             className="mt-1 text-[14px] font-medium leading-5"
             style={{ color: 'rgba(15, 23, 43, 1)' }}
           >
-            English or Mandarin
+            Microsoft Teams
           </p>
         </div>
         <div>
@@ -810,13 +809,13 @@ function InterviewInvitationCard({
             className="text-[14px] font-normal leading-5"
             style={{ color: 'rgba(69, 85, 108, 1)' }}
           >
-            Format
+            Duration
           </p>
           <p
             className="mt-1 text-[14px] font-medium leading-5"
             style={{ color: 'rgba(15, 23, 43, 1)' }}
           >
-            30 min · Microsoft Teams
+            30 minutes
           </p>
         </div>
       </div>
@@ -861,7 +860,7 @@ function TasksCard({
         className="mt-1.5 text-[18px] font-semibold tracking-[-0.45px] leading-6"
         style={{ color: 'rgba(15, 23, 43, 1)' }}
       >
-        2 tasks for you
+        2 tasks need your attention
       </p>
       {stacked && (
         <div className="mt-2">
@@ -875,17 +874,17 @@ function TasksCard({
         )}
       >
         <TaskTile
-          title="Confirm profile details"
-          body="Check your contact and education information."
-          cta="Confirm"
+          title="Update your contact details"
+          body="Add a current email address and mobile number."
+          cta="Update details"
           onClick={onConfirm}
           image="/images/confirm-v1.png"
           compact={stacked}
         />
         <TaskTile
-          title="Update availability"
-          body="Add your preferred internship dates."
-          cta="Update"
+          title="Provide additional information"
+          body="The review team has requested additional information."
+          cta="View request"
           onClick={onUpdate}
           image="/images/canlander-v1.png"
           compact={stacked}

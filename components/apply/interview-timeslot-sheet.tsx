@@ -55,9 +55,11 @@ function MetaField({ label, value }: { label: string; value: string }) {
 export default function InterviewTimeslotSheet({
   open,
   onOpenChange,
+  projectName,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  projectName: string;
 }) {
   const [selectedId, setSelectedId] = useState<string>('2');
   const [taskCompletedOpen, setTaskCompletedOpen] = useState(false);
@@ -104,7 +106,7 @@ export default function InterviewTimeslotSheet({
               color: 'rgba(15, 23, 43, 1)',
             }}
           >
-            You have been selected to interview for project Cyber Security.
+            You have been selected to interview for project {projectName}.
           </SheetTitle>
           <p
             className="mt-1.5 text-left"

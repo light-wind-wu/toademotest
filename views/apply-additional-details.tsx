@@ -189,7 +189,7 @@ export default function ApplyAdditionalDetailsPage() {
               <Input
                 value={draft.creditModuleCode}
                 onChange={(e) => persist({ ...draft, creditModuleCode: e.target.value })}
-                placeholder="e.g. INTR3001 (Optional)"
+                placeholder="Share any relevant school requirements (Optional)"
                 className="h-10 rounded-md"
               />
             </div>
