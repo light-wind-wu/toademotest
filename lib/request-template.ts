@@ -224,7 +224,7 @@ export async function downloadRequestTemplateXLSX(
    injects the same dynamic data per intern category.
    ──────────────────────────────────────────────────────────────────────────── */
 
-const TEMPLATE_PATH = '/DSTA_Project_Request_Template.xlsx';
+const TEMPLATE_PATH = '/DSTA_Project_Request_Template_Skillset.xlsx';
 const TEMPLATE_SHEET_NAME = 'Tech UP';
 
 /** Deep copy a JSON-serialisable value. */
@@ -379,6 +379,9 @@ export async function downloadRequestTemplateFromXlsx(
   if (!template) {
     throw new Error(`Template sheet '${TEMPLATE_SHEET_NAME}' not found`);
   }
+  // Free up the template sheet's name so category tabs keep their exact names;
+  // the template sheet itself is removed before the file is written.
+  template.name = '_Template';
 
   const lookups = wb.getWorksheet('_Lookups');
   if (lookups) lookups.state = 'veryHidden';
@@ -529,6 +532,9 @@ export async function downloadResponseTemplateXlsx(
     if (!template) {
       throw new Error(`Template sheet '${RESPONSE_TEMPLATE_SHEET_NAME}' not found`);
     }
+    // Free up the template sheet's name so category tabs keep their exact names;
+    // the template sheet itself is removed before the file is written.
+    template.name = '_Template';
 
     const byCat = new Map<string, ProjectRequest[]>();
     for (const r of requests) {
@@ -537,7 +543,7 @@ export async function downloadResponseTemplateXlsx(
       byCat.get(cat)!.push(r);
     }
 
-    const usedTabs = new Set<string>([RESPONSE_TEMPLATE_SHEET_NAME]);
+    const usedTabs = new Set<string>();
     const lastCol = template.columnCount;
     const lastLetter = template.getColumn(lastCol).letter;
 
