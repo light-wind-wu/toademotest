@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { SuccessCelebration } from '@/components/ui-legacy/success-celebration';
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
+import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Inbox, CheckCircle2, Calendar, ListFilter, Filter } from 'lucide-react';
 import { loadLiveProgrammeOptions, CONTACTS, STATUS_COLOURS } from '@/lib/data';
@@ -163,6 +164,12 @@ function getCardAction(
   return { label: 'View Submission', mode: 'view' };
 }
 
+function isUtClosedRequestGroup(group: RequestGroup): boolean {
+  return isGroupClosed(group) && group.requests.every(
+    req => req.id?.startsWith('ut-adpnc-'),
+  );
+}
+
 function getContextMessage(uploaded: number, placements: number): string {
   if (uploaded === 0) return 'No project placements have been submitted yet.';
   if (uploaded < placements) return 'Some placements are submitted, but the requested total has not been met.';
@@ -282,6 +289,7 @@ export default function AdPncSubmissionsPage() {
   const [tab, setTab] = useState<'open' | 'done'>('open');
   const [statusFilters, setStatusFilters] = useState<string[]>([]);
   const [submittedDialog, setSubmittedDialog] = useState(false);
+  const [closedSubmissionDialogOpen, setClosedSubmissionDialogOpen] = useState(false);
 
   useEffect(() => {
     // Surface a one-shot flash toast set by the upload/create flows before redirect.
@@ -414,7 +422,13 @@ export default function AdPncSubmissionsPage() {
                   batches={batches}
                   progMap={progMap}
                   onUpload={() => upload(group)}
-                  onViewProject={() => viewProject(group)}
+                  onViewProject={() => {
+                    if (isUtClosedRequestGroup(group)) {
+                      setClosedSubmissionDialogOpen(true);
+                      return;
+                    }
+                    viewProject(group);
+                  }}
                 />
               ))}
             </div>
@@ -437,6 +451,10 @@ export default function AdPncSubmissionsPage() {
           />
         </DialogContent>
       </Dialog>
+      <OutOfScopeDialog
+        open={closedSubmissionDialogOpen}
+        onOpenChange={setClosedSubmissionDialogOpen}
+      />
       <Toast message={toastMsg} />
     </Shell>
   );
@@ -460,9 +478,7 @@ function RequestCard({
   const returnedForUpdate = getReturnedForUpdateProjects(group, batches);
   const action = getCardAction(group, batches);
   const closed = isGroupClosed(group);
-  const isUtClosedFixture = closed && group.requests.every(
-    req => req.id?.startsWith('ut-adpnc-'),
-  );
+  const isUtClosedFixture = isUtClosedRequestGroup(group);
 
   const projectStatusItems = [
     counts.notSubmitted > 0 && { key: 'notSubmitted', label: 'Not submitted', count: counts.notSubmitted, cls: textOnly(STATUS_COLOURS.draft) },
@@ -562,8 +578,8 @@ function RequestCard({
             </AlertTitle>
             <AlertDescription>
               {returnedForUpdate.length === 1
-                ? 'Please remove the sensitive information of mentor, and check other information to make sure it can be published.'
-                : returnedForUpdate.map(p => p.remarks || 'Please remove the sensitive information of mentor, and check other information to make sure it can be published.').join(' ')}
+                ? 'Project scope: Contains the mentor’s personal information. Please remove the sensitive details and review the remaining content to ensure it is suitable for publication.'
+                : returnedForUpdate.map(p => p.remarks || 'Project scope: Contains the mentor’s personal information. Please remove the sensitive details and review the remaining content to ensure it is suitable for publication.').join(' ')}
             </AlertDescription>
           </Alert>
         )}
@@ -572,7 +588,7 @@ function RequestCard({
         <div className="mt-auto flex flex-col gap-3 sm:flex-row sm:items-center">
           <Button
             size="sm"
-            disabled={closed}
+            disabled={closed && !isUtClosedFixture}
             onClick={action.mode === 'upload' ? onUpload : onViewProject}
           >
             {action.label}

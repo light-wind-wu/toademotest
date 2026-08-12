@@ -231,7 +231,7 @@ export const task2ReturnedProject = (): SubmittedProject => ({
   skills: ['Python', 'Data Analysis', 'Machine Learning'],
   status: 'returnedForUpdate',
   remarks:
-    'Please remove the sensitive information of mentor, and check other information to make sure it can be published.',
+    'Project scope: Contains the mentor’s personal information. Please remove the sensitive details and review the remaining content to ensure it is suitable for publication.',
   techDomain: 'Digital',
   emergingArea: 'Data Analytics',
 });
