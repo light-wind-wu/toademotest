@@ -1,10 +1,12 @@
 'use client';
 
-/* Apply dashboard entry — V1 / V2 comps layouts (catalog probing A / B).
-   Version preference lives in localStorage (also set from /catlog A·B). */
+/* Apply dashboard entry — V1–V4 comps layouts.
+   V1/V2 from catalog A·B; V3/V4 from custom timeslot follow-up task. */
 import { useEffect, useState } from 'react';
 import ApplyDashboardV1 from '@/views/apply-dashboard-v1';
 import ApplyDashboardV2 from '@/views/apply-dashboard-v2';
+import ApplyDashboardV3 from '@/views/apply-dashboard-v3';
+import ApplyDashboardV4 from '@/views/apply-dashboard-v4';
 import {
   loadApplyDashboardVersion,
   type ApplyDashboardVersion,
@@ -20,7 +22,9 @@ export default function ApplyDashboardPage() {
 
     function onVersion(e: Event) {
       const detail = (e as CustomEvent<ApplyDashboardVersion>).detail;
-      if (detail === 'v1' || detail === 'v2') setVersion(detail);
+      if (detail === 'v1' || detail === 'v2' || detail === 'v3' || detail === 'v4') {
+        setVersion(detail);
+      }
     }
     window.addEventListener('dsta-apply-dashboard-version', onVersion);
     return () => window.removeEventListener('dsta-apply-dashboard-version', onVersion);
@@ -34,5 +38,8 @@ export default function ApplyDashboardPage() {
     );
   }
 
-  return version === 'v2' ? <ApplyDashboardV2 /> : <ApplyDashboardV1 />;
+  if (version === 'v4') return <ApplyDashboardV4 />;
+  if (version === 'v3') return <ApplyDashboardV3 />;
+  if (version === 'v2') return <ApplyDashboardV2 />;
+  return <ApplyDashboardV1 />;
 }

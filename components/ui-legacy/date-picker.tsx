@@ -79,10 +79,11 @@ export default function DatePicker({
           align={align === 'right' ? 'end' : 'start'}
           sideOffset={4}
           collisionAvoidance={{ side: 'flip' }}
+          className="z-[200]"
         >
           <BasePopover.Popup
             className={cn(
-              'z-50 w-auto rounded-lg border border-border bg-surface-elevated p-1 shadow-md',
+              'z-[200] w-auto rounded-lg border border-border bg-surface-elevated p-1 shadow-md',
               'data-[starting-style]:opacity-0 data-[starting-style]:scale-95',
               'data-[ending-style]:opacity-0 data-[ending-style]:scale-95',
               'transition-all duration-150',

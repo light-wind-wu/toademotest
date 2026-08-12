@@ -667,6 +667,8 @@ export default function ApplyDashboardV2() {
         open={timeslotOpen}
         onOpenChange={setTimeslotOpen}
         projectName={INTERVIEW_PROJECT_NAME}
+        allowCustomRequest
+        sourceVersion="v2"
       />
       <OutOfScopeDialog open={outOfScopeOpen} onOpenChange={setOutOfScopeOpen} />
     </Shell>

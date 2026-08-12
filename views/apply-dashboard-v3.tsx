@@ -1,10 +1,7 @@
 'use client';
 
-/* Apply Dashboard V1 — content max 1440; Part1 bg full-bleed of main column.
-   Part1 hero sides fill; copy/art stay in 1440.
-   Part2 status inset 24px: 335 | 60 | 1fr (Interview invited in normal flow).
-   Part3 inset 24px: 1fr | 20 | 314 (fills width, right aligned).
-   Map 143 | 40 | 1fr · Activity 676 | 16 | 270 */
+/* Apply Dashboard V3 — follow-up interview task (cloned from V1 for future copy diffs).
+   Timeslot sheet has fixed slots only (no “Request another timeslot”). */
 import Image from 'next/image';
 import { Calendar } from 'lucide-react';
 import Shell from '@/components/layout/shell';
@@ -54,7 +51,7 @@ const ACTIVITY = [
   },
 ];
 
-export default function ApplyDashboardV1() {
+export default function ApplyDashboardV3() {
   const { profile } = useRole();
   const firstName = profile.name.split(' ')[0] || 'there';
   const [quizTaken, setQuizTaken] = useState(false);
@@ -634,7 +631,7 @@ export default function ApplyDashboardV1() {
         open={timeslotOpen}
         onOpenChange={setTimeslotOpen}
         projectName={INTERVIEW_PROJECT_NAME}
-        allowCustomRequest
+        allowCustomRequest={false}
         sourceVersion="v1"
       />
       <OutOfScopeDialog open={outOfScopeOpen} onOpenChange={setOutOfScopeOpen} />
