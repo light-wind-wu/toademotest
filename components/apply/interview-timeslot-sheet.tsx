@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { addDays, format } from 'date-fns';
 import { Loader2, X } from 'lucide-react';
@@ -89,12 +90,17 @@ export default function InterviewTimeslotSheet({
     () => format(addDays(new Date(), 1), 'yyyy-MM-dd'),
     [],
   );
+
+  useEffect(() => {
+    if (allowCustomRequest) router.prefetch('/apply/interview-proposed');
+  }, [allowCustomRequest, router]);
   const [selectedId, setSelectedId] = useState<string>('2');
   const [preferredDate, setPreferredDate] = useState('');
   const [availableTime, setAvailableTime] = useState('');
   const [taskCompletedOpen, setTaskCompletedOpen] = useState(false);
   const [availabilityOpen, setAvailabilityOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [leavingToProposed, setLeavingToProposed] = useState(false);
 
   const isCustom = allowCustomRequest && selectedId === CUSTOM_SLOT_ID;
   const canConfirm = isCustom
@@ -108,12 +114,17 @@ export default function InterviewTimeslotSheet({
   }
 
   function goInterviewProposed() {
+    /* Paint the cover before the dialog unmounts so V1/V2 never flashes. */
+    flushSync(() => {
+      setLeavingToProposed(true);
+      setAvailabilityOpen(false);
+    });
     try {
       sessionStorage.setItem(INTERVIEW_PROPOSED_FROM_KEY, sourceVersion);
     } catch {
       /* ignore */
     }
-    router.push('/apply/interview-proposed');
+    router.replace('/apply/interview-proposed');
   }
 
   function handleConfirm() {
@@ -140,6 +151,21 @@ export default function InterviewTimeslotSheet({
 
   return (
     <>
+      {leavingToProposed && (
+        <div
+          className="fixed inset-0 z-[300] flex flex-col items-center justify-center gap-3"
+          style={{ background: 'rgba(248, 247, 242, 1)' }}
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <Loader2
+            className="size-8 animate-spin text-accent"
+            strokeWidth={1.5}
+            aria-hidden
+          />
+          <span className="text-[14px] font-medium text-fg-muted">Continuing…</span>
+        </div>
+      )}
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="right"

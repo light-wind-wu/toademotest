@@ -4,7 +4,6 @@
 import { useEffect, useRef } from 'react';
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -31,7 +30,7 @@ export default function AvailabilitySubmittedDialog({
   function finish() {
     if (continuedRef.current) return;
     continuedRef.current = true;
-    onOpenChange(false);
+    /* Parent paints a full-screen cover first, then navigates — don’t close first. */
     onContinue();
   }
 
@@ -82,12 +81,14 @@ export default function AvailabilitySubmittedDialog({
         </DialogHeader>
 
         <DialogFooter className="mt-6">
-          <DialogClose
+          <button
+            type="button"
+            onClick={finish}
             className="inline-flex h-9 cursor-pointer items-center justify-center rounded-md px-4 text-[14px] font-medium text-white transition-opacity hover:opacity-90"
             style={{ background: 'rgba(26, 101, 248, 1)' }}
           >
             Done
-          </DialogClose>
+          </button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
