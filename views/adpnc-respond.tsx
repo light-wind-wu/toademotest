@@ -737,7 +737,7 @@ function buildUploadReview(fileName: string, projects: SubmittedProject[], group
 
     readyProjects.push({
       ...project,
-      pc: project.pc ?? matchedRequest.pc,
+      pc: project.pc ?? matchedRequest.programmeCenter ?? matchedRequest.pc,
       requestLineId: matchedRequest.id,
       status: 'draft',
     });
@@ -782,10 +782,12 @@ function parseStructuredWorkbook(
     const cTech = idx(/tech competency|tech domain|skillset/i);
     const cDisc = idx(/discipline/i);
     const cPMName = idx(/primary mentor name|full name of main mentor|main mentor name/i);
-    const cPMAppt = idx(/appointment/i);
+    const cPMAppt = idx(/primary mentor appointment|main mentor appointment/i);
     const cPMEmail = idx(/primary mentor email|main mentor email/i);
     const cSMName = idx(/secondary mentor name/i);
+    const cSMAppt = idx(/secondary mentor appointment/i);
     const cSMEmail = idx(/secondary mentor email/i);
+    const cPC = idx(/programme cent(er|re)/i);
     const cPlace = idx(/placements|no\. of interns/i);
     const at = (row: number, colIdx: number) => (colIdx >= 0 ? parseCellValue(ws.getCell(row, colIdx + 1).value) : '');
     const rowText = (row: number) => {
@@ -847,7 +849,9 @@ function parseStructuredWorkbook(
           'Main Mentor Appointment': at(r, cPMAppt),
           'Main Mentor Email': at(r, cPMEmail),
           'Secondary Mentor Name': at(r, cSMName),
+          'Secondary Mentor Appointment': at(r, cSMAppt),
           'Secondary Mentor Email': at(r, cSMEmail),
+          'PC': at(r, cPC),
           'No. of Placements': at(r, cPlace) || '1',
           'Project Duration': barDuration,
           'Internship Start Month': pStart ?? '',
@@ -1175,8 +1179,7 @@ export default function AdPncRespondPage() {
   async function handleDownloadTemplate() {
     if (!group) return;
     try {
-      const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
-      await downloadResponseTemplateXlsx(group.requests, `DCE_Project_Approval_List_${dateStr}.xlsx`);
+      await downloadResponseTemplateXlsx(group.requests, 'DSTA_Project_Request.xlsx');
     } catch {
       showToast('Could not download the template. Please try again.', 'danger');
     }
@@ -1381,7 +1384,7 @@ export default function AdPncRespondPage() {
       mentorUserId,
       skills,
       slots: Number.isFinite(project.slots) && project.slots > 0 ? project.slots : 1,
-      pc: project.pc || matchedRequest?.pc,
+      pc: project.pc || matchedRequest?.programmeCenter || matchedRequest?.pc,
       requestLineId: matchedRequest?.id,
       status: 'draft',
       educationLevel,

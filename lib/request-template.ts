@@ -506,6 +506,8 @@ export async function downloadRequestTemplateFromXlsx(
 const RESPONSE_TEMPLATE_PATH = '/DSTA_Project_Response_Template.xlsx';
 const RESPONSE_TEMPLATE_SHEET_NAME = 'Undergraduate Student';
 const RESPONSE_ENTRY_ROWS = 3;
+const RESPONSE_TEMPLATE_BLOCK_START = 4;
+const RESPONSE_TEMPLATE_TRACKER_ROW = 7;
 
 export async function downloadResponseTemplateXlsx(
   requests: ProjectRequest[],
@@ -538,10 +540,6 @@ export async function downloadResponseTemplateXlsx(
     const usedTabs = new Set<string>([RESPONSE_TEMPLATE_SHEET_NAME]);
     const lastCol = template.columnCount;
     const lastLetter = template.getColumn(lastCol).letter;
-
-    // Columns whose values are merged across the 3 entry rows (all except the bar
-    // and the two stacked multi-select columns E and F).
-    const MERGED_COLS = ['B', 'C', 'D', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
 
     for (const [cat, rows] of Array.from(byCat.entries())) {
       const ws = wb.addWorksheet(safeTab(cat, usedTabs));
@@ -579,18 +577,23 @@ export async function downloadResponseTemplateXlsx(
 
       for (let e = 0; e < target; e++) {
         const es = r + e * RESPONSE_ENTRY_ROWS;
-        for (let k = 0; k < RESPONSE_ENTRY_ROWS; k++) ws.getRow(es + k).height = 20;
+        // Stamp the template block's styles, merges and dropdown validations so
+        // every entry matches the template format (not just the first one).
+        stampBlock(ws, template, es, RESPONSE_TEMPLATE_BLOCK_START, RESPONSE_ENTRY_ROWS);
 
-        // Re-apply the single-value merges (B, C, D, G–M) across the 3 entry rows.
-        for (const col of MERGED_COLS) {
-          ws.mergeCells(`${col}${es}:${col}${es + RESPONSE_ENTRY_ROWS - 1}`);
+        // Unlock the editable cells (C–M). Column A (Period / Duration) and
+        // column B (Programme Centre) stay locked once the sheet is protected.
+        for (let k = 0; k < RESPONSE_ENTRY_ROWS; k++) {
+          for (let cc = 3; cc <= lastCol; cc++) {
+            ws.getCell(es + k, cc).protection = { locked: false };
+          }
         }
       }
 
       const tr = r + target * RESPONSE_ENTRY_ROWS;
 
-      // Tracker row
-      ws.mergeCells(`B${tr}:${lastLetter}${tr}`);
+      // Tracker row — style and merge cloned from the template's tracker row.
+      stampTracker(ws, template, tr, RESPONSE_TEMPLATE_TRACKER_ROW);
       const tc = ws.getCell(`B${tr}`);
       tc.value = { formula: `\"Placements filled: \"&SUM(${lastLetter}${blockStart}:${lastLetter}${tr - 1})&\" of ${target}\"` } as any;
       tc.font = { italic: true, size: 10, color: { argb: NAVY } };
@@ -627,6 +630,10 @@ export async function downloadResponseTemplateXlsx(
 
       r = tr + 2;
     }
+
+    // Lock the sheet: Period / Duration and Programme Centre (and all other
+    // pre-filled cells) cannot be edited; only the unlocked entry cells can.
+    ws.protect('', {});
   }
 
   wb.removeWorksheet(template.id);

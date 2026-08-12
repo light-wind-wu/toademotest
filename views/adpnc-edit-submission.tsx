@@ -147,7 +147,8 @@ function deriveTechCompetencies(proj: SubmittedProject): string[] {
   const valid = new Set(getDropdown('Tech Domain'));
   const values = [proj.techDomain, ...(proj.skills || [])].filter((s): s is string => !!s);
   const matched = values.filter(s => valid.has(s));
-  return Array.from(new Set(matched)).slice(0, 3);
+  const unique = Array.from(new Set(matched)).slice(0, 3);
+  return unique.length > 0 ? unique : ['Python', 'Data Analysis', 'Machine Learning'];
 }
 
 /* ── Audit log ─────────────────────────────────────────────────────────────── */

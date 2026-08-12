@@ -562,8 +562,8 @@ function RequestCard({
             </AlertTitle>
             <AlertDescription>
               {returnedForUpdate.length === 1
-                ? 'Please narrow the scope to one equipment category, use only anonymised data, and include a baseline comparison for model evaluation.'
-                : returnedForUpdate.map(p => p.remarks || 'Please narrow the scope to one equipment category, use only anonymised data, and include a baseline comparison for model evaluation.').join(' ')}
+                ? 'Please remove the sensitive information of mentor, and check other information to make sure it can be published.'
+                : returnedForUpdate.map(p => p.remarks || 'Please remove the sensitive information of mentor, and check other information to make sure it can be published.').join(' ')}
             </AlertDescription>
           </Alert>
         )}

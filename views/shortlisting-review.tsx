@@ -9,6 +9,10 @@ import { SuccessCelebration } from '@/components/ui-legacy/success-celebration';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui-legacy/tooltip';
@@ -19,7 +23,6 @@ import {
   RowDropdown,
   DropdownItem,
 } from '@/components/ui-legacy/row-actions';
-import Modal from '@/components/ui-legacy/modal';
 import {
   Select,
   SelectValue,
@@ -901,85 +904,99 @@ export default function ShortlistingReviewPage() {
         </>
       )}
 
-      <Modal open={reviewOpen} onClose={() => setReviewOpen(false)} maxWidth="sm" labelledBy="dispatch-review-title">
-        <h2 id="dispatch-review-title" className="text-headline-md text-fg mb-1">Review selected shortlists</h2>
-        <p className="text-body-md text-fg-muted mb-4">Check the selected projects before continuing.</p>
+      <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-headline-md">Review selected applicants</DialogTitle>
+            <DialogDescription className="text-body-md text-fg-muted">
+              Check the applicants and projects included in this dispatch.
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-3 mb-4 max-h-[360px] overflow-y-auto pr-1">
-          {dispatchSummary?.projectIds.map(pid => {
-            const proj = projects.find(p => p.id === pid);
-            const selectedIds = selectedByProject[pid] || new Set<string>();
-            const newIds = Array.from(selectedIds).filter(id => !dispatchedIds.has(id));
-            const [recommendedMin, recommendedMax] = proj
-              ? recommendedShortlist(proj, (applicationsByProject[pid] || []).length)
-              : [0, 0];
-            const belowRecommended = newIds.length < recommendedMin;
-            return (
-              <div key={pid} className="border border-border rounded-xl p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-body-sm font-semibold text-fg truncate">{proj?.title || pid}</p>
-                    <p className="text-body-sm text-fg-muted truncate">
-                      {newIds.map(appId => apps.find(a => a.id === appId)?.name).filter(Boolean).join(', ') || 'No new candidates selected'}
-                    </p>
+          <div className="space-y-3 mb-4 max-h-[360px] overflow-y-auto pr-1">
+            {dispatchSummary?.projectIds.map(pid => {
+              const proj = projects.find(p => p.id === pid);
+              const selectedIds = selectedByProject[pid] || new Set<string>();
+              const newIds = Array.from(selectedIds).filter(id => !dispatchedIds.has(id));
+              return (
+                <div key={pid} className="border border-border rounded-xl p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-body-sm font-semibold text-fg">{proj?.title || pid}</p>
+                    <span className="inline-flex items-center rounded-full border border-border px-2.5 py-1 text-[12px] font-medium text-fg">
+                      {newIds.length} applicant{newIds.length !== 1 ? 's' : ''}
+                    </span>
                   </div>
-                  <span className="shrink-0 text-body-sm font-medium text-fg">
-                    {newIds.length} new candidate{newIds.length !== 1 ? 's' : ''}
-                  </span>
+                  <p className="text-body-sm text-fg-muted mt-2">
+                    {newIds.map(appId => apps.find(a => a.id === appId)?.name).filter(Boolean).join(', ') || 'No new candidates selected'}
+                  </p>
                 </div>
-                {belowRecommended && (
-                  <p className="text-body-sm text-warning mt-2">
-                    Warning: below the recommended shortlist of {recommendedMin}–{recommendedMax} candidates.
+              );
+            })}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReviewOpen(false)}>Cancel</Button>
+            <Button onClick={proceedToConfirm}>Continue</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-headline-md">Confirm dispatch</DialogTitle>
+            <DialogDescription className="text-body-md text-fg-muted">
+              This is the final confirmation. The assigned mentors will be notified immediately.
+            </DialogDescription>
+          </DialogHeader>
+
+          {(() => {
+            const belowRecommendedProjects = (dispatchSummary?.projectIds || []).filter(pid => {
+              const proj = projects.find(p => p.id === pid);
+              const newIds = Array.from(selectedByProject[pid] || new Set<string>()).filter(id => !dispatchedIds.has(id));
+              const [recommendedMin] = proj
+                ? recommendedShortlist(proj, (applicationsByProject[pid] || []).length)
+                : [0, 0];
+              return newIds.length < recommendedMin;
+            });
+            const aboveRecommendedProjects = (dispatchSummary?.projectIds || []).filter(pid => {
+              const proj = projects.find(p => p.id === pid);
+              const newIds = Array.from(selectedByProject[pid] || new Set<string>()).filter(id => !dispatchedIds.has(id));
+              const [, recommendedMax] = proj
+                ? recommendedShortlist(proj, (applicationsByProject[pid] || []).length)
+                : [0, 0];
+              return newIds.length > recommendedMax;
+            });
+            return (
+              <div className="bg-warning-bg border border-warning/30 rounded-xl p-4 mb-5 space-y-2">
+                <p className="text-body-sm font-semibold text-warning">
+                  {dispatchSummary?.total} applicant{dispatchSummary?.total !== 1 ? 's' : ''} across {dispatchSummary?.projectCount} project{dispatchSummary?.projectCount !== 1 ? 's' : ''} will be sent to the assigned mentors for interview.
+                </p>
+                <p className="text-body-sm text-warning/80">
+                  Only the applicants listed here will be marked as sent to mentor.
+                </p>
+                {belowRecommendedProjects.length > 0 && (
+                  <p className="text-body-sm text-warning/80">
+                    {belowRecommendedProjects.length} project{belowRecommendedProjects.length !== 1 ? 's are' : ' is'} below the recommended shortlist. IO may proceed with this exception.
+                  </p>
+                )}
+                {aboveRecommendedProjects.length > 0 && (
+                  <p className="text-body-sm text-warning/80">
+                    {aboveRecommendedProjects.length} project{aboveRecommendedProjects.length !== 1 ? 's are' : ' is'} above the recommended shortlist. IO may proceed with this exception.
                   </p>
                 )}
               </div>
             );
-          })}
-        </div>
+          })()}
 
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => setReviewOpen(false)}>Cancel</Button>
-          <Button onClick={proceedToConfirm}>Continue</Button>
-        </div>
-      </Modal>
-
-      <Modal open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="sm" labelledBy="confirm-dispatch-title">
-        <h2 id="confirm-dispatch-title" className="text-headline-md text-fg mb-1">Confirm dispatch</h2>
-        <p className="text-body-md text-fg-muted mb-4">This is the final confirmation. Mentors will be notified immediately.</p>
-
-        {(() => {
-          const belowRecommendedProjects = (dispatchSummary?.projectIds || []).filter(pid => {
-            const proj = projects.find(p => p.id === pid);
-            const newIds = Array.from(selectedByProject[pid] || new Set<string>()).filter(id => !dispatchedIds.has(id));
-            const [recommendedMin] = proj
-              ? recommendedShortlist(proj, (applicationsByProject[pid] || []).length)
-              : [0, 0];
-            return newIds.length < recommendedMin;
-          });
-          return (
-            <div className="bg-warning-bg border border-warning/30 rounded-xl p-3 mb-5 space-y-1">
-              <p className="text-body-sm font-semibold text-warning">
-                {dispatchSummary?.total} new candidate{dispatchSummary?.total !== 1 ? 's' : ''} across {dispatchSummary?.projectCount} project{dispatchSummary?.projectCount !== 1 ? 's' : ''} will be dispatched.
-              </p>
-              {belowRecommendedProjects.length > 0 && (
-                <p className="text-body-sm text-warning/80">
-                  {belowRecommendedProjects.length} project{belowRecommendedProjects.length !== 1 ? 's are' : ' is'} below the recommended shortlist. IO may proceed with this exception.
-                </p>
-              )}
-              <p className="text-body-sm text-warning/80">
-                Only these candidates will be marked as sent. Projects with remaining seats stay open for another dispatch.
-              </p>
-            </div>
-          );
-        })()}
-
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => { setConfirmOpen(false); setReviewOpen(true); }}>Back</Button>
-          <Button onClick={confirmDispatch}>
-            <Send size={14} /> Confirm and dispatch
-          </Button>
-        </div>
-      </Modal>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setConfirmOpen(false); setReviewOpen(true); }}>Back</Button>
+            <Button onClick={confirmDispatch}>
+              <Send size={14} /> Confirm and dispatch
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={dispatchSuccessOpen} onOpenChange={setDispatchSuccessOpen}>
         <DialogContent className="border-none bg-transparent p-0 shadow-none">
