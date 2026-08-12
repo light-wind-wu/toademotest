@@ -700,7 +700,7 @@ function RespondBy() {
         className="text-[12px] font-normal leading-4"
         style={{ color: 'rgba(3, 3, 3, 1)' }}
       >
-        Respond by 30 Jul 2026
+        Respond by 30 Aug 2026
       </span>
     </span>
   );

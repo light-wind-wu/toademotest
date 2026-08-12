@@ -30,7 +30,7 @@ const SLOTS: TimeSlot[] = [
 const META = [
   ['Format', 'Microsoft Teams'],
   ['Duration', '30 minutes'],
-  ['Responed by', '30 Aug 2026'],
+  ['Respond by', '30 Aug 2026'],
 ] as const;
 
 function MetaField({ label, value }: { label: string; value: string }) {
