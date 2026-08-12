@@ -91,18 +91,21 @@ export const UNI_EDUCATION: EducationDetails = {
   expectedGraduation: '2027-05-31',
 };
 
-const MOCK_TRANSCRIPT = 'Chen_academic transcript.pdf';
-const MOCK_CV = 'Chen1230_CV2026.pdf';
-
-const DEFAULT_EDUCATION: EducationDetails = { ...UNI_EDUCATION };
+const EMPTY_EDUCATION: EducationDetails = {
+  institution: '',
+  course: '',
+  yearOfStudy: '',
+  gpa: '',
+  expectedGraduation: '',
+};
 
 const EMPTY_DRAFT: ApplySessionDraft = {
   transcriptName: '',
   cvName: '',
-  education: { ...DEFAULT_EDUCATION },
-  startDate: '2026-07-13',
-  endDate: '2026-10-31',
-  interests: ['Advanced Systems', 'Air Systems', 'Simulation & Training Systems'],
+  education: { ...EMPTY_EDUCATION },
+  startDate: '',
+  endDate: '',
+  interests: [],
   interestsOther: '',
   rankedProjectIds: [],
   quizAnswers: [null, null, null, null, null, null],
@@ -114,11 +117,22 @@ const EMPTY_DRAFT: ApplySessionDraft = {
   programmeTitle: 'Undergraduate Internship 2027',
 };
 
+/** Preset details shown after the applicant uploads a transcript (demo fill). */
 export function defaultEducationDetails(
   variant?: 'polytechnic' | 'tech-up' | 'undergraduate' | null,
 ): EducationDetails {
   if (variant === 'polytechnic') return { ...POLY_EDUCATION };
   return { ...UNI_EDUCATION };
+}
+
+/** Blank form for “enter details manually” — no mock values. */
+export function emptyEducationDetails(
+  variant?: 'polytechnic' | 'tech-up' | 'undergraduate' | null,
+): EducationDetails {
+  if (variant === 'polytechnic') {
+    return { institution: '', course: '', yearOfStudy: '', gpa: '' };
+  }
+  return { ...EMPTY_EDUCATION };
 }
 
 export function programmeTitleForVariant(
@@ -136,16 +150,14 @@ export function applyingForLabel(
   return programmeTitleForVariant(variant ?? 'undergraduate');
 }
 
-/** Align draft education / programme fields to the catalog applicant path. */
+/** Align programme / scholarship flags to the catalog path — does not overwrite education. */
 export function syncApplyDraftToVariant(
   draft: ApplySessionDraft,
   variant: 'polytechnic' | 'tech-up' | 'undergraduate' | null,
 ): ApplySessionDraft {
   if (!variant) return draft;
-  const education = defaultEducationDetails(variant);
   return {
     ...draft,
-    education,
     programmeTitle: programmeTitleForVariant(variant),
     bondedScholarship: variant === 'polytechnic' ? false : draft.bondedScholarship,
     scholarshipName: variant === 'polytechnic' ? '' : draft.scholarshipName,
@@ -159,9 +171,9 @@ export function seedApplyDraftForVariant(
   const draft: ApplySessionDraft = syncApplyDraftToVariant(
     {
       ...EMPTY_DRAFT,
-      /* Pre-fill uploads so education details match comps immediately. */
-      transcriptName: MOCK_TRANSCRIPT,
-      cvName: MOCK_CV,
+      transcriptName: '',
+      cvName: '',
+      education: emptyEducationDetails(variant),
       creditBearing: null,
       creditModuleCode: '',
       bondedScholarship: variant === 'polytechnic' ? false : null,
@@ -175,14 +187,14 @@ export function seedApplyDraftForVariant(
 
 export function loadApplyDraft(): ApplySessionDraft {
   if (typeof window === 'undefined') {
-    return { ...EMPTY_DRAFT, education: { ...DEFAULT_EDUCATION } };
+    return { ...EMPTY_DRAFT, education: { ...EMPTY_EDUCATION } };
   }
   try {
     const raw = localStorage.getItem(APPLY_DRAFT_KEY);
-    if (!raw) return { ...EMPTY_DRAFT, education: { ...DEFAULT_EDUCATION } };
+    if (!raw) return { ...EMPTY_DRAFT, education: { ...EMPTY_EDUCATION } };
     const parsed = JSON.parse(raw) as Partial<ApplySessionDraft>;
     const education = {
-      ...DEFAULT_EDUCATION,
+      ...EMPTY_EDUCATION,
       ...(parsed.education ?? {}),
     };
     /* Drop stale graduation when poly draft has empty/undefined graduation. */
@@ -195,7 +207,7 @@ export function loadApplyDraft(): ApplySessionDraft {
       education,
     };
   } catch {
-    return { ...EMPTY_DRAFT, education: { ...DEFAULT_EDUCATION } };
+    return { ...EMPTY_DRAFT, education: { ...EMPTY_EDUCATION } };
   }
 }
 

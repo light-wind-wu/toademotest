@@ -2,7 +2,7 @@
 
 /* Session chapter intro — mirrors concept demo `.chapter-intro-card` motion
    (card cycle + top progress + staggered copy). Full-stage scrim uses page `bg-bg`
-   (same as Myinfo overlay). Auto-dismisses after ~2s. */
+   (same as Myinfo overlay). Auto-dismisses after ~10s. */
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { CHAPTER_INTROS } from '@/lib/apply-application';
@@ -22,7 +22,7 @@ export default function ChapterIntro({
     const reduced =
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const delay = reduced ? 500 : 2000;
+    const delay = reduced ? 500 : 10000;
     const t = window.setTimeout(onDone, delay);
     return () => window.clearTimeout(t);
   }, [onDone]);

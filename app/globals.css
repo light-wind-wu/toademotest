@@ -333,8 +333,9 @@
     opacity: 0;
     transform: translateY(28px) scale(0.97);
   }
-  18%,
-  82% {
+  /* ~360ms enter / ~360ms exit — same feel as the old 2s cycle, stretched to 10s */
+  3.6%,
+  96.4% {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
@@ -361,7 +362,7 @@
 }
 
 .chapter-intro-card {
-  animation: chapterCardCycle 2000ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: chapterCardCycle 10000ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .chapter-intro-card::before {
@@ -371,7 +372,8 @@
   height: 6px;
   background: var(--prizm-color-accent);
   transform-origin: left;
-  animation: chapterProgress 1700ms linear 220ms both;
+  /* 220ms delay + 9780ms fill ≈ 10s, matches auto-dismiss */
+  animation: chapterProgress 9780ms linear 220ms both;
 }
 
 .chapter-intro-line {

@@ -61,18 +61,13 @@ export default function ApplyAvailabilityPage() {
     setFromReview(isFromReview());
     const loaded = loadApplyDraft();
     const start = parseDate(loaded.startDate);
-    /* Clamp seeded / stale start dates that fall before tomorrow */
-    if (!start || isBeforeDay(start, minStart)) {
-      const startIso = format(minStart, 'yyyy-MM-dd');
+    /* Keep empty by default; only clear stale dates before the selectable min. */
+    if (start && isBeforeDay(start, minStart)) {
       const next: ApplySessionDraft = {
         ...loaded,
-        startDate: startIso,
-        endDate:
-          loaded.endDate && loaded.endDate >= startIso ? loaded.endDate : loaded.endDate,
+        startDate: '',
+        endDate: '',
       };
-      if (next.endDate && next.endDate < next.startDate) {
-        next.endDate = '';
-      }
       saveApplyDraft(next);
       setDraft(next);
     } else {

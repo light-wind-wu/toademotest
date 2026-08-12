@@ -697,10 +697,15 @@ function RankingPhase({
   return (
     /* Fills shell lockViewport area — page itself must not scroll */
     <div className="flex h-full min-h-0 flex-col">
-      <header className="mb-10 shrink-0 lg:mb-8">
+      <header className="mb-8 shrink-0 lg:mb-6">
         <h1 className="text-[1.375rem] font-bold leading-snug tracking-tight text-fg md:text-[1.5rem]">
           Rank your projects, {displayName}.
         </h1>
+        <p className="mt-1 text-[13px] text-fg-muted">
+          Based on your{' '}
+          <span style={highlight}>selected interests</span> profile and interests, we&apos;ve flagged
+          your best matches. Pick up to {MAX_RANKED} in order of preference.
+        </p>
       </header>
 
       {/* One white panel: left scroll (no scrollbar) · divider · right ranking */}

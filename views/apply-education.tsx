@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import {
   clearChapterIntro,
   defaultEducationDetails,
+  emptyEducationDetails,
   loadApplyDraft,
   peekChapterIntro,
   saveApplyDraft,
@@ -20,9 +21,6 @@ import {
 } from '@/lib/apply-application';
 import { loadUtApplicantVariant } from '@/lib/ut-track';
 import { isSignedIn } from '@/lib/session';
-
-const MOCK_TRANSCRIPT = 'Chen_academic transcript.pdf';
-const MOCK_CV = 'Chen1230_CV2026.pdf';
 
 function shouldShowSession1Intro(): boolean {
   if (typeof window === 'undefined') return false;
@@ -102,41 +100,34 @@ export default function ApplyEducationPage() {
   const hasTranscript = Boolean(draft.transcriptName);
   const showEducationDetails = hasTranscript || manualEntry;
 
-  function mockUpload(kind: 'transcript' | 'cv', file?: File | null) {
-    const name =
-      file?.name || (kind === 'transcript' ? MOCK_TRANSCRIPT : MOCK_CV);
+  function handleFileUpload(kind: 'transcript' | 'cv', file?: File | null) {
+    if (!file) return;
+    const variant = loadUtApplicantVariant();
     if (kind === 'transcript') {
       setManualEntry(false);
       persist({
         ...draft!,
-        transcriptName: name,
-        education: defaultEducationDetails(loadUtApplicantVariant()),
+        transcriptName: file.name,
+        /* Demo: selecting a file fills the preset education details. */
+        education: defaultEducationDetails(variant),
       });
     } else {
-      persist({ ...draft!, cvName: name });
+      persist({ ...draft!, cvName: file.name });
     }
   }
 
   function enterDetailsManually() {
     setManualEntry(true);
-    if (!draft!.education.institution) {
-      persist({
-        ...draft!,
-        education: defaultEducationDetails(loadUtApplicantVariant()),
-      });
-    }
+    persist({
+      ...draft!,
+      transcriptName: '',
+      education: emptyEducationDetails(loadUtApplicantVariant()),
+    });
+    if (transcriptRef.current) transcriptRef.current.value = '';
   }
 
-  /** Demo: empty zone click seeds mock file (comps). File picker still available to override. */
+  /** Open the native file picker (same pattern as B-end uploads). */
   function handleZoneClick(kind: 'transcript' | 'cv') {
-    if (kind === 'transcript' && !draft!.transcriptName) {
-      mockUpload('transcript');
-      return;
-    }
-    if (kind === 'cv' && !draft!.cvName) {
-      mockUpload('cv');
-      return;
-    }
     (kind === 'transcript' ? transcriptRef : cvRef).current?.click();
   }
 
@@ -210,7 +201,10 @@ export default function ApplyEducationPage() {
             type="file"
             accept=".pdf,.doc,.docx"
             className="sr-only"
-            onChange={(e) => mockUpload('transcript', e.target.files?.[0])}
+            onChange={(e) => {
+              handleFileUpload('transcript', e.target.files?.[0]);
+              e.target.value = '';
+            }}
           />
 
           <UploadZone onActivate={() => handleZoneClick('transcript')}>
@@ -324,7 +318,10 @@ export default function ApplyEducationPage() {
             type="file"
             accept=".pdf,.doc,.docx"
             className="sr-only"
-            onChange={(e) => mockUpload('cv', e.target.files?.[0])}
+            onChange={(e) => {
+              handleFileUpload('cv', e.target.files?.[0]);
+              e.target.value = '';
+            }}
           />
           <UploadZone onActivate={() => handleZoneClick('cv')}>
             {draft.cvName ? (
