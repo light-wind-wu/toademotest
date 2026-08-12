@@ -22,15 +22,15 @@ type TimeSlot = {
 };
 
 const SLOTS: TimeSlot[] = [
-  { id: '1', dateLabel: 'Wed, 5 Aug 2026', timeLabel: '14:00–14:30' },
-  { id: '2', dateLabel: 'Thu, 6 Aug 2026', timeLabel: '14:00–14:30' },
-  { id: '3', dateLabel: 'Fri, 7 Aug 2026', timeLabel: '10:00–10:30' },
+  { id: '1', dateLabel: 'Wed, 19 Aug 2026', timeLabel: '14:00–14:30' },
+  { id: '2', dateLabel: 'Thu, 20 Aug 2026', timeLabel: '09:30–10:00' },
+  { id: '3', dateLabel: 'Fri, 21 Aug 2026', timeLabel: '11:00–11:30' },
 ];
 
 const META = [
   ['Format', 'Microsoft Teams'],
   ['Duration', '30 minutes'],
-  ['Responded by', '30 Jul 2026'],
+  ['Responed by', '30 Aug 2026'],
 ] as const;
 
 function MetaField({ label, value }: { label: string; value: string }) {
@@ -109,74 +109,81 @@ export default function InterviewTimeslotSheet({
             You have been selected to interview for project {projectName}.
           </SheetTitle>
           <p
-            className="mt-1.5 text-left"
+            className="text-left"
             style={{
+              marginTop: 6,
               fontWeight: 600,
-              fontSize: 18,
-              lineHeight: '24px',
-              letterSpacing: '-0.45px',
-              color: 'rgba(15, 23, 43, 1)',
+              fontSize: 14,
+              lineHeight: '20px',
+              color: 'rgba(69, 85, 108, 1)',
             }}
           >
             Choose an available timeslot to confirm your interview.
           </p>
         </SheetHeader>
 
-        <SheetBody className="flex flex-col gap-0 px-4 pb-5 pt-4 sm:px-6">
+        {/* Top divider full-bleed; bottom divider keeps side inset */}
+        <SheetBody className="flex flex-col gap-0 px-0 pb-5 pt-4">
           <div
             style={{
               borderTop: '1px solid rgba(231, 228, 221, 1)',
-              borderBottom: '1px solid rgba(231, 228, 221, 1)',
             }}
           >
-            <div className="hidden grid-cols-3 sm:grid">
-              {META.map(([label, value], i) => (
-                <div
-                  key={label}
-                  className={cn(
-                    'relative flex min-w-0 flex-col justify-center py-6',
-                    i === 0 ? 'pr-4' : 'pl-5 pr-4',
-                  )}
-                >
-                  {i > 0 && (
+            <div
+              className="mx-4 sm:mx-6"
+              style={{
+                borderBottom: '1px solid rgba(231, 228, 221, 1)',
+              }}
+            >
+              <div className="hidden grid-cols-3 sm:grid">
+                {META.map(([label, value], i) => (
+                  <div
+                    key={label}
+                    className={cn(
+                      'relative flex min-w-0 flex-col justify-center py-6',
+                      i === 0 ? 'pr-4' : 'pl-5 pr-4',
+                    )}
+                  >
+                    {i > 0 && (
+                      <span
+                        className="pointer-events-none absolute left-0 top-1/2 w-px -translate-y-1/2"
+                        style={{
+                          height: 48,
+                          background: 'rgba(231, 228, 221, 1)',
+                        }}
+                        aria-hidden
+                      />
+                    )}
+                    <MetaField label={label} value={value} />
+                  </div>
+                ))}
+              </div>
+
+              <div className="sm:hidden">
+                <div className="grid grid-cols-2 py-5">
+                  <div className="relative min-w-0 pr-4">
+                    <MetaField label={META[0][0]} value={META[0][1]} />
+                  </div>
+                  <div className="relative min-w-0 pl-4">
                     <span
                       className="pointer-events-none absolute left-0 top-1/2 w-px -translate-y-1/2"
                       style={{
-                        height: 48,
+                        height: 40,
                         background: 'rgba(231, 228, 221, 1)',
                       }}
                       aria-hidden
                     />
-                  )}
-                  <MetaField label={label} value={value} />
+                    <MetaField label={META[1][0]} value={META[1][1]} />
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            <div className="sm:hidden">
-              <div className="grid grid-cols-2 py-5">
-                <div className="relative min-w-0 pr-4">
-                  <MetaField label={META[0][0]} value={META[0][1]} />
+                <div className="pb-5">
+                  <MetaField label={META[2][0]} value={META[2][1]} />
                 </div>
-                <div className="relative min-w-0 pl-4">
-                  <span
-                    className="pointer-events-none absolute left-0 top-1/2 w-px -translate-y-1/2"
-                    style={{
-                      height: 40,
-                      background: 'rgba(231, 228, 221, 1)',
-                    }}
-                    aria-hidden
-                  />
-                  <MetaField label={META[1][0]} value={META[1][1]} />
-                </div>
-              </div>
-              <div className="pb-5">
-                <MetaField label={META[2][0]} value={META[2][1]} />
               </div>
             </div>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-4 px-4 sm:px-6">
             <p
               className="mb-3 text-[14px] font-normal leading-5"
               style={{ color: 'rgba(69, 85, 108, 1)' }}

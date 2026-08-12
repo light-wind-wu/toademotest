@@ -909,14 +909,14 @@ function TasksCard({
         <TaskTile
           title="Update your contact details"
           body="Add a current email address and mobile number."
-          cta="Update details"
+          cta="Update Details"
           onClick={onConfirm}
           compact={stacked}
         />
         <TaskTile
           title="Provide additional information"
           body="The review team has requested additional information."
-          cta="View request"
+          cta="View Request"
           onClick={onUpdate}
           compact={stacked}
         />

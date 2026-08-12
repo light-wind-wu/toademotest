@@ -876,17 +876,17 @@ function TasksCard({
         <TaskTile
           title="Update your contact details"
           body="Add a current email address and mobile number."
-          cta="Update details"
+          cta="Update Details"
           onClick={onConfirm}
-          image="/images/confirm-v1.png"
+          image={stacked ? '/images/contact-details-m.jpg' : '/images/contact-details.jpg'}
           compact={stacked}
         />
         <TaskTile
           title="Provide additional information"
           body="The review team has requested additional information."
-          cta="View request"
+          cta="View Request"
           onClick={onUpdate}
-          image="/images/canlander-v1.png"
+          image={stacked ? '/images/additional-information-m.jpg' : '/images/additional-information.jpg'}
           compact={stacked}
         />
       </div>
@@ -952,7 +952,9 @@ function TaskTile({
       <div
         className={cn(
           'pointer-events-none absolute',
-          compact ? 'bottom-4 right-4 size-20' : 'bottom-3 right-3 h-24 w-24',
+          compact
+            ? 'bottom-[5px] right-[14px] size-20'
+            : 'bottom-3 right-[14px] h-24 w-24',
         )}
       >
         <Image src={image} alt="" fill className="object-contain" sizes={compact ? '80px' : '96px'} />
