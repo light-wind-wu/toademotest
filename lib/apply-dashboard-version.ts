@@ -34,3 +34,18 @@ export function followUpDashboardVersion(
 ): 'v3' | 'v4' {
   return base === 'v1' ? 'v3' : 'v4';
 }
+
+/** Map V3/V4 follow-up back to the base layout that still has the 4th timeslot option. */
+export function baseDashboardVersion(
+  version: ApplyDashboardVersion,
+): ApplyDashboardBase {
+  if (version === 'v2' || version === 'v4') return 'v2';
+  return 'v1';
+}
+
+/** After the follow-up task ends, restore V1/V2 so the 4th radio option is available again. */
+export function restoreBaseApplyDashboardVersion() {
+  const current = loadApplyDashboardVersion();
+  const base = baseDashboardVersion(current);
+  if (current !== base) saveApplyDashboardVersion(base);
+}

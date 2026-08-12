@@ -22,7 +22,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Shell from "@/components/layout/shell";
-import OutOfScopeDialog from "@/components/apply/out-of-scope-dialog";
+import OutOfScopeTooltip from "@/components/apply/out-of-scope-tooltip";
 import { COHORT_DATA, WIDGET_DEFS, STATUS_COLOURS } from "@/lib/data";
 import DashboardCards from "@/components/ui-legacy/dashboard-cards";
 import { useRole } from "@/lib/role";
@@ -81,8 +81,6 @@ export default function DashboardPage() {
   const [newMenuOpen, setNewMenuOpen] = useState(false);
   const newMenuRef = useRef<HTMLDivElement>(null);
   const [liveFunnel, setLiveFunnel] = useState<LiveFunnel>(MOCK_FUNNEL);
-  const [exploreOpen, setExploreOpen] = useState(false);
-  const [scopeDialogOpen, setScopeDialogOpen] = useState(false);
 
   type LiveTask = {
     icon: LucideIcon;
@@ -125,10 +123,7 @@ export default function DashboardPage() {
     setLiveFunnel(MOCK_FUNNEL);
   }, [cohort]);
 
-  // Application Overview / Tasks 使用固定演示数据，点击统一弹出 OutOfScopeDialog。
-  function showScopeDialog() {
-    setScopeDialogOpen(true);
-  }
+  // Application Overview / Tasks 使用固定演示数据，点击无跳转，悬停显示 out-of-scope tooltip。
 
   // Tasks 使用固定演示数据，不走 seed/localStorage 的真实项目提交和请求。
   useEffect(() => {
@@ -207,18 +202,17 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <h1 className="text-[24px] font-bold text-fg">Dashboard</h1>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setExploreOpen(true)}
-            className="flex h-9 w-[200px] items-center justify-between rounded-md border border-border bg-surface px-3 py-1 text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent cursor-pointer"
-          >
-            <span className="flex-1 text-left text-body-sm">
-              {cohort === "all" ? "All Intern categories" : cohort}
-            </span>
-            <ChevronDown className="h-4 w-4 text-fg-muted" />
-          </button>
-          <OutOfScopeDialog open={exploreOpen} onOpenChange={setExploreOpen} />
-          <OutOfScopeDialog open={scopeDialogOpen} onOpenChange={setScopeDialogOpen} />
+          <OutOfScopeTooltip>
+            <button
+              type="button"
+              className="flex h-9 w-[200px] items-center justify-between rounded-md border border-border bg-surface px-3 py-1 text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent cursor-pointer"
+            >
+              <span className="flex-1 text-left text-body-sm">
+                {cohort === "all" ? "All Intern categories" : cohort}
+              </span>
+              <ChevronDown className="h-4 w-4 text-fg-muted" />
+            </button>
+          </OutOfScopeTooltip>
 
           {(role === "io-admin" || role === "io") && (
             <div className="relative" ref={newMenuRef}>
@@ -315,24 +309,25 @@ export default function DashboardPage() {
                   </div>
                   <div className="space-y-3">
                     {ROWS.map((r) => (
-                      <button
-                        key={r.label}
-                        onClick={showScopeDialog}
-                        className="w-full flex items-center gap-4 group text-left"
-                      >
-                        <span className="text-[13px] text-[rgba(69,85,108,1)] w-36 shrink-0">
-                          {r.label}
-                        </span>
-                        <div className="flex-1 bg-[#F4F2EC] rounded-full h-2.5 overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-accent transition-all duration-500"
-                            style={{ width: `${Math.max((r.val / barMax) * 100, r.val > 0 ? 3 : 0)}%` }}
-                          />
-                        </div>
-                        <span className="text-[13px] font-semibold text-[rgba(69,85,108,1)] w-6 text-right shrink-0">
-                          {r.val}
-                        </span>
-                      </button>
+                      <OutOfScopeTooltip key={r.label}>
+                        <button
+                          type="button"
+                          className="w-full flex items-center gap-4 group text-left cursor-pointer"
+                        >
+                          <span className="text-[13px] text-[rgba(69,85,108,1)] w-36 shrink-0">
+                            {r.label}
+                          </span>
+                          <div className="flex-1 bg-[#F4F2EC] rounded-full h-2.5 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-accent transition-all duration-500"
+                              style={{ width: `${Math.max((r.val / barMax) * 100, r.val > 0 ? 3 : 0)}%` }}
+                            />
+                          </div>
+                          <span className="text-[13px] font-semibold text-[rgba(69,85,108,1)] w-6 text-right shrink-0">
+                            {r.val}
+                          </span>
+                        </button>
+                      </OutOfScopeTooltip>
                     ))}
                   </div>
                 </div>
@@ -364,31 +359,31 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-3">
               {liveTasks.map((t, i) => (
-                <a
-                  key={i}
-                  href={t.href}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    showScopeDialog();
-                  }}
-                  className="flex items-center gap-4 p-4 rounded-xl bg-surface border border-border cursor-pointer transition-colors no-underline hover:border-accent/30"
-                >
-                  <t.icon size={20} className={`${t.color} shrink-0`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-body-md font-semibold text-fg truncate">
-                      {t.label}
-                    </p>
-                    <p className="text-body-sm text-fg-muted mt-0.5">{t.sub}</p>
-                  </div>
-                  <span
-                    className={cn(
-                      "text-[12px] font-medium px-3 py-1 rounded-full shrink-0",
-                      t.tagCls,
-                    )}
+                <OutOfScopeTooltip key={i}>
+                  <a
+                    href={t.href}
+                    onClick={(e) => {
+                      e.preventDefault();
+                    }}
+                    className="flex items-center gap-4 p-4 rounded-xl bg-surface border border-border cursor-pointer transition-colors no-underline hover:border-accent/30"
                   >
-                    {t.tag}
-                  </span>
-                </a>
+                    <t.icon size={20} className={`${t.color} shrink-0`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-body-md font-semibold text-fg truncate">
+                        {t.label}
+                      </p>
+                      <p className="text-body-sm text-fg-muted mt-0.5">{t.sub}</p>
+                    </div>
+                    <span
+                      className={cn(
+                        "text-[12px] font-medium px-3 py-1 rounded-full shrink-0",
+                        t.tagCls,
+                      )}
+                    >
+                      {t.tag}
+                    </span>
+                  </a>
+                </OutOfScopeTooltip>
               ))}
             </div>
           )}

@@ -12,7 +12,7 @@ import { loadUtApplicantVariant } from '@/lib/ut-track';
 import { cn } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import InterviewTimeslotSheet from '@/components/apply/interview-timeslot-sheet';
-import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
+import OutOfScopeTooltip from '@/components/apply/out-of-scope-tooltip';
 import HeroRadarOverlay from '@/components/apply/hero-radar-overlay';
 
 const STEPS: {
@@ -57,7 +57,6 @@ export default function ApplyDashboardV3() {
   const [quizTaken, setQuizTaken] = useState(false);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
   const [timeslotOpen, setTimeslotOpen] = useState(false);
-  const [outOfScopeOpen, setOutOfScopeOpen] = useState(false);
   const [programmeTitle, setProgrammeTitle] = useState('Undergraduate Internship 2027');
 
   useEffect(() => {
@@ -251,14 +250,16 @@ export default function ApplyDashboardV3() {
                     >
                       Choose a Timeslot
                     </button>
+                    <OutOfScopeTooltip>
                     <button
                       type="button"
-                      onClick={() => setOutOfScopeOpen(true)}
+                      
                       className="h-9 min-w-0 flex-1 cursor-pointer rounded-md border border-border bg-bg px-3 text-[14px] text-fg lg:flex-none lg:px-4"
                       style={{ height: 36 }}
                     >
                       View Application
                     </button>
+                    </OutOfScopeTooltip>
                   </div>
                 </div>
               </div>
@@ -384,9 +385,7 @@ export default function ApplyDashboardV3() {
                       <TasksCard
                         className="relative mt-4"
                         stacked
-                        onConfirm={() => setOutOfScopeOpen(true)}
-                        onUpdate={() => setOutOfScopeOpen(true)}
-                      />
+                        />
                     </div>
 
                     {/* Desktop: 143 | 40 | 1fr */}
@@ -447,10 +446,7 @@ export default function ApplyDashboardV3() {
 
                       <div className="min-w-0 w-full space-y-4">
                         <InterviewInvitationCard />
-                        <TasksCard
-                          onConfirm={() => setOutOfScopeOpen(true)}
-                          onUpdate={() => setOutOfScopeOpen(true)}
-                        />
+                        <TasksCard />
                       </div>
                     </div>
                   </div>
@@ -473,13 +469,15 @@ export default function ApplyDashboardV3() {
                         Updates from your journey
                       </h3>
                     </div>
+                    <OutOfScopeTooltip>
                     <button
                       type="button"
-                      onClick={() => setOutOfScopeOpen(true)}
+                      
                       className="mt-4 self-start cursor-pointer text-[14px] font-medium leading-5 text-[rgba(26,101,248,1)] lg:mt-0"
                     >
                       Mark all read
                     </button>
+                    </OutOfScopeTooltip>
                   </div>
 
                   <div className="relative z-[1] mt-6 flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,676px)_270px] lg:gap-4">
@@ -608,9 +606,10 @@ export default function ApplyDashboardV3() {
                   </p>
                 </div>
 
-                <button
+                <OutOfScopeTooltip>
+                    <button
                   type="button"
-                  onClick={() => setOutOfScopeOpen(true)}
+                  
                   className="absolute bottom-9 left-6 z-[1] h-8 cursor-pointer rounded-md px-3 text-[12px] font-medium leading-4 lg:bottom-6"
                   style={{
                     background: 'rgba(26, 101, 248, 1)',
@@ -622,6 +621,7 @@ export default function ApplyDashboardV3() {
                 >
                   Play Quiz Again
                 </button>
+                    </OutOfScopeTooltip>
               </aside>
             </div>
           </div>
@@ -634,7 +634,6 @@ export default function ApplyDashboardV3() {
         allowCustomRequest={false}
         sourceVersion="v1"
       />
-      <OutOfScopeDialog open={outOfScopeOpen} onOpenChange={setOutOfScopeOpen} />
     </Shell>
   );
 }
@@ -823,13 +822,9 @@ function InterviewInvitationCard({
 }
 
 function TasksCard({
-  onConfirm,
-  onUpdate,
   stacked = false,
   className,
 }: {
-  onConfirm: () => void;
-  onUpdate: () => void;
   stacked?: boolean;
   className?: string;
 }) {
@@ -876,7 +871,6 @@ function TasksCard({
           title="Update your contact details"
           body="Add a current email address and mobile number."
           cta="Update Details"
-          onClick={onConfirm}
           image={stacked ? '/images/contact-details-m.jpg' : '/images/contact-details.jpg'}
           compact={stacked}
         />
@@ -884,7 +878,6 @@ function TasksCard({
           title="Provide additional information"
           body="The review team has requested additional information."
           cta="View Request"
-          onClick={onUpdate}
           image={stacked ? '/images/additional-information-m.jpg' : '/images/additional-information.jpg'}
           compact={stacked}
         />
@@ -897,14 +890,12 @@ function TaskTile({
   title,
   body,
   cta,
-  onClick,
   image,
   compact = false,
 }: {
   title: string;
   body: string;
   cta: string;
-  onClick: () => void;
   image: string;
   compact?: boolean;
 }) {
@@ -937,17 +928,18 @@ function TaskTile({
       >
         {body}
       </p>
-      <button
-        type="button"
-        onClick={onClick}
-        className={cn(
-          'absolute z-[1] h-8 cursor-pointer rounded-md px-3 text-[13px] text-white',
-          compact ? 'bottom-4 left-4' : 'bottom-6 left-6',
-        )}
-        style={{ background: 'rgba(26, 101, 248, 1)', height: 32 }}
-      >
-        {cta}
-      </button>
+      <OutOfScopeTooltip>
+        <button
+          type="button"
+          className={cn(
+            'absolute z-[1] h-8 cursor-pointer rounded-md px-3 text-[13px] text-white',
+            compact ? 'bottom-4 left-4' : 'bottom-6 left-6',
+          )}
+          style={{ background: 'rgba(26, 101, 248, 1)', height: 32 }}
+        >
+          {cta}
+        </button>
+      </OutOfScopeTooltip>
       <div
         className={cn(
           'pointer-events-none absolute',

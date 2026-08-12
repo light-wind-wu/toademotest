@@ -11,6 +11,7 @@ import {
 } from '@/components/ui-legacy/dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { restoreBaseApplyDashboardVersion } from '@/lib/apply-dashboard-version';
 
 const CARD_SHADOW =
   '0px 4px 6px -4px rgba(0, 0, 0, 0.05), 0px 10px 15px -3px rgba(0, 0, 0, 0.1)';
@@ -38,13 +39,25 @@ export default function TaskCompletedDialog({
 }) {
   const router = useRouter();
 
+  function restoreAndClose() {
+    restoreBaseApplyDashboardVersion();
+    onOpenChange(false);
+  }
+
   function goTasks() {
+    restoreBaseApplyDashboardVersion();
     onOpenChange(false);
     router.push('/start-tasks');
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) restoreBaseApplyDashboardVersion();
+        onOpenChange(next);
+      }}
+    >
       <DialogContent
         showCloseButton={false}
         className={cn(
@@ -62,7 +75,7 @@ export default function TaskCompletedDialog({
           >
             <button
               type="button"
-              onClick={() => onOpenChange(false)}
+              onClick={restoreAndClose}
               className={cn(
                 'absolute right-4 top-4 z-30 inline-flex size-6 cursor-pointer items-center justify-center rounded-sm text-fg-muted opacity-70 transition-opacity',
                 'hover:opacity-100 focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-accent',

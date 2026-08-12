@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 
 import Image from 'next/image';
 import { signOut } from '@/lib/session';
-import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
+import OutOfScopeTooltip from '@/components/apply/out-of-scope-tooltip';
 
 import {
   loadApplyDashboardVersion,
@@ -31,8 +31,6 @@ export default function Topbar({
   const onStartTasks = pathname === '/start-tasks';
   const onCatlog = pathname === '/catlog';
   const [open,      setOpen]      = useState(false);
-  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
-  const [notifDialogOpen, setNotifDialogOpen] = useState(false);
   const [dashVersion, setDashVersion] = useState<ApplyDashboardVersion>('v1');
   const ref       = useRef<HTMLDivElement>(null);
   const isApplicant = role === 'new-applicant' || role === 'existing-scholar-applicant';
@@ -47,20 +45,6 @@ export default function Topbar({
     }
     document.addEventListener('click', onClick);
     return () => document.removeEventListener('click', onClick);
-  }, []);
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        if (document.querySelector('[aria-modal="true"]')) return;
-        const target = e.target as HTMLElement;
-        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
-        e.preventDefault();
-        setSearchDialogOpen(true);
-      }
-    }
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
   }, []);
 
   return (
@@ -95,31 +79,31 @@ export default function Topbar({
         {!hideProfile && (
         <>
         {/* Cross-IA search — desktop only. Disabled for usability test. */}
-        <div className="relative hidden md:flex items-center group">
-          <Search size={18} className="absolute left-3 text-[rgba(244,242,236,0.72)] transition-colors pointer-events-none" />
-          <button
-            type="button"
-            onClick={() => setSearchDialogOpen(true)}
-            className="w-64 pl-9 pr-10 py-2 bg-topbar-fg/10 border border-topbar-fg/10 rounded-lg text-left text-body-sm text-[rgba(244,242,236,0.72)] focus:outline-none focus:ring-2 focus:ring-topbar-fg/20 focus:border-topbar-fg/20 transition-all cursor-pointer"
-          >
-            Search across TOA…
-          </button>
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-            <span className="text-[12px] font-semibold text-[rgba(244,242,236,0.72)] border border-topbar-fg/20 rounded px-1.5 py-0.5">/</span>
+        <OutOfScopeTooltip>
+          <div className="relative hidden md:flex items-center group">
+            <Search size={18} className="absolute left-3 text-[rgba(244,242,236,0.72)] transition-colors pointer-events-none" />
+            <button
+              type="button"
+              className="w-64 pl-9 pr-10 py-2 bg-topbar-fg/10 border border-topbar-fg/10 rounded-lg text-left text-body-sm text-[rgba(244,242,236,0.72)] focus:outline-none focus:ring-2 focus:ring-topbar-fg/20 focus:border-topbar-fg/20 transition-all cursor-pointer"
+            >
+              Search across TOA…
+            </button>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+              <span className="text-[12px] font-semibold text-[rgba(244,242,236,0.72)] border border-topbar-fg/20 rounded px-1.5 py-0.5">/</span>
+            </div>
           </div>
-        </div>
-        <OutOfScopeDialog open={searchDialogOpen} onOpenChange={setSearchDialogOpen} />
+        </OutOfScopeTooltip>
 
         {/* Notifications — disabled for usability test. */}
-        <button
-          type="button"
-          onClick={() => setNotifDialogOpen(true)}
-          aria-label="Notifications"
-          className="relative p-2 text-topbar-fg-muted hover:bg-topbar-fg/10 rounded-full transition-all cursor-pointer"
-        >
-          <Bell size={20} />
-        </button>
-        <OutOfScopeDialog open={notifDialogOpen} onOpenChange={setNotifDialogOpen} />
+        <OutOfScopeTooltip>
+          <button
+            type="button"
+            aria-label="Notifications"
+            className="relative p-2 text-topbar-fg-muted hover:bg-topbar-fg/10 rounded-full transition-all cursor-pointer"
+          >
+            <Bell size={20} />
+          </button>
+        </OutOfScopeTooltip>
 
         {/* Profile */}
         <div className="relative border-l border-topbar-fg/10 pl-4" ref={ref}>

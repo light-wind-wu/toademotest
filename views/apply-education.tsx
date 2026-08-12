@@ -33,6 +33,22 @@ function isFromReview(): boolean {
   return new URLSearchParams(window.location.search).get('from') === 'review';
 }
 
+/** Required education fields must be non-empty before Next / Save. */
+function isEducationFilled(
+  education: EducationDetails,
+  isPolyPath: boolean,
+): boolean {
+  const required = [
+    education.institution,
+    education.course,
+    education.yearOfStudy,
+    education.gpa,
+  ];
+  if (!required.every((v) => String(v ?? '').trim().length > 0)) return false;
+  if (isPolyPath) return true;
+  return String(education.expectedGraduation ?? '').trim().length > 0;
+}
+
 export default function ApplyEducationPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
@@ -60,8 +76,15 @@ export default function ApplyEducationPage() {
     }
     /* Keep form values aligned with catalog applicant path. */
     const synced = syncApplyDraftToVariant(loadApplyDraft(), variant);
-    saveApplyDraft(synced);
-    setDraft(synced);
+    /* No transcript → education fields stay empty (cannot Next until upload or filled manual entry). */
+    const normalized = synced.transcriptName
+      ? synced
+      : {
+          ...synced,
+          education: emptyEducationDetails(variant),
+        };
+    saveApplyDraft(normalized);
+    setDraft(normalized);
     setReady(true);
   }, [router]);
 
@@ -99,6 +122,8 @@ export default function ApplyEducationPage() {
 
   const hasTranscript = Boolean(draft.transcriptName);
   const showEducationDetails = hasTranscript || manualEntry;
+  const educationReady = isEducationFilled(draft.education, isPolyPath);
+  const canContinue = showEducationDetails && educationReady;
 
   function handleFileUpload(kind: 'transcript' | 'cv', file?: File | null) {
     if (!file) return;
@@ -142,10 +167,10 @@ export default function ApplyEducationPage() {
         router.push(fromReview ? '/apply/review' : '/apply/personal-details')
       }
       onContinue={() => {
-        if (!hasTranscript && !manualEntry) return;
+        if (!canContinue) return;
         router.push(fromReview ? '/apply/review' : '/apply/availability');
       }}
-      continueDisabled={!hasTranscript && !manualEntry}
+      continueDisabled={!canContinue}
       continueLabel={fromReview ? 'Save' : 'Next'}
     >
       <header style={{ marginBottom: 24 }}>

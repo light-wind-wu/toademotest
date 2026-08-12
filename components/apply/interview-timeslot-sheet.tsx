@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui-legacy/select';
 import TaskCompletedDialog from '@/components/apply/task-completed-dialog';
+import AvailabilitySubmittedDialog from '@/components/apply/availability-submitted-dialog';
 import { cn } from '@/lib/utils';
 import type { ApplyDashboardBase } from '@/lib/apply-dashboard-version';
 
@@ -92,6 +93,7 @@ export default function InterviewTimeslotSheet({
   const [preferredDate, setPreferredDate] = useState('');
   const [availableTime, setAvailableTime] = useState('');
   const [taskCompletedOpen, setTaskCompletedOpen] = useState(false);
+  const [availabilityOpen, setAvailabilityOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
   const isCustom = allowCustomRequest && selectedId === CUSTOM_SLOT_ID;
@@ -99,20 +101,31 @@ export default function InterviewTimeslotSheet({
     ? Boolean(preferredDate && availableTime)
     : Boolean(selectedId);
 
+  function resetCustomFields() {
+    setSelectedId('2');
+    setPreferredDate('');
+    setAvailableTime('');
+  }
+
+  function goInterviewProposed() {
+    try {
+      sessionStorage.setItem(INTERVIEW_PROPOSED_FROM_KEY, sourceVersion);
+    } catch {
+      /* ignore */
+    }
+    router.push('/apply/interview-proposed');
+  }
+
   function handleConfirm() {
     if (confirming) return;
 
     if (isCustom) {
-      try {
-        sessionStorage.setItem(INTERVIEW_PROPOSED_FROM_KEY, sourceVersion);
-      } catch {
-        /* ignore */
-      }
       setConfirming(true);
       window.setTimeout(() => {
         onOpenChange(false);
         setConfirming(false);
-        router.push('/apply/interview-proposed');
+        resetCustomFields();
+        setAvailabilityOpen(true);
       }, 900);
       return;
     }
@@ -390,6 +403,11 @@ export default function InterviewTimeslotSheet({
         </SheetContent>
       </Sheet>
 
+      <AvailabilitySubmittedDialog
+        open={availabilityOpen}
+        onOpenChange={setAvailabilityOpen}
+        onContinue={goInterviewProposed}
+      />
       <TaskCompletedDialog
         open={taskCompletedOpen}
         onOpenChange={setTaskCompletedOpen}

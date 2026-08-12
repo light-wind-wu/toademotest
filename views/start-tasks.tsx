@@ -19,8 +19,9 @@ import {
   type UtTrack,
 } from '@/lib/ut-track';
 import { getAdPncTask2RespondHref, resetUtScenario } from '@/lib/ut-scenarios';
+import { restoreBaseApplyDashboardVersion } from '@/lib/apply-dashboard-version';
 import Topbar from '@/components/layout/topbar';
-import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
+import OutOfScopeTooltip from '@/components/apply/out-of-scope-tooltip';
 import { cn } from '@/lib/utils';
 import { getMyinfoProfile, saveApplicantProfile } from '@/lib/myinfo';
 
@@ -47,7 +48,7 @@ type TaskDef = {
   /** Optional live resolve (e.g. token from submissions list data). */
   resolveHref?: () => string;
   /**
-   * When false, Start Task stays clickable but opens the out-of-scope dialog
+   * When false, Start Task stays clickable but shows an out-of-scope tooltip
    * instead of navigating (feature not in this UT).
    */
   enabled?: boolean;
@@ -140,12 +141,13 @@ export default function StartTasks() {
   const [path, setPath] = useState<UtCatalogPath>('io-admin');
   const [scale, setScale] = useState(1);
   const [isDesktop, setIsDesktop] = useState(false);
-  const [outOfScopeOpen, setOutOfScopeOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     setTrack(loadUtTrack());
     setPath(loadUtCatalogPath());
+    /* Returning to the task list restores V1/V2 so the 4th timeslot option is visible again. */
+    restoreBaseApplyDashboardVersion();
   }, []);
 
   useEffect(() => {
@@ -181,10 +183,7 @@ export default function StartTasks() {
   const taskCols = tasks.length === 1 ? 'grid-cols-1' : 'grid-cols-2';
 
   function startTask(task: TaskDef) {
-    if (task.enabled === false) {
-      setOutOfScopeOpen(true);
-      return;
-    }
+    if (task.enabled === false) return;
     const applicantVariant =
       track === 'applicant' || path === 'applicant' || path === 'probing'
         ? loadUtApplicantVariant()
@@ -291,6 +290,7 @@ export default function StartTasks() {
                       label={`Task ${task.id}`}
                       title={task.title}
                       cta={`Start Task ${task.id}`}
+                      outOfScope={task.enabled === false}
                       onClick={() => startTask(task)}
                     />
                   ))}
@@ -300,8 +300,6 @@ export default function StartTasks() {
           </div>
         </div>
       )}
-
-      <OutOfScopeDialog open={outOfScopeOpen} onOpenChange={setOutOfScopeOpen} />
     </div>
   );
 }
@@ -326,6 +324,7 @@ function MobileBriefing({
               label={`Task ${task.id}`}
               title={task.title}
               cta={`Start Task ${task.id}`}
+              outOfScope={task.enabled === false}
               onClick={() => onStart(task)}
               compact
             />
@@ -341,14 +340,37 @@ function TaskCard({
   title,
   cta,
   onClick,
+  outOfScope = false,
   compact = false,
 }: {
   label: string;
   title: string;
   cta: string;
   onClick: () => void;
+  outOfScope?: boolean;
   compact?: boolean;
 }) {
+  const button = (
+    <button
+      type="button"
+      onClick={outOfScope ? undefined : onClick}
+      className={cn(
+        'mt-4 inline-flex cursor-pointer items-center justify-center gap-1 rounded-md text-white transition-opacity hover:opacity-90',
+        compact ? 'h-9 w-full px-3 text-[13px]' : 'w-fit px-3 text-[12px]',
+      )}
+      style={{
+        height: compact ? 36 : 30,
+        padding: '0 12px',
+        background: ACCENT,
+        fontWeight: 600,
+        lineHeight: '16px',
+      }}
+    >
+      {cta}
+      <ArrowRight className="size-3.5 shrink-0" strokeWidth={1.5} />
+    </button>
+  );
+
   return (
     <div
       className="flex flex-col"
@@ -381,24 +403,7 @@ function TaskCard({
       >
         {title}
       </h2>
-      <button
-        type="button"
-        onClick={onClick}
-        className={cn(
-          'mt-4 inline-flex cursor-pointer items-center justify-center gap-1 rounded-md text-white transition-opacity hover:opacity-90',
-          compact ? 'h-9 w-full px-3 text-[13px]' : 'w-fit px-3 text-[12px]',
-        )}
-        style={{
-          height: compact ? 36 : 30,
-          padding: '0 12px',
-          background: ACCENT,
-          fontWeight: 600,
-          lineHeight: '16px',
-        }}
-      >
-        {cta}
-        <ArrowRight className="size-3.5 shrink-0" strokeWidth={1.5} />
-      </button>
+      {outOfScope ? <OutOfScopeTooltip>{button}</OutOfScopeTooltip> : button}
     </div>
   );
 }

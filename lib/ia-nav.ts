@@ -39,7 +39,7 @@ export interface IaSection {
   match?:  (route: string) => boolean; // active-state test (defaults to startsWith)
   groups?: IaGroup[];
   badge?:  BadgeKey;                    // section-level action badge
-  /** Not in this UT / not built — click opens the shared out-of-scope dialog. */
+  /** Not in this UT / not built — route lands on the shared empty placeholder. */
   soon?:   boolean;
 }
 

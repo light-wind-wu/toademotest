@@ -9,7 +9,7 @@ import Button from '@/components/ui-legacy/button';
 import Combobox from '@/components/ui-legacy/combobox';
 import EmptyState from '@/components/ui-legacy/empty-state';
 import RequestContextTable from '@/components/ui-legacy/request-context-table';
-import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
+import OutOfScopeTooltip from '@/components/apply/out-of-scope-tooltip';
 import { SortHeader } from '@/components/ui-legacy/sort-header';
 import AiCheckBlock from '@/components/ui-legacy/ai-check-block';
 import { SuccessCelebration } from '@/components/ui-legacy/success-celebration';
@@ -915,7 +915,6 @@ export default function AdPncRespondPage() {
   const [batches, setBatches] = useState<ProjectSubmissionBatch[]>([]);
   const [responseDrafts, setResponseDrafts] = useState<ProjectResponseDraft[]>([]);
   const [createProjectPickerOpen, setCreateProjectPickerOpen] = useState(false);
-  const [createProjectOpen, setCreateProjectOpen] = useState(false);
   const [editingDraftProjectId, setEditingDraftProjectId] = useState<string | null>(null);
   const [editingSubmittedProject, setEditingSubmittedProject] = useState<{ batchId: string; projectId: string } | null>(null);
   const [uploadReview, setUploadReview] = useState<UploadReview | null>(null);
@@ -1457,10 +1456,12 @@ export default function AdPncRespondPage() {
                     accept=".xlsx,.xls"
                     onChange={event => handleUploadFile(event.target.files?.[0])}
                   />
-                  <Button onClick={() => setCreateProjectOpen(true)}>
-                    <Plus size={15} />
-                    Create a New Project
-                  </Button>
+                  <OutOfScopeTooltip>
+                    <Button type="button">
+                      <Plus size={15} />
+                      Create a New Project
+                    </Button>
+                  </OutOfScopeTooltip>
                 </div>
               )}
             </div>
@@ -1817,7 +1818,6 @@ export default function AdPncRespondPage() {
           />
         </DialogContent>
       </Dialog>
-      <OutOfScopeDialog open={createProjectOpen} onOpenChange={setCreateProjectOpen} />
       <Toast message={toast} />
     </Shell>
   );

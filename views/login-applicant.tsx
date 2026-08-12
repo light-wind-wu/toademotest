@@ -3,7 +3,7 @@
 /* Applicant sign-in — match C-end comps: Singpass + decorative email/password
    (email login is visual only). Singpass → Myinfo → welcome (apply Task 1),
    or /apply/dashboard (Task 2 interview / probing A·B). */
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type MouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRole } from '@/lib/role';
 import {
@@ -20,7 +20,7 @@ import {
 } from '@/lib/ut-track';
 import LoginShell, { LoginBrand, GovAuthButton } from '@/components/gov/login-shell';
 import MyinfoFlow from '@/components/gov/myinfo-flow';
-import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
+import OutOfScopeTooltip from '@/components/apply/out-of-scope-tooltip';
 import { Input } from '@/components/ui-legacy/input';
 
 const BODY = 'rgba(69, 85, 108, 1)';
@@ -34,7 +34,6 @@ export default function LoginApplicant() {
   const router = useRouter();
   const { setRole } = useRole();
   const [myinfoOpen, setMyinfoOpen] = useState(false);
-  const [outOfScopeOpen, setOutOfScopeOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -78,9 +77,8 @@ export default function LoginApplicant() {
     router.push('/apply/welcome');
   }
 
-  function handleCreateAccount(e: React.MouseEvent) {
+  function handleCreateAccount(e: MouseEvent) {
     e.preventDefault();
-    setOutOfScopeOpen(true);
   }
 
   return (
@@ -148,26 +146,29 @@ export default function LoginApplicant() {
               className="h-11 rounded-lg border-border bg-white"
             />
           </div>
-          <button
-            type="button"
-            className="flex h-11 w-full cursor-pointer items-center justify-center rounded-lg text-[14px] font-semibold text-white"
-            style={{ background: CTA_BG }}
-            onClick={() => setOutOfScopeOpen(true)}
-          >
-            Login
-          </button>
+          <OutOfScopeTooltip>
+            <button
+              type="button"
+              className="flex h-11 w-full cursor-pointer items-center justify-center rounded-lg text-[14px] font-semibold text-white"
+              style={{ background: CTA_BG }}
+            >
+              Login
+            </button>
+          </OutOfScopeTooltip>
         </div>
 
         <p className="mt-5 text-left text-[14px]" style={{ color: BODY }}>
           Don&apos;t have an account?{' '}
-          <a
-            href="#create"
-            onClick={handleCreateAccount}
-            className="cursor-pointer font-semibold hover:underline"
-            style={{ color: CTA_BG }}
-          >
-            Create an account
-          </a>
+          <OutOfScopeTooltip>
+            <a
+              href="#create"
+              onClick={handleCreateAccount}
+              className="cursor-pointer font-semibold hover:underline"
+              style={{ color: CTA_BG }}
+            >
+              Create an account
+            </a>
+          </OutOfScopeTooltip>
         </p>
       </LoginShell>
 
@@ -177,7 +178,6 @@ export default function LoginApplicant() {
         onCancel={() => setMyinfoOpen(false)}
         onContinue={handleMyinfoContinue}
       />
-      <OutOfScopeDialog open={outOfScopeOpen} onOpenChange={setOutOfScopeOpen} />
     </>
   );
 }

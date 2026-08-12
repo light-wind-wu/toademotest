@@ -12,7 +12,7 @@ import { loadUtApplicantVariant } from '@/lib/ut-track';
 import { cn } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import InterviewTimeslotSheet from '@/components/apply/interview-timeslot-sheet';
-import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
+import OutOfScopeTooltip from '@/components/apply/out-of-scope-tooltip';
 import { HeroV2Bg, HeroV2Fx } from '@/components/apply/hero-v2-art';
 
 const STEPS: {
@@ -57,7 +57,6 @@ export default function ApplyDashboardV2() {
   const [quizTaken, setQuizTaken] = useState(false);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
   const [timeslotOpen, setTimeslotOpen] = useState(false);
-  const [outOfScopeOpen, setOutOfScopeOpen] = useState(false);
   const [programmeTitle, setProgrammeTitle] = useState('Undergraduate Internship 2027');
 
   useEffect(() => {
@@ -306,14 +305,16 @@ export default function ApplyDashboardV2() {
                   >
                     Choose a Timeslot
                   </button>
-                  <button
+                  <OutOfScopeTooltip>
+                    <button
                     type="button"
-                    onClick={() => setOutOfScopeOpen(true)}
+                    
                     className="h-9 min-w-0 flex-1 cursor-pointer rounded-md border border-border bg-white px-4 text-[14px] text-fg sm:flex-none"
                     style={{ height: 36 }}
                   >
                     View Application
                   </button>
+                    </OutOfScopeTooltip>
                 </div>
               </div>
             </section>
@@ -433,9 +434,7 @@ export default function ApplyDashboardV2() {
                       <TasksCard
                         className="relative mt-4"
                         stacked
-                        onConfirm={() => setOutOfScopeOpen(true)}
-                        onUpdate={() => setOutOfScopeOpen(true)}
-                      />
+                        />
                     </div>
 
                     {/* Desktop: 143 | 40 | 1fr */}
@@ -496,10 +495,7 @@ export default function ApplyDashboardV2() {
 
                       <div className="min-w-0 w-full space-y-4">
                         <InterviewInvitationCard />
-                        <TasksCard
-                          onConfirm={() => setOutOfScopeOpen(true)}
-                          onUpdate={() => setOutOfScopeOpen(true)}
-                        />
+                        <TasksCard />
                       </div>
                     </div>
                   </div>
@@ -522,13 +518,15 @@ export default function ApplyDashboardV2() {
                         Updates from your journey
                       </h3>
                     </div>
+                    <OutOfScopeTooltip>
                     <button
                       type="button"
-                      onClick={() => setOutOfScopeOpen(true)}
+                      
                       className="mt-4 self-start cursor-pointer text-[14px] font-medium leading-5 text-[rgba(26,101,248,1)] lg:mt-0"
                     >
                       Mark all read
                     </button>
+                    </OutOfScopeTooltip>
                   </div>
 
                   <ol
@@ -644,9 +642,10 @@ export default function ApplyDashboardV2() {
                   </p>
                 </div>
 
-                <button
+                <OutOfScopeTooltip>
+                    <button
                   type="button"
-                  onClick={() => setOutOfScopeOpen(true)}
+                  
                   className="absolute bottom-9 left-6 z-[1] h-8 cursor-pointer rounded-md px-3 text-[12px] font-medium leading-4 lg:bottom-6"
                   style={{
                     background: 'rgba(26, 101, 248, 1)',
@@ -658,6 +657,7 @@ export default function ApplyDashboardV2() {
                 >
                   Play Quiz Again
                 </button>
+                    </OutOfScopeTooltip>
               </aside>
             </div>
           </div>
@@ -670,7 +670,6 @@ export default function ApplyDashboardV2() {
         allowCustomRequest
         sourceVersion="v2"
       />
-      <OutOfScopeDialog open={outOfScopeOpen} onOpenChange={setOutOfScopeOpen} />
     </Shell>
   );
 }
@@ -859,13 +858,9 @@ function InterviewInvitationCard({
 }
 
 function TasksCard({
-  onConfirm,
-  onUpdate,
   stacked = false,
   className,
 }: {
-  onConfirm: () => void;
-  onUpdate: () => void;
   stacked?: boolean;
   className?: string;
 }) {
@@ -912,14 +907,14 @@ function TasksCard({
           title="Update your contact details"
           body="Add a current email address and mobile number."
           cta="Update Details"
-          onClick={onConfirm}
+          image={stacked ? '/images/contact-details-m.jpg' : '/images/contact-details.jpg'}
           compact={stacked}
         />
         <TaskTile
           title="Provide additional information"
           body="The review team has requested additional information."
           cta="View Request"
-          onClick={onUpdate}
+          image={stacked ? '/images/additional-information-m.jpg' : '/images/additional-information.jpg'}
           compact={stacked}
         />
       </div>
@@ -931,28 +926,28 @@ function TaskTile({
   title,
   body,
   cta,
-  onClick,
+  image,
   compact = false,
 }: {
   title: string;
   body: string;
   cta: string;
-  onClick: () => void;
+  image: string;
   compact?: boolean;
 }) {
   return (
     <div
       className={cn(
         'relative overflow-hidden rounded-lg border border-border bg-surface',
-        compact ? 'min-h-[140px] p-4 pb-14' : 'h-[160px] px-6 pb-3 pt-7',
+        compact ? 'min-h-[160px] p-4 pb-14' : 'h-[190px] pt-7 pl-6 pr-3 pb-3',
       )}
     >
       <p
         className={cn(
           'w-full font-semibold',
           compact
-            ? 'text-[16px] font-semibold leading-[18px]'
-            : 'text-[13px] text-fg',
+            ? 'pr-6 text-[16px] font-semibold leading-[18px]'
+            : 'pr-24 text-[13px] text-fg',
         )}
         style={compact ? { color: 'rgba(15, 23, 43, 1)' } : undefined}
       >
@@ -962,24 +957,35 @@ function TaskTile({
         className={cn(
           'w-full',
           compact
-            ? 'mt-1.5 text-[14px] font-normal leading-5'
-            : 'mt-1 text-[12px] leading-snug text-fg-muted',
+            ? 'mt-1.5 pr-6 text-[14px] font-normal leading-5'
+            : 'mt-1 pr-24 text-[12px] leading-snug text-fg-muted',
         )}
         style={compact ? { color: 'rgba(69, 85, 108, 1)' } : undefined}
       >
         {body}
       </p>
-      <button
-        type="button"
-        onClick={onClick}
+      <OutOfScopeTooltip>
+        <button
+          type="button"
+          className={cn(
+            'absolute z-[1] h-8 cursor-pointer rounded-md px-3 text-[13px] text-white',
+            compact ? 'bottom-4 left-4' : 'bottom-6 left-6',
+          )}
+          style={{ background: 'rgba(26, 101, 248, 1)', height: 32 }}
+        >
+          {cta}
+        </button>
+      </OutOfScopeTooltip>
+      <div
         className={cn(
-          'absolute z-[1] h-8 cursor-pointer rounded-md px-3 text-[13px] text-white',
-          compact ? 'bottom-4 left-4' : 'bottom-6 left-6',
+          'pointer-events-none absolute',
+          compact
+            ? 'bottom-[5px] right-[14px] size-20'
+            : 'bottom-3 right-[14px] h-24 w-24',
         )}
-        style={{ background: 'rgba(26, 101, 248, 1)', height: 32 }}
       >
-        {cta}
-      </button>
+        <Image src={image} alt="" fill className="object-contain" sizes={compact ? '80px' : '96px'} />
+      </div>
     </div>
   );
 }

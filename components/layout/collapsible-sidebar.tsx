@@ -9,7 +9,6 @@ import { useMenuVisibility, isSectionVisible } from '@/lib/portal-config';
 import { getNav, isSectionActive, type IaSection, type BadgeKey } from '@/lib/ia-nav';
 import { useSidebarBadges } from './use-sidebar-badges';
 import { cn } from '@/lib/utils';
-import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
 import {
   Tooltip,
   TooltipContent,
@@ -40,7 +39,6 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
   const { safeNavigate } = useUnsavedChanges();
   const { badges, hasApplied, hasInternship } = useSidebarBadges(role, profile.email, activeRoute);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [outOfScopeOpen, setOutOfScopeOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const burgerRef = useRef<HTMLButtonElement>(null);
   const prevDrawerOpen = useRef(false);
@@ -84,11 +82,7 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
   };
 
   function goSection(s: IaSection) {
-    if (s.soon) {
-      setDrawerOpen(false);
-      setOutOfScopeOpen(true);
-      return;
-    }
+    /* soon menus still navigate to their route (shared empty placeholder). */
     safeNavigate(s.route);
   }
 
@@ -216,7 +210,8 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
                 </button>
               );
 
-              if (!collapsed) return <Fragment key={s.id}>{button}</Fragment>;
+              /* Collapsed (and soon items when expanded): tooltip shows menu name only. */
+              if (!collapsed && !s.soon) return <Fragment key={s.id}>{button}</Fragment>;
 
               return (
                 <Tooltip key={s.id}>
@@ -234,8 +229,6 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
           </TooltipProvider>
         </nav>
       </aside>
-
-      <OutOfScopeDialog open={outOfScopeOpen} onOpenChange={setOutOfScopeOpen} />
     </>
   );
 }

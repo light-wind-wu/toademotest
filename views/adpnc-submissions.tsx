@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { SuccessCelebration } from '@/components/ui-legacy/success-celebration';
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
-import OutOfScopeDialog from '@/components/apply/out-of-scope-dialog';
+import OutOfScopeTooltip from '@/components/apply/out-of-scope-tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Inbox, CheckCircle2, Calendar, ListFilter, Filter } from 'lucide-react';
 import { loadLiveProgrammeOptions, CONTACTS, STATUS_COLOURS } from '@/lib/data';
@@ -289,7 +289,6 @@ export default function AdPncSubmissionsPage() {
   const [tab, setTab] = useState<'open' | 'done'>('open');
   const [statusFilters, setStatusFilters] = useState<string[]>([]);
   const [submittedDialog, setSubmittedDialog] = useState(false);
-  const [closedSubmissionDialogOpen, setClosedSubmissionDialogOpen] = useState(false);
 
   useEffect(() => {
     // Surface a one-shot flash toast set by the upload/create flows before redirect.
@@ -423,10 +422,7 @@ export default function AdPncSubmissionsPage() {
                   progMap={progMap}
                   onUpload={() => upload(group)}
                   onViewProject={() => {
-                    if (isUtClosedRequestGroup(group)) {
-                      setClosedSubmissionDialogOpen(true);
-                      return;
-                    }
+                    if (isUtClosedRequestGroup(group)) return;
                     viewProject(group);
                   }}
                 />
@@ -451,10 +447,6 @@ export default function AdPncSubmissionsPage() {
           />
         </DialogContent>
       </Dialog>
-      <OutOfScopeDialog
-        open={closedSubmissionDialogOpen}
-        onOpenChange={setClosedSubmissionDialogOpen}
-      />
       <Toast message={toastMsg} />
     </Shell>
   );
@@ -586,13 +578,21 @@ function RequestCard({
 
         {/* Footer action */}
         <div className="mt-auto flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Button
-            size="sm"
-            disabled={closed && !isUtClosedFixture}
-            onClick={action.mode === 'upload' ? onUpload : onViewProject}
-          >
-            {action.label}
-          </Button>
+          {isUtClosedFixture ? (
+            <OutOfScopeTooltip>
+              <Button size="sm" type="button">
+                {action.label}
+              </Button>
+            </OutOfScopeTooltip>
+          ) : (
+            <Button
+              size="sm"
+              disabled={closed && !isUtClosedFixture}
+              onClick={action.mode === 'upload' ? onUpload : onViewProject}
+            >
+              {action.label}
+            </Button>
+          )}
           <div className="flex items-center gap-2 text-body-sm text-fg-muted">
             <Calendar size={16} />
             <span>Deadline · {fmtDate(group.deadline)}</span>
