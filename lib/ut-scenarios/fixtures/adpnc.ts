@@ -57,8 +57,15 @@ const POLY_EDUCATION: EducationLevel = 'Polytechnic Scholar/Polytechnic Student'
 
 const SENT_DATE = '2026-07-01';
 const OPEN_DEADLINE = '2026-09-30'; // after UT dates
-const CLOSED_DEADLINE_1 = '2026-07-31'; // before UT dates
-const CLOSED_DEADLINE_2 = '2026-06-30'; // before UT dates
+const CLOSED_SENT_DATE = '2025-07-01';
+const CLOSED_DEADLINE_1 = '2025-07-31';
+const CLOSED_DEADLINE_2 = '2025-08-31';
+const CLOSED_PERIOD_START = '1 Jan 2026';
+const CLOSED_PERIOD_END = '30 Jun 2026';
+const CLOSED_CALENDAR_PERIOD = '1 Jan 2026 – 30 Jun 2026';
+const CLOSED_PROGRAMME_CENTER = 'PC4';
+const CLOSED_PC_EMAIL = 'aisha.rahman@dsta.gov.sg';
+const CLOSED_HEAD_NAME = 'Aisha Rahman';
 
 const PERIOD_START = '1 Jan 2027';
 const PERIOD_END = '30 Jun 2027';
@@ -105,10 +112,17 @@ export const task1ClosedRequests = (): ProjectRequest[] => [
     ...baseRequest(),
     id: TASK_1_CLOSED_REQUEST_1_ID,
     uploadToken: TASK_1_CLOSED_TOKEN_1,
+    pc: CLOSED_PC_EMAIL,
+    programmeCenter: CLOSED_PROGRAMME_CENTER,
+    headName: CLOSED_HEAD_NAME,
     educationLevel: TECHUP_EDUCATION,
     internCategory: TECHUP_EDUCATION,
+    calendarPeriod: CLOSED_CALENDAR_PERIOD,
+    periodStart: CLOSED_PERIOD_START,
+    periodEnd: CLOSED_PERIOD_END,
     placements: 2,
-    uploaded: 0,
+    uploaded: 2,
+    sentDate: CLOSED_SENT_DATE,
     status: 'pending',
     deadline: CLOSED_DEADLINE_1,
   },
@@ -116,10 +130,17 @@ export const task1ClosedRequests = (): ProjectRequest[] => [
     ...baseRequest(),
     id: TASK_1_CLOSED_REQUEST_2_ID,
     uploadToken: TASK_1_CLOSED_TOKEN_2,
+    pc: CLOSED_PC_EMAIL,
+    programmeCenter: CLOSED_PROGRAMME_CENTER,
+    headName: CLOSED_HEAD_NAME,
     educationLevel: POLY_EDUCATION,
     internCategory: POLY_EDUCATION,
+    calendarPeriod: CLOSED_CALENDAR_PERIOD,
+    periodStart: CLOSED_PERIOD_START,
+    periodEnd: CLOSED_PERIOD_END,
     placements: 3,
-    uploaded: 0,
+    uploaded: 3,
+    sentDate: CLOSED_SENT_DATE,
     status: 'pending',
     deadline: CLOSED_DEADLINE_2,
   },
@@ -141,10 +162,17 @@ export const task2ClosedRequests = (): ProjectRequest[] => [
     ...baseRequest(),
     id: TASK_2_CLOSED_REQUEST_1_ID,
     uploadToken: TASK_2_CLOSED_TOKEN_1,
+    pc: CLOSED_PC_EMAIL,
+    programmeCenter: CLOSED_PROGRAMME_CENTER,
+    headName: CLOSED_HEAD_NAME,
     educationLevel: TECHUP_EDUCATION,
     internCategory: TECHUP_EDUCATION,
+    calendarPeriod: CLOSED_CALENDAR_PERIOD,
+    periodStart: CLOSED_PERIOD_START,
+    periodEnd: CLOSED_PERIOD_END,
     placements: 2,
-    uploaded: 0,
+    uploaded: 2,
+    sentDate: CLOSED_SENT_DATE,
     status: 'pending',
     deadline: CLOSED_DEADLINE_1,
   },
@@ -152,10 +180,17 @@ export const task2ClosedRequests = (): ProjectRequest[] => [
     ...baseRequest(),
     id: TASK_2_CLOSED_REQUEST_2_ID,
     uploadToken: TASK_2_CLOSED_TOKEN_2,
+    pc: CLOSED_PC_EMAIL,
+    programmeCenter: CLOSED_PROGRAMME_CENTER,
+    headName: CLOSED_HEAD_NAME,
     educationLevel: POLY_EDUCATION,
     internCategory: POLY_EDUCATION,
+    calendarPeriod: CLOSED_CALENDAR_PERIOD,
+    periodStart: CLOSED_PERIOD_START,
+    periodEnd: CLOSED_PERIOD_END,
     placements: 3,
-    uploaded: 0,
+    uploaded: 3,
+    sentDate: CLOSED_SENT_DATE,
     status: 'pending',
     deadline: CLOSED_DEADLINE_2,
   },

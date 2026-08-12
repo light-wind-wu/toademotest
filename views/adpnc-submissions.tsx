@@ -58,23 +58,24 @@ function requestCategoryTotals(
   progMap: Record<string, string>,
 ) {
   const totals = new Map<string, { label: string; uploaded: number; placements: number }>();
+  const submitted = submittedForGroup(group, batches).filter(p => p.status !== 'withdrawn');
+  const useRequestTotals = submitted.length === 0;
 
   group.requests.forEach(req => {
     const label = requestCategoryLabel(req, progMap);
     const existing = totals.get(label) ?? { label, uploaded: 0, placements: 0 };
     existing.placements += req.placements;
+    if (useRequestTotals) existing.uploaded += req.uploaded ?? 0;
     totals.set(label, existing);
   });
 
-  submittedForGroup(group, batches)
-    .filter(p => p.status !== 'withdrawn')
-    .forEach(p => {
-      const matched = group.requests.find(req => projectMatchesRequest(p, req));
-      if (!matched) return;
-      const label = requestCategoryLabel(matched, progMap);
-      const existing = totals.get(label);
-      if (existing) existing.uploaded += p.slots;
-    });
+  submitted.forEach(p => {
+    const matched = group.requests.find(req => projectMatchesRequest(p, req));
+    if (!matched) return;
+    const label = requestCategoryLabel(matched, progMap);
+    const existing = totals.get(label);
+    if (existing) existing.uploaded += p.slots;
+  });
 
   return Array.from(totals.values());
 }
@@ -90,6 +91,7 @@ function getGroupBadge(
   group: RequestGroup,
   batches: ProjectSubmissionBatch[],
 ): RequestBadge {
+  if (isGroupClosed(group)) return { label: 'Closed', variant: 'info' };
   const submitted = submittedForGroup(group, batches);
   const hasIssue = submitted.some(p => p.status === 'rejected' || p.status === 'returnedForUpdate');
   const { uploaded, placements } = groupTotals(group);
@@ -113,9 +115,11 @@ function groupSubmittedSlots(
   group: RequestGroup,
   batches: ProjectSubmissionBatch[],
 ): number {
-  return submittedForGroup(group, batches)
+  const submitted = submittedForGroup(group, batches)
     .filter(p => p.status !== 'withdrawn')
     .reduce((sum, p) => sum + p.slots, 0);
+  if (submitted > 0) return submitted;
+  return group.requests.reduce((sum, req) => sum + (req.uploaded ?? 0), 0);
 }
 
 function getProjectStatusCounts(
@@ -147,6 +151,7 @@ function getCardAction(
   group: RequestGroup,
   batches: ProjectSubmissionBatch[],
 ): { label: string; mode: 'upload' | 'view' } {
+  if (isGroupClosed(group)) return { label: 'View Submission', mode: 'view' };
   const submitted = submittedForGroup(group, batches);
   const hasIssue = submitted.some(p => p.status === 'rejected' || p.status === 'returnedForUpdate');
   const placements = groupTotals(group).placements;
@@ -168,6 +173,7 @@ const GROUP_STATUS_COLOURS: Record<string, string> = {
   Pending: STATUS_COLOURS.pending,
   Incomplete: STATUS_COLOURS.incomplete,
   Fulfilled: STATUS_COLOURS.fulfilled,
+  Closed: STATUS_COLOURS.closed,
 };
 
 /* Rejected alert uses the shared rejected status colours plus a red border override. */
@@ -178,7 +184,7 @@ function textOnly(cls: string) {
 }
 
 /* ── Status filter ─────────────────────────────────────────────────────────── */
-const STATUS_OPTIONS = ['Pending', 'Incomplete', 'Fulfilled'] as const;
+const STATUS_OPTIONS = ['Pending', 'Incomplete', 'Fulfilled', 'Closed'] as const;
 
 function StatusFilter({
   selected,
@@ -316,7 +322,10 @@ export default function AdPncSubmissionsPage() {
     setRequests(scoped.filter(r => {
       if (r.id?.startsWith('draft-request-demo-')) return false;
       const pc = r.programmeCenter || CONTACTS.find(c => c.email === r.pc)?.pc || r.pc;
-      return myPcs.has(pc);
+      const isAllowlistedUtFixture = Boolean(
+        r.uploadToken && allowlist.includes(r.uploadToken),
+      );
+      return myPcs.has(pc) || isAllowlistedUtFixture;
     }));
     setBatches(loadSubmissions());
   }, [profile.email]);
@@ -450,6 +459,10 @@ function RequestCard({
   const counts = getProjectStatusCounts(group, batches);
   const returnedForUpdate = getReturnedForUpdateProjects(group, batches);
   const action = getCardAction(group, batches);
+  const closed = isGroupClosed(group);
+  const isUtClosedFixture = closed && group.requests.every(
+    req => req.id?.startsWith('ut-adpnc-'),
+  );
 
   const projectStatusItems = [
     counts.notSubmitted > 0 && { key: 'notSubmitted', label: 'Not submitted', count: counts.notSubmitted, cls: textOnly(STATUS_COLOURS.draft) },
@@ -508,13 +521,19 @@ function RequestCard({
               {uploaded} of {placements} submitted
             </span>
           </div>
-          <p className="mt-2 text-body-sm text-fg-muted">{getContextMessage(uploaded, placements)}</p>
+          <p className="mt-2 text-body-sm text-fg-muted">
+            {isUtClosedFixture ? 'Placement target met.' : getContextMessage(uploaded, placements)}
+          </p>
         </div>
 
         {/* Project Statuses */}
         <div>
           <h4 className="text-label-md mb-3 font-semibold text-fg">Project Statuses</h4>
-          {projectStatusItems.length === 0 || (projectStatusItems.length === 1 && projectStatusItems[0].key === 'notSubmitted') ? (
+          {isUtClosedFixture ? (
+            <p className="text-body-sm text-fg-muted">
+              Submission details are not available in this test.
+            </p>
+          ) : projectStatusItems.length === 0 || (projectStatusItems.length === 1 && projectStatusItems[0].key === 'notSubmitted') ? (
             <p className="text-body-sm text-fg-muted">No project yet.</p>
           ) : (
             <div className="flex flex-wrap items-center gap-y-2 text-body-sm">
@@ -553,6 +572,7 @@ function RequestCard({
         <div className="mt-auto flex flex-col gap-3 sm:flex-row sm:items-center">
           <Button
             size="sm"
+            disabled={closed}
             onClick={action.mode === 'upload' ? onUpload : onViewProject}
           >
             {action.label}
