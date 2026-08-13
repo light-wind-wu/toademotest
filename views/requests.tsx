@@ -71,7 +71,7 @@ import { Paperclip, Download } from 'lucide-react';
 import { loadRequestAuditLogs, loadRequests, saveRequestAuditLogs, saveRequests, loadProjects, saveProjects, loadSubmissions, saveSubmissions } from '@/lib/storage';
 import { useProgramme } from '@/lib/programme-context';
 import { addNotification } from '@/lib/notifications';
-import { cn, exportToCSV, exportToXLSX } from '@/lib/utils';
+import { cn, exportToCSV } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Toast, useToast } from '@/components/ui-legacy/toast';
 import { TruncatedTooltip } from '@/components/ui-legacy/truncated-tooltip';
@@ -177,37 +177,104 @@ function groupByPc(rows: FlatProj[]): PendingPCGroup[] {
 }
 
 async function exportProjectFreezeXLSX(filename: string, rows: FlatProj[]) {
-  await exportToXLSX(
-    filename,
-    [
-      'Programme Centre',
-      'Intern Category',
-      'Internship Period',
-      'Duration',
-      'Project Title',
-      'Project Scope',
-      'Skillset (up to 3, one per row)',
-      'Discipline (up to 3, one per row)',
-      'Primary Mentor Name',
-      'Primary Mentor Appointment',
-      'Placements',
-      'Review Decision',
-    ],
-    rows.map(r => [
-      r.pc,
-      r.educationLevel || r.requestedEducationLevels.join(', ') || '—',
-      formatInternshipPeriod(r.internshipPeriodStart, r.internshipPeriodEnd),
-      formatDuration(r.internshipDuration),
-      r.title,
-      r.description || '—',
-      (r.skills ?? []).slice(0, 3).join('\n'),
-      parseDisciplines(r.discipline).slice(0, 3).join('\n'),
-      r.mentor || '—',
-      r.mentorAppointment || '—',
-      r.slots,
-      '',
-    ]),
-  );
+  const ExcelJS = (await import('exceljs')).default;
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'DSTA TOA Portal';
+
+  const worksheet = workbook.addWorksheet('Sheet1', {
+    views: [{ state: 'frozen', ySplit: 1, showGridLines: false }],
+    pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+  });
+
+  const headers = [
+    'Programme Centre',
+    'Intern Category',
+    'Internship Period',
+    'Duration',
+    'Project Title',
+    'Project Scope',
+    'Skillset (up to 3, one per row)',
+    'Discipline (up to 3, one per row)',
+    'Primary Mentor Name',
+    'Primary Mentor Appointment',
+    'Placements',
+    'Review Decision',
+  ];
+  const dataRows = rows.map(r => [
+    r.pc,
+    r.educationLevel || r.requestedEducationLevels.join(', ') || '—',
+    formatInternshipPeriod(r.internshipPeriodStart, r.internshipPeriodEnd),
+    formatDuration(r.internshipDuration),
+    r.title,
+    r.description || '—',
+    (r.skills ?? []).slice(0, 3).join('\n'),
+    parseDisciplines(r.discipline).slice(0, 3).join('\n'),
+    r.mentor || '—',
+    r.mentorAppointment || '—',
+    r.slots,
+    '',
+  ]);
+
+  worksheet.addRow(headers);
+  dataRows.forEach(row => worksheet.addRow(row));
+
+  // Match the visual language of the AD (P&C) upload template while preserving
+  // this export's existing single-row-per-project structure and data content.
+  const HEADER_BLUE = 'FF1856D6';
+  const BORDER = 'FFBFC7D2';
+  const EDITABLE_BG = 'FFEAF1FF';
+  const thinBorder = { style: 'thin' as const, color: { argb: BORDER } };
+  const cellBorder = { top: thinBorder, right: thinBorder, bottom: thinBorder, left: thinBorder };
+
+  const headerRow = worksheet.getRow(1);
+  headerRow.height = 38;
+  headerRow.eachCell(cell => {
+    cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: HEADER_BLUE } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.border = cellBorder;
+  });
+
+  const widths = [18, 24, 22, 14, 30, 46, 27, 29, 23, 27, 12, 20];
+  for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
+    const row = worksheet.getRow(rowNumber);
+    let maxVisualLines = 1;
+    row.eachCell({ includeEmpty: true }, (cell, columnNumber) => {
+      const value = String(cell.value ?? '');
+      const visualLines = value.split('\n').reduce(
+        (total, line) => total + Math.max(1, Math.ceil(line.length / Math.max(8, widths[columnNumber - 1]))),
+        0,
+      );
+      maxVisualLines = Math.max(maxVisualLines, visualLines);
+      cell.font = { name: 'Calibri', size: 11, color: { argb: 'FF000000' } };
+      cell.alignment = {
+        horizontal: columnNumber === 11 ? 'center' : 'left',
+        vertical: 'top',
+        wrapText: true,
+      };
+      cell.border = cellBorder;
+      if (columnNumber === 12) {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: EDITABLE_BG } };
+      }
+    });
+    row.height = Math.min(105, Math.max(24, maxVisualLines * 15));
+  }
+
+  worksheet.columns.forEach((column, index) => { column.width = widths[index]; });
+  worksheet.autoFilter = { from: 'A1', to: 'L1' };
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer as ArrayBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
 }
 
 function exportLockedProjects(selectedKeys: string[], flatRows: FlatProj[]) {

@@ -344,8 +344,8 @@ export function Shell({
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-subtle" />
             <Input
               type="search"
-              aria-label="Search across TOA"
-              placeholder="Search across TOA…"
+              aria-label="Search candidates by keyword, ID or profile information"
+              placeholder="Search candidates…"
               className="pl-9"
             />
           </div>
