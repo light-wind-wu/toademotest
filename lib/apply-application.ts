@@ -58,6 +58,8 @@ export interface ApplySessionDraft {
   transcriptName: string;
   cvName: string;
   education: EducationDetails;
+  /** True when the applicant chose “Enter Details Manually” (no transcript upload). */
+  educationManual: boolean;
   startDate: string; // ISO date yyyy-mm-dd
   endDate: string;
   interests: string[];
@@ -103,6 +105,7 @@ const EMPTY_DRAFT: ApplySessionDraft = {
   transcriptName: '',
   cvName: '',
   education: { ...EMPTY_EDUCATION },
+  educationManual: false,
   startDate: '',
   endDate: '',
   interests: [],
@@ -201,10 +204,21 @@ export function loadApplyDraft(): ApplySessionDraft {
     if (!parsed.education?.expectedGraduation) {
       delete education.expectedGraduation;
     }
+    const hasManualFields = [
+      education.institution,
+      education.course,
+      education.yearOfStudy,
+      education.gpa,
+      education.expectedGraduation,
+    ].some((v) => String(v ?? '').trim().length > 0);
     return {
       ...EMPTY_DRAFT,
       ...parsed,
       education,
+      /* Infer manual mode for drafts saved before educationManual existed. */
+      educationManual: Boolean(
+        parsed.educationManual || (!parsed.transcriptName && hasManualFields),
+      ),
     };
   } catch {
     return { ...EMPTY_DRAFT, education: { ...EMPTY_EDUCATION } };

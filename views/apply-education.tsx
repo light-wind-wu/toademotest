@@ -66,31 +66,43 @@ export default function ApplyEducationPage() {
       router.replace('/login');
       return;
     }
-    setFromReview(isFromReview());
+    const from = isFromReview();
+    setFromReview(from);
     const variant = loadUtApplicantVariant();
     setIsPolyPath(variant === 'polytechnic');
     /* Peek only — do not clear here (Strict Mode remount would skip the card). */
-    if (!introStarted.current && !isFromReview()) {
+    if (!introStarted.current && !from) {
       introStarted.current = shouldShowSession1Intro();
       setShowIntro(introStarted.current);
     }
-    /* Keep form values aligned with catalog applicant path. */
+    /* Keep form values aligned with catalog applicant path — never wipe education. */
     const synced = syncApplyDraftToVariant(loadApplyDraft(), variant);
-    /* No transcript → education fields stay empty (cannot Next until upload or filled manual entry). */
-    const normalized = synced.transcriptName
-      ? synced
-      : {
-          ...synced,
-          education: emptyEducationDetails(variant),
-        };
-    saveApplyDraft(normalized);
-    setDraft(normalized);
+    saveApplyDraft(synced);
+    setDraft(synced);
+    /* Restore manual panel: saved flag, inferred fields, or Edit-from-review without upload. */
+    setManualEntry(
+      Boolean(synced.educationManual) ||
+        (!synced.transcriptName && from),
+    );
     setReady(true);
   }, [router]);
 
   const persist = useCallback((next: ApplySessionDraft) => {
     setDraft(next);
     saveApplyDraft(next);
+  }, []);
+
+  const patchEducation = useCallback((patch: Partial<EducationDetails>) => {
+    setDraft((prev) => {
+      if (!prev) return prev;
+      const next: ApplySessionDraft = {
+        ...prev,
+        educationManual: prev.educationManual || !prev.transcriptName,
+        education: { ...prev.education, ...patch },
+      };
+      saveApplyDraft(next);
+      return next;
+    });
   }, []);
 
   const onIntroDone = useCallback(() => {
@@ -121,7 +133,7 @@ export default function ApplyEducationPage() {
   }
 
   const hasTranscript = Boolean(draft.transcriptName);
-  const showEducationDetails = hasTranscript || manualEntry;
+  const showEducationDetails = hasTranscript || manualEntry || draft.educationManual;
   const educationReady = isEducationFilled(draft.education, isPolyPath);
   const canContinue = showEducationDetails && educationReady;
 
@@ -133,6 +145,7 @@ export default function ApplyEducationPage() {
       persist({
         ...draft!,
         transcriptName: file.name,
+        educationManual: false,
         /* Demo: selecting a file fills the preset education details. */
         education: defaultEducationDetails(variant),
       });
@@ -143,10 +156,23 @@ export default function ApplyEducationPage() {
 
   function enterDetailsManually() {
     setManualEntry(true);
+    /* First time into manual mode: start blank. Returning: keep saved values. */
+    const keepExisting =
+      draft!.educationManual ||
+      [
+        draft!.education.institution,
+        draft!.education.course,
+        draft!.education.yearOfStudy,
+        draft!.education.gpa,
+        draft!.education.expectedGraduation,
+      ].some((v) => String(v ?? '').trim().length > 0);
     persist({
       ...draft!,
       transcriptName: '',
-      education: emptyEducationDetails(loadUtApplicantVariant()),
+      educationManual: true,
+      education: keepExisting
+        ? draft!.education
+        : emptyEducationDetails(loadUtApplicantVariant()),
     });
     if (transcriptRef.current) transcriptRef.current.value = '';
   }
@@ -156,10 +182,6 @@ export default function ApplyEducationPage() {
     (kind === 'transcript' ? transcriptRef : cvRef).current?.click();
   }
 
-  function updateEducation(patch: Partial<EducationDetails>) {
-    persist({ ...draft!, education: { ...draft!.education, ...patch } });
-  }
-
   return (
     <ApplicationFlowShell
       stepId="education"
@@ -167,7 +189,12 @@ export default function ApplyEducationPage() {
         router.push(fromReview ? '/apply/review' : '/apply/personal-details')
       }
       onContinue={() => {
-        if (!canContinue) return;
+        if (!canContinue || !draft) return;
+        /* Flush latest draft (incl. educationManual) before leaving. */
+        saveApplyDraft({
+          ...draft,
+          educationManual: !draft.transcriptName,
+        });
         router.push(fromReview ? '/apply/review' : '/apply/availability');
       }}
       continueDisabled={!canContinue}
@@ -240,7 +267,7 @@ export default function ApplyEducationPage() {
             )}
           </UploadZone>
 
-          {!hasTranscript && (
+          {!hasTranscript && !manualEntry && !draft.educationManual && (
             <button
               type="button"
               onClick={enterDetailsManually}
@@ -274,22 +301,22 @@ export default function ApplyEducationPage() {
                 <Field
                   label="Institution"
                   value={draft.education.institution}
-                  onChange={(v) => updateEducation({ institution: v })}
+                  onChange={(v) => patchEducation({ institution: v })}
                 />
                 <Field
                   label="Course of study"
                   value={draft.education.course}
-                  onChange={(v) => updateEducation({ course: v })}
+                  onChange={(v) => patchEducation({ course: v })}
                 />
                 <Field
                   label="Year of study"
                   value={draft.education.yearOfStudy}
-                  onChange={(v) => updateEducation({ yearOfStudy: v })}
+                  onChange={(v) => patchEducation({ yearOfStudy: v })}
                 />
                 <Field
                   label="GPA"
                   value={draft.education.gpa}
-                  onChange={(v) => updateEducation({ gpa: v })}
+                  onChange={(v) => patchEducation({ gpa: v })}
                 />
                 {!isPolyPath && (
                   <div>
@@ -307,7 +334,7 @@ export default function ApplyEducationPage() {
                     </label>
                     <DatePicker
                       value={draft.education.expectedGraduation || ''}
-                      onChange={(v) => updateEducation({ expectedGraduation: v })}
+                      onChange={(v) => patchEducation({ expectedGraduation: v })}
                       placeholder="Select date"
                     />
                   </div>
