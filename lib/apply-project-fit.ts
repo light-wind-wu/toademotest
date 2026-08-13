@@ -37,7 +37,8 @@ export const PROJECT_MATCHES: ProjectMatch[] = [
     name: 'AI Threat Detection',
     area: 'Cybersecurity',
     lead: 'DR Tan Wei Ming',
-    description: 'Train models that flag intrusions before they happen.',
+    description:
+      'Develop machine learning models that identify suspicious patterns in network traffic and system logs. Compare accuracy and false positives to produce a prototype for security analysts.',
     greatMatch: true,
   },
   {
@@ -45,7 +46,8 @@ export const PROJECT_MATCHES: ProjectMatch[] = [
     name: 'Intelligence Data Pipeline',
     area: 'AI & Data Analytics',
     lead: 'Arjun Menon',
-    description: 'Turn messy operational data into decision-ready signal.',
+    description:
+      'Build a pipeline that cleans and transforms operational data from multiple sources. Create reliable datasets that help teams identify trends and act faster.',
     greatMatch: true,
   },
   {
@@ -53,7 +55,8 @@ export const PROJECT_MATCHES: ProjectMatch[] = [
     name: 'Red-Team Toolkit',
     area: 'Cybersecurity',
     lead: 'Haziq Rahman',
-    description: 'Build the tools that stress-test our own defences.',
+    description:
+      'Design tools that simulate common attack techniques in controlled environments. Automate security checks and present findings that help strengthen defences.',
     greatMatch: true,
   },
   {
@@ -61,7 +64,8 @@ export const PROJECT_MATCHES: ProjectMatch[] = [
     name: 'Med-Team Toolkit',
     area: 'Software Development',
     lead: 'Priya Nair',
-    description: 'Prototype clinical decision support for field medical teams.',
+    description:
+      'Prototype a decision-support tool for field medical teams working under pressure. Explore how clear recommendations can help users prioritise care.',
     greatMatch: true,
   },
   {
@@ -69,14 +73,16 @@ export const PROJECT_MATCHES: ProjectMatch[] = [
     name: 'Autonomous Systems Lab',
     area: 'Robotics & Autonomous',
     lead: 'Mei Lin Koh',
-    description: 'Prototype navigation behaviours for autonomous ground systems.',
+    description:
+      'Prototype navigation behaviours for autonomous ground systems in simulated environments. Test route planning and obstacle avoidance under changing conditions.',
   },
   {
     id: 'secure-mission-network',
     name: 'Secure Mission Network',
     area: 'Networks & Infrastructure',
     lead: 'Aaron Lim',
-    description: 'Improve the resilience of communications in contested environments.',
+    description:
+      'Explore ways to improve communication resilience in contested environments. Test monitoring and failover approaches when network links become unstable.',
   },
 ];
 
