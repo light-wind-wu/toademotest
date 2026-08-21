@@ -1,18 +1,26 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Modal from '@/components/ui-legacy/modal';
-import Button from '@/components/ui-legacy/button';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRole } from '@/lib/role';
 import {
-  Briefcase, CalendarDays, MapPin, Clock, User2,
+  ArrowRight, Briefcase, CalendarDays, MapPin, Clock, User2,
   Mail as MailIcon, CheckCircle2, Award, FileText, Hourglass,
-  TrendingUp, Star,
+  TrendingUp, ShieldCheck, MessageSquareHeart, Quote, Share2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Application, ProjectEntry } from '@/lib/types';
+import {
+  APPLICANT_HOME_SCENARIO_CHANGED,
+  isApplicantHomeScenario,
+  loadApplicantHomeScenario,
+} from '@/lib/applicant-home-scenario';
+import type { ApplicantHomeScenario, Application, ProjectEntry } from '@/lib/types';
 import applicationsSeed from '@/data/applications.json';
 import { loadProjects } from '@/lib/storage';
 
@@ -68,11 +76,11 @@ const STATUS_CFG: Record<string, { label: string; color: string; bg: string; ico
 function InfoRow({ icon: Icon, label, value }: { icon: typeof Briefcase; label: string; value?: string }) {
   if (!value) return null;
   return (
-    <div className="flex items-start gap-3 py-3 border-b border-border last:border-0">
-      <Icon size={15} className="text-fg-muted shrink-0 mt-0.5" />
+    <div className="flex items-start gap-3 border-b border-border py-4 last:border-0">
+      <Icon size={17} className="mt-0.5 shrink-0 text-fg-muted" />
       <div>
-        <p className="text-[12px] font-bold uppercase tracking-widest text-fg-subtle mb-0.5">{label}</p>
-        <p className="text-body-sm text-fg">{value}</p>
+        <p className="text-[12px] leading-5 text-fg-muted">{label}</p>
+        <p className="mt-1 text-[14px] font-medium leading-5 text-fg">{value}</p>
       </div>
     </div>
   );
@@ -84,6 +92,7 @@ export default function ApplyInternship() {
   const [app,             setApp]             = useState<Application | null | 'loading'>('loading');
   const [project,         setProject]         = useState<ProjectEntry | null>(null);
   const [showWelcomeLetter, setShowWelcomeLetter] = useState(false);
+  const [homeScenario, setHomeScenario] = useState<ApplicantHomeScenario>('interview-action');
 
   useEffect(() => {
     const allApps = loadIoApps();
@@ -96,6 +105,16 @@ export default function ApplyInternship() {
       setProject(projects.find(p => p.id === myApp.shortlistedFor) ?? null);
     }
   }, [profile.email]);
+
+  useEffect(() => {
+    setHomeScenario(loadApplicantHomeScenario());
+    const handleScenarioChange = (event: Event) => {
+      const detail = (event as CustomEvent<ApplicantHomeScenario>).detail;
+      if (isApplicantHomeScenario(detail)) setHomeScenario(detail);
+    };
+    window.addEventListener(APPLICANT_HOME_SCENARIO_CHANGED, handleScenarioChange);
+    return () => window.removeEventListener(APPLICANT_HOME_SCENARIO_CHANGED, handleScenarioChange);
+  }, []);
 
   if (app === 'loading') return null;
 
@@ -115,200 +134,238 @@ export default function ApplyInternship() {
     );
   }
 
-  const cfg      = STATUS_CFG[app.status];
-  const Icon     = cfg?.icon ?? CheckCircle2;
-  const progress = app.status === 'Active Intern' ? getProgress(app.internshipStartDate, app.internshipEndDate) : null;
+  const isCompletionScenario = homeScenario === 'completion-action';
+  const cfg = isCompletionScenario
+    ? { label: 'Completion action required', color: 'text-warning', bg: 'bg-warning-bg border-warning/20', icon: Hourglass }
+    : STATUS_CFG[app.status];
+  const isBeforeStart = !isCompletionScenario && app.status === 'Offer Accepted';
+  const isActive = !isCompletionScenario && app.status === 'Active Intern';
+  const isCompleted = isCompletionScenario || app.status === 'Internship Completed';
+  const progress = isActive ? getProgress(app.internshipStartDate, app.internshipEndDate) : null;
+  const statusVariant = isCompletionScenario
+    ? 'warning'
+    : app.status === 'Active Intern'
+    ? 'success'
+    : app.status === 'Offer Accepted'
+      ? 'info'
+      : app.status === 'Terminated'
+        ? 'danger'
+        : app.status === 'Withdrawn'
+          ? 'warning'
+          : 'subtle';
+  const nextAction = isBeforeStart
+    ? {
+        label: 'Prepare for your internship',
+        title: 'Get ready for your first day',
+        body: 'Review your onboarding requirements and make sure your information is up to date before the internship begins.',
+        cta: 'Continue Onboarding',
+        route: '/apply/onboarding',
+      }
+    : isActive
+      ? {
+          label: 'Internship in progress',
+          title: 'Keep your internship record up to date',
+          body: 'Review your internship details, documents and mentor information whenever you need them.',
+          cta: 'View Onboarding Record',
+          route: '/apply/onboarding',
+        }
+      : isCompleted
+        ? {
+            label: 'Completion action required',
+            title: 'Complete your offboarding',
+            body: 'Submit the required internship feedback to complete your record. You can also request a testimonial, prepare a LinkedIn post and track certificate eligibility.',
+            cta: 'Start Offboarding',
+            route: '/apply/applicant-offboarding',
+          }
+        : {
+            label: 'Internship record',
+            title: 'This internship record is closed',
+            body: 'The record remains available for reference. Contact the internship office if you need help.',
+            cta: 'Contact Internship Office',
+            route: 'mailto:internship@dsta.gov.sg',
+          };
 
   return (
-    <Shell activeRoute="/apply/internship">
-      <div className="mb-6">
-        <h1 className="text-headline-lg text-fg mb-1">My Internship</h1>
-        <p className="text-body-md text-fg-muted">{app.programmeName}</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-        {/* Left column */}
-        <div className="space-y-4">
-
-          {/* Status */}
-          {cfg && (
-            <div className={cn('rounded-2xl border p-5', cfg.bg)}>
-              <div className="flex items-center gap-2 mb-1">
-                <Icon size={16} className={cfg.color} />
-                <p className="text-body-sm font-bold text-fg">Status</p>
-              </div>
-              <p className={cn('text-body-md font-semibold', cfg.color)}>{cfg.label}</p>
+    <Shell activeRoute="/apply/internship" flushTop>
+      <div className="relative mx-[calc(-1*clamp(24px,2.6vw,40px))] min-h-[calc(100vh-64px)] bg-bg-subtle">
+        <header className="border-b border-border bg-bg px-[clamp(24px,2.6vw,40px)] py-10">
+          <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[13px] font-medium text-fg-muted">Internship record</p>
+              <h1 className="mt-2 text-[38px] font-semibold leading-[44px] tracking-[-0.8px] text-fg">My Internship</h1>
+              <p className="mt-2 text-[16px] leading-6 text-fg-muted">{app.programmeName}</p>
             </div>
-          )}
-
-          {/* Progress (active only) */}
-          {progress && (
-            <div className="rounded-2xl border border-border bg-surface p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp size={14} className="text-accent" />
-                <p className="text-[12px] font-bold uppercase tracking-widest text-fg-subtle">Progress</p>
-              </div>
-              <div className="flex items-end justify-between mb-2">
-                <p className="text-body-sm font-semibold text-fg">
-                  Week {progress.weeksDone} of {progress.totalWeeks}
-                </p>
-                <p className="text-[13px] font-bold text-accent">{progress.pct}%</p>
-              </div>
-              <div className="w-full h-2 rounded-full bg-bg-subtle overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-accent transition-all"
-                  style={{ width: `${progress.pct}%` }}
-                />
-              </div>
-              <p className="text-[13px] text-fg-subtle mt-2">
-                {progress.daysLeft} day{progress.daysLeft !== 1 ? 's' : ''} remaining
-              </p>
-            </div>
-          )}
-
-          {/* Internship period */}
-          <div className="rounded-2xl border border-border bg-surface p-5">
-            <p className="text-[12px] font-bold uppercase tracking-widest text-fg-subtle mb-3">Internship Period</p>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CalendarDays size={13} className="text-fg-muted shrink-0" />
-                  <p className="text-[12px] text-fg-subtle uppercase tracking-widest font-bold">Start</p>
-                </div>
-                <p className="text-body-sm font-semibold text-fg">{fmtDateShort(app.internshipStartDate)}</p>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CalendarDays size={13} className="text-fg-muted shrink-0" />
-                  <p className="text-[12px] text-fg-subtle uppercase tracking-widest font-bold">End</p>
-                </div>
-                <p className="text-body-sm font-semibold text-fg">{fmtDateShort(app.internshipEndDate)}</p>
-              </div>
-              {app.creditBearing !== undefined && (
-                <div className="pt-2 border-t border-border flex items-center justify-between">
-                  <p className="text-[12px] font-bold uppercase tracking-widest text-fg-subtle">Credit-Bearing</p>
-                  <p className="text-body-sm text-fg">{app.creditBearing ? 'Yes' : 'No'}</p>
-                </div>
-              )}
-            </div>
+            {cfg ? <Badge variant={statusVariant}>{cfg.label}</Badge> : null}
           </div>
+        </header>
 
-          {/* Documents */}
-          <div className="rounded-2xl border border-border bg-surface p-5">
-            <p className="text-[12px] font-bold uppercase tracking-widest text-fg-subtle mb-3">Documents</p>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <MailIcon size={14} className={app.welcomeLetterSent ? 'text-success' : 'text-fg-subtle'} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-body-sm font-semibold text-fg">Welcome Letter</p>
-                  <p className="text-[13px] text-fg-muted">
-                    {app.welcomeLetterSent ? `Sent ${fmtDate(app.welcomeLetterSentDate)}` : 'Not yet sent'}
-                  </p>
-                </div>
-                {app.welcomeLetterSent && app.welcomeLetterBody && (
-                  <button
-                    onClick={() => setShowWelcomeLetter(true)}
-                    className="text-[12px] font-semibold text-accent hover:underline shrink-0"
-                  >
-                    View
-                  </button>
-                )}
-                {app.welcomeLetterSent && !app.welcomeLetterBody && <CheckCircle2 size={13} className="text-success shrink-0" />}
+        <div className="mx-auto w-full max-w-[1440px] px-[clamp(24px,2.6vw,40px)] py-8">
+          <Card className="relative overflow-hidden border-accent/30 shadow-none">
+            <CardContent className="relative z-[1] flex min-h-[220px] flex-col justify-between gap-6 p-6 pr-6 sm:pr-52 lg:flex-row lg:items-center">
+              <div className="max-w-2xl">
+                <p className="text-[13px] font-medium text-accent">{nextAction.label}</p>
+                <h2 className="mt-2 text-[24px] font-semibold leading-8 text-fg">{nextAction.title}</h2>
+                <p className="mt-2 text-[14px] leading-6 text-fg-muted">{nextAction.body}</p>
+                <Button className="mt-5" onClick={() => nextAction.route.startsWith('mailto:') ? window.location.assign(nextAction.route) : router.push(nextAction.route)}>
+                  {nextAction.cta}
+                  <ArrowRight className="size-4" aria-hidden />
+                </Button>
               </div>
-              {app.status === 'Internship Completed' && (
-                <div className="flex items-center gap-3">
-                  <Award size={14} className={app.cocSent ? 'text-success' : 'text-fg-subtle'} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-body-sm font-semibold text-fg">Certificate of Completion</p>
-                    <p className="text-[13px] text-fg-muted">
-                      {app.cocSent ? `Issued ${fmtDate(app.cocSentDate)}` : 'Not yet issued'}
-                    </p>
+              {progress ? (
+                <div className="w-full max-w-xs rounded-lg border border-border bg-bg p-4 lg:shrink-0">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="inline-flex items-center gap-2 text-[13px] font-medium text-fg"><TrendingUp className="size-4 text-accent" aria-hidden />Internship progress</span>
+                    <span className="text-[13px] font-semibold text-accent">{progress.pct}%</span>
                   </div>
-                  {app.cocSent && <CheckCircle2 size={13} className="text-success shrink-0" />}
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-bg-muted"><div className="h-full rounded-full bg-accent" style={{ width: `${progress.pct}%` }} /></div>
+                  <p className="mt-2 text-[12px] text-fg-muted">Week {progress.weeksDone} of {progress.totalWeeks} · {progress.daysLeft} days remaining</p>
                 </div>
-              )}
+              ) : null}
+            </CardContent>
+            <div className="pointer-events-none absolute bottom-0 right-0 hidden h-[180px] w-[180px] sm:block" aria-hidden>
+              <Image src="/images/activity-v1.png" alt="" fill className="object-contain object-right-bottom" sizes="180px" />
             </div>
-          </div>
-        </div>
+          </Card>
 
-        {/* Right column — project + contact */}
-        <div className="md:col-span-2 space-y-4">
-          {project ? (
-            <div className="rounded-2xl border border-border bg-surface overflow-hidden">
-              <div className="px-5 py-4 border-b border-border bg-bg-subtle">
-                <p className="text-[12px] font-bold uppercase tracking-widest text-fg-subtle mb-1">Assigned Project</p>
-                <p className="text-body-md font-bold text-fg">{project.title}</p>
+          {isCompleted ? (
+            <section className="mt-6" aria-labelledby="completion-tasks-title">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-[13px] font-medium text-fg-muted">Offboarding</p>
+                  <h2 id="completion-tasks-title" className="mt-1 text-[20px] font-semibold text-fg">Completion tasks</h2>
+                </div>
+                <p className="text-[13px] text-fg-muted">Complete the required task first. Optional actions remain available afterwards.</p>
               </div>
-              <div className="px-5 py-4">
-                <InfoRow icon={User2}    label="Mentor"           value={project.mentor && project.mentorAppointment ? `${project.mentor} · ${project.mentorAppointment}` : project.mentor} />
-                <InfoRow icon={MapPin}   label="Working Location" value={project.workingLocation} />
-                <InfoRow icon={Clock}    label="Project Duration"         value={project.internshipDuration} />
-                <InfoRow icon={FileText} label="Tech Domain"      value={project.techDomain} />
 
-                {project.description && (
-                  <div className="pt-3 mt-1">
-                    <p className="text-[12px] font-bold uppercase tracking-widest text-fg-subtle mb-2">Project Scope</p>
-                    <p className="text-body-sm text-fg leading-relaxed">{project.description}</p>
-                  </div>
-                )}
-
-                {project.skills && project.skills.length > 0 && (
-                  <div className="pt-3 mt-2 border-t border-border">
-                    <p className="text-[12px] font-bold uppercase tracking-widest text-fg-subtle mb-2">Skills</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {project.skills.map(s => (
-                        <span key={s} className="text-[13px] font-semibold px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent">
-                          {s}
-                        </span>
-                      ))}
+              <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <Card className="shadow-none">
+                  <CardContent className="flex h-full flex-col p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="inline-flex size-9 items-center justify-center rounded-md bg-bg-muted text-accent"><MessageSquareHeart className="size-4" aria-hidden /></span>
+                      <Badge variant={app.internFeedback ? 'success' : 'warning'}>{app.internFeedback ? 'Completed' : 'Required'}</Badge>
                     </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-border bg-surface p-8 text-center">
-              <p className="text-body-sm text-fg-muted">Project details not available.</p>
-            </div>
-          )}
+                    <h3 className="mt-4 text-[16px] font-semibold text-fg">Internship feedback</h3>
+                    <p className="mt-2 flex-1 text-[13px] leading-5 text-fg-muted">Share feedback on your project, mentorship and learning experience.</p>
+                    <Button className="mt-5 self-start" onClick={() => router.push(`/apply/feedback/${app.id}`)}>{app.internFeedback ? 'View Feedback' : 'Start Feedback'}</Button>
+                  </CardContent>
+                </Card>
 
-          <div className="rounded-2xl border border-border bg-surface p-5">
-            <p className="text-[12px] font-bold uppercase tracking-widest text-fg-subtle mb-2">DSTA Internship Office</p>
-            <p className="text-body-sm text-fg-muted">For any queries regarding your internship, please contact:</p>
-            <p className="text-body-sm font-semibold text-accent mt-1">internship@dsta.gov.sg</p>
+                <Card className="shadow-none">
+                  <CardContent className="flex h-full flex-col p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="inline-flex size-9 items-center justify-center rounded-md bg-bg-muted text-accent"><Quote className="size-4" aria-hidden /></span>
+                      <Badge variant="subtle">Optional</Badge>
+                    </div>
+                    <h3 className="mt-4 text-[16px] font-semibold text-fg">Request a testimonial</h3>
+                    <p className="mt-2 flex-1 text-[13px] leading-5 text-fg-muted">Ask your mentor for a testimonial to support future applications.</p>
+                    <Button className="mt-5 self-start" variant="outline" onClick={() => router.push('/apply/applicant-testimonial-request')}>Request Testimonial</Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-none">
+                  <CardContent className="flex h-full flex-col p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="inline-flex size-9 items-center justify-center rounded-md bg-bg-muted text-accent"><Share2 className="size-4" aria-hidden /></span>
+                      <Badge variant="subtle">Optional</Badge>
+                    </div>
+                    <h3 className="mt-4 text-[16px] font-semibold text-fg">Share your experience</h3>
+                    <p className="mt-2 flex-1 text-[13px] leading-5 text-fg-muted">Prepare editable content before continuing to LinkedIn.</p>
+                    <Button className="mt-5 self-start" variant="outline" onClick={() => router.push('/apply/applicant-linkedin-share')}>Prepare Post</Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-none">
+                  <CardContent className="flex h-full flex-col p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="inline-flex size-9 items-center justify-center rounded-md bg-bg-muted text-accent"><Award className="size-4" aria-hidden /></span>
+                      <Badge variant="info">Pending</Badge>
+                    </div>
+                    <h3 className="mt-4 text-[16px] font-semibold text-fg">Certificate eligibility</h3>
+                    <p className="mt-2 flex-1 text-[13px] leading-5 text-fg-muted">Available after feedback, offboarding and final clearance are complete.</p>
+                    <Button className="mt-5 self-start" variant="outline" onClick={() => router.push('/apply/certification')}>View Status</Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </section>
+          ) : null}
+
+          <div className="mt-5 grid gap-5 md:grid-cols-[minmax(0,2fr)_minmax(280px,0.8fr)]">
+            <div className="space-y-5">
+              {project ? (
+                <Card className="shadow-none">
+                  <CardHeader className="border-b border-border">
+                    <p className="text-[12px] font-medium text-fg-muted">Assigned project</p>
+                    <CardTitle className="mt-1 text-[20px] leading-7">{project.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-2">
+                    <div className="grid gap-x-8 md:grid-cols-2">
+                      <InfoRow icon={User2} label="Mentor" value={project.mentor && project.mentorAppointment ? `${project.mentor} · ${project.mentorAppointment}` : project.mentor} />
+                      <InfoRow icon={MapPin} label="Working location" value={project.workingLocation} />
+                      <InfoRow icon={Clock} label="Project duration" value={project.internshipDuration} />
+                      <InfoRow icon={FileText} label="Tech domain" value={project.techDomain} />
+                    </div>
+                    {project.description ? (
+                      <div className="mt-5 border-t border-border pt-5">
+                        <h2 className="text-[16px] font-semibold text-fg">About this project</h2>
+                        <p className="mt-3 text-[14px] leading-6 text-fg-muted">{project.description}</p>
+                      </div>
+                    ) : null}
+                    {project.skills && project.skills.length > 0 ? (
+                      <div className="mt-5 border-t border-border pt-5">
+                        <p className="text-[13px] font-medium text-fg-muted">Skills you may develop</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {project.skills.map((skill) => <Badge key={skill} variant="outline">{skill}</Badge>)}
+                        </div>
+                      </div>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="p-8 text-center shadow-none"><p className="text-[14px] text-fg-muted">Project details are not available yet.</p></Card>
+              )}
+
+            </div>
+
+            <aside className="space-y-5">
+              <Card className="shadow-none">
+                <CardHeader><CardTitle className="text-[17px]">Important dates</CardTitle></CardHeader>
+                <CardContent>
+                  <dl className="space-y-4">
+                    <div className="flex items-start gap-3"><CalendarDays className="mt-0.5 size-4 text-fg-muted" aria-hidden /><div><dt className="text-[12px] text-fg-muted">Start date</dt><dd className="mt-1 text-[14px] font-medium text-fg">{fmtDateShort(app.internshipStartDate)}</dd></div></div>
+                    <div className="flex items-start gap-3"><CalendarDays className="mt-0.5 size-4 text-fg-muted" aria-hidden /><div><dt className="text-[12px] text-fg-muted">End date</dt><dd className="mt-1 text-[14px] font-medium text-fg">{fmtDateShort(app.internshipEndDate)}</dd></div></div>
+                    {app.creditBearing !== undefined ? <div className="flex items-start gap-3"><ShieldCheck className="mt-0.5 size-4 text-fg-muted" aria-hidden /><div><dt className="text-[12px] text-fg-muted">Credit-bearing</dt><dd className="mt-1 text-[14px] font-medium text-fg">{app.creditBearing ? 'Yes' : 'No'}</dd></div></div> : null}
+                  </dl>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-none">
+                <CardHeader><CardTitle className="text-[17px]">Documents</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <MailIcon className={cn('size-4 shrink-0', app.welcomeLetterSent ? 'text-success' : 'text-fg-muted')} aria-hidden />
+                    <div className="min-w-0 flex-1"><p className="text-[14px] font-medium text-fg">Welcome letter</p><p className="mt-1 text-[12px] text-fg-muted">{app.welcomeLetterSent ? `Sent ${fmtDate(app.welcomeLetterSentDate)}` : 'Not yet available'}</p></div>
+                    {app.welcomeLetterSent && app.welcomeLetterBody ? <Button variant="ghost" size="sm" onClick={() => setShowWelcomeLetter(true)}>View</Button> : null}
+                  </div>
+                  {isCompleted ? (
+                    <div className="flex items-center gap-3 border-t border-border pt-4">
+                      <Award className={cn('size-4 shrink-0', app.cocSent ? 'text-success' : 'text-fg-muted')} aria-hidden />
+                      <div className="min-w-0 flex-1"><p className="text-[14px] font-medium text-fg">Certificate of Completion</p><p className="mt-1 text-[12px] text-fg-muted">{app.cocSent ? `Issued ${fmtDate(app.cocSentDate)}` : 'Pending final clearance'}</p></div>
+                      <Button variant="outline" size="sm" onClick={() => router.push('/apply/certification')}>View status</Button>
+                    </div>
+                  ) : null}
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-none">
+                <CardContent className="flex items-start gap-3 p-5">
+                  <MailIcon className="mt-0.5 size-4 shrink-0 text-fg-muted" aria-hidden />
+                  <div><p className="text-[14px] font-medium text-fg">Need help?</p><p className="mt-1 text-[13px] leading-5 text-fg-muted">Contact the DSTA Internship Office.</p><a className="mt-2 block text-[13px] font-medium text-accent hover:underline" href="mailto:internship@dsta.gov.sg">internship@dsta.gov.sg</a></div>
+                </CardContent>
+              </Card>
+            </aside>
           </div>
         </div>
-
       </div>
-
-      {/* ── Post-internship feedback prompt ── */}
-      {app.status === 'Internship Completed' && (
-        <div className="mt-6">
-          {app.internFeedback ? (
-            <div className="flex items-center gap-3 px-5 py-4 bg-success-bg border border-success/20 rounded-2xl">
-              <CheckCircle2 size={18} className="text-success shrink-0" />
-              <div>
-                <p className="text-body-md font-semibold text-fg">Feedback submitted</p>
-                <p className="text-body-sm text-fg-muted">Thank you — your feedback has been received.</p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-wrap items-center gap-4 px-5 py-4 bg-accent/5 border border-accent/20 rounded-2xl">
-              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
-                <Star size={18} className="text-accent" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-body-md font-semibold text-fg">Share your internship feedback</p>
-                <p className="text-body-sm text-fg-muted">A few quick questions to help us improve the programme.</p>
-              </div>
-              <Button onClick={() => router.push(`/apply/feedback/${app.id}`)} className="shrink-0">
-                <Star size={13} /> Give Feedback
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Welcome letter modal */}
       {app && typeof app !== 'string' && app.welcomeLetterBody && (

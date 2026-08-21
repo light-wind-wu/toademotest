@@ -1,1 +1,1 @@
-export { default } from '@/views/empty-placeholder';
+export { default } from '@/views/apply-certification';

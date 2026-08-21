@@ -133,14 +133,12 @@ function applicantNav(_hasApplied: boolean, _hasInternship: boolean): IaSection[
       label: 'My Interviews',
       icon: InterviewsNavIcon as LucideIcon,
       route: '/apply/interviews',
-      soon: true,
     },
     {
       id: 'my-offers',
       label: 'My Offers',
       icon: BookCheck,
       route: '/apply/offers',
-      soon: true,
     },
     {
       id: 'my-internship',
@@ -154,7 +152,6 @@ function applicantNav(_hasApplied: boolean, _hasInternship: boolean): IaSection[
       label: 'Certification',
       icon: CertificationNavIcon as LucideIcon,
       route: '/apply/certification',
-      soon: true,
     },
     {
       id: 'events',

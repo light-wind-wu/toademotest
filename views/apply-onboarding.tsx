@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
-import Button from '@/components/ui-legacy/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { useRole } from '@/lib/role';
 import {
   Landmark, ShieldCheck, Phone, ClipboardCheck, CheckCircle2,
@@ -46,7 +48,7 @@ const RELATIONS = ['Parent', 'Guardian', 'Sibling', 'Spouse', 'Relative', 'Frien
 const SHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
 /* ── Field helpers (match apply-profile.tsx) ─────────────────────────────── */
-const inputCls  = 'w-full rounded-xl border border-border bg-bg-subtle px-3 py-2 text-body-sm text-fg focus:outline-none focus:ring-2 focus:ring-accent/40 transition-all';
+const inputCls  = 'w-full rounded-md border border-border bg-bg px-3 py-2 text-body-sm text-fg transition-colors focus:outline-none focus:ring-2 focus:ring-accent/40';
 const selectCls = inputCls + ' appearance-none';
 
 function Field({ label, required, children, hint }: { label: string; required?: boolean; children: React.ReactNode; hint?: string }) {
@@ -63,16 +65,20 @@ function Field({ label, required, children, hint }: { label: string; required?: 
 
 function SectionCard({ icon: Icon, title, sub, children }: { icon: typeof Landmark; title: string; sub?: string; children: React.ReactNode }) {
   return (
-    <div className="card p-5">
-      <div className="flex items-start gap-2 mb-5">
-        <Icon size={16} className="text-accent mt-0.5 shrink-0" />
-        <div>
-          <h2 className="text-headline-sm font-bold text-fg leading-snug">{title}</h2>
-          {sub && <p className="text-body-sm text-fg-muted mt-0.5">{sub}</p>}
+    <Card className="shadow-none">
+      <CardContent className="p-6">
+        <div className="mb-5 flex items-start gap-3">
+          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-md bg-bg-muted text-accent">
+            <Icon size={16} />
+          </span>
+          <div>
+            <h2 className="text-headline-sm font-semibold leading-snug text-fg">{title}</h2>
+            {sub && <p className="mt-0.5 text-body-sm text-fg-muted">{sub}</p>}
+          </div>
         </div>
-      </div>
-      {children}
-    </div>
+        {children}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -237,30 +243,37 @@ export default function ApplyOnboarding() {
   const err = (k: keyof typeof errors) => tried && errors[k];
 
   return (
-    <Shell activeRoute="/apply/onboarding">
-      <div className="max-w-2xl mx-auto mt-2">
-        <button onClick={() => router.push('/apply/dashboard')}
-          className="flex items-center gap-1.5 text-body-sm font-semibold text-fg-muted hover:text-accent mb-4">
-          <ArrowLeft size={14} /> Back to home
-        </button>
+    <Shell activeRoute="/apply/onboarding" flushTop>
+      <div className="relative mx-[calc(-1*clamp(24px,2.6vw,40px))] min-h-[calc(100vh-64px)] bg-bg-subtle">
+        <header className="bg-bg px-[clamp(24px,2.6vw,40px)] py-10">
+          <div className="mx-auto w-full max-w-[1440px]">
+            <button onClick={() => router.push('/apply/dashboard')}
+              className="flex items-center gap-1.5 text-[14px] font-medium text-fg-muted transition-colors hover:text-fg">
+              <ArrowLeft size={14} /> Back to home
+            </button>
 
-        <div className="mb-6">
-          <h1 className="text-headline-lg text-fg mb-1">Onboarding information</h1>
-          <p className="text-body-md text-fg-muted">
-            A few details we need before you start <span className="font-medium text-fg">{app.programmeName}</span>.
-            This replaces the paper forms — it takes about 3 minutes.
-          </p>
-        </div>
+            <div className="mt-6">
+              <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-fg-muted">Onboarding · Information required</p>
+              <h1 className="mt-2 text-[34px] font-semibold leading-[42px] tracking-[-0.6px] text-fg">Onboarding information</h1>
+              <p className="mt-3 max-w-2xl text-[15px] leading-6 text-fg-muted">
+                A few details we need before you start <span className="font-medium text-fg">{app.programmeName}</span>.
+                This replaces the paper forms — it takes about 3 minutes.
+              </p>
+            </div>
+          </div>
+        </header>
 
-        <div className="flex items-start gap-2 p-3 rounded-xl bg-info-bg border border-info/20 mb-5">
-          <Lock size={14} className="text-info shrink-0 mt-0.5" />
-          <p className="text-body-sm text-info">
-            Your information is protected under IM8 and the PDPA, and is used only to set up your internship
-            (allowance, emergency contact and access).
-          </p>
-        </div>
+        <div className="mx-auto w-full max-w-[1440px] px-[clamp(24px,2.6vw,40px)] py-8">
+          <div className="max-w-[960px]">
+            <Alert variant="info" className="mb-5">
+              <Lock aria-hidden />
+              <AlertDescription>
+                Your information is protected under IM8 and the PDPA, and is used only to set up your internship
+                (allowance, emergency contact and access).
+              </AlertDescription>
+            </Alert>
 
-        <div className="space-y-5">
+            <div className="space-y-5">
           {/* Banking */}
           <SectionCard icon={Landmark} title="Allowance disbursement"
             sub="Where we credit your monthly internship allowance.">
@@ -302,8 +315,8 @@ export default function ApplyOnboarding() {
               </Field>
               <Field label="Contact number" required>
                 <div className="flex">
-                  <span className="flex items-center px-3 border border-r-0 border-border rounded-l-xl bg-bg-subtle text-body-sm text-fg-muted">+65</span>
-                  <input className={cn('flex-1 rounded-l-none rounded-r-xl border border-border bg-bg-subtle px-3 py-2 text-body-sm text-fg focus:outline-none focus:ring-2 focus:ring-accent/40',
+                  <span className="flex items-center rounded-l-md border border-r-0 border-border bg-bg-muted px-3 text-body-sm text-fg-muted">+65</span>
+                  <input className={cn('flex-1 rounded-l-none rounded-r-md border border-border bg-bg px-3 py-2 text-body-sm text-fg focus:outline-none focus:ring-2 focus:ring-accent/40',
                     err('emergencyPhone') && 'ring-2 ring-danger/40 border-danger/40')}
                     inputMode="numeric" placeholder="9123 4567" value={form.emergencyPhone}
                     onChange={e => update('emergencyPhone', e.target.value)} />
@@ -361,13 +374,15 @@ export default function ApplyOnboarding() {
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-3 pt-1 pb-8">
-            <Button onClick={handleSubmit}>
-              <ClipboardCheck size={14} /> Submit onboarding
+          <div className="flex flex-wrap items-center gap-3 pb-8 pt-1">
+            <Button onClick={() => router.push('/apply/applicant-onboarding-requirement')}>
+              <ClipboardCheck size={14} /> Continue onboarding
             </Button>
             <span className="flex items-center gap-1.5 text-[12px] text-fg-subtle">
               <Info size={12} /> You can review these details later from your internship page.
             </span>
+          </div>
+            </div>
           </div>
         </div>
       </div>

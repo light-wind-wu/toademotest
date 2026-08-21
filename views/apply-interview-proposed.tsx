@@ -9,8 +9,6 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 import ApplicantChrome from '@/components/apply/applicant-chrome';
 import { INTERVIEW_PROPOSED_FROM_KEY } from '@/components/apply/interview-timeslot-sheet';
 import {
-  followUpDashboardVersion,
-  saveApplyDashboardVersion,
   type ApplyDashboardBase,
 } from '@/lib/apply-dashboard-version';
 import { cn } from '@/lib/utils';
@@ -65,16 +63,14 @@ export default function ApplyInterviewProposed() {
     if (leftRef.current) return;
     leftRef.current = true;
     setLeaving(true);
-    const next = followUpDashboardVersion(source);
     window.setTimeout(() => {
       setNavigating(true);
-      saveApplyDashboardVersion(next);
       try {
         sessionStorage.removeItem(INTERVIEW_PROPOSED_FROM_KEY);
       } catch {
         /* ignore */
       }
-      router.replace('/apply/dashboard');
+      router.replace('/apply/applicant-interview-reschedule-review');
     }, 280);
   }
 

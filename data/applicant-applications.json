@@ -1,0 +1,303 @@
+[
+  {
+    "id": "app-ui-2027",
+    "programmeName": "University Internship 2027",
+    "intake": "Jan–Jun 2027 Intake",
+    "applicationWindow": "1 Jul–30 Sep 2026",
+    "applicationId": "APP-UI27-00418",
+    "submittedAt": "12 Aug 2026",
+    "updatedAt": "15 Aug 2026",
+    "status": "UNDER REVIEW",
+    "filter": "in-progress",
+    "statusMessage": "Your application is being reviewed by the internship team.",
+    "currentStep": 2,
+    "nextStep": "We will contact you if you are shortlisted for an interview.",
+    "location": "Singapore",
+    "type": "Full-time internship",
+    "department": "Digital Hub",
+    "contactEmail": "internships@dsta.gov.sg",
+    "timeline": [
+      { "title": "Screening in progress", "description": "Your application is being reviewed against the programme requirements.", "date": "15 Aug 2026", "tone": "current" },
+      { "title": "Application received", "description": "Your University Internship 2027 submission is complete.", "date": "13 Aug 2026", "tone": "complete" },
+      { "title": "Application submitted", "description": "Your submitted information and documents were recorded.", "date": "12 Aug 2026", "tone": "neutral" }
+    ],
+    "documents": [
+      { "label": "CV", "fileName": "jenny-aw-cv.pdf", "meta": "PDF · 2.4 MB", "kind": "resume" },
+      { "label": "Academic transcript", "fileName": "nus-transcript.pdf", "meta": "PDF · 1.1 MB", "kind": "transcript" },
+      { "label": "Portfolio", "fileName": "jennyaw.design", "meta": "Web portfolio", "kind": "portfolio" }
+    ],
+    "summary": {
+      "personal": "Jenny Aw · Singapore Citizen",
+      "education": "National University of Singapore · Computer Science · Year 3",
+      "availability": "12 weeks · 5 Jan–26 Mar 2027",
+      "interests": ["Cybersecurity", "Product Design", "Data & AI"],
+      "projectPreferences": ["Designing Mission-Critical Digital Services", "Human-Centred AI Prototyping", "Secure Product Experience Research"]
+    }
+  },
+  {
+    "id": "app-poly-2027",
+    "programmeName": "Polytechnic Internship 2027",
+    "intake": "Apr–Sep 2027 Intake",
+    "applicationWindow": "15 Jul–15 Oct 2026",
+    "applicationId": "APP-PI27-00176",
+    "submittedAt": "10 Aug 2026",
+    "updatedAt": "18 Aug 2026",
+    "status": "INTERVIEW",
+    "filter": "needs-action",
+    "statusMessage": "Choose an interview timeslot to continue your application.",
+    "currentStep": 3,
+    "nextStep": "Confirm one of the proposed interview timeslots.",
+    "deadline": "Respond by 21 Aug 2026",
+    "primaryAction": "confirm-interview",
+    "interviewState": "awaiting-confirmation",
+    "location": "Singapore",
+    "type": "Full-time internship",
+    "department": "Information Programme Centre",
+    "contactEmail": "internships@dsta.gov.sg",
+    "timeline": [
+      { "title": "Interview invitation received", "description": "Three interview timeslots are ready for your review.", "date": "18 Aug 2026", "tone": "current" },
+      { "title": "Application progressed", "description": "Your application has progressed to the interview stage.", "date": "17 Aug 2026", "tone": "complete" },
+      { "title": "Application submitted", "description": "Your application was successfully submitted.", "date": "10 Aug 2026", "tone": "neutral" }
+    ],
+    "documents": [
+      { "label": "CV", "fileName": "jenny-aw-cv.pdf", "meta": "PDF · 2.4 MB", "kind": "resume" },
+      { "label": "Academic transcript", "fileName": "poly-transcript.pdf", "meta": "PDF · 930 KB", "kind": "transcript" }
+    ],
+    "summary": {
+      "personal": "Jenny Aw · Singapore Citizen",
+      "education": "Nanyang Polytechnic · Infocomm & Media Engineering",
+      "availability": "24 weeks · 6 Apr–18 Sep 2027",
+      "interests": ["Robotics", "Systems Engineering"],
+      "projectPreferences": ["Autonomous Platform Interface", "Operational Data Visualisation"]
+    }
+  },
+  {
+    "id": "app-techup-2027",
+    "programmeName": "Tech UP Internship 2027",
+    "intake": "May–Jul 2027 Intake",
+    "applicationWindow": "1 Aug–31 Oct 2026",
+    "applicationId": "APP-TU27-00209",
+    "submittedAt": "14 Aug 2026",
+    "updatedAt": "14 Aug 2026",
+    "status": "SUBMITTED",
+    "filter": "in-progress",
+    "statusMessage": "Your application has been submitted successfully.",
+    "currentStep": 1,
+    "nextStep": "The internship team will begin screening after the application window closes.",
+    "location": "Singapore",
+    "type": "Full-time internship",
+    "department": "Enterprise IT",
+    "contactEmail": "internships@dsta.gov.sg",
+    "timeline": [
+      { "title": "Application submitted", "description": "Your application and documents were received.", "date": "14 Aug 2026", "tone": "current" }
+    ],
+    "documents": [
+      { "label": "CV", "fileName": "jenny-aw-cv.pdf", "meta": "PDF · 2.4 MB", "kind": "resume" },
+      { "label": "Academic transcript", "fileName": "nus-transcript.pdf", "meta": "PDF · 1.1 MB", "kind": "transcript" }
+    ],
+    "summary": {
+      "personal": "Jenny Aw · Singapore Citizen",
+      "education": "National University of Singapore · Computer Science · Year 3",
+      "availability": "12 weeks · 3 May–23 Jul 2027",
+      "interests": ["Software Engineering", "Cloud Platforms"],
+      "projectPreferences": ["Developer Platform Modernisation", "Cloud Security Automation"]
+    }
+  },
+  {
+    "id": "app-experience-2027",
+    "programmeName": "JC Internship Experience 2027",
+    "intake": "Nov–Dec 2027 Intake",
+    "applicationWindow": "1 Jun–31 Aug 2026",
+    "applicationId": "APP-JC27-00083",
+    "submittedAt": "5 Aug 2026",
+    "updatedAt": "13 Aug 2026",
+    "status": "INTERVIEW",
+    "filter": "in-progress",
+    "statusMessage": "Your interview is confirmed for 24 Aug 2026 at 10:00 AM.",
+    "currentStep": 3,
+    "nextStep": "Attend your confirmed online interview.",
+    "interviewState": "confirmed",
+    "location": "Singapore",
+    "type": "Full-time internship",
+    "department": "Cybersecurity Programme Centre",
+    "contactEmail": "internships@dsta.gov.sg",
+    "timeline": [
+      { "title": "Interview confirmed", "description": "Your online interview is scheduled for 24 Aug 2026 at 10:00 AM.", "date": "13 Aug 2026", "tone": "current" },
+      { "title": "Application submitted", "description": "Your application was successfully submitted.", "date": "5 Aug 2026", "tone": "neutral" }
+    ],
+    "documents": [
+      { "label": "Academic transcript", "fileName": "jc-results.pdf", "meta": "PDF · 860 KB", "kind": "transcript" }
+    ],
+    "summary": {
+      "personal": "Jenny Aw · Singapore Citizen",
+      "education": "National Junior College · Year 2",
+      "availability": "6 weeks · 8 Nov–17 Dec 2027",
+      "interests": ["Cybersecurity", "Engineering"],
+      "projectPreferences": ["Cyber Defence Experience", "Engineering Systems Lab"]
+    }
+  },
+  {
+    "id": "app-design-2027",
+    "programmeName": "Design Innovation Internship 2027",
+    "intake": "Jan–Jun 2027 Intake",
+    "applicationWindow": "1 Jul–30 Sep 2026",
+    "applicationId": "APP-DI27-00241",
+    "submittedAt": "7 Aug 2026",
+    "updatedAt": "19 Aug 2026",
+    "status": "INTERVIEW",
+    "filter": "in-progress",
+    "statusMessage": "Your interview timeslot is selected for 27 Aug 2026 at 2:30 PM.",
+    "currentStep": 3,
+    "nextStep": "Review your interview details and prepare for the scheduled session.",
+    "primaryAction": "manage-interview",
+    "interviewState": "timeslot-selected",
+    "interviewDetails": {
+      "card": "scheduled",
+      "selectedDate": "27 Aug 2026",
+      "selectedTime": "2:30 PM",
+      "timezone": "Singapore Time (SGT)",
+      "mentor": "Marcus Tan",
+      "mentorRole": "Principal UX Designer",
+      "format": "Online interview",
+      "location": "Microsoft Teams",
+      "duration": "45 minutes"
+    },
+    "location": "Singapore",
+    "type": "Full-time internship",
+    "department": "Digital Hub",
+    "contactEmail": "internships@dsta.gov.sg",
+    "timeline": [
+      { "title": "Interview timeslot selected", "description": "Your interview is scheduled for 27 Aug 2026 at 2:30 PM.", "date": "19 Aug 2026", "tone": "current" },
+      { "title": "Interview invitation received", "description": "You were invited to select an interview timeslot.", "date": "18 Aug 2026", "tone": "complete" },
+      { "title": "Application submitted", "description": "Your application was successfully submitted.", "date": "7 Aug 2026", "tone": "neutral" }
+    ],
+    "documents": [
+      { "label": "CV", "fileName": "jenny-aw-cv.pdf", "meta": "PDF · 2.4 MB", "kind": "resume" },
+      { "label": "Portfolio", "fileName": "jennyaw.design", "meta": "Web portfolio", "kind": "portfolio" }
+    ],
+    "summary": {
+      "personal": "Jenny Aw · Singapore Citizen",
+      "education": "National University of Singapore · Industrial Design · Year 3",
+      "availability": "20 weeks · 5 Jan–21 May 2027",
+      "interests": ["Product Design", "Service Design", "Data & AI"],
+      "projectPreferences": ["Mission Planning Experience Design", "Operational Service Blueprinting"]
+    }
+  },
+  {
+    "id": "app-ai-2027",
+    "programmeName": "AI & Data Internship 2027",
+    "intake": "May–Jul 2027 Intake",
+    "applicationWindow": "1 Aug–31 Oct 2026",
+    "applicationId": "APP-AI27-00154",
+    "submittedAt": "8 Aug 2026",
+    "updatedAt": "20 Aug 2026",
+    "status": "INTERVIEW",
+    "filter": "in-progress",
+    "statusMessage": "Your alternative interview time is awaiting confirmation.",
+    "currentStep": 3,
+    "nextStep": "No action is needed while the internship team reviews your requested time change.",
+    "primaryAction": "await-interview-confirmation",
+    "interviewState": "time-change-requested",
+    "interviewDetails": {
+      "card": "rescheduling",
+      "selectedDate": "31 Aug 2026",
+      "selectedTime": "11:00 AM",
+      "timezone": "Singapore Time (SGT)",
+      "mentor": "Priya Nair",
+      "mentorRole": "Senior Data Scientist",
+      "format": "Online interview",
+      "location": "Microsoft Teams",
+      "duration": "45 minutes",
+      "originalDate": "28 Aug 2026",
+      "originalTime": "3:00 PM",
+      "requestStatus": "Awaiting interviewer confirmation"
+    },
+    "location": "Singapore",
+    "type": "Full-time internship",
+    "department": "AI & Data Analytics Hub",
+    "contactEmail": "internships@dsta.gov.sg",
+    "timeline": [
+      { "title": "Alternative time suggested", "description": "Your request for 31 Aug 2026 at 11:00 AM is awaiting confirmation.", "date": "20 Aug 2026", "tone": "current" },
+      { "title": "Interview timeslot selected", "description": "The original interview was scheduled for 28 Aug 2026 at 3:00 PM.", "date": "19 Aug 2026", "tone": "complete" },
+      { "title": "Application submitted", "description": "Your application was successfully submitted.", "date": "8 Aug 2026", "tone": "neutral" }
+    ],
+    "documents": [
+      { "label": "CV", "fileName": "jenny-aw-cv.pdf", "meta": "PDF · 2.4 MB", "kind": "resume" },
+      { "label": "Academic transcript", "fileName": "nus-transcript.pdf", "meta": "PDF · 1.1 MB", "kind": "transcript" }
+    ],
+    "summary": {
+      "personal": "Jenny Aw · Singapore Citizen",
+      "education": "National University of Singapore · Computer Science · Year 3",
+      "availability": "12 weeks · 3 May–23 Jul 2027",
+      "interests": ["Data & AI", "Machine Learning"],
+      "projectPreferences": ["Operational AI Prototyping", "Responsible Analytics Platform"]
+    }
+  },
+  {
+    "id": "app-ui-2026",
+    "programmeName": "University Internship 2026",
+    "intake": "May–Jul 2026 Intake",
+    "applicationWindow": "1 Jul–30 Sep 2025",
+    "applicationId": "APP-UI26-00312",
+    "submittedAt": "5 Aug 2025",
+    "updatedAt": "13 Sep 2025",
+    "status": "UNSUCCESSFUL",
+    "filter": "closed",
+    "statusMessage": "Your application was not selected for this intake.",
+    "currentStep": 5,
+    "nextStep": "This application is closed and remains available for your records.",
+    "primaryAction": "view-outcome",
+    "location": "Singapore",
+    "type": "Full-time internship",
+    "department": "Digital Hub",
+    "contactEmail": "internships@dsta.gov.sg",
+    "timeline": [
+      { "title": "Application outcome", "description": "Your application was not selected for this intake.", "date": "13 Sep 2025", "tone": "current" },
+      { "title": "Application reviewed", "description": "The internship team completed its review.", "date": "1 Sep 2025", "tone": "complete" },
+      { "title": "Application submitted", "description": "Your application was successfully submitted.", "date": "5 Aug 2025", "tone": "neutral" }
+    ],
+    "documents": [
+      { "label": "CV", "fileName": "jenny-aw-cv-2025.pdf", "meta": "PDF · 2.1 MB", "kind": "resume" },
+      { "label": "Academic transcript", "fileName": "nus-transcript-2025.pdf", "meta": "PDF · 1.0 MB", "kind": "transcript" }
+    ],
+    "summary": {
+      "personal": "Jenny Aw · Singapore Citizen",
+      "education": "National University of Singapore · Computer Science · Year 2",
+      "availability": "12 weeks · 4 May–24 Jul 2026",
+      "interests": ["Product Design", "Data & AI"],
+      "projectPreferences": ["Digital Service Design", "Data Visualisation"]
+    }
+  },
+  {
+    "id": "app-techup-2026",
+    "programmeName": "Tech UP Internship 2026",
+    "intake": "May–Jul 2026 Intake",
+    "applicationWindow": "1 Aug–31 Oct 2025",
+    "applicationId": "APP-TU26-00126",
+    "submittedAt": "3 Aug 2025",
+    "updatedAt": "8 Aug 2025",
+    "status": "WITHDRAWN",
+    "filter": "closed",
+    "statusMessage": "You withdrew this application on 8 Aug 2025.",
+    "currentStep": 1,
+    "nextStep": "This application is closed and remains available for your records.",
+    "location": "Singapore",
+    "type": "Full-time internship",
+    "department": "Enterprise IT",
+    "contactEmail": "internships@dsta.gov.sg",
+    "timeline": [
+      { "title": "Application withdrawn", "description": "You withdrew this application.", "date": "8 Aug 2025", "tone": "current" },
+      { "title": "Application submitted", "description": "Your application was successfully submitted.", "date": "3 Aug 2025", "tone": "neutral" }
+    ],
+    "documents": [
+      { "label": "CV", "fileName": "jenny-aw-cv-2025.pdf", "meta": "PDF · 2.1 MB", "kind": "resume" }
+    ],
+    "summary": {
+      "personal": "Jenny Aw · Singapore Citizen",
+      "education": "National University of Singapore · Computer Science · Year 2",
+      "availability": "12 weeks · 4 May–24 Jul 2026",
+      "interests": ["Software Engineering"],
+      "projectPreferences": ["Developer Experience Platform"]
+    }
+  }
+]

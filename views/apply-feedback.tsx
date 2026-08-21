@@ -193,8 +193,8 @@ export default function ApplyFeedback() {
         {!justSaved && !alreadyDone && (
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={saveDraft}><Save size={13} /> Save Draft</Button>
-            <Button disabled={!fbComplete || fbSubmitting} onClick={submitFeedback}>
-              <Send size={13} />{fbSubmitting ? 'Submitting…' : 'Submit Feedback'}
+            <Button disabled={!fbComplete || fbSubmitting} onClick={() => { saveDraftToStorage(appId, currentDraft()); router.push('/apply/applicant-feedback-review'); }}>
+              <Send size={13} />Review Feedback
             </Button>
           </div>
         )}
@@ -300,8 +300,8 @@ export default function ApplyFeedback() {
 
           {/* Actions */}
           <div className="flex justify-end gap-2">
-            <Button disabled={!fbComplete || fbSubmitting} onClick={submitFeedback}>
-              <Send size={13} />{fbSubmitting ? 'Submitting…' : 'Submit Feedback'}
+            <Button disabled={!fbComplete || fbSubmitting} onClick={() => { saveDraftToStorage(appId, currentDraft()); router.push('/apply/applicant-feedback-review'); }}>
+              <Send size={13} />Review Feedback
             </Button>
             <Button variant="outline" onClick={saveDraft}><Save size={13} /> Save Draft</Button>
           </div>

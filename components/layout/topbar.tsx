@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Search, Bell, Settings, HelpCircle, ChevronDown, LayoutGrid, ListTodo, PanelsTopLeft } from 'lucide-react';
+import { Search, Bell, Settings, HelpCircle, ChevronDown, LayoutGrid, ListTodo, PanelsTopLeft, Check } from 'lucide-react';
 import { useRole, ROLE_LABELS } from '@/lib/role';
 import { cn } from '@/lib/utils';
 
@@ -12,10 +12,14 @@ import { signOut } from '@/lib/session';
 import OutOfScopeTooltip from '@/components/apply/out-of-scope-tooltip';
 
 import {
-  loadApplyDashboardVersion,
   saveApplyDashboardVersion,
-  type ApplyDashboardVersion,
 } from '@/lib/apply-dashboard-version';
+import {
+  APPLICANT_HOME_SCENARIOS,
+  loadApplicantHomeScenario,
+  saveApplicantHomeScenario,
+} from '@/lib/applicant-home-scenario';
+import type { ApplicantHomeScenario } from '@/lib/types';
 
 export default function Topbar({
   navigationHidden = false,
@@ -31,12 +35,12 @@ export default function Topbar({
   const onStartTasks = pathname === '/start-tasks';
   const onCatlog = pathname === '/catlog';
   const [open,      setOpen]      = useState(false);
-  const [dashVersion, setDashVersion] = useState<ApplyDashboardVersion>('v1');
+  const [homeScenario, setHomeScenario] = useState<ApplicantHomeScenario>('interview-action');
   const ref       = useRef<HTMLDivElement>(null);
   const isApplicant = role === 'new-applicant' || role === 'existing-scholar-applicant';
 
   useEffect(() => {
-    setDashVersion(loadApplyDashboardVersion());
+    setHomeScenario(loadApplicantHomeScenario());
   }, [open]);
 
   useEffect(() => {
@@ -143,39 +147,46 @@ export default function Topbar({
                   <div className="px-3 py-2">
                     <p className="mb-1.5 flex items-center gap-2 text-[12px] font-semibold text-fg-muted">
                       <PanelsTopLeft size={14} className="shrink-0" />
-                      Dashboard layout
+                      Applicant Home scenario
                     </p>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {(
-                        [
-                          ['v1', 'A'],
-                          ['v2', 'B'],
-                        ] as const
-                      ).map(([value, label]) => (
-                        <button
-                          key={value}
-                          type="button"
-                          onClick={() => {
-                            saveApplyDashboardVersion(value);
-                            setDashVersion(value);
-                            setOpen(false);
-                            if (pathname === '/apply/dashboard' || pathname === '/apply') {
-                              router.refresh();
-                            } else {
-                              router.push('/apply/dashboard');
-                            }
-                          }}
-                          className={cn(
-                            'cursor-pointer rounded-md border px-2 py-1.5 text-[12px] font-semibold transition-colors',
-                            dashVersion === value
-                              ? 'border-accent bg-accent/10 text-accent'
-                              : 'border-border bg-surface text-fg hover:bg-bg-subtle',
-                          )}
-                        >
-                          {label}
-                        </button>
-                      ))}
+                    <div
+                      role="listbox"
+                      aria-label="Applicant Home scenario"
+                      className="max-h-52 overflow-y-auto rounded-lg border border-border bg-surface p-1"
+                    >
+                      {APPLICANT_HOME_SCENARIOS.map((scenario) => {
+                        const selected = homeScenario === scenario.value;
+                        return (
+                          <button
+                            key={scenario.value}
+                            type="button"
+                            role="option"
+                            aria-selected={selected}
+                            onClick={() => {
+                              saveApplyDashboardVersion('v1');
+                              saveApplicantHomeScenario(scenario.value);
+                              setHomeScenario(scenario.value);
+                              setOpen(false);
+                              if (pathname !== '/apply/dashboard' && pathname !== '/apply' && pathname !== '/apply/internship') {
+                                router.push('/apply/dashboard');
+                              }
+                            }}
+                            className={cn(
+                              'flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-xs transition-colors',
+                              selected
+                                ? 'bg-accent/10 font-semibold text-accent'
+                                : 'text-fg hover:bg-bg-subtle',
+                            )}
+                          >
+                            <span>{scenario.label}</span>
+                            {selected ? <Check size={14} className="shrink-0" aria-hidden /> : null}
+                          </button>
+                        );
+                      })}
                     </div>
+                    <p className="mt-1.5 text-[11px] leading-4 text-fg-subtle">
+                      Switch between the APP-01 required state variants.
+                    </p>
                   </div>
                 )}
                 <button

@@ -278,6 +278,12 @@ export interface Application {
   summary?:        string;
   /** Optional internal notes surfaced in shortlisting review when summary is absent. */
   notes?:          string;
+  /** Internal rematching pool context. This is visible only to authorised IO users. */
+  talentPool?: {
+    addedDate?: string;
+    sourceProjectId?: string;
+    reason?: string;
+  };
   // Personal
   name:            string;
   email:           string;
@@ -324,7 +330,7 @@ export interface Application {
   interviewSlots?:   { date: string; time: string; duration?: string }[];   // mentor's proposed slots
   confirmedSlot?:    number;                              // applicant-selected index
   // Mentor evaluation (set after Interview Completed)
-  mentorDecision?:          'Accepted' | 'Rejected' | null;
+  mentorDecision?:          'Accepted' | 'Rejected' | 'Referred' | null;
   mentorNotes?:             string;
   mentorRejectionRemark?:   string;
   ioRejectionRemark?:       string;
@@ -699,4 +705,190 @@ export interface MyApplication {
   status:             ApplicationStatus;
   formValues:         Record<string, string | string[]>;
   projectPreferences: string[]; // ordered confirmed project IDs, max 5
+}
+
+export type CandidateApplicationStatus =
+  | 'DRAFT'
+  | 'SUBMITTED'
+  | 'UNDER REVIEW'
+  | 'INTERVIEW'
+  | 'OFFER RECEIVED'
+  | 'OFFER ACCEPTED'
+  | 'OFFER DECLINED'
+  | 'OFFER EXPIRED'
+  | 'UNSUCCESSFUL'
+  | 'WITHDRAWN';
+
+export type ApplicantApplicationFilter = 'all' | 'needs-action' | 'in-progress' | 'closed';
+
+export interface ApplicantApplicationTimelineEvent {
+  title: string;
+  description: string;
+  date: string;
+  tone: 'current' | 'complete' | 'neutral';
+}
+
+export interface ApplicantApplicationDocument {
+  label: string;
+  fileName: string;
+  meta: string;
+  kind: 'resume' | 'transcript' | 'portfolio';
+}
+
+export interface ApplicantApplicationRecord {
+  id: string;
+  programmeName: string;
+  intake: string;
+  applicationWindow: string;
+  applicationId: string;
+  submittedAt: string;
+  updatedAt: string;
+  status: CandidateApplicationStatus;
+  filter: Exclude<ApplicantApplicationFilter, 'all'>;
+  statusMessage: string;
+  currentStep: number;
+  nextStep: string;
+  deadline?: string;
+  primaryAction?:
+    | 'resume'
+    | 'confirm-interview'
+    | 'confirm-slot'
+    | 'manage-interview'
+    | 'await-interview-confirmation'
+    | 'view-offer'
+    | 'view-outcome';
+  interviewState?:
+    | 'awaiting-confirmation'
+    | 'timeslot-selected'
+    | 'time-change-requested'
+    | 'confirmed'
+    | 'completed';
+  interviewDetails?: {
+    card: 'scheduled' | 'rescheduling';
+    selectedDate: string;
+    selectedTime: string;
+    timezone: string;
+    mentor: string;
+    mentorRole: string;
+    format: string;
+    location: string;
+    duration: string;
+    originalDate?: string;
+    originalTime?: string;
+    requestStatus?: string;
+    availabilityNote?: string;
+  };
+  location: string;
+  type: string;
+  department: string;
+  contactEmail: string;
+  timeline: ApplicantApplicationTimelineEvent[];
+  documents: ApplicantApplicationDocument[];
+  summary: {
+    personal: string;
+    education: string;
+    availability: string;
+    interests: string[];
+    projectPreferences: string[];
+  };
+}
+
+/** Prototype-only Applicant Home states from APP-01 in the UX design brief. */
+export type ApplicantHomeScenario =
+  | 'no-application'
+  | 'draft-application'
+  | 'under-review'
+  | 'interview-action'
+  | 'interview-scheduled'
+  | 'interview-rescheduling'
+  | 'offer-action'
+  | 'onboarding-action'
+  | 'active-internship'
+  | 'completion-action'
+  | 'journey-completed';
+
+export interface ApplicantHomeTaskContent {
+  title: string;
+  body: string;
+  cta: string;
+}
+
+export interface ApplicantHomeActivityContent {
+  title: string;
+  body: string;
+  date: string;
+  tone: 'accent' | 'warning';
+}
+
+export type ApplicantWorkflowPageId =
+  | 'applicant-interview-review'
+  | 'applicant-interview-confirmation'
+  | 'applicant-interview-reschedule-review'
+  | 'applicant-offer-detail'
+  | 'applicant-offer-review'
+  | 'applicant-offer-reject'
+  | 'applicant-offer-confirmation'
+  | 'applicant-onboarding-requirement'
+  | 'applicant-onboarding-review'
+  | 'applicant-onboarding-confirmation'
+  | 'applicant-offboarding'
+  | 'applicant-feedback-review'
+  | 'applicant-feedback-confirmation'
+  | 'applicant-testimonial-request'
+  | 'applicant-testimonial-status'
+  | 'applicant-linkedin-share'
+  | 'applicant-certificate-viewer';
+
+export interface ApplicantWorkflowDetail {
+  label: string;
+  value: string;
+}
+
+export interface ApplicantWorkflowPageConfig {
+  id: ApplicantWorkflowPageId;
+  eyebrow: string;
+  title: string;
+  description: string;
+  status?: string;
+  statusTone?: 'info' | 'success' | 'warning' | 'subtle';
+  activeRoute: string;
+  backLabel: string;
+  backRoute: string;
+  primaryLabel: string;
+  primaryRoute: string;
+  secondaryLabel?: string;
+  secondaryRoute?: string;
+  notice?: string;
+  details: ApplicantWorkflowDetail[];
+  checklist?: string[];
+}
+
+export interface ApplicantHomeScenarioContent {
+  heroLines: readonly [string, string];
+  heroMessage: string;
+  heroBadge: string;
+  bannerLines: readonly [string, string, string];
+  bannerBody: string;
+  recordDate: string;
+  statusLabel: string;
+  summary: string;
+  dueText: string;
+  primaryLabel: string;
+  primaryRoute: string;
+  secondaryLabel: string;
+  progressIndex: -1 | 0 | 1 | 2 | 3 | 4;
+  progressHint: string;
+  detailLabel: string;
+  detailTitle: string;
+  detailPerson: string;
+  detailRole: string;
+  detailMeta: readonly [
+    { label: string; value: string },
+    { label: string; value: string },
+  ];
+  tasksKicker: string;
+  tasksTitle: string;
+  tasksDeadline: string;
+  tasks: readonly [ApplicantHomeTaskContent, ApplicantHomeTaskContent];
+  activity: readonly ApplicantHomeActivityContent[];
 }
