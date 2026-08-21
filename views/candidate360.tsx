@@ -1694,7 +1694,7 @@ export default function Candidate360() {
   const [dstaEngagements, setDstaEngagements] = useState<DSTAEngagementEntry[] | undefined>(undefined);
 
   /* IO action state */
-  const [localMentorDecision, setLocalMentorDecision] = useState<'Accepted' | 'Rejected' | null>(null);
+  const [localMentorDecision, setLocalMentorDecision] = useState<'Accepted' | 'Rejected' | 'Referred' | null>(null);
   const [rejectModal,         setRejectModal]         = useState<{ onConfirm: (remark: string) => void; isPostInterview: boolean } | null>(null);
   const [rejectRemark,        setRejectRemark]        = useState('');
   const [overrideOpen,        setOverrideOpen]        = useState(false);
