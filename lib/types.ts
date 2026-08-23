@@ -807,6 +807,85 @@ export type ApplicantHomeScenario =
   | 'completion-action'
   | 'journey-completed';
 
+export type ApplicantInternshipPhase = 'onboarding' | 'offboarding';
+
+export interface ApplicantInternshipAction {
+  label: string;
+  title: string;
+  body: string;
+  cta: string;
+  route: string;
+}
+
+export interface ApplicantInternshipProject {
+  id: string;
+  title: string;
+  mentor: string;
+  mentorAppointment: string;
+  workingLocation: string;
+  duration: string;
+  techDomain: string;
+  description: string;
+  skills: string[];
+}
+
+export interface ApplicantInternshipDocument {
+  status: 'pending' | 'available';
+  date?: string;
+  body?: string;
+}
+
+export type ApplicantInternshipTaskId =
+  | 'feedback'
+  | 'testimonial'
+  | 'linkedin'
+  | 'certificate';
+
+export interface ApplicantInternshipTask {
+  id: ApplicantInternshipTaskId;
+  status: string;
+  statusTone: 'info' | 'success' | 'warning' | 'subtle';
+  title: string;
+  body: string;
+  cta: string;
+  route: string;
+}
+
+export interface ApplicantInternshipFeedback {
+  submittedAt: string;
+  ratings: {
+    calibration: number;
+    sentiment: number;
+    mentorship: number;
+    environment: number;
+  };
+  scopeFit: 'too-easy' | 'just-right' | 'too-hard';
+  recommend: number;
+  highlights: string;
+  improvements: string;
+  mentorMessage?: string;
+}
+
+/** Seed-backed applicant internship record used by the My Internship prototype. */
+export interface ApplicantInternshipRecord {
+  phase: ApplicantInternshipPhase;
+  applicationId: string;
+  applicantName: string;
+  applicantEmail: string;
+  programmeName: string;
+  statusLabel: string;
+  statusTone: 'info' | 'success' | 'warning' | 'subtle';
+  internshipStartDate: string;
+  internshipEndDate: string;
+  creditBearing: boolean;
+  action: ApplicantInternshipAction;
+  project: ApplicantInternshipProject;
+  welcomeLetter: ApplicantInternshipDocument;
+  certificate: ApplicantInternshipDocument;
+  completionTasks: ApplicantInternshipTask[];
+  feedback?: ApplicantInternshipFeedback;
+}
+
 export interface ApplicantHomeTaskContent {
   title: string;
   body: string;

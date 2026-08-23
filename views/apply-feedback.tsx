@@ -9,25 +9,12 @@ import { useRole } from '@/lib/role';
 import { ChevronLeft, Star, Send, CheckCircle2, MessageSquareHeart, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { addNotification } from '@/lib/notifications';
-import type { Application } from '@/lib/types';
-import applicationsSeed from '@/data/applications.json';
-
-const IO_APPS_KEY     = 'dsta_applications';
-const IO_APPS_VER_KEY = 'dsta_applications_seed_v';
-const IO_APPS_VER     = '31';
-
-function loadIoApps(): Application[] {
-  try {
-    const ver = localStorage.getItem(IO_APPS_VER_KEY);
-    if (ver !== IO_APPS_VER) return applicationsSeed as Application[];
-    const r = localStorage.getItem(IO_APPS_KEY);
-    return r ? (JSON.parse(r) as Application[]) : (applicationsSeed as Application[]);
-  } catch { return applicationsSeed as Application[]; }
-}
-function saveIoApps(apps: Application[]) {
-  localStorage.setItem(IO_APPS_KEY, JSON.stringify(apps));
-  localStorage.setItem(IO_APPS_VER_KEY, IO_APPS_VER);
-}
+import {
+  loadApplicantInternshipRecord,
+  saveApplicantInternshipFeedback,
+} from '@/lib/applicant-internship';
+import type { ApplicantInternshipRecord } from '@/lib/types';
+import { z } from 'zod';
 
 /* ── Draft persistence ─────────────────────────────────────────────────── */
 interface FbDraft {
@@ -38,6 +25,20 @@ interface FbDraft {
   improvements: string;
   mentorMsg:  string;
 }
+
+const feedbackDraftSchema = z.object({
+  ratings: z.object({
+    calibration: z.number().int().min(1).max(5),
+    sentiment: z.number().int().min(1).max(5),
+    mentorship: z.number().int().min(1).max(5),
+    environment: z.number().int().min(1).max(5),
+  }),
+  scopeFit: z.enum(['too-easy', 'just-right', 'too-hard']),
+  recommend: z.number().int().min(0).max(10),
+  highlights: z.string().trim().min(1),
+  improvements: z.string().trim().min(1),
+  mentorMsg: z.string().trim().min(1),
+});
 const draftKey = (id: string) => `dsta_feedback_draft_${id}`;
 function loadDraft(id: string): FbDraft | null {
   try { const r = localStorage.getItem(draftKey(id)); return r ? JSON.parse(r) as FbDraft : null; } catch { return null; }
@@ -88,7 +89,7 @@ export default function ApplyFeedback() {
   const { toast, showToast } = useToast();
   const appId  = (params?.id as string) ?? '';
 
-  const [app,          setApp]          = useState<Application | null | 'loading'>('loading');
+  const [internship,   setInternship]   = useState<ApplicantInternshipRecord | null | 'loading'>('loading');
   const [fbRatings,    setFbRatings]    = useState({ calibration: 0, sentiment: 0, mentorship: 0, environment: 0 });
   const [fbScopeFit,   setFbScopeFit]   = useState<'too-easy' | 'just-right' | 'too-hard' | ''>('');
   const [fbRecommend,  setFbRecommend]  = useState<number | null>(null);
@@ -99,10 +100,11 @@ export default function ApplyFeedback() {
   const [justSaved,    setJustSaved]    = useState(false);
 
   useEffect(() => {
-    const found = loadIoApps().find(a => a.id === appId) ?? null;
-    setApp(found);
+    const found = loadApplicantInternshipRecord('offboarding');
+    const matchingRecord = found.applicationId === appId ? found : null;
+    setInternship(matchingRecord);
     // Restore a saved draft if the feedback hasn't been submitted yet
-    if (found && !found.internFeedback) {
+    if (matchingRecord && !matchingRecord.feedback) {
       const d = loadDraft(appId);
       if (d) {
         setFbRatings(d.ratings);
@@ -129,35 +131,49 @@ export default function ApplyFeedback() {
     showToast('Draft saved');
   }
 
+  function reviewFeedback() {
+    const result = feedbackDraftSchema.safeParse(currentDraft());
+    if (!result.success) {
+      showToast('Complete all required feedback fields before continuing.');
+      return;
+    }
+    saveDraftToStorage(appId, result.data);
+    router.push('/apply/applicant-feedback-review');
+  }
+
   function submitFeedback() {
-    if (!app || typeof app === 'string' || !fbComplete) return;
+    if (!internship || typeof internship === 'string' || !fbComplete) return;
+    const result = feedbackDraftSchema.safeParse(currentDraft());
+    if (!result.success) {
+      showToast('Complete all required feedback fields before submitting.');
+      return;
+    }
     setFbSubmitting(true);
     setTimeout(() => {
       const feedback = {
         submittedAt:   new Date().toISOString().split('T')[0],
-        ratings:       fbRatings,
-        scopeFit:      fbScopeFit as 'too-easy' | 'just-right' | 'too-hard',
-        recommend:     fbRecommend as number,
-        highlights:    fbHighlights.trim(),
-        improvements:  fbImprove.trim(),
-        mentorMessage: fbMentorMsg.trim() || undefined,
+        ratings:       result.data.ratings,
+        scopeFit:      result.data.scopeFit,
+        recommend:     result.data.recommend,
+        highlights:    result.data.highlights,
+        improvements:  result.data.improvements,
+        mentorMessage: result.data.mentorMsg,
       };
-      const updated = { ...app, internFeedback: feedback };
-      saveIoApps(loadIoApps().map(a => a.id === updated.id ? updated : a));
+      const updated = saveApplicantInternshipFeedback(appId, feedback);
       clearDraft(appId);
-      addNotification({ forRole: 'io', title: `Internship feedback received — ${app.name}`, body: `${app.name} has submitted their post-internship feedback.`, href: `/candidate360/${app.id}`, tier: 'info' });
+      addNotification({ forRole: 'io', title: `Internship feedback received — ${internship.applicantName}`, body: `${internship.applicantName} has submitted their post-internship feedback.`, href: `/candidate360/${internship.applicationId}`, tier: 'info' });
       if (fbMentorMsg.trim()) {
-        addNotification({ forRole: 'mentor', title: `Message from your intern — ${app.name}`, body: fbMentorMsg.trim(), href: '/mentor/interns', tier: 'info' });
+        addNotification({ forRole: 'mentor', title: `Message from your intern — ${internship.applicantName}`, body: fbMentorMsg.trim(), href: '/mentor/interns', tier: 'info' });
       }
-      setApp(updated);
+      setInternship(updated);
       setFbSubmitting(false);
       setJustSaved(true);
     }, 400);
   }
 
-  if (app === 'loading') return null;
+  if (internship === 'loading') return null;
 
-  if (!app || app.email !== profile.email) {
+  if (!internship || internship.applicantEmail !== profile.email) {
     return (
       <Shell activeRoute="/apply/internship">
         <div className="flex flex-col items-center justify-center py-32 gap-4">
@@ -168,7 +184,7 @@ export default function ApplyFeedback() {
     );
   }
 
-  const alreadyDone = !!app.internFeedback && !justSaved;
+  const alreadyDone = !!internship.feedback && !justSaved;
 
   return (
     <Shell activeRoute="/apply/internship">
@@ -193,7 +209,7 @@ export default function ApplyFeedback() {
         {!justSaved && !alreadyDone && (
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={saveDraft}><Save size={13} /> Save Draft</Button>
-            <Button disabled={!fbComplete || fbSubmitting} onClick={() => { saveDraftToStorage(appId, currentDraft()); router.push('/apply/applicant-feedback-review'); }}>
+            <Button disabled={!fbComplete || fbSubmitting} onClick={reviewFeedback}>
               <Send size={13} />Review Feedback
             </Button>
           </div>
@@ -300,7 +316,7 @@ export default function ApplyFeedback() {
 
           {/* Actions */}
           <div className="flex justify-end gap-2">
-            <Button disabled={!fbComplete || fbSubmitting} onClick={() => { saveDraftToStorage(appId, currentDraft()); router.push('/apply/applicant-feedback-review'); }}>
+            <Button disabled={!fbComplete || fbSubmitting} onClick={reviewFeedback}>
               <Send size={13} />Review Feedback
             </Button>
             <Button variant="outline" onClick={saveDraft}><Save size={13} /> Save Draft</Button>
