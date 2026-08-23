@@ -1,0 +1,115 @@
+[
+  {
+    "phase": "onboarding",
+    "applicationId": "APP-0031",
+    "applicantName": "Jenny Aw",
+    "applicantEmail": "jenny.aw@u.nus.edu",
+    "programmeName": "University Internship 2026",
+    "statusLabel": "Confirmed — Not yet started",
+    "statusTone": "info",
+    "internshipStartDate": "2026-06-23",
+    "internshipEndDate": "2026-09-19",
+    "creditBearing": true,
+    "action": {
+      "label": "Prepare for your internship",
+      "title": "Get ready for your first day",
+      "body": "Review your onboarding requirements and make sure your information is up to date before the internship begins.",
+      "cta": "Continue Onboarding",
+      "route": "/apply/onboarding"
+    },
+    "project": {
+      "id": "cybersecurity-threat-analysis",
+      "title": "Cybersecurity Threat Analysis",
+      "mentor": "Wei Jian Lim",
+      "mentorAppointment": "Senior Research Scientist",
+      "workingLocation": "Hybrid",
+      "duration": "3 Months",
+      "techDomain": "Cybersecurity",
+      "description": "Interns will conduct structured threat analysis and develop automated threat intelligence pipelines for defence networks. Scope includes threat modelling using the MITRE ATT&CK framework, malware behavioural analysis, and development of detection rules for SIEM platforms. Learning outcomes include adversarial thinking and practical cyber defence workflows. Deliverables include threat reports, SIEM detection rule sets, and a documented threat modelling framework.",
+      "skills": ["Python", "Threat Intelligence", "MITRE ATT&CK", "Log Analysis", "Network Forensics"]
+    },
+    "welcomeLetter": {
+      "status": "pending"
+    },
+    "certificate": {
+      "status": "pending"
+    },
+    "completionTasks": []
+  },
+  {
+    "phase": "offboarding",
+    "applicationId": "APP-0031",
+    "applicantName": "Jenny Aw",
+    "applicantEmail": "jenny.aw@u.nus.edu",
+    "programmeName": "University Internship 2026",
+    "statusLabel": "Completion action required",
+    "statusTone": "warning",
+    "internshipStartDate": "2026-06-23",
+    "internshipEndDate": "2026-09-19",
+    "creditBearing": true,
+    "action": {
+      "label": "Completion action required",
+      "title": "Complete your offboarding",
+      "body": "Submit the required internship feedback to complete your record. You can also request a testimonial, prepare a LinkedIn post and track certificate eligibility.",
+      "cta": "Start Offboarding",
+      "route": "/apply/applicant-offboarding"
+    },
+    "project": {
+      "id": "cybersecurity-threat-analysis",
+      "title": "Cybersecurity Threat Analysis",
+      "mentor": "Wei Jian Lim",
+      "mentorAppointment": "Senior Research Scientist",
+      "workingLocation": "Hybrid",
+      "duration": "3 Months",
+      "techDomain": "Cybersecurity",
+      "description": "Interns will conduct structured threat analysis and develop automated threat intelligence pipelines for defence networks. Scope includes threat modelling using the MITRE ATT&CK framework, malware behavioural analysis, and development of detection rules for SIEM platforms. Learning outcomes include adversarial thinking and practical cyber defence workflows. Deliverables include threat reports, SIEM detection rule sets, and a documented threat modelling framework.",
+      "skills": ["Python", "Threat Intelligence", "MITRE ATT&CK", "Log Analysis", "Network Forensics"]
+    },
+    "welcomeLetter": {
+      "status": "available",
+      "date": "2026-06-12",
+      "body": "Dear Jenny,\n\nWelcome to the University Internship 2026 programme. You will be joining the Cybersecurity Threat Analysis project under the guidance of Wei Jian Lim.\n\nPlease review your onboarding information and report to the DSTA Digital Hub on 23 June 2026.\n\nRegards,\nDSTA Internship Office"
+    },
+    "certificate": {
+      "status": "pending"
+    },
+    "completionTasks": [
+      {
+        "id": "feedback",
+        "status": "Required",
+        "statusTone": "warning",
+        "title": "Internship feedback",
+        "body": "Share feedback on your project, mentorship and learning experience.",
+        "cta": "Start Feedback",
+        "route": "/apply/feedback/APP-0031"
+      },
+      {
+        "id": "testimonial",
+        "status": "Optional",
+        "statusTone": "subtle",
+        "title": "Request a testimonial",
+        "body": "Ask your mentor for a testimonial to support future applications.",
+        "cta": "Request Testimonial",
+        "route": "/apply/applicant-testimonial-request"
+      },
+      {
+        "id": "linkedin",
+        "status": "Optional",
+        "statusTone": "subtle",
+        "title": "Share your experience",
+        "body": "Prepare editable content before continuing to LinkedIn.",
+        "cta": "Prepare Post",
+        "route": "/apply/applicant-linkedin-share"
+      },
+      {
+        "id": "certificate",
+        "status": "Pending",
+        "statusTone": "info",
+        "title": "Certificate eligibility",
+        "body": "Available after feedback, offboarding and final clearance are complete.",
+        "cta": "View Status",
+        "route": "/apply/certification"
+      }
+    ]
+  }
+]
