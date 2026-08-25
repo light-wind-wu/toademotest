@@ -11,13 +11,18 @@ import { useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import { useRole } from '@/lib/role';
 import { PROJECT_MATCHES, resolveArchetype, archetypeResultImage } from '@/lib/apply-project-fit';
-import { loadApplyDraft, programmeTitleForVariant } from '@/lib/apply-application';
-import { loadUtApplicantVariant } from '@/lib/ut-track';
+import { loadApplyDraft } from '@/lib/apply-application';
 import { cn } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import InterviewTimeslotSheet from '@/components/apply/interview-timeslot-sheet';
 import OutOfScopeTooltip from '@/components/apply/out-of-scope-tooltip';
 import HeroRadarOverlay from '@/components/apply/hero-radar-overlay';
+import { HeroV2Bg, HeroV2Fx } from '@/components/apply/hero-v2-art';
+import {
+  APPLICANT_HOME_DASHBOARD_ASSETS,
+  APPLICANT_HOME_DASHBOARD_CONTENT,
+} from '@/lib/applicant-home-dashboard-content';
+import type { ApplyDashboardBase } from '@/lib/apply-dashboard-version';
 import {
   APPLICANT_HOME_SCENARIO_CHANGED,
   isApplicantHomeScenario,
@@ -30,444 +35,31 @@ import type {
 
 const INTERVIEW_PROJECT_NAME = 'Designing Mission-Critical Digital Services';
 
-const BASE_STEP_LABELS = ['Submitted', 'Under Review', 'Interview', 'Outcome'] as const;
+const BASE_STEP_LABELS = ['Submitted', 'Under review', 'Interview', 'Offer', 'Outcome'] as const;
 
-const HOME_SCENARIO_CONTENT = {
-  'no-application': {
-    heroLines: ['Start your journey', 'with DSTA'],
-    heroMessage: 'Explore internship programmes and discover opportunities that match your interests.',
-    heroBadge: 'Applications open',
-    bannerLines: ['Discover where', 'your strengths', 'can take you.'],
-    bannerBody: 'Browse open programmes and begin an application when you are ready.',
-    recordDate: 'Applications close 30 Sep 2026',
-    statusLabel: 'Not started',
-    summary: 'Undergraduate Internship 2027 is open for applications across cyber, digital and engineering teams.',
-    dueText: 'Start any time before 30 Sep 2026.',
-    primaryLabel: 'Explore Programmes',
-    primaryRoute: '/join-us/student/internships',
-    secondaryLabel: 'View Programme',
-    progressIndex: -1,
-    progressHint: 'Start an application',
-    detailLabel: 'Getting started',
-    detailTitle: 'Find a programme that fits your goals.',
-    detailPerson: 'Talent Outreach Team',
-    detailRole: 'DSTA Internships',
-    detailMeta: [{ label: 'Application window', value: 'Open now' }, { label: 'Closes', value: '30 Sep 2026' }],
-    tasksKicker: 'Take the first step',
-    tasksTitle: 'Explore your options',
-    tasksDeadline: 'Applications close 30 Sep 2026',
-    tasks: [
-      { title: 'Explore programmes', body: 'Compare internship pathways and eligibility.', cta: 'Explore' },
-      { title: 'Discover your archetype', body: 'Find projects that match your interests.', cta: 'Take Quiz' },
-    ],
-    activity: [],
-  },
-  'draft-application': {
-    heroLines: ['You have made', 'a good start'],
-    heroMessage: 'Your draft is saved. Pick up where you left off and submit before the window closes.',
-    heroBadge: 'Draft saved',
-    bannerLines: ['Your application', 'is ready to', 'continue.'],
-    bannerBody: 'Complete your project preferences and review your answers before submitting.',
-    recordDate: 'Last updated 16 Aug 2026',
-    statusLabel: 'Draft',
-    summary: 'Your profile and education details are saved for Undergraduate Internship 2027.',
-    dueText: 'Submit by 30 Sep 2026.',
-    primaryLabel: 'Resume Application',
-    primaryRoute: '/apply/review',
-    secondaryLabel: 'View Draft',
-    progressIndex: -1,
-    progressHint: 'Draft application',
-    detailLabel: 'Draft application',
-    detailTitle: 'Complete your application before submitting.',
-    detailPerson: 'Jenny Aw',
-    detailRole: 'Applicant profile',
-    detailMeta: [{ label: 'Progress', value: '4 of 6 sections' }, { label: 'Time remaining', value: 'About 8 minutes' }],
-    tasksKicker: 'Keep things moving',
-    tasksTitle: '2 sections need your attention',
-    tasksDeadline: 'Submit by 30 Sep 2026',
-    tasks: [
-      { title: 'Rank project preferences', body: 'Choose and rank up to five projects.', cta: 'Continue' },
-      { title: 'Review your application', body: 'Check your details before submission.', cta: 'Review' },
-    ],
-    activity: [
-      { title: 'Draft saved', body: 'Your latest changes have been stored.', date: '16 Aug 2026', tone: 'accent' },
-      { title: 'Profile details completed', body: 'Your personal details are ready for review.', date: '15 Aug 2026', tone: 'accent' },
-      { title: 'Application window reminder', body: 'Submit by 30 September 2026.', date: '15 Aug 2026', tone: 'warning' },
-    ],
-  },
-  'submitted': {
-    heroLines: ['Your application', 'has been submitted'],
-    heroMessage: 'Your application was submitted successfully. We will let you know when the review begins or if any action is required.',
-    heroBadge: 'Submitted',
-    bannerLines: ['Your application', 'is safely', 'with us.'],
-    bannerBody: 'The Talent Acquisition team will review your application next. No action is required right now.',
-    recordDate: 'Submitted today',
-    statusLabel: 'Submitted',
-    summary: 'Your University Internship 2027 application has been received successfully.',
-    dueText: 'We will notify you when there is an update.',
-    primaryLabel: 'View Application',
-    primaryRoute: '/apply/applications',
-    secondaryLabel: 'View Details',
-    progressIndex: 0,
-    progressHint: 'Application submitted',
-    detailLabel: 'Application received',
-    detailTitle: 'Your submission is complete and awaiting review.',
-    detailPerson: 'Talent Acquisition Team',
-    detailRole: 'DSTA Internships',
-    detailMeta: [{ label: 'Status', value: 'Submitted' }, { label: 'Reference', value: 'APP-UI27-00418' }],
-    tasksKicker: 'You are all caught up',
-    tasksTitle: 'No action is required',
-    tasksDeadline: 'We will notify you of any updates',
-    tasks: [
-      { title: 'Monitor your application', body: 'Check the Applicant Portal for status updates.', cta: 'View Application' },
-      { title: 'Keep your profile current', body: 'Make sure your contact details remain up to date.', cta: 'View Profile' },
-    ],
-    activity: [
-      { title: 'Application submitted', body: 'Your University Internship 2027 application was received successfully.', date: 'Today', tone: 'accent' },
-    ],
-  },
-  'under-review': {
-    heroLines: ['Your application is', 'moving forward'],
-    heroMessage: 'The review team has everything they need. We will let you know when there is an update.',
-    heroBadge: 'Under review',
-    bannerLines: ['Your application', 'is now under', 'review.'],
-    bannerBody: 'No action is needed while we review your application and suitable project matches.',
-    recordDate: 'Submitted 24 Jul 2026',
-    statusLabel: 'Under review',
-    summary: 'Your Undergraduate Internship 2027 application is being reviewed for suitable project matches.',
-    dueText: 'No action is required right now.',
-    primaryLabel: 'View Application',
-    primaryRoute: '/apply/applications',
-    secondaryLabel: 'View Details',
-    progressIndex: 1,
-    progressHint: 'Application review',
-    detailLabel: 'Application review',
-    detailTitle: 'Your application is with our review team.',
-    detailPerson: 'Talent Outreach Team',
-    detailRole: 'Application review',
-    detailMeta: [{ label: 'Status', value: 'Under review' }, { label: 'Submitted', value: '24 Jul 2026' }],
-    tasksKicker: 'You are all caught up',
-    tasksTitle: 'No tasks need your attention',
-    tasksDeadline: 'We will notify you of any updates',
-    tasks: [
-      { title: 'Keep your profile current', body: 'Check that your contact details are up to date.', cta: 'View Profile' },
-      { title: 'Explore DSTA events', body: 'Discover upcoming talks and experiences.', cta: 'View Events' },
-    ],
-    activity: [
-      { title: 'Application under review', body: 'Your application has moved to the review stage.', date: '25 Jul 2026', tone: 'accent' },
-      { title: 'Application received', body: 'Your Undergraduate Internship 2027 submission is complete.', date: '24 Jul 2026', tone: 'accent' },
-      { title: 'Quiz result saved', body: 'Your archetype can be replayed any time.', date: '24 Jul 2026', tone: 'warning' },
-    ],
-  },
-  'interview-action': {
-    heroLines: ['Your next chapter is', 'taking shape'],
-    heroMessage: 'You’ve received an interview invitation. Choose a timeslot to continue.',
-    heroBadge: 'Interview invitation received',
-    bannerLines: ['Congratulations! You', 'have been shortlisted', 'for an interview.'],
-    bannerBody: 'Your mentor Marcus Tan (Digital Hub) would like to meet you before the application progresses.',
-    recordDate: 'Submitted 12 Aug 2026',
-    statusLabel: 'Interview invited',
-    summary: `You’ve been shortlisted for an interview for ${INTERVIEW_PROJECT_NAME} under University Internship 2027.`,
-    dueText: 'Choose a timeslot by 28 Aug 2026.',
-    primaryLabel: 'Choose a Timeslot',
-    primaryRoute: '/apply/interviews',
-    secondaryLabel: 'View Application',
-    progressIndex: 2,
-    progressHint: 'Choose a timeslot',
-    detailLabel: 'Interview invitation',
-    detailTitle: 'Choose a timeslot to confirm your interview.',
-    detailPerson: 'Marcus Tan',
-    detailRole: 'Mentor · Digital Hub',
-    detailMeta: [{ label: 'Format', value: 'Microsoft Teams' }, { label: 'Duration', value: '1 hour' }],
-    tasksKicker: 'Keep things moving',
-    tasksTitle: 'Your mentor interview needs a response',
-    tasksDeadline: 'Respond by 28 Aug 2026',
-    tasks: [
-      { title: 'Choose a timeslot', body: 'Select an available time to meet Marcus Tan.', cta: 'Choose Timeslot' },
-      { title: 'Review your application', body: 'Check the application linked to this interview.', cta: 'View Application' },
-    ],
-    activity: [
-      { title: 'Interview invitation received', body: `Marcus Tan invited you to interview for ${INTERVIEW_PROJECT_NAME}.`, date: '25 Aug 2026', tone: 'accent' },
-      { title: 'Application received', body: 'Your University Internship 2027 submission is complete.', date: '12 Aug 2026', tone: 'accent' },
-      { title: 'Application under review', body: 'Your application progressed to the review stage.', date: '15 Aug 2026', tone: 'warning' },
-    ],
-  },
-  'interview-scheduled': {
-    heroLines: ['Your interview is', 'on the calendar'],
-    heroMessage: 'Your timeslot is selected. Review the details and get ready to meet your mentor.',
-    heroBadge: 'Interview scheduled',
-    bannerLines: ['Your interview', 'timeslot is', 'confirmed.'],
-    bannerBody: 'Everything you need for the conversation is available below. You can manage the interview if your availability changes.',
-    recordDate: 'Timeslot selected 25 Aug 2026',
-    statusLabel: 'Timeslot selected',
-    summary: `Your interview for the ${INTERVIEW_PROJECT_NAME} project is scheduled with Marcus Tan.`,
-    dueText: '28 Aug 2026 · 10:00 AM · Singapore Time (SGT)',
-    primaryLabel: 'View / Manage Interview',
-    primaryRoute: '/apply/applications/app-design-2027',
-    secondaryLabel: 'View Application',
-    progressIndex: 2,
-    progressHint: 'Timeslot Selected',
-    detailLabel: 'Interview Scheduled',
-    detailTitle: 'Your interview timeslot is confirmed.',
-    detailPerson: 'Marcus Tan',
-    detailRole: 'Mentor · Digital Hub',
-    detailMeta: [{ label: 'Selected date & time', value: '28 Aug 2026 · 10:00 AM' }, { label: 'Interview details', value: 'Microsoft Teams · 1 hour' }],
-    tasksKicker: 'Interview details',
-    tasksTitle: 'Everything you need for the conversation',
-    tasksDeadline: '28 Aug 2026 · 10:00 AM SGT',
-    tasks: [
-      { title: 'View interview details', body: 'Review the mentor, format and joining instructions.', cta: 'View Details' },
-      { title: 'Suggest another time', body: 'Request a different time if your availability changes.', cta: 'Suggest Time' },
-    ],
-    activity: [],
-  },
-  'interview-rescheduling': {
-    heroLines: ['Your time change is', 'being reviewed'],
-    heroMessage: 'Your suggested interview time has been sent. No action is needed while we confirm it.',
-    heroBadge: 'Time change requested',
-    bannerLines: ['Your alternative', 'interview time is', 'pending.'],
-    bannerBody: 'The interviewer is reviewing your suggested time. We will notify you as soon as it is confirmed.',
-    recordDate: 'Time change requested 20 Aug 2026',
-    statusLabel: 'Awaiting confirmation',
-    summary: `Your request to reschedule the ${INTERVIEW_PROJECT_NAME} interview is awaiting confirmation from your mentor.`,
-    dueText: 'No action is needed while this request is pending.',
-    primaryLabel: 'Await Interview Time Confirmation',
-    primaryRoute: '/apply/applications/app-ai-2027',
-    secondaryLabel: 'View Application',
-    progressIndex: 2,
-    progressHint: 'Time Change Requested',
-    detailLabel: 'Interview Rescheduling',
-    detailTitle: 'Your suggested time is awaiting confirmation.',
-    detailPerson: 'Marcus Tan',
-    detailRole: 'Mentor · Digital Hub',
-    detailMeta: [{ label: 'Suggested date & time', value: '31 Aug 2026 · 11:00 AM' }, { label: 'Request status', value: 'Awaiting interviewer confirmation' }],
-    tasksKicker: 'Rescheduling details',
-    tasksTitle: 'No action is needed right now',
-    tasksDeadline: 'We will notify you when the time is confirmed',
-    tasks: [
-      { title: 'Suggested time', body: '31 Aug 2026 · 11:00 AM SGT', cta: 'View Details' },
-      { title: 'Original slot', body: '28 Aug 2026 · 3:00 PM SGT', cta: 'View Original' },
-    ],
-    activity: [],
-  },
-  'interview-completed': {
-    heroLines: ['Your interview is', 'complete'],
-    heroMessage: 'Thank you for meeting the project team. The internship team is reviewing the outcome.',
-    heroBadge: 'Outcome pending',
-    bannerLines: ['Your interview', 'has been', 'completed.'],
-    bannerBody: 'No action is needed while the internship team completes its review.',
-    recordDate: 'Interview completed 27 Aug 2026',
-    statusLabel: 'Under review',
-    summary: `Your interview for the ${INTERVIEW_PROJECT_NAME} project is complete and the outcome is pending.`,
-    dueText: 'We will notify you when there is an outcome.',
-    primaryLabel: 'View Application',
-    primaryRoute: '/apply/applications',
-    secondaryLabel: 'View Interview',
-    progressIndex: 3,
-    progressHint: 'Outcome pending',
-    detailLabel: 'Interview completed',
-    detailTitle: 'The internship team is reviewing the outcome.',
-    detailPerson: 'Talent Outreach Team',
-    detailRole: 'DSTA Internships',
-    detailMeta: [{ label: 'Completed', value: '27 Aug 2026 · 2:30 PM' }, { label: 'Status', value: 'Outcome pending' }],
-    tasksKicker: 'You are all caught up',
-    tasksTitle: 'No tasks need your attention',
-    tasksDeadline: 'We will notify you of any updates',
-    tasks: [
-      { title: 'View interview record', body: 'Review the completed interview details.', cta: 'View Interview' },
-      { title: 'Keep your profile current', body: 'Check that your contact details are up to date.', cta: 'View Profile' },
-    ],
-    activity: [
-      { title: 'Interview completed', body: `Your interview for ${INTERVIEW_PROJECT_NAME} was completed.`, date: '27 Aug 2026', tone: 'accent' },
-      { title: 'Outcome review started', body: 'The internship team is reviewing the interview outcome.', date: '28 Aug 2026', tone: 'accent' },
-    ],
-  },
-  'offer-action': {
-    heroLines: ['An offer is waiting', 'for you'],
-    heroMessage: 'Review your internship offer and tell us your decision before the response deadline.',
-    heroBadge: 'Offer received',
-    bannerLines: ['Your internship', 'offer is ready', 'to review.'],
-    bannerBody: 'Review the internship period, reporting details and terms before responding.',
-    recordDate: 'Offer issued 29 Aug 2026',
-    statusLabel: 'Offer received',
-    summary: `You have received an offer for the ${INTERVIEW_PROJECT_NAME} project under University Internship 2027.`,
-    dueText: 'Respond by 5 Sep 2026.',
-    primaryLabel: 'View Offer',
-    primaryRoute: '/apply/applicant-offer-detail?applicationId=app-ui-2027',
-    secondaryLabel: 'View Application',
-    progressIndex: 3,
-    progressHint: 'Respond to your offer',
-    detailLabel: 'Offer received',
-    detailTitle: 'Review and respond to your internship offer.',
-    detailPerson: 'Marcus Tan',
-    detailRole: 'Mentor · Digital Hub',
-    detailMeta: [{ label: 'Internship period', value: '14 Sep – 11 Dec 2026' }, { label: 'Response deadline', value: '5 Sep 2026' }],
-    tasksKicker: 'Offer response',
-    tasksTitle: '2 details to review',
-    tasksDeadline: 'Respond by 5 Sep 2026',
-    tasks: [
-      { title: 'Review your offer', body: 'Check the period, location and terms.', cta: 'View Offer' },
-      { title: 'Confirm your decision', body: 'Accept or decline before the deadline.', cta: 'Respond' },
-    ],
-    activity: [
-      { title: 'Offer received', body: 'Your internship offer is ready to review.', date: '29 Aug 2026', tone: 'accent' },
-      { title: 'Interview completed', body: 'Thank you for meeting the project team.', date: '28 Aug 2026', tone: 'accent' },
-      { title: 'Response deadline', body: 'Respond to your offer by 5 September 2026.', date: '29 Aug 2026', tone: 'warning' },
-    ],
-  },
-  'onboarding-action': {
-    heroLines: ['Let’s get you ready', 'for day one'],
-    heroMessage: 'Your place is confirmed. Complete the remaining onboarding tasks before your internship begins.',
-    heroBadge: 'Offer accepted',
-    bannerLines: ['Welcome aboard.', 'Your internship', 'is confirmed.'],
-    bannerBody: 'Complete your onboarding checklist and review your first-day information.',
-    recordDate: 'Offer accepted 31 Aug 2026',
-    statusLabel: 'Onboarding',
-    summary: `Your place on the ${INTERVIEW_PROJECT_NAME} project is confirmed. Three onboarding tasks remain.`,
-    dueText: 'Complete onboarding by 15 Sep 2026.',
-    primaryLabel: 'Continue Onboarding',
-    primaryRoute: '/apply/onboarding',
-    secondaryLabel: 'View Internship',
-    progressIndex: 3,
-    progressHint: 'Complete onboarding',
-    detailLabel: 'Onboarding checklist',
-    detailTitle: 'Complete your remaining onboarding tasks.',
-    detailPerson: 'Marcus Tan',
-    detailRole: 'Mentor · Digital Hub',
-    detailMeta: [{ label: 'Progress', value: '3 of 6 tasks' }, { label: 'Due', value: '15 Sep 2026' }],
-    tasksKicker: 'Before day one',
-    tasksTitle: '2 tasks need your attention',
-    tasksDeadline: 'Complete by 15 Sep 2026',
-    tasks: [
-      { title: 'Provide bank details', body: 'Add your account and supporting document.', cta: 'Continue' },
-      { title: 'Accept use policy', body: 'Read and acknowledge the policy.', cta: 'Review' },
-    ],
-    activity: [
-      { title: 'Onboarding tasks created', body: 'Complete your checklist before your first day.', date: '31 Aug 2026', tone: 'accent' },
-      { title: 'Welcome letter available', body: 'Your first-day information is ready.', date: '31 Aug 2026', tone: 'accent' },
-      { title: 'Offer accepted', body: 'Your response was submitted successfully.', date: '31 Aug 2026', tone: 'accent' },
-    ],
-  },
-  'active-internship': {
-    heroLines: ['You are building', 'what comes next'],
-    heroMessage: 'Stay on top of your internship details, key contacts and upcoming milestones.',
-    heroBadge: 'Week 5 of 12',
-    bannerLines: ['Your internship', 'is in progress', 'and on track.'],
-    bannerBody: 'Your next milestone is the mid-point check-in with your mentor.',
-    recordDate: 'Started 14 Sep 2026',
-    statusLabel: 'Active internship',
-    summary: `You are completing the ${INTERVIEW_PROJECT_NAME} project with Digital Hub.`,
-    dueText: 'Next check-in on 16 Oct 2026.',
-    primaryLabel: 'View Internship',
-    primaryRoute: '/apply/internship',
-    secondaryLabel: 'View Details',
-    progressIndex: 3,
-    progressHint: 'Internship in progress',
-    detailLabel: 'Active internship',
-    detailTitle: 'Your internship is on track.',
-    detailPerson: 'Marcus Tan',
-    detailRole: 'Mentor · Digital Hub',
-    detailMeta: [{ label: 'Progress', value: 'Week 5 of 12' }, { label: 'Next check-in', value: '16 Oct 2026' }],
-    tasksKicker: 'You are all caught up',
-    tasksTitle: 'No tasks need your attention',
-    tasksDeadline: 'Next check-in 16 Oct 2026',
-    tasks: [
-      { title: 'View internship details', body: 'Check your period, mentor and contacts.', cta: 'View Details' },
-      { title: 'Prepare for check-in', body: 'Review your progress with your mentor.', cta: 'View Guide' },
-    ],
-    activity: [
-      { title: 'Mid-point check-in scheduled', body: 'Meet Aisha on 16 October at 10:00 AM.', date: '10 Oct 2026', tone: 'accent' },
-      { title: 'Internship started', body: `Welcome to the ${INTERVIEW_PROJECT_NAME} project.`, date: '14 Sep 2026', tone: 'accent' },
-      { title: 'Onboarding completed', body: 'All onboarding details have been confirmed.', date: '12 Sep 2026', tone: 'accent' },
-    ],
-  },
-  'completion-action': {
-    heroLines: ['Help us close', 'the loop'],
-    heroMessage: 'Your internship is complete. Share your experience while the journey is still fresh.',
-    heroBadge: 'Feedback due',
-    bannerLines: ['Congratulations on', 'completing your', 'internship.'],
-    bannerBody: 'Share feedback on your project, mentorship and learning experience.',
-    recordDate: 'Completed 11 Dec 2026',
-    statusLabel: 'Completion action',
-    summary: `You completed the ${INTERVIEW_PROJECT_NAME} project under Undergraduate Internship 2027.`,
-    dueText: 'Submit feedback by 18 Dec 2026.',
-    primaryLabel: 'Start Feedback',
-    primaryRoute: '/apply/applicant-offboarding',
-    secondaryLabel: 'View Internship',
-    progressIndex: 3,
-    progressHint: 'Complete feedback',
-    detailLabel: 'Internship completion',
-    detailTitle: 'One final task completes your journey.',
-    detailPerson: 'Talent Outreach Team',
-    detailRole: 'Internship completion',
-    detailMeta: [{ label: 'Completed', value: '11 Dec 2026' }, { label: 'Feedback due', value: '18 Dec 2026' }],
-    tasksKicker: 'Completion tasks',
-    tasksTitle: '2 items are in progress',
-    tasksDeadline: 'Feedback due 18 Dec 2026',
-    tasks: [
-      { title: 'Complete feedback', body: 'Share your internship experience.', cta: 'Start Feedback' },
-      { title: 'Certificate preparation', body: 'We will notify you when it is ready.', cta: 'View Status' },
-    ],
-    activity: [
-      { title: 'Feedback is ready', body: 'Share your internship experience by 18 December.', date: '11 Dec 2026', tone: 'warning' },
-      { title: 'Internship completed', body: 'Congratulations on completing your internship.', date: '11 Dec 2026', tone: 'accent' },
-      { title: 'Certificate preparation started', body: 'We will notify you when it is available.', date: '11 Dec 2026', tone: 'accent' },
-    ],
-  },
-  'journey-completed': {
-    heroLines: ['Look how far', 'you have come'],
-    heroMessage: 'Your internship journey is complete, and your certificate is ready for what comes next.',
-    heroBadge: 'Certificate available',
-    bannerLines: ['Your internship', 'journey is now', 'complete.'],
-    bannerBody: 'Your certificate and completed internship record will remain available here.',
-    recordDate: 'Completed 18 Dec 2026',
-    statusLabel: 'Journey completed',
-    summary: `Your ${INTERVIEW_PROJECT_NAME} internship and all completion actions are finished.`,
-    dueText: 'Certificate issued 18 Dec 2026.',
-    primaryLabel: 'View Certificate',
-    primaryRoute: '/apply/certification',
-    secondaryLabel: 'View Internship',
-    progressIndex: 4,
-    progressHint: 'Journey completed',
-    detailLabel: 'Journey completed',
-    detailTitle: 'Your certificate is ready.',
-    detailPerson: 'Talent Outreach Team',
-    detailRole: 'DSTA Internships',
-    detailMeta: [{ label: 'Completed', value: '18 Dec 2026' }, { label: 'Certificate', value: 'Available' }],
-    tasksKicker: 'Your achievements',
-    tasksTitle: '2 items are available',
-    tasksDeadline: 'Available any time',
-    tasks: [
-      { title: 'View your certificate', body: 'Preview or download your credential.', cta: 'View Certificate' },
-      { title: 'View internship record', body: 'Return to your completed internship.', cta: 'View Record' },
-    ],
-    activity: [
-      { title: 'Certificate available', body: 'Your internship certificate is ready to view.', date: '18 Dec 2026', tone: 'accent' },
-      { title: 'Feedback submitted', body: 'Thank you for sharing your experience.', date: '18 Dec 2026', tone: 'accent' },
-      { title: 'Journey completed', body: 'Your internship record is complete.', date: '18 Dec 2026', tone: 'accent' },
-    ],
-  },
-} satisfies Record<ApplicantHomeScenario, ApplicantHomeScenarioContent>;
+const HOME_SCENARIO_CONTENT = APPLICANT_HOME_DASHBOARD_CONTENT;
 
-export default function ApplyDashboardV1() {
+export interface ApplyDashboardViewProps {
+  visualVariant?: ApplyDashboardBase;
+  allowCustomRequest?: boolean;
+}
+
+export default function ApplyDashboardV1({
+  visualVariant = 'v1',
+  allowCustomRequest = true,
+}: ApplyDashboardViewProps = {}) {
   const { profile } = useRole();
   const router = useRouter();
   const firstName = profile.name.split(' ')[0] || 'there';
   const [quizTaken, setQuizTaken] = useState(false);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
   const [timeslotOpen, setTimeslotOpen] = useState(false);
-  const [programmeTitle, setProgrammeTitle] = useState('Undergraduate Internship 2027');
   const [scenario, setScenario] = useState<ApplicantHomeScenario>('interview-action');
 
   useEffect(() => {
     const d = loadApplyDraft();
     setQuizTaken(d.quizTaken);
     setAnswers(d.quizAnswers);
-    setProgrammeTitle(
-      d.programmeTitle ||
-        programmeTitleForVariant(loadUtApplicantVariant() ?? 'undergraduate'),
-    );
-
     setScenario(loadApplicantHomeScenario());
     function onScenarioChange(event: Event) {
       const detail = (event as CustomEvent<ApplicantHomeScenario>).detail;
@@ -482,9 +74,8 @@ export default function ApplyDashboardV1() {
     [quizTaken, answers],
   );
   const content = HOME_SCENARIO_CONTENT[scenario];
-  const displayProgrammeTitle = scenario === 'no-application' || scenario === 'draft-application'
-    ? programmeTitle
-    : 'University Internship 2027';
+  const assets = APPLICANT_HOME_DASHBOARD_ASSETS;
+  const displayProgrammeTitle = 'University Internship 2027';
   const steps = useMemo(
     () => BASE_STEP_LABELS.map((label, index) => ({
       id: index + 1,
@@ -548,11 +139,11 @@ export default function ApplyDashboardV1() {
             <div className="relative mx-auto h-full w-full max-w-[1440px]">
               {/* Desktop ship bg + radar share one contain frame (sidebar-safe) */}
               <div className="ship-float pointer-events-none absolute inset-0 z-0 hidden lg:block">
-                <HeroRadarOverlay />
+                {visualVariant === 'v2' ? <HeroV2Bg /> : <HeroRadarOverlay />}
               </div>
               <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden lg:hidden">
                 <Image
-                  src="/images/dashboard-v1-top-m.png"
+                  src={assets.heroMobile[visualVariant]}
                   alt=""
                   fill
                   className="object-cover object-center"
@@ -591,6 +182,14 @@ export default function ApplyDashboardV1() {
             </div>
           </header>
 
+          {visualVariant === 'v2' ? (
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-30 hidden h-[345px] overflow-visible lg:block">
+              <div className="relative mx-auto h-full w-full max-w-[1440px] overflow-visible">
+                <HeroV2Fx />
+              </div>
+            </div>
+          ) : null}
+
           {/* New applicants do not yet have an application status card. */}
           {scenario !== 'no-application' ? (
           <div className="relative z-20 mx-auto w-full max-w-[1440px] max-lg:mt-0 lg:-mt-[345px]">
@@ -609,7 +208,7 @@ export default function ApplyDashboardV1() {
                 aria-hidden
               >
                 <Image
-                  src="/images/radar-v1-new.png"
+                  src={assets.statusRadar[visualVariant]}
                   alt=""
                   width={354}
                   height={285}
@@ -624,14 +223,14 @@ export default function ApplyDashboardV1() {
                 >
                   <div className="pointer-events-none absolute inset-0 z-0">
                     <Image
-                      src="/images/banner-bg-v1.png"
+                      src={assets.bannerDesktop}
                       alt=""
                       fill
                       className="object-cover object-bottom max-lg:hidden"
                       sizes="335px"
                     />
                     <Image
-                      src="/images/banner-bg-v1-m.png"
+                      src={assets.bannerMobile}
                       alt=""
                       fill
                       className="object-cover object-bottom lg:hidden"
@@ -686,7 +285,7 @@ export default function ApplyDashboardV1() {
                     className="mt-0.5 text-[14px] font-normal leading-[120%] lg:mt-2"
                     style={{ color: 'rgba(74, 85, 104, 1)' }}
                   >
-                    {content.summary.replace('Undergraduate Internship 2027', displayProgrammeTitle)}
+                    {content.summary}
                   </p>
                   <p
                     className="mt-6 text-[14px] font-medium leading-[120%] lg:mt-8"
@@ -748,7 +347,7 @@ export default function ApplyDashboardV1() {
                     aria-hidden
                   >
                     <Image
-                      src="/images/map-right-top-v1.png"
+                      src={assets.mapTopDesktop}
                       alt=""
                       width={370}
                       height={116}
@@ -760,7 +359,7 @@ export default function ApplyDashboardV1() {
                     aria-hidden
                   >
                     <Image
-                      src="/images/map-right-top-v1-m.png"
+                      src={assets.mapTopMobile}
                       alt=""
                       width={260}
                       height={72}
@@ -772,7 +371,7 @@ export default function ApplyDashboardV1() {
                     aria-hidden
                   >
                     <Image
-                      src="/images/map-left-down-v1.png"
+                      src={assets.mapBottomDesktop}
                       alt=""
                       fill
                       className="object-contain object-left-bottom"
@@ -800,30 +399,11 @@ export default function ApplyDashboardV1() {
 
                     {showApplicationMap ? (
                       <>
-                    {/* Mobile: horizontal step dots — 24 below title, 14 above Interview */}
-                    <ol
-                      className="mt-6 flex w-full items-center lg:hidden"
-                      aria-label="Application progress"
-                    >
-                      {steps.map((step, i) => {
-                        const isLast = i === steps.length - 1;
-                        return (
-                          <li
-                            key={step.id}
-                            className={cn('flex items-center', !isLast && 'min-w-0 flex-1')}
-                          >
-                            <StepGlyph step={step} />
-                            {!isLast && (
-                              <span
-                                className="mx-2 h-px min-w-[12px] flex-1"
-                                style={{ background: 'rgba(163, 163, 163, 1)' }}
-                                aria-hidden
-                              />
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ol>
+                    <VerticalProgressBar
+                      steps={steps}
+                      ariaLabel="Application progress"
+                      className="mt-6 lg:hidden"
+                    />
 
                     {/* Mobile: Interview + invitation + tasks (16px gap) */}
                     <div className="relative mt-3.5 lg:hidden">
@@ -847,59 +427,10 @@ export default function ApplyDashboardV1() {
 
                     {/* Desktop: 143 | 40 | 1fr */}
                     <div className="mt-12 hidden lg:grid lg:grid-cols-[143px_minmax(0,1fr)] lg:gap-10">
-                      <ol
-                        className="flex w-[143px] shrink-0 flex-col"
-                        aria-label="Application progress"
-                      >
-                        {steps.map((step, i) => {
-                          const isLast = i === steps.length - 1;
-                          const lineDone = step.done;
-                          return (
-                            <li key={step.id} className="flex gap-3">
-                              <div className="flex w-6 shrink-0 flex-col items-center">
-                                <StepGlyph step={step} />
-                                {!isLast && (
-                                  <>
-                                    <span className="block w-px shrink-0" style={{ height: 8 }} aria-hidden />
-                                    <span
-                                      className="block w-px shrink-0"
-                                      style={{
-                                        height: 62,
-                                        background: lineDone
-                                          ? 'rgba(69, 85, 108, 1)'
-                                          : 'rgba(163, 163, 163, 1)',
-                                      }}
-                                      aria-hidden
-                                    />
-                                    <span className="block w-px shrink-0" style={{ height: 8 }} aria-hidden />
-                                  </>
-                                )}
-                              </div>
-                              <div className="min-w-0 pt-0.5">
-                                <p
-                                  className="text-[14px] font-normal leading-[140%]"
-                                  style={{
-                                    color:
-                                      step.done || step.current
-                                        ? 'rgba(0, 0, 0, 0.87)'
-                                        : 'rgba(74, 85, 104, 1)',
-                                  }}
-                                >
-                                  {step.label}
-                                </p>
-                                {step.hint && (
-                                  <p
-                                    className="mt-0.5 text-[12px] font-normal leading-[140%]"
-                                    style={{ color: 'rgba(74, 85, 104, 0.87)' }}
-                                  >
-                                    {step.hint}
-                                  </p>
-                                )}
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ol>
+                      <VerticalProgressBar
+                        steps={steps}
+                        ariaLabel="Application progress"
+                      />
 
                       <div className="min-w-0 w-full space-y-4">
                         <JourneyDetailCard content={content} />
@@ -1026,7 +557,7 @@ export default function ApplyDashboardV1() {
 
                     <div className="pointer-events-none relative mx-auto hidden h-[200px] w-[270px] shrink-0 lg:block">
                       <Image
-                        src="/images/activity-v1.png"
+                        src={assets.activityIllustration}
                         alt=""
                         fill
                         className="object-contain object-right-bottom"
@@ -1042,7 +573,11 @@ export default function ApplyDashboardV1() {
               {scenario === 'no-application' ? (
                 <NoApplicationAside />
               ) : showInternshipHome ? (
-                <InternshipStageAside scenario={scenario} onOpen={() => router.push(content.primaryRoute)} />
+                <InternshipStageAside
+                  scenario={scenario}
+                  illustration={assets.activityIllustration}
+                  onOpen={() => router.push(content.primaryRoute)}
+                />
               ) : (
               <aside
                 className="relative mx-auto h-auto min-h-[420px] w-full shrink-0 overflow-hidden rounded-2xl p-6 max-lg:max-w-none lg:mx-0 lg:h-[423px] lg:min-h-0 lg:w-[314px] lg:max-w-[314px]"
@@ -1114,8 +649,8 @@ export default function ApplyDashboardV1() {
         open={timeslotOpen}
         onOpenChange={setTimeslotOpen}
         projectName={INTERVIEW_PROJECT_NAME}
-        allowCustomRequest
-        sourceVersion="v1"
+        allowCustomRequest={allowCustomRequest}
+        sourceVersion={visualVariant}
       />
     </Shell>
   );
@@ -1159,25 +694,16 @@ function PreApplicationSection({
             {isDraft ? 'About 8 minutes remaining' : 'Applications close 30 Sep 2026'}
           </p>
         </div>
-        <ol className="mt-6 grid gap-3 sm:grid-cols-4" aria-label={isDraft ? 'Draft application progress' : 'Application journey'}>
-          {stages.map((stage, index) => (
-            <li key={stage.label} className="flex items-center gap-2">
-              <span
-                className={cn(
-                  'inline-flex size-6 shrink-0 items-center justify-center rounded-full border text-[12px]',
-                  stage.state === 'done' && 'border-transparent bg-[rgba(24,184,166,1)] text-white',
-                  stage.state === 'current' && 'border-transparent bg-[rgba(26,101,248,1)] text-white',
-                  stage.state === 'upcoming' && 'border-border bg-bg-subtle text-fg-muted',
-                )}
-              >
-                {stage.state === 'done' ? '✓' : index + 1}
-              </span>
-              <span className={cn('text-[13px]', stage.state === 'upcoming' ? 'text-fg-muted' : 'font-medium text-fg')}>
-                {stage.label}
-              </span>
-            </li>
-          ))}
-        </ol>
+        <VerticalProgressBar
+          className="mt-6"
+          ariaLabel="Draft application progress"
+          steps={stages.map((stage, index) => ({
+            id: index + 1,
+            label: stage.label,
+            done: stage.state === 'done',
+            current: stage.state === 'current',
+          }))}
+        />
       </div>
       ) : null}
 
@@ -1204,65 +730,31 @@ function InternshipHomeSection({
         : scenario === 'completion-action'
           ? 3
           : 4;
-  const internshipStages = ['Onboarding', 'Ready', 'Active', 'Complete'];
-  const status =
-    scenario === 'onboarding-action'
-      ? 'Onboarding'
-      : scenario === 'active-internship'
-        ? 'Active internship'
-        : scenario === 'completion-action'
-          ? 'Completion action'
-          : 'Completed';
+  const internshipStages = [
+    { label: 'Onboarding', hint: 'Complete pre-internship requirements' },
+    { label: 'Ready', hint: 'Prepare for your first day' },
+    { label: 'Active', hint: 'Complete your internship project' },
+    { label: 'Complete', hint: 'Finish feedback and receive your certificate' },
+  ];
 
   return (
-    <div className="mt-8 space-y-4">
-      <div className="rounded-xl border border-border bg-white p-5 lg:p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-[18px] font-semibold text-fg">University Internship 2027</p>
-              <span className="rounded-full bg-[rgba(0,188,125,0.15)] px-2.5 py-1 text-[12px] text-[rgba(0,122,85,1)]">
-                {status}
-              </span>
-            </div>
-            <p className="mt-2 text-[14px] text-fg-muted">Digital Hub · Mentor: Marcus Tan</p>
-          </div>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[13px]">
-            <div><span className="block text-fg-muted">Period</span><span className="font-medium text-fg">14 Sep – 11 Dec 2026</span></div>
-            <div><span className="block text-fg-muted">Location</span><span className="font-medium text-fg">Depot Road</span></div>
-          </div>
-        </div>
-        <ol className="mt-6 grid grid-cols-4 gap-2" aria-label="Internship progress">
-          {internshipStages.map((stage, index) => {
-            const done = currentIndex > index;
-            const current = currentIndex === index;
-            return (
-              <li key={stage} className="min-w-0">
-                <div className="flex items-center">
-                  <span
-                    className={cn(
-                      'inline-flex size-6 shrink-0 items-center justify-center rounded-full border text-[12px]',
-                      done && 'border-transparent bg-[rgba(24,184,166,1)] text-white',
-                      current && 'border-transparent bg-[rgba(26,101,248,1)] text-white',
-                      !done && !current && 'border-border bg-bg-subtle text-fg-muted',
-                    )}
-                  >
-                    {done ? '✓' : index + 1}
-                  </span>
-                  {index < internshipStages.length - 1 ? (
-                    <span className="mx-2 h-px min-w-0 flex-1 bg-border" aria-hidden />
-                  ) : null}
-                </div>
-                <p className={cn('mt-2 truncate text-[12px]', current ? 'font-semibold text-fg' : 'text-fg-muted')}>{stage}</p>
-              </li>
-            );
-          })}
-        </ol>
+    <div className="mt-8 grid gap-6 md:grid-cols-[180px_minmax(0,1fr)] md:gap-10">
+      <div className="min-w-0">
+        <VerticalProgressBar
+          ariaLabel="Internship progress"
+          steps={internshipStages.map((stage, index) => ({
+            id: index + 1,
+            label: stage.label,
+            done: currentIndex > index,
+            current: currentIndex === index,
+            hint: currentIndex === index ? stage.hint : undefined,
+          }))}
+        />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <JourneyDetailCard content={content} mobile />
-        <TasksCard content={content} stacked />
+      <div className="min-w-0 space-y-4">
+        <JourneyDetailCard content={content} />
+        <TasksCard content={content} />
       </div>
     </div>
   );
@@ -1313,9 +805,11 @@ function NoApplicationAside() {
 
 function InternshipStageAside({
   scenario,
+  illustration,
   onOpen,
 }: {
   scenario: ApplicantHomeScenario;
+  illustration: string;
   onOpen: () => void;
 }) {
   const copy = scenario === 'onboarding-action'
@@ -1336,7 +830,7 @@ function InternshipStageAside({
         <p className="mt-3 text-[14px] leading-6 text-fg-muted">{copy.body}</p>
       </div>
       <div className="pointer-events-none absolute inset-x-6 bottom-16 h-[180px]" aria-hidden>
-        <Image src="/images/activity-v1.png" alt="" fill className="object-contain object-right-bottom" sizes="270px" />
+        <Image src={illustration} alt="" fill className="object-contain object-right-bottom" sizes="270px" />
       </div>
       <button
         type="button"
@@ -1346,6 +840,61 @@ function InternshipStageAside({
         {copy.cta}
       </button>
     </aside>
+  );
+}
+
+type VerticalProgressStep = {
+  id: number;
+  label: string;
+  done: boolean;
+  current?: boolean;
+  hint?: string;
+};
+
+function VerticalProgressBar({
+  steps,
+  ariaLabel,
+  className,
+}: {
+  steps: readonly VerticalProgressStep[];
+  ariaLabel: string;
+  className?: string;
+}) {
+  return (
+    <ol className={cn('flex flex-col', className)} aria-label={ariaLabel}>
+      {steps.map((step, index) => {
+        const isLast = index === steps.length - 1;
+        return (
+          <li key={step.id} className="flex gap-3">
+            <div className="flex w-6 shrink-0 flex-col items-center">
+              <StepGlyph step={step} />
+              {!isLast ? (
+                <span
+                  className={cn(
+                    'my-2 h-8 w-px shrink-0',
+                    step.done ? 'bg-success' : 'bg-border',
+                  )}
+                  aria-hidden
+                />
+              ) : null}
+            </div>
+            <div className="min-w-0 pt-0.5">
+              <p
+                className={cn(
+                  'text-[14px] leading-5',
+                  step.done || step.current ? 'font-medium text-fg' : 'text-fg-muted',
+                )}
+              >
+                {step.label}
+              </p>
+              {step.current && step.hint ? (
+                <p className="mt-0.5 text-[12px] leading-4 text-fg-muted">{step.hint}</p>
+              ) : null}
+            </div>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
@@ -1544,8 +1093,6 @@ function TasksCard({
   className?: string;
 }) {
   const router = useRouter();
-  const exploreProgrammes = content.tasks[0].title === 'Explore programmes';
-  const discoverArchetype = content.tasks[1].title === 'Discover your archetype';
 
   return (
     <article
@@ -1590,17 +1137,17 @@ function TasksCard({
           title={content.tasks[0].title}
           body={content.tasks[0].body}
           cta={content.tasks[0].cta}
-          image={stacked ? '/images/contact-details-m.jpg' : '/images/contact-details.jpg'}
+          image={stacked ? content.tasks[0].imageMobile : content.tasks[0].imageDesktop}
           compact={stacked}
-          onClick={exploreProgrammes ? () => router.push('/join-us/student/internships') : undefined}
+          onClick={content.tasks[0].route ? () => router.push(content.tasks[0].route!) : undefined}
         />
         <TaskTile
           title={content.tasks[1].title}
           body={content.tasks[1].body}
           cta={content.tasks[1].cta}
-          image={stacked ? '/images/additional-information-m.jpg' : '/images/additional-information.jpg'}
+          image={stacked ? content.tasks[1].imageMobile : content.tasks[1].imageDesktop}
           compact={stacked}
-          onClick={discoverArchetype ? () => router.push('/apply/project-fit') : undefined}
+          onClick={content.tasks[1].route ? () => router.push(content.tasks[1].route!) : undefined}
         />
       </div>
     </article>

@@ -1020,6 +1020,9 @@ export interface ApplicantHomeTaskContent {
   title: string;
   body: string;
   cta: string;
+  route: string | null;
+  imageDesktop: string;
+  imageMobile: string;
 }
 
 export interface ApplicantHomeActivityContent {
@@ -1073,6 +1076,8 @@ export interface ApplicantWorkflowPageConfig {
 }
 
 export interface ApplicantHomeScenarioContent {
+  scenarioId: string | null;
+  label: string;
   heroLines: readonly [string, string];
   heroMessage: string;
   heroBadge: string;
@@ -1100,4 +1105,21 @@ export interface ApplicantHomeScenarioContent {
   tasksDeadline: string;
   tasks: readonly [ApplicantHomeTaskContent, ApplicantHomeTaskContent];
   activity: readonly ApplicantHomeActivityContent[];
+}
+
+export interface ApplicantHomeDashboardAssets {
+  heroDesktop: { v1: string; v2: string };
+  heroMobile: { v1: string; v2: string };
+  statusRadar: { v1: string; v2: string };
+  bannerDesktop: string;
+  bannerMobile: string;
+  activityIllustration: string;
+  mapTopDesktop: string;
+  mapTopMobile: string;
+  mapBottomDesktop: string;
+}
+
+export interface ApplicantHomeDashboardData {
+  assets: ApplicantHomeDashboardAssets;
+  scenarios: Record<ApplicantHomeScenario, ApplicantHomeScenarioContent>;
 }
