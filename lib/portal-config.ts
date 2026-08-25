@@ -26,12 +26,17 @@ export const SYS_DEFAULTS: SysConfig = {
   dceApproval: false,
   categoryFormThumbnails: false,
   categoryInput: 'radio',
-  offerValidityDays: 14, maxProjectRanks: 5, interviewMins: 45,
+  offerValidityDays: 14, maxProjectRanks: 5, interviewMins: 60,
 };
 
 export function loadSystemConfig(): SysConfig {
   if (typeof window === 'undefined') return SYS_DEFAULTS;
-  try { const raw = localStorage.getItem(SYS_CONFIG_KEY); return raw ? { ...SYS_DEFAULTS, ...JSON.parse(raw) } : SYS_DEFAULTS; }
+  try {
+    const raw = localStorage.getItem(SYS_CONFIG_KEY);
+    if (!raw) return SYS_DEFAULTS;
+    const saved = { ...SYS_DEFAULTS, ...JSON.parse(raw) } as SysConfig;
+    return { ...saved, interviewMins: 60 };
+  }
   catch { return SYS_DEFAULTS; }
 }
 

@@ -104,7 +104,7 @@ function generateICS(
   description: string,
   meetingLink: string,
 ): string {
-  const durationMins = slot.duration ? parseInt(slot.duration) : 45;
+  const durationMins = slot.duration ? parseInt(slot.duration) : 60;
   const start = new Date(`${slot.date}T${slot.time}:00`);
   const end   = new Date(start.getTime() + durationMins * 60_000);
   const fmt   = (d: Date) => d.toISOString().replace(/[-:.]/g, '').slice(0, 15) + 'Z';

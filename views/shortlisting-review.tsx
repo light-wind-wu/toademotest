@@ -17,7 +17,6 @@ import {
 import { UnderlineTabs } from '@/components/ui-legacy/underline-tabs';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui-legacy/tooltip';
 import AiSummaryCard from '@/components/ui-legacy/ai-summary-card';
-import AiSummaryPreview from '@/components/ui-legacy/ai-summary-preview';
 import {
   RowMenuButton,
   RowDropdown,
@@ -32,11 +31,13 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Info, Inbox, ChevronDown, Check, Send, X,
+  Info, Folder, ChevronDown, Check, Send, X, Users, ClipboardCheck, CalendarCheck, Eye,
+  Sparkles, AlertTriangle, ArrowRight, RotateCcw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { loadWeights, reweightScore, scoreSuitability } from '@/lib/scoring';
+import { availabilityWarnings, loadWeights, reweightScore, scoreSuitability } from '@/lib/scoring';
 import type { ScoringWeights } from '@/lib/scoring';
+import { z } from 'zod';
 import type { Application, ProjectEntry, Programme, SuitabilityScore } from '@/lib/types';
 import { loadProjects, loadProgrammes } from '@/lib/storage';
 import { toEducationLevel, INTERN_CATEGORIES } from '@/lib/data';
@@ -53,6 +54,7 @@ import { addNotification } from '@/lib/notifications';
 import { useRole } from '@/lib/role';
 import { logAccess } from '@/lib/audit';
 import { getEngagements } from '@/lib/participants';
+import applicationSeed from '@/data/applications.json';
 import {
   getIoShortlistTask1Session,
   type IoShortlistTask1Session,
@@ -60,7 +62,7 @@ import {
 
 const APP_KEY      = 'dsta_applications';
 const APP_VER_KEY  = 'dsta_applications_seed_v';
-const APP_SEED_VER = '31';
+const APP_SEED_VER = '32';
 
 const ENABLED_SHORTLIST_CATEGORIES = [
   'Tech UP',
@@ -74,9 +76,13 @@ function loadApps(): Application[] {
   try {
     const ver = localStorage.getItem(APP_VER_KEY);
     const raw = localStorage.getItem(APP_KEY);
-    if (ver === APP_SEED_VER && raw) return JSON.parse(raw) as Application[];
-    return [];
-  } catch { return []; }
+    const stored = raw ? JSON.parse(raw) as Application[] : [];
+    const storedIds = new Set(stored.map(app => app.id));
+    const additions = (applicationSeed as Application[]).filter(app => !storedIds.has(app.id));
+    const merged = [...stored, ...additions];
+    if (additions.length > 0 || ver !== APP_SEED_VER) saveApps(merged);
+    return merged;
+  } catch { return applicationSeed as Application[]; }
 }
 
 function saveApps(apps: Application[]) {
@@ -95,7 +101,7 @@ type TabKey = typeof TABS[number]['key'];
 
 const STATUS_BY_TAB: Record<TabKey, Set<Application['status']>> = {
   'shortlist':          new Set(['Pending Review', 'Shortlisted for Interview']),
-  'interview-outcomes': new Set(['Interview Scheduled', 'Interview Completed']),
+  'interview-outcomes': new Set(['Interview Completed']),
   'offers-extended':    new Set(['Offer Extended']),
   'fully-placed':       new Set(['Offer Accepted', 'Active Intern', 'Internship Completed']),
 };
@@ -199,9 +205,31 @@ interface CandidateRow {
   score: number | null;
   sui: SuitabilityScore | undefined;
   rank: number | null;
+  projectPosition: number | null;
   disciplineMatch: boolean;
   skillsMatched: number;
   skillsTotal: number;
+}
+
+const outcomeReasonSchema = z.string().trim().min(10, 'Add at least 10 characters so the decision is auditable.');
+
+type OutcomeDecision = {
+  app: Application;
+  mode: 'refer' | 'reject';
+} | null;
+
+function mentorFeedbackLabel(decision: Application['mentorDecision']): string {
+  if (decision === 'Accepted') return 'Recommend for offer';
+  if (decision === 'Rejected') return 'Reject';
+  if (decision === 'Referred') return 'Refer';
+  return 'Awaiting feedback';
+}
+
+function mentorFeedbackTextClass(decision: Application['mentorDecision']): string {
+  if (decision === 'Accepted') return 'text-success';
+  if (decision === 'Rejected') return 'text-danger';
+  if (decision === 'Referred') return 'text-warning';
+  return 'text-fg-muted';
 }
 
 function remainingPlacements(project: ProjectEntry): number {
@@ -236,11 +264,17 @@ export default function ShortlistingReviewPage() {
   const [activeTab, setActiveTab]     = useState<TabKey>('shortlist');
   const [viewingProjectId, setViewingProjectId] = useState<string>('');
   const [selectedByProject, setSelectedByProject] = useState<Record<string, Set<string>>>({});
+  const [dispatchProjectIds, setDispatchProjectIds] = useState<Set<string>>(new Set());
   const [expandedEligible, setExpandedEligible]   = useState<Set<string>>(new Set());
   const [reviewOpen, setReviewOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [dispatchSuccessOpen, setDispatchSuccessOpen] = useState(false);
   const [aiPanelApp, setAiPanelApp] = useState<Application | null>(null);
+  const [mentorOutcomeApp, setMentorOutcomeApp] = useState<Application | null>(null);
+  const [outcomeDecision, setOutcomeDecision] = useState<OutcomeDecision>(null);
+  const [outcomeDestination, setOutcomeDestination] = useState<string>('talent-pool');
+  const [outcomeReason, setOutcomeReason] = useState('');
+  const [outcomeError, setOutcomeError] = useState('');
   const [utSession, setUtSession] = useState<IoShortlistTask1Session | null>(null);
 
   // Refs to apply seed-time default selections once per intake, not on every render.
@@ -385,9 +419,10 @@ export default function ShortlistingReviewPage() {
           : 0;
         const rank = app.projectRankings.indexOf(project.id) + 1 || null;
 
-        rows.push({ app, score, sui, rank, disciplineMatch, skillsMatched, skillsTotal });
+        rows.push({ app, score, sui, rank, projectPosition: null, disciplineMatch, skillsMatched, skillsTotal });
       }
       rows.sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
+      rows.forEach((row, index) => { row.projectPosition = index + 1; });
       map[project.id] = rows;
     }
     return map;
@@ -438,6 +473,9 @@ export default function ShortlistingReviewPage() {
       next[project.id] = selected;
     }
     setSelectedByProject(next);
+    setDispatchProjectIds(new Set(filteredProjects
+      .filter(project => remainingPlacements(project) > 0)
+      .map(project => project.id)));
     defaultSelectedAppliedRef.current = true;
   }, [filteredProjects, activeTab, applicationsByProject]);
 
@@ -485,6 +523,7 @@ export default function ShortlistingReviewPage() {
     const projectsToDispatch: string[] = [];
     for (const project of filteredProjects) {
       if (remainingPlacements(project) === 0) continue;
+      if (!dispatchProjectIds.has(project.id)) continue;
       const ids = selectedByProject[project.id];
       if (!ids || ids.size === 0) continue;
       const newIds = Array.from(ids).filter(id => !dispatchedIds.has(id));
@@ -493,7 +532,14 @@ export default function ShortlistingReviewPage() {
       projectsToDispatch.push(project.id);
     }
     return { total, projectCount: projectsToDispatch.length, projectIds: projectsToDispatch };
-  }, [dispatchEnabled, filteredProjects, selectedByProject, dispatchedIds]);
+  }, [dispatchEnabled, filteredProjects, selectedByProject, dispatchedIds, dispatchProjectIds]);
+
+  const selectedDispatchProjectCount = useMemo(
+    () => filteredProjects.filter(project =>
+      remainingPlacements(project) > 0 && dispatchProjectIds.has(project.id),
+    ).length,
+    [filteredProjects, dispatchProjectIds],
+  );
 
   const projectTitles = useMemo(() => {
     const map: Record<string, string> = {};
@@ -532,26 +578,11 @@ export default function ShortlistingReviewPage() {
   function toggleDispatchProject(projectId: string) {
     const project = projects.find(item => item.id === projectId);
     if (!project || remainingPlacements(project) === 0) return;
-    setSelectedByProject(prev => {
-      const current = prev[projectId] || new Set<string>();
-      if (current.size > 0) {
-        return { ...prev, [projectId]: new Set<string>() };
-      }
-      const candidates = applicationsByProject[projectId] || [];
-      const selected = new Set<string>();
-      const recommended = Math.min(Math.max(project.slots + 1, 2), candidates.length);
-      const selectedElsewhere = new Set<string>();
-      for (const [pid, ids] of Object.entries(prev)) {
-        if (pid !== projectId) ids.forEach(id => selectedElsewhere.add(id));
-      }
-      for (let i = 0; i < recommended; i++) {
-        const candidate = candidates[i];
-        if (!candidate) continue;
-        if (dispatchedIds.has(candidate.app.id)) continue;
-        if (selectedElsewhere.has(candidate.app.id)) continue;
-        selected.add(candidate.app.id);
-      }
-      return { ...prev, [projectId]: selected };
+    setDispatchProjectIds(prev => {
+      const next = new Set(prev);
+      if (next.has(projectId)) next.delete(projectId);
+      else next.add(projectId);
+      return next;
     });
   }
 
@@ -614,12 +645,123 @@ export default function ShortlistingReviewPage() {
     });
 
     setConfirmOpen(false);
+    setDispatchProjectIds(prev => {
+      const next = new Set(prev);
+      dispatchSummary.projectIds.forEach(id => next.delete(id));
+      return next;
+    });
     showToast(
       `${dispatchSummary.total} candidate${dispatchSummary.total !== 1 ? 's have' : ' has'} been sent across ${dispatchSummary.projectCount} project${dispatchSummary.projectCount !== 1 ? 's' : ''}. Projects with remaining seats stay open.`,
       'success',
       'Candidates dispatched'
     );
     setDispatchSuccessOpen(true);
+  }
+
+  function proceedToOffer(app: Application) {
+    if (app.preOfferChecks !== 'completed') {
+      showToast('Complete the pre-offer checks in Applications before preparing the offer.', 'warning', 'Pre-offer checks pending');
+      return;
+    }
+    router.push(`/offer-letter?appId=${app.id}`);
+  }
+
+  function openOutcomeAction(app: Application, mode: 'refer' | 'reject') {
+    setOutcomeDecision({ app, mode });
+    setOutcomeDestination('talent-pool');
+    setOutcomeReason('');
+    setOutcomeError('');
+  }
+
+  function confirmOutcomeAction() {
+    if (!outcomeDecision) return;
+    const parsed = outcomeReasonSchema.safeParse(outcomeReason);
+    if (!parsed.success) {
+      setOutcomeError(parsed.error.issues[0]?.message || 'Add a reason for this decision.');
+      return;
+    }
+
+    const { app, mode } = outcomeDecision;
+    const currentProjectId = app.shortlistedFor;
+    const triedProjects = Array.from(new Set([
+      ...(app.triedProjects || []),
+      ...(currentProjectId ? [currentProjectId] : []),
+    ]));
+    const today = new Date().toISOString().split('T')[0];
+    let updated: Application;
+
+    if (mode === 'reject') {
+      updated = {
+        ...app,
+        status: 'Rejected',
+        ioRejectionRemark: parsed.data,
+        triedProjects,
+        rejectionEmailSent: true,
+        rejectionEmailSentDate: today,
+      };
+      addNotification({
+        forRole: 'applicant',
+        forEmail: app.email,
+        title: 'Update on your application',
+        body: `We regret to inform you that your application to ${app.programmeName} was unsuccessful.`,
+        href: '/apply/applications',
+        tier: 'info',
+      });
+    } else if (outcomeDestination === 'talent-pool') {
+      updated = {
+        ...app,
+        status: 'Pending Review',
+        shortlistedFor: undefined,
+        triedProjects,
+        talentPool: {
+          addedDate: today,
+          sourceProjectId: currentProjectId,
+          reason: parsed.data,
+        },
+        mentorDecision: null,
+      };
+    } else {
+      updated = {
+        ...app,
+        status: 'Shortlisted for Interview',
+        shortlistedFor: outcomeDestination,
+        triedProjects,
+        talentPool: undefined,
+        mentorDecision: null,
+        mentorNotes: undefined,
+        mentorScores: undefined,
+        mentorRejectionRemark: undefined,
+        mentorAiSummary: undefined,
+        mentorTranscript: undefined,
+        interviewSlots: undefined,
+        confirmedSlot: undefined,
+        meetingLink: undefined,
+      };
+      const target = projects.find(project => project.id === outcomeDestination);
+      addNotification({
+        forRole: 'mentor',
+        ...(target?.mentorUserId ? { forMentorId: target.mentorUserId } : {}),
+        title: `New applicant referred — ${target?.title || 'your project'}`,
+        body: `${app.name} has been referred to your project for interview review.`,
+        href: '/mentor/projects',
+        tier: 'action',
+      });
+    }
+
+    const nextApps = apps.map(item => item.id === app.id ? updated : item);
+    setApps(nextApps);
+    saveApps(nextApps);
+    setMentorOutcomeApp(null);
+    setOutcomeDecision(null);
+    showToast(
+      mode === 'reject'
+        ? `${app.name}'s application has been rejected.`
+        : outcomeDestination === 'talent-pool'
+          ? `${app.name} has been moved to the Talent Pool.`
+          : `${app.name} has been referred to another project.`,
+      'success',
+      mode === 'reject' ? 'Decision recorded' : 'Candidate referred',
+    );
   }
 
   const handleYearChange = (value: string) => {
@@ -638,7 +780,7 @@ export default function ShortlistingReviewPage() {
       <div className="mb-1">
         <h1 className="text-headline-lg text-fg">Project Shortlisting</h1>
         <p className="text-body-md text-fg-muted mt-1">
-          Select an intake to review system-ranked applicants by project and send approved shortlists to mentors.
+          Select an internship intake, review ranked applicants by project, and dispatch selected applicants to mentors for interview.
         </p>
       </div>
 
@@ -706,11 +848,11 @@ export default function ShortlistingReviewPage() {
       {!selectedIntake ? (
         <div className="card flex flex-col items-center justify-center text-center py-20">
           <div className="w-12 h-12 rounded-full bg-bg-muted flex items-center justify-center mb-4">
-            <Inbox size={24} className="text-fg-muted" />
+            <Folder size={24} className="text-fg-muted" />
           </div>
-          <h2 className="text-body-lg font-semibold text-fg mb-1">Select a year to begin</h2>
+          <h2 className="text-body-lg font-semibold text-fg mb-1">Select an intern category to begin</h2>
           <p className="text-body-md text-fg-muted max-w-md">
-            Projects will appear only after the year, intern category, and internship window have been selected.
+            Projects will appear after the intern category and internship window have been selected.
           </p>
         </div>
       ) : (
@@ -725,9 +867,29 @@ export default function ShortlistingReviewPage() {
             />
           </div>
 
-          <div className="grid min-h-[calc(100vh-360px)] min-w-0 overflow-hidden rounded-xl border border-border bg-surface lg:grid-cols-[minmax(260px,360px)_minmax(0,1fr)]">
-            <aside className="relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-border bg-surface shadow-lg lg:overflow-visible lg:border-b-0 lg:border-r">
-              <div className="px-3 py-3 border-b border-border bg-[#FDFCFA] flex items-center justify-between">
+          <section className="mb-3 flex items-start gap-3 border border-info/25 bg-info-bg px-4 py-3" aria-labelledby="review-guidance">
+            <Info size={17} className="mt-0.5 shrink-0 text-info" aria-hidden="true" />
+            <div>
+              <h2 id="review-guidance" className="text-[13px] font-semibold text-fg">
+                {activeTab === 'shortlist'
+                  ? 'Applicants are ranked based on their discipline of study, skills, and project preferences.'
+                  : activeTab === 'interview-outcomes'
+                    ? 'Mentor interview conclusions are ready for IO review.'
+                    : 'Review applicants in the selected stage.'}
+              </h2>
+              <p className="mt-0.5 text-[11px] text-fg-muted">
+                {activeTab === 'shortlist'
+                  ? 'The highest-ranked applicants are pre-selected for IO review. An applicant can be selected for only one active project shortlist at a time.'
+                  : activeTab === 'interview-outcomes'
+                    ? 'View the Mentor’s submitted scores, recommendation and remarks. The eventual IO decision is recorded separately.'
+                    : 'Select a project to view applicants and their current status.'}
+              </p>
+            </div>
+          </section>
+
+          <div className="grid min-h-[510px] min-w-0 overflow-hidden rounded-lg border border-border bg-surface lg:grid-cols-[380px_minmax(0,1fr)]">
+            <aside className="relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-border bg-surface lg:overflow-visible lg:border-b-0 lg:border-r">
+              <div className="flex min-h-[42px] items-center justify-between border-b border-border bg-bg-subtle/50 px-4">
                 <span className="text-[12px] font-semibold text-fg">Projects ({filteredProjects.length})</span>
                 <span className="inline-flex items-center gap-1 text-[12px] text-fg-muted">
                   Status
@@ -748,65 +910,64 @@ export default function ShortlistingReviewPage() {
                   const selectedCount = getNewSelectedCount(project.id);
                   const [recommendedMin, recommendedMax] = recommendedShortlist(project, candidates.length);
                   const isInRange = selectedCount >= recommendedMin && selectedCount <= recommendedMax;
-                  const isValid = isFull || isInRange;
                   const isAbove = !isFull && selectedCount > recommendedMax;
-                  const statusTooltip = isFull
-                    ? 'All placements filled'
+                  const dispatchedCount = candidates.filter(row => dispatchedIds.has(row.app.id)).length;
+                  const shortlistStatusText = isFull
+                    ? 'Shortlist already dispatched'
+                    : dispatchedCount > 0
+                      ? `${dispatchedCount} candidate${dispatchedCount !== 1 ? 's' : ''} sent · ${remaining} seat${remaining !== 1 ? 's' : ''} remaining`
                     : isInRange
-                      ? `Ready to shortlist · ${selectedCount} applicant${selectedCount !== 1 ? 's' : ''} selected`
+                      ? `${selectedCount} applicant${selectedCount !== 1 ? 's' : ''} selected`
                       : isAbove
-                        ? `Above recommended shortlist · ${selectedCount} selected`
-                        : `Select ${recommendedMin}–${recommendedMax} applicants to continue`;
+                        ? 'Above recommended range'
+                        : 'Below recommended range';
+                  const statusText = activeTab === 'interview-outcomes'
+                    ? `${candidates.length} conclusion${candidates.length !== 1 ? 's' : ''} ready for IO review`
+                    : activeTab === 'shortlist'
+                      ? shortlistStatusText
+                      : `${candidates.length} candidate${candidates.length !== 1 ? 's' : ''} in this stage`;
                   return (
                     <div
                       key={project.id}
                       className={cn(
-                        'group relative box-border w-full min-w-0 border-b px-3 py-2.5 text-left transition-colors',
+                        'group relative box-border grid w-full min-w-0 border-b text-left transition-colors',
+                        activeTab === 'shortlist' ? 'grid-cols-[48px_minmax(0,1fr)]' : 'grid-cols-1',
                         isViewing
                           ? 'z-10 border-y border-[#E7E4DD] bg-[#F4F2EC]'
                           : 'border-border bg-surface hover:bg-bg-muted'
                       )}
                     >
-                      <div className="flex items-start gap-2">
-                        <div className="pt-0.5">
+                      {activeTab === 'shortlist' && <div className="flex justify-center pt-5">
                           <Checkbox
-                            checked={!isFull && selectedCount > 0}
+                            checked={!isFull && dispatchProjectIds.has(project.id)}
                             disabled={isFull}
                             onCheckedChange={() => toggleDispatchProject(project.id)}
                             className={cn(isFull && 'bg-bg-muted border-border opacity-60')}
                             aria-label={`Include ${project.title} in dispatch`}
                           />
-                        </div>
+                      </div>}
                         <button
                           type="button"
                           onClick={() => setViewingProjectId(project.id)}
-                          className="flex-1 text-left min-w-0 pr-3"
+                          className={cn('min-w-0 py-[15px] pr-[18px] text-left', activeTab === 'shortlist' ? 'px-0' : 'pl-[18px]')}
                         >
-                          <p className={cn('text-[12px] font-semibold leading-snug text-fg truncate')}>
+                          <p className="truncate text-[14px] font-semibold leading-snug text-fg">
                             {project.title}
                           </p>
-                          <p className="text-[10px] text-fg-muted mt-0.5">
-                            {project.matched} of {project.slots} placement{project.slots !== 1 ? 's' : ''} filled
-                            {!isFull && <> · recommended {recommendedMin}–{recommendedMax}</>}
+                          <p className="mt-0.5 text-[12px] text-fg-muted">
+                            {activeTab === 'interview-outcomes'
+                              ? `${candidates.length} mentor conclusion${candidates.length !== 1 ? 's' : ''} submitted`
+                              : activeTab === 'shortlist'
+                                ? `${project.slots} placement${project.slots !== 1 ? 's' : ''} · recommended shortlist ${recommendedMin}–${recommendedMax}`
+                                : `${candidates.length} candidate${candidates.length !== 1 ? 's' : ''}`}
+                          </p>
+                          <p className={cn(
+                            'mt-1 text-[12px] font-medium',
+                            activeTab !== 'shortlist' || isInRange || isFull || dispatchedCount > 0 ? 'text-success' : 'text-warning',
+                          )}>
+                            {statusText}
                           </p>
                         </button>
-                        <div className="pt-0.5 shrink-0">
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <span className="inline-flex cursor-help">
-                                {isValid ? (
-                                  <Check size={15} className="text-success" />
-                                ) : (
-                                  <Info size={15} className="text-warning" />
-                                )}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent side="right">
-                              {statusTooltip}
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                      </div>
                       {isViewing && (
                         <span
                           className="absolute right-[-10px] top-1/2 z-10 h-[18px] w-[18px] -translate-y-1/2 rotate-45 border-t border-r border-[#E7E4DD] bg-[#F4F2EC]"
@@ -826,8 +987,10 @@ export default function ShortlistingReviewPage() {
                     <div className="min-w-0">
                       <h2 className="text-[15px] font-semibold text-fg">{viewingProject.title}</h2>
                       <p className="text-[10px] text-fg-muted">
-                        {viewingProject.matched} of {viewingProject.slots} placement{viewingProject.slots !== 1 ? 's' : ''} filled
-                        {remainingPlacements(viewingProject) > 0 && (() => {
+                        {activeTab === 'interview-outcomes'
+                          ? `${(applicationsByProject[viewingProject.id] || []).length} submitted Mentor conclusion${(applicationsByProject[viewingProject.id] || []).length !== 1 ? 's' : ''}`
+                          : `${viewingProject.slots} placement${viewingProject.slots !== 1 ? 's' : ''}`}
+                        {activeTab === 'shortlist' && remainingPlacements(viewingProject) > 0 && (() => {
                           const [min, max] = recommendedShortlist(
                             viewingProject,
                             (applicationsByProject[viewingProject.id] || []).length,
@@ -835,11 +998,14 @@ export default function ShortlistingReviewPage() {
                           return <> · Recommended shortlist: {min}–{max}</>;
                         })()}
                       </p>
-                      <p className="text-[10px] text-success font-semibold mt-0.5">
-                        {remainingPlacements(viewingProject) === 0
-                          ? 'All placements are filled'
-                          : `${remainingPlacements(viewingProject)} placement${remainingPlacements(viewingProject) !== 1 ? 's' : ''} remaining`}
-                      </p>
+                      {applicationsByProject[viewingProject.id]?.some(row => dispatchedIds.has(row.app.id)) && (
+                        <p className="mt-0.5 text-[10px] font-semibold text-success">
+                          {(() => {
+                            const sent = applicationsByProject[viewingProject.id].filter(row => dispatchedIds.has(row.app.id)).length;
+                            return `${sent} candidate${sent !== 1 ? 's' : ''} sent`;
+                          })()}
+                        </p>
+                      )}
                     </div>
                     <div className="inline-flex items-center gap-1 border border-border rounded-full px-2 py-1 text-[10px] font-medium text-fg bg-surface shrink-0">
                       {activeTab === 'shortlist'
@@ -870,10 +1036,16 @@ export default function ShortlistingReviewPage() {
                         activeTab={activeTab}
                         onView360={(app) => window.open(`/candidate360/${app.id}?from=shortlisting-review`, '_blank')}
                         onAiSummary={setAiPanelApp}
+                        onViewMentorOutcome={setMentorOutcomeApp}
                         viewingProjectId={viewingProject.id}
                         projectTitles={projectTitles}
                         dispatchedIds={dispatchedIds}
                         selectedProjectByApplicant={selectedProjectByApplicant}
+                        project={viewingProject}
+                        weights={weights}
+                        onProceedToOffer={proceedToOffer}
+                        onRefer={(app) => openOutcomeAction(app, 'refer')}
+                        onReject={(app) => openOutcomeAction(app, 'reject')}
                       />
                     )}
                   </div>
@@ -887,11 +1059,13 @@ export default function ShortlistingReviewPage() {
             </div>
           </div>
 
-          <div className="sticky bottom-0 z-20 bg-surface/95 backdrop-blur-md border-t border-border py-2 px-7 min-h-[58px] flex items-center justify-between gap-4 shadow-[0_-8px_24px_rgba(16,24,40,.06)]">
+          {activeTab === 'shortlist' && <div className="sticky bottom-0 z-20 bg-surface/95 backdrop-blur-md border-t border-border py-2 px-7 min-h-[58px] flex items-center justify-between gap-4 shadow-[0_-8px_24px_rgba(16,24,40,.06)]">
             <p className="text-[12px] text-fg">
               {dispatchSummary && dispatchSummary.total > 0
-                ? `${dispatchSummary.total} candidate${dispatchSummary.total !== 1 ? 's' : ''} in ${dispatchSummary.projectCount} project${dispatchSummary.projectCount !== 1 ? 's' : ''} ready for submission to respective mentors`
-                : 'No projects selected for dispatch.'}
+                ? `${dispatchSummary.total} applicant${dispatchSummary.total !== 1 ? 's' : ''} in ${selectedDispatchProjectCount} project${selectedDispatchProjectCount !== 1 ? 's' : ''} ready to dispatch to mentors`
+                : selectedDispatchProjectCount > 0
+                  ? `${selectedDispatchProjectCount} project${selectedDispatchProjectCount !== 1 ? 's are' : ' is'} selected`
+                  : 'No projects selected for dispatch'}
             </p>
             <Button
               disabled={!dispatchEnabled || !dispatchSummary || dispatchSummary.total === 0}
@@ -900,7 +1074,7 @@ export default function ShortlistingReviewPage() {
             >
               <Check size={14} /> Dispatch selected applicants
             </Button>
-          </div>
+          </div>}
         </>
       )}
 
@@ -1012,6 +1186,178 @@ export default function ShortlistingReviewPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={mentorOutcomeApp != null} onOpenChange={(open) => !open && setMentorOutcomeApp(null)}>
+        <DialogContent className="max-w-2xl">
+          {mentorOutcomeApp && (() => {
+            const project = projects.find(item => item.id === mentorOutcomeApp.shortlistedFor);
+            const scores = mentorOutcomeApp.mentorScores;
+            const scoreEntries = scores ? [
+              ['Technical knowledge', scores.technicalKnowledge],
+              ['Problem solving', scores.problemSolving],
+              ['Communication', scores.communication],
+              ['Initiative & drive', scores.initiativeDrive],
+            ] as const : [];
+            const average = scoreEntries.length
+              ? scoreEntries.reduce((sum, [, score]) => sum + score, 0) / scoreEntries.length
+              : null;
+            const slot = mentorOutcomeApp.confirmedSlot != null
+              ? mentorOutcomeApp.interviewSlots?.[mentorOutcomeApp.confirmedSlot]
+              : undefined;
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-headline-md">
+                    <ClipboardCheck size={18} className="text-accent" /> Mentor&apos;s interview conclusion
+                  </DialogTitle>
+                  <DialogDescription className="text-body-md text-fg-muted">
+                    Review the submitted assessment before recording a separate IO decision.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between gap-4 rounded-xl border border-border bg-bg-subtle/40 p-4">
+                    <div>
+                      <p className="text-body-md font-semibold text-fg">{mentorOutcomeApp.name}</p>
+                      <p className="mt-0.5 text-body-sm text-fg-muted">{project?.title || 'Project not available'}</p>
+                      {slot && (
+                        <p className="mt-2 flex items-center gap-1.5 text-[12px] text-fg-muted">
+                          <CalendarCheck size={13} /> Conducted {slot.date} at {slot.time}
+                        </p>
+                      )}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="text-[11px] text-fg-muted">Mentor feedback</p>
+                      <p className={cn('mt-0.5 text-body-sm font-semibold', mentorFeedbackTextClass(mentorOutcomeApp.mentorDecision))}>
+                        {mentorFeedbackLabel(mentorOutcomeApp.mentorDecision)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {scoreEntries.length > 0 && (
+                    <section className="rounded-xl border border-border p-4" aria-labelledby="mentor-score-heading">
+                      <div className="mb-3 flex items-center justify-between">
+                        <h3 id="mentor-score-heading" className="text-body-sm font-semibold text-fg">Submitted assessment</h3>
+                        <span className="text-body-sm font-semibold text-fg">{average?.toFixed(1)} / 10</span>
+                      </div>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {scoreEntries.map(([label, score]) => (
+                          <div key={label} className="flex items-center justify-between border-b border-border pb-2 text-body-sm">
+                            <span className="text-fg-muted">{label}</span>
+                            <span className="font-semibold tabular-nums text-fg">{score.toFixed(1)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  <section className="rounded-xl border border-border p-4" aria-labelledby="mentor-remarks-heading">
+                    <h3 id="mentor-remarks-heading" className="text-body-sm font-semibold text-fg">Mentor remarks</h3>
+                    <p className="mt-2 whitespace-pre-wrap text-body-sm leading-relaxed text-fg-muted">
+                      {mentorOutcomeApp.mentorNotes || mentorOutcomeApp.mentorRejectionRemark || 'No remarks were submitted.'}
+                    </p>
+                    {mentorOutcomeApp.mentorRejectionRemark && mentorOutcomeApp.mentorNotes && (
+                      <p className="mt-3 rounded-lg border border-danger/20 bg-danger-bg px-3 py-2 text-body-sm text-danger">
+                        {mentorOutcomeApp.mentorRejectionRemark}
+                      </p>
+                    )}
+                  </section>
+                </div>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setMentorOutcomeApp(null)}>Close</Button>
+                  <Button variant="ghost" onClick={() => window.open(`/candidate360/${mentorOutcomeApp.id}?from=shortlisting-review`, '_blank')}>
+                    View Candidate 360
+                  </Button>
+                  {mentorOutcomeApp.mentorDecision === 'Accepted' && (
+                    <Button onClick={() => proceedToOffer(mentorOutcomeApp)}>
+                      Proceed to offer <ArrowRight size={14} />
+                    </Button>
+                  )}
+                  {(mentorOutcomeApp.mentorDecision === 'Rejected' || mentorOutcomeApp.mentorDecision === 'Referred') && (
+                    <>
+                      <Button variant="outline" onClick={() => openOutcomeAction(mentorOutcomeApp, 'refer')}>
+                        <RotateCcw size={14} /> Refer
+                      </Button>
+                      <Button variant="danger" onClick={() => openOutcomeAction(mentorOutcomeApp, 'reject')}>
+                        Reject application
+                      </Button>
+                    </>
+                  )}
+                </DialogFooter>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={outcomeDecision != null} onOpenChange={(open) => !open && setOutcomeDecision(null)}>
+        <DialogContent className="max-w-lg">
+          {outcomeDecision && (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {outcomeDecision.mode === 'refer' ? `Refer ${outcomeDecision.app.name}` : `Reject ${outcomeDecision.app.name}`}
+                </DialogTitle>
+                <DialogDescription>
+                  {outcomeDecision.mode === 'refer'
+                    ? 'Choose where the candidate should continue. The current project will be recorded as a previous attempt.'
+                    : 'This removes the candidate from the active internship pipeline and notifies them.'}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                {outcomeDecision.mode === 'refer' && (
+                  <div>
+                    <label className="mb-1.5 block text-body-sm font-medium text-fg">Destination</label>
+                    <Select value={outcomeDestination} onValueChange={(value) => setOutcomeDestination(value || 'talent-pool')}>
+                      <SelectTrigger className="w-full">
+                        <span className="truncate text-left text-body-sm">
+                          {outcomeDestination === 'talent-pool'
+                            ? 'Talent Pool — rematch later'
+                            : projects.find(project => project.id === outcomeDestination)?.title || 'Select destination'}
+                        </span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="talent-pool">Talent Pool — rematch later</SelectItem>
+                        {intakeProjects
+                          .filter(project => project.id !== outcomeDecision.app.shortlistedFor && remainingPlacements(project) > 0)
+                          .map(project => <SelectItem key={project.id} value={project.id}>{project.title}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div>
+                  <label htmlFor="outcome-reason" className="mb-1.5 block text-body-sm font-medium text-fg">
+                    Internal reason <span className="text-danger">*</span>
+                  </label>
+                  <textarea
+                    id="outcome-reason"
+                    value={outcomeReason}
+                    onChange={(event) => { setOutcomeReason(event.target.value); setOutcomeError(''); }}
+                    rows={4}
+                    className={cn(
+                      'w-full rounded-md border bg-surface px-3 py-2 text-body-sm text-fg outline-none focus:border-accent focus:ring-2 focus:ring-accent/20',
+                      outcomeError ? 'border-danger' : 'border-border',
+                    )}
+                    placeholder={outcomeDecision.mode === 'refer'
+                      ? 'Explain why another project or Talent Pool is more suitable.'
+                      : 'Record the IO rationale for rejecting this application.'}
+                  />
+                  {outcomeError && <p className="mt-1 text-body-sm text-danger">{outcomeError}</p>}
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setOutcomeDecision(null)}>Cancel</Button>
+                <Button variant={outcomeDecision.mode === 'reject' ? 'danger' : 'primary'} onClick={confirmOutcomeAction}>
+                  {outcomeDecision.mode === 'refer' ? 'Confirm referral' : 'Confirm rejection'}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {aiPanelApp && (
         <>
           <div className="fixed inset-0 z-[150] bg-fg/20" onClick={() => setAiPanelApp(null)} />
@@ -1056,10 +1402,16 @@ function CandidateList({
   activeTab,
   onView360,
   onAiSummary,
+  onViewMentorOutcome,
   viewingProjectId,
   projectTitles,
   dispatchedIds,
   selectedProjectByApplicant,
+  project,
+  weights,
+  onProceedToOffer,
+  onRefer,
+  onReject,
 }: {
   rows: CandidateRow[];
   selected: Set<string>;
@@ -1069,16 +1421,24 @@ function CandidateList({
   activeTab: TabKey;
   onView360: (app: Application) => void;
   onAiSummary: (app: Application) => void;
+  onViewMentorOutcome: (app: Application) => void;
   viewingProjectId: string;
   projectTitles: Record<string, string>;
   dispatchedIds: Set<string>;
   selectedProjectByApplicant: Record<string, string>;
+  project: ProjectEntry;
+  weights: ScoringWeights;
+  onProceedToOffer: (app: Application) => void;
+  onRefer: (app: Application) => void;
+  onReject: (app: Application) => void;
 }) {
   const [menuApp, setMenuApp] = useState<Application | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
+  const [expandedExplanationId, setExpandedExplanationId] = useState<string | null>(null);
 
   const selectedRows = rows.filter(r => selected.has(r.app.id) && !dispatchedIds.has(r.app.id));
-  const eligibleRows = rows.filter(r => !selected.has(r.app.id) || dispatchedIds.has(r.app.id));
+  const eligibleRows = rows.filter(r => (!selected.has(r.app.id) || dispatchedIds.has(r.app.id)) && !r.app.talentPool);
+  const talentPoolRows = rows.filter(r => !selected.has(r.app.id) && !dispatchedIds.has(r.app.id) && !!r.app.talentPool);
 
   function openMenu(e: React.MouseEvent, app: Application) {
     e.stopPropagation();
@@ -1089,8 +1449,13 @@ function CandidateList({
 
   function candidateStatus(row: CandidateRow): { disabled: boolean; label?: string; variant?: 'muted' | 'warning' | 'success' } {
     const app = row.app;
-    if (selected.has(app.id)) {
-      return { disabled: true, label: undefined };
+    if (dispatchedIds.has(app.id)) {
+      const title = app.shortlistedFor ? projectTitles[app.shortlistedFor] || 'another project' : 'another project';
+      return {
+        disabled: true,
+        label: app.shortlistedFor === viewingProjectId ? `sent to ${title}` : `selected for ${title}`,
+        variant: app.shortlistedFor === viewingProjectId ? 'success' : 'warning',
+      };
     }
     const selectedProjectId = selectedProjectByApplicant[app.id];
     if (selectedProjectId && selectedProjectId !== viewingProjectId) {
@@ -1100,34 +1465,25 @@ function CandidateList({
         variant: 'warning',
       };
     }
-    if (dispatchedIds.has(app.id)) {
-      const title = app.shortlistedFor ? projectTitles[app.shortlistedFor] || 'another project' : 'another project';
-      return {
-        disabled: true,
-        label: app.shortlistedFor === viewingProjectId ? `sent to ${title}` : `selected for ${title}`,
-        variant: app.shortlistedFor === viewingProjectId ? 'success' : 'warning',
-      };
-    }
     if (app.shortlistedFor && app.shortlistedFor !== viewingProjectId) {
       const title = projectTitles[app.shortlistedFor] || 'another project';
       return { disabled: true, label: `selected for ${title}`, variant: 'warning' };
     }
-    return { disabled: false, label: 'not shortlisted', variant: 'muted' };
+    return { disabled: false, label: 'Available', variant: 'muted' };
   }
 
   return (
     <div className="space-y-4">
       {activeTab === 'shortlist' && (
         <>
-          <div className="border border-border rounded-lg overflow-hidden bg-surface">
-            <div className="px-4 py-3 bg-bg-subtle/50 border-b border-border">
-              <h3 className="text-[13px] font-semibold text-fg">Selected for dispatch</h3>
-            </div>
-            <div>
-              {selectedRows.length === 0 ? (
-                <p className="text-[12px] text-fg-muted px-4 py-3">No candidates selected yet.</p>
-              ) : (
-                selectedRows.map((row, i) => (
+          {selectedRows.length > 0 && (
+            <div className="overflow-hidden rounded-lg border border-border bg-surface">
+              <div className="border-b border-border bg-bg-subtle/50 px-4 py-3">
+                <h3 className="text-[13px] font-semibold text-fg">Selected for dispatch</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <CandidateTableHeader />
+                {selectedRows.map((row, i) => (
                   <CandidateRowCard
                     key={row.app.id}
                     row={row}
@@ -1138,25 +1494,33 @@ function CandidateList({
                     statusVariant={undefined}
                     onMenu={openMenu}
                     isLast={i === selectedRows.length - 1}
+                    project={project}
+                    weights={weights}
+                    explanationOpen={expandedExplanationId === row.app.id}
+                    onToggleExplanation={() => setExpandedExplanationId(current => current === row.app.id ? null : row.app.id)}
+                    onAiSummary={() => onAiSummary(row.app)}
                   />
-                ))
-              )}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="border border-border rounded-lg overflow-hidden bg-surface">
             <div className="px-4 py-3 bg-bg-subtle/50 border-b border-border flex items-center justify-between">
-              <h3 className="text-[13px] font-semibold text-fg">Other eligible applicants ({eligibleRows.length})</h3>
+              <h3 className="text-[13px] font-semibold text-fg">Other eligible applicants</h3>
               <button
                 type="button"
                 onClick={onToggleExpanded}
                 className="flex items-center gap-1 text-[12px] font-medium text-accent hover:underline"
+                aria-label={expanded ? 'Collapse other eligible applicants' : 'Expand other eligible applicants'}
+                aria-expanded={expanded}
               >
                 <ChevronDown size={14} className={cn('transition-transform', expanded && 'rotate-180')} />
               </button>
             </div>
             {expanded && (
-              <div>
+              <div className="overflow-x-auto">
+                <CandidateTableHeader />
                 {eligibleRows.map((row, i) => {
                   const status = candidateStatus(row);
                   return (
@@ -1170,17 +1534,83 @@ function CandidateList({
                       statusVariant={status.variant}
                       onMenu={openMenu}
                       isLast={i === eligibleRows.length - 1}
+                      project={project}
+                      weights={weights}
+                      explanationOpen={expandedExplanationId === row.app.id}
+                      onToggleExplanation={() => setExpandedExplanationId(current => current === row.app.id ? null : row.app.id)}
+                      onAiSummary={() => onAiSummary(row.app)}
                     />
                   );
                 })}
               </div>
             )}
           </div>
+
+          <section className="overflow-hidden rounded-lg border border-border bg-surface" aria-labelledby="talent-pool-heading">
+            <div className="flex items-start justify-between gap-4 border-b border-border bg-bg-subtle/50 px-4 py-3">
+              <div>
+                <h3 id="talent-pool-heading" className="flex items-center gap-2 text-[13px] font-semibold text-fg">
+                  <Users size={14} className="text-accent" /> Talent Pool ({talentPoolRows.length})
+                </h3>
+                <p className="mt-0.5 text-[11px] text-fg-muted">Applicants available for rematching to this project.</p>
+              </div>
+            </div>
+            {talentPoolRows.length === 0 ? (
+              <div className="px-4 py-5 text-center text-[12px] text-fg-muted">
+                No Talent Pool applicants match this project.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <CandidateTableHeader />
+                {talentPoolRows.map((row, index) => {
+                  const status = candidateStatus(row);
+                  const triedCurrentProject = row.app.triedProjects?.includes(viewingProjectId) ?? false;
+                  const triedTitles = (row.app.triedProjects || []).map(id => projectTitles[id] || id);
+                  const context = [
+                    row.score != null ? `Recommended match ${row.score}%` : null,
+                    triedTitles.length > 0 ? `Previous attempt: ${triedTitles.join(', ')}` : 'No previous project attempt',
+                  ].filter(Boolean).join(' · ');
+                  return (
+                    <CandidateRowCard
+                      key={row.app.id}
+                      row={row}
+                      checked={false}
+                      disabled={status.disabled || triedCurrentProject}
+                      onToggle={() => !status.disabled && !triedCurrentProject && onToggle(row.app.id)}
+                      statusLabel={triedCurrentProject ? 'Previously tried this project' : 'Available to assign'}
+                      statusVariant={triedCurrentProject ? 'warning' : 'success'}
+                      contextLine={context}
+                      onMenu={openMenu}
+                      isLast={index === talentPoolRows.length - 1}
+                      project={project}
+                      weights={weights}
+                      explanationOpen={expandedExplanationId === row.app.id}
+                      onToggleExplanation={() => setExpandedExplanationId(current => current === row.app.id ? null : row.app.id)}
+                      onAiSummary={() => onAiSummary(row.app)}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </section>
         </>
       )}
 
-      {activeTab !== 'shortlist' && (
-        <div className="border border-border rounded-lg overflow-hidden bg-surface">
+      {activeTab === 'interview-outcomes' && (
+        <InterviewOutcomeList
+          rows={rows}
+          projectTitles={projectTitles}
+          onViewConclusion={onViewMentorOutcome}
+          onView360={onView360}
+          onProceedToOffer={onProceedToOffer}
+          onRefer={onRefer}
+          onReject={onReject}
+        />
+      )}
+
+      {activeTab !== 'shortlist' && activeTab !== 'interview-outcomes' && (
+        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+          <CandidateTableHeader />
           {rows.map((row, i) => (
             <CandidateRowCard
               key={row.app.id}
@@ -1203,7 +1633,7 @@ function CandidateList({
           <div className="px-4 py-2 text-[12px] font-semibold text-fg-muted uppercase tracking-wider">Actions</div>
           <DropdownItem
             label="View 360 candidate"
-            onClick={() => { setMenuApp(null); }}
+            onClick={() => { onView360(menuApp); setMenuApp(null); }}
           />
         </RowDropdown>
       )}
@@ -1221,6 +1651,12 @@ function CandidateRowCard({
   onMenu,
   hideCheckbox,
   isLast,
+  contextLine,
+  project,
+  weights,
+  explanationOpen,
+  onToggleExplanation,
+  onAiSummary,
 }: {
   row: CandidateRow;
   checked: boolean;
@@ -1231,49 +1667,292 @@ function CandidateRowCard({
   onMenu: (e: React.MouseEvent, app: Application) => void;
   hideCheckbox?: boolean;
   isLast?: boolean;
+  contextLine?: string;
+  project?: ProjectEntry;
+  weights?: ScoringWeights;
+  explanationOpen?: boolean;
+  onToggleExplanation?: () => void;
+  onAiSummary?: () => void;
 }) {
   const app = row.app;
+  const availabilityIssues = project ? availabilityWarnings(app, project) : [];
+  const availabilityText = app.availability
+    ? app.availability.from && app.availability.to
+      ? `${app.availability.from} – ${app.availability.to}`
+      : app.availability.weeks ? `${app.availability.weeks} weeks available` : 'Availability on file'
+    : 'Availability not provided';
+  const scoreParts = weights ? [
+    { label: 'Discipline', value: row.sui?.disciplineScore, weight: weights.discipline },
+    { label: 'Skills', value: row.sui?.skillsScore, weight: weights.skills },
+    { label: 'Academic standing', value: row.sui?.standingScore, weight: weights.standing },
+  ] : [];
+  const evidence = [
+    'Application',
+    app.cvFileName ? 'CV' : null,
+    app.transcriptFileName ? 'Transcript' : null,
+    row.rank ? 'Project preferences' : null,
+  ].filter((item): item is string => Boolean(item));
+  const recommendationReasons = [
+    row.projectPosition ? `Ranked #${row.projectPosition} of ${project ? 'eligible applicants' : 'this list'}` : null,
+    row.disciplineMatch ? `${app.course} aligns with the required discipline` : null,
+    row.skillsTotal > 0 ? `${row.skillsMatched} of ${row.skillsTotal} required skills matched` : null,
+    row.rank ? `Candidate ranked this project preference #${row.rank}` : null,
+  ].filter((item): item is string => Boolean(item));
+  const watchouts = [
+    !row.disciplineMatch ? 'Discipline alignment is below the recommended threshold.' : null,
+    row.skillsTotal > 0 && row.skillsMatched < row.skillsTotal ? `${row.skillsTotal - row.skillsMatched} required skill${row.skillsTotal - row.skillsMatched !== 1 ? 's are' : ' is'} not evidenced.` : null,
+    !app.availability ? 'Availability has not been provided.' : null,
+    ...availabilityIssues,
+  ].filter((item): item is string => Boolean(item));
+  const explanationId = `recommendation-${app.id}`;
 
   return (
     <div
       className={cn(
-        'group flex items-start gap-3 px-4 py-3 bg-surface transition-colors',
+        'group grid min-w-[780px] grid-cols-[28px_minmax(140px,1.45fr)_minmax(130px,1.25fr)_88px_82px_72px_105px_120px_28px] items-start bg-surface px-3 py-3 transition-colors',
         !isLast && 'border-b border-border',
         disabled ? 'opacity-70' : 'hover:bg-bg-subtle/30'
       )}
     >
-      {!hideCheckbox && (
+      {!hideCheckbox ? (
         <div className="pt-0.5">
           <Checkbox checked={checked} disabled={disabled} onCheckedChange={onToggle} />
         </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[12px] font-semibold text-fg">{app.name}</span>
-          {statusLabel && (
-            <span className={cn(
-              'text-[10px]',
-              statusVariant === 'success' ? 'text-success'
-                : statusVariant === 'warning' ? 'text-warning'
-                : 'text-fg-muted'
-            )}>
-              → {statusLabel}
-            </span>
-          )}
-        </div>
-        <div className="mt-0.5 text-[11px] text-fg-muted">
-          <AiSummaryPreview
-            app={app}
-            disciplineMatch={row.disciplineMatch}
-            skillsMatched={row.skillsMatched}
-            skillsTotal={row.skillsTotal}
-            rank={row.rank}
-          />
-        </div>
+      ) : <span aria-hidden="true" />}
+      <div className="min-w-0 pr-2">
+        <p className="truncate text-[12px] font-semibold text-fg">{app.name}</p>
+        {statusLabel && (
+          <p className={cn(
+            'mt-1 text-[10px]',
+            statusVariant === 'success' ? 'text-success'
+              : statusVariant === 'warning' ? 'text-warning'
+              : 'text-fg-muted'
+          )}>
+            {statusLabel}
+          </p>
+        )}
+        {contextLine && <p className="mt-1 line-clamp-2 text-[10px] text-fg-subtle">{contextLine}</p>}
+      </div>
+      <div className="min-w-0 pr-2 text-[10px] text-fg-muted">
+        <p className="truncate font-medium text-fg">GPA {app.gpa.toFixed(1)} · Year {app.year}</p>
+        <p className="mt-1 line-clamp-2">{app.course}</p>
+        <p className="mt-1 truncate text-fg-subtle">{app.school}</p>
+      </div>
+      <div className="pr-2 text-[10px] text-fg-muted">
+        <p className="font-semibold text-fg">#{row.projectPosition ?? '—'}</p>
+        <p className="mt-1">Preference #{row.rank ?? '—'}</p>
+      </div>
+      <div className="pr-2 text-[10px]">
+        <p className="font-semibold tabular-nums text-accent">{row.score != null ? `${row.score}%` : '—'}</p>
+        <p className={cn('mt-1', row.disciplineMatch ? 'text-success' : 'text-warning')}>
+          {row.disciplineMatch ? 'Discipline matched' : 'Review discipline'}
+        </p>
+      </div>
+      <div className="pr-2 text-[10px] text-fg-muted">
+        <p className="font-semibold text-fg">{row.skillsTotal > 0 ? `${row.skillsMatched}/${row.skillsTotal}` : '—'}</p>
+        <p className="mt-1">required skills</p>
+      </div>
+      <div className="pr-2 text-[10px]">
+        <p className={cn(
+          'font-medium',
+          availabilityIssues.length > 0 || !app.availability ? 'text-warning' : 'text-success',
+        )}>
+          {availabilityIssues.length > 0 ? 'Conflict' : app.availability ? 'Matched' : 'Not provided'}
+        </p>
+        {app.availability?.weeks && <p className="mt-1 text-fg-muted">{app.availability.weeks} weeks</p>}
+      </div>
+      <div className="pr-2">
+        {onToggleExplanation ? (
+          <button
+            type="button"
+            onClick={onToggleExplanation}
+            className="inline-flex items-center gap-1 text-left text-[10px] font-semibold text-accent hover:underline"
+            aria-expanded={explanationOpen}
+            aria-controls={explanationId}
+          >
+            <Sparkles size={12} className="shrink-0" /> Why recommended
+            <ChevronDown size={12} className={cn('shrink-0 transition-transform', explanationOpen && 'rotate-180')} />
+          </button>
+        ) : <span className="text-[10px] text-fg-muted">—</span>}
       </div>
 
       <RowMenuButton onClick={(e) => onMenu(e, app)} alwaysVisible />
+
+      {explanationOpen && (
+        <div className="col-start-2 col-end-[-2] mt-3">
+          <section
+            id={explanationId}
+            role="region"
+            aria-label={`AI recommendation explanation for ${app.name}`}
+            className="mt-3 rounded-lg border border-accent/20 bg-accent/5 p-3"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-[11px] font-semibold text-fg">Recommendation rationale</p>
+                <p className="mt-0.5 text-[10px] text-fg-muted">
+                  {app.summary || app.notes || row.sui?.reasoning || buildFallbackSummary(row) || 'Based on the available application and project data.'}
+                </p>
+              </div>
+              {row.sui?.confidence && (
+                <span className="text-[10px] font-medium text-fg-muted">Confidence: {row.sui.confidence}</span>
+              )}
+            </div>
+
+            <div className="mt-3 grid gap-3 lg:grid-cols-2">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-fg-muted">Recommended because</p>
+                <ul className="mt-1.5 space-y-1 text-[11px] text-fg">
+                  {recommendationReasons.map(reason => <li key={reason} className="flex gap-2"><Check size={12} className="mt-0.5 shrink-0 text-success" />{reason}</li>)}
+                </ul>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-fg-muted">Watch-outs</p>
+                {watchouts.length > 0 ? (
+                  <ul className="mt-1.5 space-y-1 text-[11px] text-fg">
+                    {watchouts.map(item => <li key={item} className="flex gap-2"><AlertTriangle size={12} className="mt-0.5 shrink-0 text-warning" />{item}</li>)}
+                  </ul>
+                ) : <p className="mt-1.5 text-[11px] text-success">No material watch-outs identified.</p>}
+              </div>
+            </div>
+
+            {scoreParts.length > 0 && (
+              <div className="mt-3 border-t border-border pt-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-fg-muted">Score breakdown</p>
+                <table className="mt-2 w-full border-collapse text-[10px]">
+                  <thead>
+                    <tr className="border-b border-border text-left text-fg-muted">
+                      {scoreParts.map(part => <th key={part.label} className="pb-1.5 font-medium">{part.label}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="text-fg">
+                      {scoreParts.map(part => (
+                        <td key={part.label} className="pt-1.5 font-semibold tabular-nums">
+                          {part.value == null ? 'N/A' : `${Math.round((part.value / 100) * part.weight)} / ${part.weight}`}
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+              <p className="text-[10px] text-fg-muted">Evidence: {evidence.join(' · ')} · {availabilityText}</p>
+              {onAiSummary && (
+                <button type="button" onClick={onAiSummary} className="text-[11px] font-semibold text-accent hover:underline">
+                  View full AI summary
+                </button>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
     </div>
+  );
+}
+
+function CandidateTableHeader() {
+  return (
+    <div className="grid min-w-[780px] grid-cols-[28px_minmax(140px,1.45fr)_minmax(130px,1.25fr)_88px_82px_72px_105px_120px_28px] border-b border-border bg-bg-subtle/30 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-fg-muted">
+      <span aria-hidden="true" />
+      <span>Candidate</span>
+      <span>Academic</span>
+      <span>Ranking</span>
+      <span>Match</span>
+      <span>Skills</span>
+      <span>Availability</span>
+      <span>AI rationale</span>
+      <span className="sr-only">Actions</span>
+    </div>
+  );
+}
+
+function InterviewOutcomeList({
+  rows,
+  projectTitles,
+  onViewConclusion,
+  onView360,
+  onProceedToOffer,
+  onRefer,
+  onReject,
+}: {
+  rows: CandidateRow[];
+  projectTitles: Record<string, string>;
+  onViewConclusion: (app: Application) => void;
+  onView360: (app: Application) => void;
+  onProceedToOffer: (app: Application) => void;
+  onRefer: (app: Application) => void;
+  onReject: (app: Application) => void;
+}) {
+  if (rows.length === 0) {
+    return (
+      <div className="rounded-lg border border-border bg-surface px-5 py-12 text-center">
+        <ClipboardCheck size={24} className="mx-auto mb-3 text-fg-muted" />
+        <p className="text-body-sm font-semibold text-fg">No mentor conclusions submitted</p>
+        <p className="mt-1 text-body-sm text-fg-muted">Completed mentor assessments will appear here for IO review.</p>
+      </div>
+    );
+  }
+
+  return (
+    <section className="overflow-hidden rounded-lg border border-border bg-surface" aria-labelledby="mentor-conclusions-heading">
+      <div className="border-b border-border bg-bg-subtle/50 px-4 py-3">
+        <h3 id="mentor-conclusions-heading" className="text-[13px] font-semibold text-fg">Mentor conclusions ({rows.length})</h3>
+        <p className="mt-0.5 text-[11px] text-fg-muted">Submitted assessments are read-only. IO decisions are recorded separately.</p>
+      </div>
+      <div className="divide-y divide-border">
+        {rows.map(row => {
+          const app = row.app;
+          const scores = app.mentorScores ? Object.values(app.mentorScores) : [];
+          const average = scores.length > 0 ? scores.reduce((sum, score) => sum + score, 0) / scores.length : null;
+          return (
+            <article key={app.id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center">
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-semibold text-fg">{app.name}</p>
+                <p className="mt-1 text-[11px] text-fg-muted">
+                  Mentor feedback:{' '}
+                  <span className={cn('font-semibold', mentorFeedbackTextClass(app.mentorDecision))}>
+                    {mentorFeedbackLabel(app.mentorDecision)}
+                  </span>
+                </p>
+                <p className="mt-1 text-[11px] text-fg-muted">
+                  {app.shortlistedFor ? projectTitles[app.shortlistedFor] || app.shortlistedFor : 'Project not available'}
+                  {average != null ? ` · Assessment ${average.toFixed(1)} / 10` : ''}
+                </p>
+                <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-fg-muted">
+                  {app.mentorNotes || app.mentorRejectionRemark || 'No mentor remarks submitted.'}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => onView360(app)}>Candidate 360</Button>
+                <Button variant="outline" size="sm" onClick={() => onViewConclusion(app)}>
+                  <Eye size={13} /> View conclusion
+                </Button>
+                {app.mentorDecision === 'Accepted' && (
+                  <div className="flex flex-col items-end gap-0.5">
+                    <Button size="sm" onClick={() => onProceedToOffer(app)}>
+                      Proceed to offer <ArrowRight size={13} />
+                    </Button>
+                    {app.preOfferChecks !== 'completed' && (
+                      <span className="text-[10px] font-medium text-warning">Pre-offer checks pending</span>
+                    )}
+                  </div>
+                )}
+                {(app.mentorDecision === 'Rejected' || app.mentorDecision === 'Referred') && (
+                  <>
+                    <Button variant="outline" size="sm" onClick={() => onRefer(app)}>
+                      <RotateCcw size={13} /> Refer
+                    </Button>
+                    <Button variant="danger" size="sm" onClick={() => onReject(app)}>Reject</Button>
+                  </>
+                )}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

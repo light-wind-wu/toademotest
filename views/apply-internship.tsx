@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Modal from '@/components/ui-legacy/modal';
@@ -14,14 +14,11 @@ import {
   ShieldCheck, MessageSquareHeart, Quote, Share2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  APPLICANT_HOME_SCENARIO_CHANGED,
-  isApplicantHomeScenario,
-  loadApplicantHomeScenario,
-} from '@/lib/applicant-home-scenario';
 import { loadApplicantInternshipRecord } from '@/lib/applicant-internship';
+import { useApplicantScenarioData } from '@/lib/applicant-scenario-data';
+import { formatStatusLabel } from '@/lib/status-label';
 import type {
-  ApplicantHomeScenario,
+  ApplicantInternshipRecord,
   ApplicantInternshipTaskId,
 } from '@/lib/types';
 
@@ -58,20 +55,45 @@ function InfoRow({ icon: Icon, label, value }: { icon: typeof Briefcase; label: 
 export default function ApplyInternship() {
   const router = useRouter();
   const [showWelcomeLetter, setShowWelcomeLetter] = useState(false);
-  const [homeScenario, setHomeScenario] = useState<ApplicantHomeScenario>('interview-action');
+  const { homeScenario, internships } = useApplicantScenarioData();
+  const scenarioInternship = internships[0];
 
-  useEffect(() => {
-    setHomeScenario(loadApplicantHomeScenario());
-    const handleScenarioChange = (event: Event) => {
-      const detail = (event as CustomEvent<ApplicantHomeScenario>).detail;
-      if (isApplicantHomeScenario(detail)) setHomeScenario(detail);
-    };
-    window.addEventListener(APPLICANT_HOME_SCENARIO_CHANGED, handleScenarioChange);
-    return () => window.removeEventListener(APPLICANT_HOME_SCENARIO_CHANGED, handleScenarioChange);
-  }, []);
+  if (!scenarioInternship) {
+    return (
+      <Shell activeRoute="/apply/internship" flushTop>
+        <div className="relative mx-[calc(-1*clamp(24px,2.6vw,40px))] min-h-[calc(100vh-64px)] bg-bg-subtle">
+          <header className="border-b border-border bg-bg px-[clamp(24px,2.6vw,40px)] py-10"><div className="mx-auto w-full max-w-[1440px]"><p className="text-[13px] font-medium text-fg-muted">Internship record</p><h1 className="mt-2 text-[38px] font-semibold leading-[44px] tracking-[-0.8px] text-fg">My Internship</h1></div></header>
+          <div className="mx-auto w-full max-w-[1440px] px-[clamp(24px,2.6vw,40px)] py-8"><Card className="shadow-none"><CardContent className="p-10 text-center"><p className="text-[18px] font-semibold text-fg">No internship record yet</p><p className="mt-2 text-[14px] text-fg-muted">Your internship record will appear after you accept an offer.</p><Button className="mt-5" variant="outline" onClick={() => router.push('/apply/applications')}>View My Applications</Button></CardContent></Card></div>
+        </div>
+      </Shell>
+    );
+  }
 
-  const phase = homeScenario === 'completion-action' ? 'offboarding' : 'onboarding';
-  const internship = loadApplicantInternshipRecord(phase);
+  const phase = homeScenario === 'completion-action' || homeScenario === 'journey-completed' ? 'offboarding' : 'onboarding';
+  const baseInternship = loadApplicantInternshipRecord(phase);
+  const isCompleted = scenarioInternship.status === 'COMPLETED';
+  const isEnding = scenarioInternship.status === 'ENDING SOON — ACTION REQUIRED';
+  const internship: ApplicantInternshipRecord = {
+    ...baseInternship,
+    applicationId: 'APP-UI27-00418',
+    programmeName: 'University Internship 2027',
+    statusLabel: scenarioInternship.status,
+    statusTone: isCompleted ? 'success' : isEnding ? 'warning' : 'info',
+    internshipStartDate: scenarioInternship.startDate,
+    internshipEndDate: scenarioInternship.endDate,
+    action: {
+      label: isCompleted ? 'Internship completed' : isEnding ? 'Completion action required' : scenarioInternship.status === 'IN PROGRESS' ? 'Current internship' : 'Prepare for your internship',
+      title: scenarioInternship.primaryCta,
+      body: scenarioInternship.statusMessage,
+      cta: scenarioInternship.primaryCta,
+      route: isCompleted ? '/apply/certification' : isEnding ? '/apply/applicant-offboarding' : scenarioInternship.status === 'UPCOMING — ONBOARDING' ? '/apply/onboarding' : '/apply/internship',
+    },
+    project: { ...baseInternship.project, id: 'ai-threat-detection', title: scenarioInternship.project },
+    certificate: isCompleted ? { status: 'available', date: '2027-07-08' } : { status: 'pending' },
+    completionTasks: baseInternship.completionTasks.map((task) => task.id === 'certificate' && isCompleted
+      ? { ...task, status: 'Available', statusTone: 'success', body: 'Your internship certificate is ready to view and download.', cta: 'View Certificate' }
+      : task),
+  };
   const { action, project } = internship;
   const isOffboarding = internship.phase === 'offboarding';
 
@@ -85,7 +107,7 @@ export default function ApplyInternship() {
               <h1 className="mt-2 text-[38px] font-semibold leading-[44px] tracking-[-0.8px] text-fg">My Internship</h1>
               <p className="mt-2 text-[16px] leading-6 text-fg-muted">{internship.programmeName}</p>
             </div>
-            <Badge variant={internship.statusTone}>{internship.statusLabel}</Badge>
+            <Badge variant={internship.statusTone}>{formatStatusLabel(internship.statusLabel)}</Badge>
           </div>
         </header>
 
@@ -125,7 +147,7 @@ export default function ApplyInternship() {
                       <CardContent className="flex h-full flex-col p-5">
                         <div className="flex items-start justify-between gap-3">
                           <span className="inline-flex size-9 items-center justify-center rounded-md bg-bg-muted text-accent"><TaskIcon className="size-4" aria-hidden /></span>
-                          <Badge variant={task.statusTone}>{task.status}</Badge>
+                          <Badge variant={task.statusTone}>{formatStatusLabel(task.status)}</Badge>
                         </div>
                         <h3 className="mt-4 text-[16px] font-semibold text-fg">{task.title}</h3>
                         <p className="mt-2 flex-1 text-[13px] leading-5 text-fg-muted">{task.body}</p>

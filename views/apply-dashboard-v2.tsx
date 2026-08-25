@@ -849,7 +849,7 @@ function InterviewInvitationCard({
             className="mt-1 text-[14px] font-medium leading-5"
             style={{ color: 'rgba(15, 23, 43, 1)' }}
           >
-            30 minutes
+            1 hour
           </p>
         </div>
       </div>

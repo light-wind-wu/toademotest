@@ -28,7 +28,7 @@ import type {
   ApplicantHomeScenarioContent,
 } from '@/lib/types';
 
-const INTERVIEW_PROJECT_NAME = PROJECT_MATCHES[0].name;
+const INTERVIEW_PROJECT_NAME = 'Designing Mission-Critical Digital Services';
 
 const BASE_STEP_LABELS = ['Submitted', 'Under Review', 'Interview', 'Outcome'] as const;
 
@@ -44,7 +44,7 @@ const HOME_SCENARIO_CONTENT = {
     summary: 'Undergraduate Internship 2027 is open for applications across cyber, digital and engineering teams.',
     dueText: 'Start any time before 30 Sep 2026.',
     primaryLabel: 'Explore Programmes',
-    primaryRoute: '/apply/welcome',
+    primaryRoute: '/join-us/student/internships',
     secondaryLabel: 'View Programme',
     progressIndex: -1,
     progressHint: 'Start an application',
@@ -95,6 +95,37 @@ const HOME_SCENARIO_CONTENT = {
       { title: 'Application window reminder', body: 'Submit by 30 September 2026.', date: '15 Aug 2026', tone: 'warning' },
     ],
   },
+  'submitted': {
+    heroLines: ['Your application', 'has been submitted'],
+    heroMessage: 'Your application was submitted successfully. We will let you know when the review begins or if any action is required.',
+    heroBadge: 'Submitted',
+    bannerLines: ['Your application', 'is safely', 'with us.'],
+    bannerBody: 'The Talent Acquisition team will review your application next. No action is required right now.',
+    recordDate: 'Submitted today',
+    statusLabel: 'Submitted',
+    summary: 'Your University Internship 2027 application has been received successfully.',
+    dueText: 'We will notify you when there is an update.',
+    primaryLabel: 'View Application',
+    primaryRoute: '/apply/applications',
+    secondaryLabel: 'View Details',
+    progressIndex: 0,
+    progressHint: 'Application submitted',
+    detailLabel: 'Application received',
+    detailTitle: 'Your submission is complete and awaiting review.',
+    detailPerson: 'Talent Acquisition Team',
+    detailRole: 'DSTA Internships',
+    detailMeta: [{ label: 'Status', value: 'Submitted' }, { label: 'Reference', value: 'APP-UI27-00418' }],
+    tasksKicker: 'You are all caught up',
+    tasksTitle: 'No action is required',
+    tasksDeadline: 'We will notify you of any updates',
+    tasks: [
+      { title: 'Monitor your application', body: 'Check the Applicant Portal for status updates.', cta: 'View Application' },
+      { title: 'Keep your profile current', body: 'Make sure your contact details remain up to date.', cta: 'View Profile' },
+    ],
+    activity: [
+      { title: 'Application submitted', body: 'Your University Internship 2027 application was received successfully.', date: 'Today', tone: 'accent' },
+    ],
+  },
   'under-review': {
     heroLines: ['Your application is', 'moving forward'],
     heroMessage: 'The review team has everything they need. We will let you know when there is an update.',
@@ -133,11 +164,11 @@ const HOME_SCENARIO_CONTENT = {
     heroMessage: 'You’ve received an interview invitation. Choose a timeslot to continue.',
     heroBadge: 'Interview invitation received',
     bannerLines: ['Congratulations! You', 'have been shortlisted', 'for an interview.'],
-    bannerBody: 'The hiring mentor Aisha Rahman (Digital Hub) would like to have a chat with you before making a final decision.',
-    recordDate: 'Submitted 24 Jul 2026',
+    bannerBody: 'Your mentor Marcus Tan (Digital Hub) would like to meet you before the application progresses.',
+    recordDate: 'Submitted 12 Aug 2026',
     statusLabel: 'Interview invited',
-    summary: `You’ve been shortlisted for an interview for the ${INTERVIEW_PROJECT_NAME} project under Undergraduate Internship 2027.`,
-    dueText: 'Choose a timeslot by 30 Jul 2026.',
+    summary: `You’ve been shortlisted for an interview for ${INTERVIEW_PROJECT_NAME} under University Internship 2027.`,
+    dueText: 'Choose a timeslot by 28 Aug 2026.',
     primaryLabel: 'Choose a Timeslot',
     primaryRoute: '/apply/interviews',
     secondaryLabel: 'View Application',
@@ -145,20 +176,20 @@ const HOME_SCENARIO_CONTENT = {
     progressHint: 'Choose a timeslot',
     detailLabel: 'Interview invitation',
     detailTitle: 'Choose a timeslot to confirm your interview.',
-    detailPerson: 'Aisha Rahman',
+    detailPerson: 'Marcus Tan',
     detailRole: 'Mentor · Digital Hub',
-    detailMeta: [{ label: 'Format', value: 'Microsoft Teams' }, { label: 'Duration', value: '30 minutes' }],
+    detailMeta: [{ label: 'Format', value: 'Microsoft Teams' }, { label: 'Duration', value: '1 hour' }],
     tasksKicker: 'Keep things moving',
-    tasksTitle: '2 tasks need your attention',
-    tasksDeadline: 'Respond by 30 Aug 2026',
+    tasksTitle: 'Your mentor interview needs a response',
+    tasksDeadline: 'Respond by 28 Aug 2026',
     tasks: [
-      { title: 'Update your contact details', body: 'Add a current email address and mobile number.', cta: 'Update Details' },
-      { title: 'Provide additional information', body: 'The review team has requested additional information.', cta: 'View Request' },
+      { title: 'Choose a timeslot', body: 'Select an available time to meet Marcus Tan.', cta: 'Choose Timeslot' },
+      { title: 'Review your application', body: 'Check the application linked to this interview.', cta: 'View Application' },
     ],
     activity: [
-      { title: 'Interview invitation received', body: `Aisha Rahman invited you to interview for ${INTERVIEW_PROJECT_NAME}.`, date: '26 Jul 2026', tone: 'accent' },
-      { title: 'Application received', body: 'Your Undergraduate Internship 2027 submission is complete.', date: '24 Jul 2026', tone: 'accent' },
-      { title: 'Quiz result saved', body: 'Your Pioneer archetype can be replayed without changing your application.', date: '24 Jul 2026', tone: 'warning' },
+      { title: 'Interview invitation received', body: `Marcus Tan invited you to interview for ${INTERVIEW_PROJECT_NAME}.`, date: '25 Aug 2026', tone: 'accent' },
+      { title: 'Application received', body: 'Your University Internship 2027 submission is complete.', date: '12 Aug 2026', tone: 'accent' },
+      { title: 'Application under review', body: 'Your application progressed to the review stage.', date: '15 Aug 2026', tone: 'warning' },
     ],
   },
   'interview-scheduled': {
@@ -167,10 +198,10 @@ const HOME_SCENARIO_CONTENT = {
     heroBadge: 'Interview scheduled',
     bannerLines: ['Your interview', 'timeslot is', 'confirmed.'],
     bannerBody: 'Everything you need for the conversation is available below. You can manage the interview if your availability changes.',
-    recordDate: 'Timeslot selected 19 Aug 2026',
+    recordDate: 'Timeslot selected 25 Aug 2026',
     statusLabel: 'Timeslot selected',
-    summary: `Your interview for the ${INTERVIEW_PROJECT_NAME} project is scheduled with Aisha Rahman.`,
-    dueText: '27 Aug 2026 · 2:30 PM · Singapore Time (SGT)',
+    summary: `Your interview for the ${INTERVIEW_PROJECT_NAME} project is scheduled with Marcus Tan.`,
+    dueText: '28 Aug 2026 · 10:00 AM · Singapore Time (SGT)',
     primaryLabel: 'View / Manage Interview',
     primaryRoute: '/apply/applications/app-design-2027',
     secondaryLabel: 'View Application',
@@ -178,12 +209,12 @@ const HOME_SCENARIO_CONTENT = {
     progressHint: 'Timeslot Selected',
     detailLabel: 'Interview Scheduled',
     detailTitle: 'Your interview timeslot is confirmed.',
-    detailPerson: 'Aisha Rahman',
+    detailPerson: 'Marcus Tan',
     detailRole: 'Mentor · Digital Hub',
-    detailMeta: [{ label: 'Selected date & time', value: '27 Aug 2026 · 2:30 PM' }, { label: 'Interview details', value: 'Microsoft Teams · 45 minutes' }],
+    detailMeta: [{ label: 'Selected date & time', value: '28 Aug 2026 · 10:00 AM' }, { label: 'Interview details', value: 'Microsoft Teams · 1 hour' }],
     tasksKicker: 'Interview details',
     tasksTitle: 'Everything you need for the conversation',
-    tasksDeadline: '27 Aug 2026 · 2:30 PM SGT',
+    tasksDeadline: '28 Aug 2026 · 10:00 AM SGT',
     tasks: [
       { title: 'View interview details', body: 'Review the mentor, format and joining instructions.', cta: 'View Details' },
       { title: 'Suggest another time', body: 'Request a different time if your availability changes.', cta: 'Suggest Time' },
@@ -207,7 +238,7 @@ const HOME_SCENARIO_CONTENT = {
     progressHint: 'Time Change Requested',
     detailLabel: 'Interview Rescheduling',
     detailTitle: 'Your suggested time is awaiting confirmation.',
-    detailPerson: 'Aisha Rahman',
+    detailPerson: 'Marcus Tan',
     detailRole: 'Mentor · Digital Hub',
     detailMeta: [{ label: 'Suggested date & time', value: '31 Aug 2026 · 11:00 AM' }, { label: 'Request status', value: 'Awaiting interviewer confirmation' }],
     tasksKicker: 'Rescheduling details',
@@ -219,6 +250,38 @@ const HOME_SCENARIO_CONTENT = {
     ],
     activity: [],
   },
+  'interview-completed': {
+    heroLines: ['Your interview is', 'complete'],
+    heroMessage: 'Thank you for meeting the project team. The internship team is reviewing the outcome.',
+    heroBadge: 'Outcome pending',
+    bannerLines: ['Your interview', 'has been', 'completed.'],
+    bannerBody: 'No action is needed while the internship team completes its review.',
+    recordDate: 'Interview completed 27 Aug 2026',
+    statusLabel: 'Under review',
+    summary: `Your interview for the ${INTERVIEW_PROJECT_NAME} project is complete and the outcome is pending.`,
+    dueText: 'We will notify you when there is an outcome.',
+    primaryLabel: 'View Application',
+    primaryRoute: '/apply/applications',
+    secondaryLabel: 'View Interview',
+    progressIndex: 3,
+    progressHint: 'Outcome pending',
+    detailLabel: 'Interview completed',
+    detailTitle: 'The internship team is reviewing the outcome.',
+    detailPerson: 'Talent Outreach Team',
+    detailRole: 'DSTA Internships',
+    detailMeta: [{ label: 'Completed', value: '27 Aug 2026 · 2:30 PM' }, { label: 'Status', value: 'Outcome pending' }],
+    tasksKicker: 'You are all caught up',
+    tasksTitle: 'No tasks need your attention',
+    tasksDeadline: 'We will notify you of any updates',
+    tasks: [
+      { title: 'View interview record', body: 'Review the completed interview details.', cta: 'View Interview' },
+      { title: 'Keep your profile current', body: 'Check that your contact details are up to date.', cta: 'View Profile' },
+    ],
+    activity: [
+      { title: 'Interview completed', body: `Your interview for ${INTERVIEW_PROJECT_NAME} was completed.`, date: '27 Aug 2026', tone: 'accent' },
+      { title: 'Outcome review started', body: 'The internship team is reviewing the interview outcome.', date: '28 Aug 2026', tone: 'accent' },
+    ],
+  },
   'offer-action': {
     heroLines: ['An offer is waiting', 'for you'],
     heroMessage: 'Review your internship offer and tell us your decision before the response deadline.',
@@ -227,7 +290,7 @@ const HOME_SCENARIO_CONTENT = {
     bannerBody: 'Review the internship period, reporting details and terms before responding.',
     recordDate: 'Offer issued 29 Aug 2026',
     statusLabel: 'Offer received',
-    summary: `You have received an offer for the ${INTERVIEW_PROJECT_NAME} project under Undergraduate Internship 2027.`,
+    summary: `You have received an offer for the ${INTERVIEW_PROJECT_NAME} project under University Internship 2027.`,
     dueText: 'Respond by 5 Sep 2026.',
     primaryLabel: 'View Offer',
     primaryRoute: '/apply/applicant-offer-detail?applicationId=app-ui-2027',
@@ -236,7 +299,7 @@ const HOME_SCENARIO_CONTENT = {
     progressHint: 'Respond to your offer',
     detailLabel: 'Offer received',
     detailTitle: 'Review and respond to your internship offer.',
-    detailPerson: 'Aisha Rahman',
+    detailPerson: 'Marcus Tan',
     detailRole: 'Mentor · Digital Hub',
     detailMeta: [{ label: 'Internship period', value: '14 Sep – 11 Dec 2026' }, { label: 'Response deadline', value: '5 Sep 2026' }],
     tasksKicker: 'Offer response',
@@ -269,7 +332,7 @@ const HOME_SCENARIO_CONTENT = {
     progressHint: 'Complete onboarding',
     detailLabel: 'Onboarding checklist',
     detailTitle: 'Complete your remaining onboarding tasks.',
-    detailPerson: 'Aisha Rahman',
+    detailPerson: 'Marcus Tan',
     detailRole: 'Mentor · Digital Hub',
     detailMeta: [{ label: 'Progress', value: '3 of 6 tasks' }, { label: 'Due', value: '15 Sep 2026' }],
     tasksKicker: 'Before day one',
@@ -302,7 +365,7 @@ const HOME_SCENARIO_CONTENT = {
     progressHint: 'Internship in progress',
     detailLabel: 'Active internship',
     detailTitle: 'Your internship is on track.',
-    detailPerson: 'Aisha Rahman',
+    detailPerson: 'Marcus Tan',
     detailRole: 'Mentor · Digital Hub',
     detailMeta: [{ label: 'Progress', value: 'Week 5 of 12' }, { label: 'Next check-in', value: '16 Oct 2026' }],
     tasksKicker: 'You are all caught up',
@@ -314,7 +377,7 @@ const HOME_SCENARIO_CONTENT = {
     ],
     activity: [
       { title: 'Mid-point check-in scheduled', body: 'Meet Aisha on 16 October at 10:00 AM.', date: '10 Oct 2026', tone: 'accent' },
-      { title: 'Internship started', body: 'Welcome to the AI Threat Detection project.', date: '14 Sep 2026', tone: 'accent' },
+      { title: 'Internship started', body: `Welcome to the ${INTERVIEW_PROJECT_NAME} project.`, date: '14 Sep 2026', tone: 'accent' },
       { title: 'Onboarding completed', body: 'All onboarding details have been confirmed.', date: '12 Sep 2026', tone: 'accent' },
     ],
   },
@@ -419,6 +482,9 @@ export default function ApplyDashboardV1() {
     [quizTaken, answers],
   );
   const content = HOME_SCENARIO_CONTENT[scenario];
+  const displayProgrammeTitle = scenario === 'no-application' || scenario === 'draft-application'
+    ? programmeTitle
+    : 'University Internship 2027';
   const steps = useMemo(
     () => BASE_STEP_LABELS.map((label, index) => ({
       id: index + 1,
@@ -430,10 +496,12 @@ export default function ApplyDashboardV1() {
     [content.progressHint, content.progressIndex],
   );
   const showApplicationMap =
+    scenario === 'submitted' ||
     scenario === 'under-review' ||
     scenario === 'interview-action' ||
     scenario === 'interview-scheduled' ||
     scenario === 'interview-rescheduling' ||
+    scenario === 'interview-completed' ||
     scenario === 'offer-action';
   const hideLatestActivity =
     scenario === 'interview-scheduled' || scenario === 'interview-rescheduling';
@@ -452,7 +520,7 @@ export default function ApplyDashboardV1() {
   const sectionTitle = showApplicationMap
     ? 'Where you are now'
     : showInternshipHome
-      ? 'AI Threat Detection'
+      ? INTERVIEW_PROJECT_NAME
       : scenario === 'draft-application'
         ? 'Finish your application'
         : 'Find your starting point';
@@ -612,13 +680,13 @@ export default function ApplyDashboardV1() {
                     className="mt-2 text-[18px] font-semibold leading-[28.8px] lg:mt-2 lg:text-[24px] lg:tracking-[-0.48px]"
                     style={{ color: 'rgba(10, 22, 40, 1)' }}
                   >
-                    {programmeTitle}
+                    {displayProgrammeTitle}
                   </h2>
                   <p
                     className="mt-0.5 text-[14px] font-normal leading-[120%] lg:mt-2"
                     style={{ color: 'rgba(74, 85, 104, 1)' }}
                   >
-                    {content.summary.replace('Undergraduate Internship 2027', programmeTitle)}
+                    {content.summary.replace('Undergraduate Internship 2027', displayProgrammeTitle)}
                   </p>
                   <p
                     className="mt-6 text-[14px] font-medium leading-[120%] lg:mt-8"
@@ -1152,12 +1220,12 @@ function InternshipHomeSection({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-[18px] font-semibold text-fg">Undergraduate Internship 2027</p>
+              <p className="text-[18px] font-semibold text-fg">University Internship 2027</p>
               <span className="rounded-full bg-[rgba(0,188,125,0.15)] px-2.5 py-1 text-[12px] text-[rgba(0,122,85,1)]">
                 {status}
               </span>
             </div>
-            <p className="mt-2 text-[14px] text-fg-muted">Digital Hub · Mentor: Aisha Rahman</p>
+            <p className="mt-2 text-[14px] text-fg-muted">Digital Hub · Mentor: Marcus Tan</p>
           </div>
           <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[13px]">
             <div><span className="block text-fg-muted">Period</span><span className="font-medium text-fg">14 Sep – 11 Dec 2026</span></div>
@@ -1475,6 +1543,10 @@ function TasksCard({
   stacked?: boolean;
   className?: string;
 }) {
+  const router = useRouter();
+  const exploreProgrammes = content.tasks[0].title === 'Explore programmes';
+  const discoverArchetype = content.tasks[1].title === 'Discover your archetype';
+
   return (
     <article
       className={cn(
@@ -1520,6 +1592,7 @@ function TasksCard({
           cta={content.tasks[0].cta}
           image={stacked ? '/images/contact-details-m.jpg' : '/images/contact-details.jpg'}
           compact={stacked}
+          onClick={exploreProgrammes ? () => router.push('/join-us/student/internships') : undefined}
         />
         <TaskTile
           title={content.tasks[1].title}
@@ -1527,6 +1600,7 @@ function TasksCard({
           cta={content.tasks[1].cta}
           image={stacked ? '/images/additional-information-m.jpg' : '/images/additional-information.jpg'}
           compact={stacked}
+          onClick={discoverArchetype ? () => router.push('/apply/project-fit') : undefined}
         />
       </div>
     </article>
@@ -1539,12 +1613,14 @@ function TaskTile({
   cta,
   image,
   compact = false,
+  onClick,
 }: {
   title: string;
   body: string;
   cta: string;
   image: string;
   compact?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <div
@@ -1575,9 +1651,10 @@ function TaskTile({
       >
         {body}
       </p>
-      <OutOfScopeTooltip>
+      {onClick ? (
         <button
           type="button"
+          onClick={onClick}
           className={cn(
             'absolute z-[1] h-8 cursor-pointer rounded-md px-3 text-[13px] text-white',
             compact ? 'bottom-4 left-4' : 'bottom-6 left-6',
@@ -1586,7 +1663,20 @@ function TaskTile({
         >
           {cta}
         </button>
-      </OutOfScopeTooltip>
+      ) : (
+        <OutOfScopeTooltip>
+          <button
+            type="button"
+            className={cn(
+              'absolute z-[1] h-8 cursor-pointer rounded-md px-3 text-[13px] text-white',
+              compact ? 'bottom-4 left-4' : 'bottom-6 left-6',
+            )}
+            style={{ background: 'rgba(26, 101, 248, 1)', height: 32 }}
+          >
+            {cta}
+          </button>
+        </OutOfScopeTooltip>
+      )}
       <div
         className={cn(
           'pointer-events-none absolute',

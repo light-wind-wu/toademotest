@@ -19,7 +19,7 @@ const FLAGS: { key: keyof SysConfig; label: string; desc: string }[] = [
 const PARAMS: { key: keyof SysConfig; label: string; desc: string; min: number; max: number; unit: string }[] = [
   { key: 'offerValidityDays', label: 'Default offer validity', desc: 'How long an extended offer stays open.',           min: 3,  max: 30, unit: 'days' },
   { key: 'maxProjectRanks',   label: 'Max project preferences', desc: 'Projects an applicant can rank in their application.', min: 1, max: 10, unit: 'projects' },
-  { key: 'interviewMins',     label: 'Default interview length', desc: 'Pre-filled duration when scheduling interviews.',  min: 15, max: 90, unit: 'min' },
+  { key: 'interviewMins',     label: 'Interview length', desc: 'All mentor interviews use a standard one-hour slot.',  min: 60, max: 60, unit: 'min' },
 ];
 
 export default function SystemConfig() {

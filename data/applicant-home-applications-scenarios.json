@@ -1,0 +1,56 @@
+{
+  "S01": [
+    { "applicationId": "APP-UI27-00418", "programme": "University Internship 2027", "statusBadge": "DRAFT", "tabGroup": "in-progress", "cardMessage": "Your application is saved as a draft. Complete the remaining sections and submit it by 18 Aug 2026.", "actionDeadline": "18 Aug 2026", "primaryCta": "Continue application", "secondaryCta": null, "focal": true }
+  ],
+  "SUBMITTED": [
+    { "applicationId": "APP-UI27-00418", "programme": "University Internship 2027", "statusBadge": "SUBMITTED", "tabGroup": "in-progress", "cardMessage": "Your application has been submitted successfully. The Talent Acquisition team will review it next.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": null, "focal": true }
+  ],
+  "S02": [
+    { "applicationId": "APP-UI27-00418", "programme": "University Internship 2027", "statusBadge": "UNDER REVIEW", "tabGroup": "in-progress", "cardMessage": "Your application is being reviewed by the internship team.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": null, "focal": true }
+  ],
+  "S03": [
+    { "applicationId": "APP-UI27-00418", "programme": "University Internship 2027", "statusBadge": "INTERVIEW", "tabGroup": "in-progress", "cardMessage": "You have been shortlisted for a mentor interview. Choose an available timeslot by 28 Aug 2026.", "actionDeadline": "28 Aug 2026", "primaryCta": "Choose a timeslot", "secondaryCta": "View application", "focal": true },
+    { "applicationId": "APP-UI26-00312", "programme": "University Internship 2026", "statusBadge": "UNSUCCESSFUL", "tabGroup": "closed", "cardMessage": "Your application was not selected for this intake.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": "View outcome", "focal": false },
+    { "applicationId": "APP-TU26-00126", "programme": "Tech UP Internship 2026", "statusBadge": "WITHDRAWN", "tabGroup": "closed", "cardMessage": "You withdrew this application on 8 Aug 2025.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": null, "focal": false }
+  ],
+  "S04": [
+    { "applicationId": "APP-UI27-00418", "programme": "University Internship 2027", "statusBadge": "INTERVIEW", "tabGroup": "in-progress", "cardMessage": "Your request to update the interview schedule is awaiting confirmation.", "actionDeadline": null, "primaryCta": "Await Interview Time Confirmation", "secondaryCta": "View application", "focal": true },
+    { "applicationId": "APP-UI26-00312", "programme": "University Internship 2026", "statusBadge": "UNSUCCESSFUL", "tabGroup": "closed", "cardMessage": "Your application was not selected for this intake.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": "View outcome", "focal": false },
+    { "applicationId": "APP-TU26-00126", "programme": "Tech UP Internship 2026", "statusBadge": "WITHDRAWN", "tabGroup": "closed", "cardMessage": "You withdrew this application on 8 Aug 2025.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": null, "focal": false }
+  ],
+  "S05": [
+    { "applicationId": "APP-UI27-00418", "programme": "University Internship 2027", "statusBadge": "INTERVIEW", "tabGroup": "in-progress", "cardMessage": "Your interview is confirmed for 28 Aug 2026 at 10:00 AM.", "actionDeadline": null, "primaryCta": "View / Manage Interview", "secondaryCta": "View application", "focal": true },
+    { "applicationId": "APP-UI26-00312", "programme": "University Internship 2026", "statusBadge": "UNSUCCESSFUL", "tabGroup": "closed", "cardMessage": "Your application was not selected for this intake.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": "View outcome", "focal": false },
+    { "applicationId": "APP-TU26-00126", "programme": "Tech UP Internship 2026", "statusBadge": "WITHDRAWN", "tabGroup": "closed", "cardMessage": "You withdrew this application on 8 Aug 2025.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": null, "focal": false }
+  ],
+  "S06": [
+    { "applicationId": "APP-UI27-00418", "programme": "University Internship 2027", "statusBadge": "UNDER REVIEW", "tabGroup": "in-progress", "cardMessage": "Your interview has been completed. The internship team is reviewing the outcome.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": "View interview", "focal": true },
+    { "applicationId": "APP-UI26-00312", "programme": "University Internship 2026", "statusBadge": "UNSUCCESSFUL", "tabGroup": "closed", "cardMessage": "Your application was not selected for this intake.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": "View outcome", "focal": false },
+    { "applicationId": "APP-TU26-00126", "programme": "Tech UP Internship 2026", "statusBadge": "WITHDRAWN", "tabGroup": "closed", "cardMessage": "You withdrew this application on 8 Aug 2025.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": null, "focal": false }
+  ],
+  "S07": [
+    { "applicationId": "APP-UI27-00418", "programme": "University Internship 2027", "statusBadge": "OFFER RECEIVED", "tabGroup": "in-progress", "cardMessage": "You have received an internship offer. Respond by 5 Sep 2026.", "actionDeadline": "05 Sep 2026", "primaryCta": "Review offer", "secondaryCta": "View application", "focal": true },
+    { "applicationId": "APP-UI26-00312", "programme": "University Internship 2026", "statusBadge": "UNSUCCESSFUL", "tabGroup": "closed", "cardMessage": "Your application was not selected for this intake.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": "View outcome", "focal": false },
+    { "applicationId": "APP-TU26-00126", "programme": "Tech UP Internship 2026", "statusBadge": "WITHDRAWN", "tabGroup": "closed", "cardMessage": "You withdrew this application on 8 Aug 2025.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": null, "focal": false }
+  ],
+  "S08": [
+    { "applicationId": "APP-UI27-00418", "programme": "University Internship 2027", "statusBadge": "OFFER ACCEPTED", "tabGroup": "closed", "cardMessage": "Your offer has been accepted. Complete the required onboarding actions by 10 Sep 2026.", "actionDeadline": "10 Sep 2026", "primaryCta": "Complete onboarding", "secondaryCta": "View application", "focal": true },
+    { "applicationId": "APP-UI26-00312", "programme": "University Internship 2026", "statusBadge": "UNSUCCESSFUL", "tabGroup": "closed", "cardMessage": "Your application was not selected for this intake.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": "View outcome", "focal": false },
+    { "applicationId": "APP-TU26-00126", "programme": "Tech UP Internship 2026", "statusBadge": "WITHDRAWN", "tabGroup": "closed", "cardMessage": "You withdrew this application on 8 Aug 2025.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": null, "focal": false }
+  ],
+  "S09": [
+    { "applicationId": "APP-UI27-00418", "programme": "University Internship 2027", "statusBadge": "OFFER ACCEPTED", "tabGroup": "closed", "cardMessage": "Your application was successful and your internship is in progress.", "actionDeadline": null, "primaryCta": "View internship", "secondaryCta": "View application", "focal": true },
+    { "applicationId": "APP-UI26-00312", "programme": "University Internship 2026", "statusBadge": "UNSUCCESSFUL", "tabGroup": "closed", "cardMessage": "Your application was not selected for this intake.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": "View outcome", "focal": false },
+    { "applicationId": "APP-TU26-00126", "programme": "Tech UP Internship 2026", "statusBadge": "WITHDRAWN", "tabGroup": "closed", "cardMessage": "You withdrew this application on 8 Aug 2025.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": null, "focal": false }
+  ],
+  "S10": [
+    { "applicationId": "APP-UI27-00418", "programme": "University Internship 2027", "statusBadge": "OFFER ACCEPTED", "tabGroup": "closed", "cardMessage": "Your application was successful. Your internship is approaching completion.", "actionDeadline": null, "primaryCta": "View internship", "secondaryCta": "View application", "focal": true },
+    { "applicationId": "APP-UI26-00312", "programme": "University Internship 2026", "statusBadge": "UNSUCCESSFUL", "tabGroup": "closed", "cardMessage": "Your application was not selected for this intake.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": "View outcome", "focal": false },
+    { "applicationId": "APP-TU26-00126", "programme": "Tech UP Internship 2026", "statusBadge": "WITHDRAWN", "tabGroup": "closed", "cardMessage": "You withdrew this application on 8 Aug 2025.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": null, "focal": false }
+  ],
+  "S11": [
+    { "applicationId": "APP-UI27-00418", "programme": "University Internship 2027", "statusBadge": "OFFER ACCEPTED", "tabGroup": "closed", "cardMessage": "Your application was successful and the internship has been completed.", "actionDeadline": null, "primaryCta": "View internship", "secondaryCta": "View application", "focal": true },
+    { "applicationId": "APP-UI26-00312", "programme": "University Internship 2026", "statusBadge": "UNSUCCESSFUL", "tabGroup": "closed", "cardMessage": "Your application was not selected for this intake.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": "View outcome", "focal": false },
+    { "applicationId": "APP-TU26-00126", "programme": "Tech UP Internship 2026", "statusBadge": "WITHDRAWN", "tabGroup": "closed", "cardMessage": "You withdrew this application on 8 Aug 2025.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": null, "focal": false }
+  ]
+}

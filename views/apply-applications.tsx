@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, CalendarDays, FileText } from 'lucide-react';
 import Shell from '@/components/layout/shell';
@@ -10,63 +10,44 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { loadApplicantApplications } from '@/lib/applicant-applications';
-import type {
-  ApplicantApplicationFilter,
-  ApplicantApplicationRecord,
-  CandidateApplicationStatus,
-} from '@/lib/types';
+import { useApplicantScenarioData } from '@/lib/applicant-scenario-data';
+import type { ApplicantScenarioApplicationRecord } from '@/lib/types';
+import { formatStatusLabel } from '@/lib/status-label';
 import { cn } from '@/lib/utils';
 
-const FILTERS: Array<{ value: ApplicantApplicationFilter; label: string }> = [
-  { value: 'all', label: 'All' },
-  { value: 'needs-action', label: 'Needs action' },
+type ApplicationTab = ApplicantScenarioApplicationRecord['tabGroup'];
+
+const FILTERS: Array<{ value: ApplicationTab; label: string }> = [
   { value: 'in-progress', label: 'In progress' },
   { value: 'closed', label: 'Closed' },
 ];
 
-function statusVariant(status: CandidateApplicationStatus) {
+function statusVariant(status: string) {
   if (status === 'OFFER ACCEPTED') return 'success' as const;
   if (status === 'OFFER RECEIVED' || status === 'INTERVIEW') return 'warning' as const;
   if (status === 'UNDER REVIEW' || status === 'SUBMITTED') return 'info' as const;
+  if (status === 'OFFER DECLINED' || status === 'OFFER EXPIRED' || status === 'UNSUCCESSFUL') return 'danger' as const;
   return 'subtle' as const;
 }
 
-function actionLabel(action: ApplicantApplicationRecord['primaryAction']) {
-  if (action === 'resume') return 'Resume application';
-  if (action === 'confirm-interview') return 'Confirm interview';
-  if (action === 'confirm-slot') return 'Confirm new slot';
-  if (action === 'manage-interview') return 'View / Manage Interview';
-  if (action === 'await-interview-confirmation') return 'Await Interview Time Confirmation';
-  if (action === 'view-offer') return 'View offer';
-  if (action === 'view-outcome') return 'View outcome';
-  return null;
+function routeRecordId(applicationId: string) {
+  return loadApplicantApplications().find((record) => record.applicationId === applicationId)?.id ?? 'app-ui-2027';
 }
 
-function ApplicationCard({ record }: { record: ApplicantApplicationRecord }) {
+function ApplicationCard({ record }: { record: ApplicantScenarioApplicationRecord }) {
   const router = useRouter();
-  const isClosed = record.filter === 'closed';
-  const action = actionLabel(record.primaryAction);
+  const isClosed = record.tabGroup === 'closed';
+  const detailId = routeRecordId(record.applicationId);
 
-  function runPrimaryAction() {
-    if (
-      record.primaryAction === 'confirm-interview' ||
-      record.primaryAction === 'confirm-slot'
-    ) {
-      router.push(`/apply/applicant-interview-review?applicationId=${record.id}`);
-      return;
-    }
-    if (
-      record.primaryAction === 'manage-interview' ||
-      record.primaryAction === 'await-interview-confirmation'
-    ) {
-      router.push(`/apply/applications/${record.id}`);
-      return;
-    }
-    if (record.primaryAction === 'view-offer') {
-      router.push(`/apply/applicant-offer-detail?applicationId=${record.id}`);
-      return;
-    }
-    router.push(`/apply/applications/${record.id}`);
+  function runAction(label: string) {
+    const action = label.toLowerCase();
+    if (action.includes('continue application')) return router.push('/apply/review');
+    if (action.includes('choose a timeslot')) return router.push(`/apply/applicant-interview-review?applicationId=${detailId}`);
+    if (action.includes('interview')) return router.push('/apply/interviews');
+    if (action.includes('offer')) return router.push(`/apply/applicant-offer-detail?applicationId=${detailId}`);
+    if (action.includes('onboarding')) return router.push('/apply/onboarding');
+    if (action.includes('internship')) return router.push('/apply/internship');
+    return router.push(`/apply/applications/${detailId}`);
   }
 
   return (
@@ -78,42 +59,34 @@ function ApplicationCard({ record }: { record: ApplicantApplicationRecord }) {
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="text-[18px] font-semibold leading-6 text-fg">{record.programmeName}</h2>
-          <p className="mt-1 text-[14px] leading-5 text-fg-muted">{record.intake}</p>
+          <h2 className="text-[18px] font-semibold leading-6 text-fg">{record.programme}</h2>
+          <p className="mt-1 text-[14px] leading-5 text-fg-muted">{record.applicationId}</p>
         </div>
-        <Badge variant={statusVariant(record.status)} className="shrink-0 whitespace-nowrap">
-          {record.status}
+        <Badge variant={statusVariant(record.statusBadge)} className="shrink-0 whitespace-nowrap">
+          {formatStatusLabel(record.statusBadge)}
         </Badge>
       </div>
 
-      <p className="mt-7 text-[14px] leading-5 text-fg">{record.statusMessage}</p>
-      {record.deadline ? (
+      <p className="mt-7 text-[14px] leading-5 text-fg">{record.cardMessage}</p>
+      {record.actionDeadline ? (
         <p className="mt-2 inline-flex items-center gap-1.5 text-[13px] font-medium text-warning">
           <CalendarDays className="size-4" aria-hidden />
-          {record.deadline}
+          Action by {record.actionDeadline}
         </p>
       ) : null}
 
       <div className="mt-auto border-t border-border pt-4">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] leading-4 text-fg-muted">
-          <span>{record.applicationId}</span>
-          <span className="hidden h-4 w-px bg-border sm:block" aria-hidden />
-          <span>Submitted {record.submittedAt}</span>
-          <span className="hidden h-4 w-px bg-border sm:block" aria-hidden />
-          <span>Updated {record.updatedAt}</span>
+          <span>{record.focal ? 'Current application' : 'Application history'}</span>
         </div>
         <div className="mt-5 flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => router.push(`/apply/applications/${record.id}`)}>
-            View application
+          <Button size="sm" onClick={() => runAction(record.primaryCta)}>
+            {record.primaryCta}
+            <ArrowRight className="size-4" aria-hidden />
           </Button>
-          {action ? (
-            <Button
-              size="sm"
-              variant={record.primaryAction === 'await-interview-confirmation' ? 'outline' : 'solid'}
-              onClick={runPrimaryAction}
-            >
-              {action}
-              <ArrowRight className="size-4" aria-hidden />
+          {record.secondaryCta ? (
+            <Button variant="outline" size="sm" onClick={() => runAction(record.secondaryCta!)}>
+              {record.secondaryCta}
             </Button>
           ) : null}
         </div>
@@ -123,27 +96,19 @@ function ApplicationCard({ record }: { record: ApplicantApplicationRecord }) {
 }
 
 export default function ApplyApplications() {
-  const [records, setRecords] = useState<ApplicantApplicationRecord[]>([]);
-  const [filter, setFilter] = useState<ApplicantApplicationFilter>('all');
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    setRecords(loadApplicantApplications());
-    setReady(true);
-  }, []);
+  const { applications: records } = useApplicantScenarioData();
+  const [filter, setFilter] = useState<ApplicationTab>('in-progress');
 
   const counts = useMemo(
     () => ({
-      all: records.length,
-      'needs-action': records.filter((record) => record.filter === 'needs-action').length,
-      'in-progress': records.filter((record) => record.filter === 'in-progress').length,
-      closed: records.filter((record) => record.filter === 'closed').length,
+      'in-progress': records.filter((record) => record.tabGroup === 'in-progress').length,
+      closed: records.filter((record) => record.tabGroup === 'closed').length,
     }),
     [records],
   );
 
   const visibleRecords = useMemo(
-    () => (filter === 'all' ? records : records.filter((record) => record.filter === filter)),
+    () => records.filter((record) => record.tabGroup === filter),
     [filter, records],
   );
 
@@ -160,7 +125,7 @@ export default function ApplyApplications() {
         </header>
 
         <div className="mx-auto w-full max-w-[1440px] px-[clamp(24px,2.6vw,40px)] py-8">
-          <Tabs value={filter} onValueChange={(value) => setFilter(value as ApplicantApplicationFilter)}>
+          <Tabs value={filter} onValueChange={(value) => setFilter(value as ApplicationTab)}>
             <TabsList className="h-auto max-w-full justify-start overflow-x-auto bg-transparent p-0">
               {FILTERS.map((item) => (
                 <TabsTrigger
@@ -174,16 +139,10 @@ export default function ApplyApplications() {
             </TabsList>
           </Tabs>
 
-          {!ready ? (
-            <div className="mt-6 grid gap-4 lg:grid-cols-2" aria-label="Loading applications">
-              {[0, 1, 2, 3].map((item) => (
-                <div key={item} className="h-[260px] animate-pulse rounded-lg border border-border bg-surface" />
-              ))}
-            </div>
-          ) : visibleRecords.length > 0 ? (
+          {visibleRecords.length > 0 ? (
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
               {visibleRecords.map((record) => (
-                <ApplicationCard key={record.id} record={record} />
+                <ApplicationCard key={record.applicationId} record={record} />
               ))}
             </div>
           ) : (

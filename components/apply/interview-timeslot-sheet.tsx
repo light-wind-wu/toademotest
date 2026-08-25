@@ -27,6 +27,7 @@ import TaskCompletedDialog from '@/components/apply/task-completed-dialog';
 import AvailabilitySubmittedDialog from '@/components/apply/availability-submitted-dialog';
 import { cn } from '@/lib/utils';
 import type { ApplyDashboardBase } from '@/lib/apply-dashboard-version';
+import { confirmApplicantMentorInterview } from '@/lib/applicant-mentor-interview';
 
 export const INTERVIEW_PROPOSED_FROM_KEY = 'dsta_interview_proposed_from';
 export const CUSTOM_SLOT_ID = 'custom';
@@ -38,16 +39,16 @@ type TimeSlot = {
 };
 
 const SLOTS: TimeSlot[] = [
-  { id: '1', dateLabel: 'Wed, 19 Aug 2026', timeLabel: '14:00–14:30' },
-  { id: '2', dateLabel: 'Thu, 20 Aug 2026', timeLabel: '09:30–10:00' },
-  { id: '3', dateLabel: 'Fri, 21 Aug 2026', timeLabel: '11:00–11:30' },
+  { id: '1', dateLabel: 'Thu, 27 Aug 2026', timeLabel: '2:00 PM - 3:00 PM' },
+  { id: '2', dateLabel: 'Fri, 28 Aug 2026', timeLabel: '9:30 AM - 10:30 AM' },
+  { id: '3', dateLabel: 'Mon, 31 Aug 2026', timeLabel: '11:00 AM - 12:00 PM' },
 ];
 
 const TIME_WINDOWS = ['09:00 — 11:00', '11:00 — 12:00'] as const;
 
 const META = [
   ['Format', 'Microsoft Teams'],
-  ['Duration', '30 minutes'],
+  ['Duration', '1 hour'],
   ['Respond by', '30 Aug 2026'],
 ] as const;
 
@@ -143,6 +144,13 @@ export default function InterviewTimeslotSheet({
 
     setConfirming(true);
     window.setTimeout(() => {
+      const selectedSlot = SLOTS.find((slot) => slot.id === selectedId);
+      if (selectedSlot) {
+        confirmApplicantMentorInterview({
+          ...selectedSlot,
+          displayDateTime: `${selectedSlot.dateLabel} at ${selectedSlot.timeLabel} SGT`,
+        });
+      }
       onOpenChange(false);
       setConfirming(false);
       window.setTimeout(() => setTaskCompletedOpen(true), 180);

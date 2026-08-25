@@ -11,6 +11,7 @@ export interface AppNotification {
   title:        string;
   body:         string;
   href:         string;
+  ctaLabel?:    string;
   tier:         NotifTier;
   createdAt:    string;
   read:         boolean;
@@ -18,11 +19,21 @@ export interface AppNotification {
 
 const KEY = 'dsta_notifications';
 export const NOTIF_CHANGED_EVENT = 'dsta:notifications-changed';
+export const APPLICANT_UNDER_REVIEW_NOTIFICATION_ID = 'notif-app-ui-2027-under-review';
+export const APPLICANT_MENTOR_INTERVIEW_NOTIFICATION_ID = 'notif-app-ui-2027-mentor-interview';
+export const APPLICANT_INTERVIEW_CONFIRMED_NOTIFICATION_ID = 'notif-app-ui-2027-interview-confirmed';
+export const APPLICANT_OFFER_RECEIVED_NOTIFICATION_ID = 'notif-app-ui-2027-offer-received';
 
 export function loadNotifications(): AppNotification[] {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as AppNotification[]) : [];
+    return raw ? (JSON.parse(raw) as AppNotification[]).map((notification) => ({
+      ...notification,
+      body: notification.body
+        .replace('2:30 PM - 3:15 PM', '2:30 PM - 3:30 PM')
+        .replace('10:00 AM - 10:45 AM', '10:00 AM - 11:00 AM')
+        .replace('4:00 PM - 4:45 PM', '4:00 PM - 5:00 PM'),
+    })) : [];
   } catch { return []; }
 }
 
@@ -36,6 +47,101 @@ export function addNotification(notif: Omit<AppNotification, 'id' | 'createdAt' 
       read:      false,
     };
     localStorage.setItem(KEY, JSON.stringify([n, ...existing]));
+    window.dispatchEvent(new Event(NOTIF_CHANGED_EVENT));
+  } catch {}
+}
+
+/** Seed the deterministic Applicant UT notification without duplicating it on reload. */
+export function ensureApplicantUnderReviewNotification(email: string): void {
+  try {
+    const existing = loadNotifications();
+    if (existing.some((notification) => notification.id === APPLICANT_UNDER_REVIEW_NOTIFICATION_ID)) return;
+
+    const notification: AppNotification = {
+      id: APPLICANT_UNDER_REVIEW_NOTIFICATION_ID,
+      forRole: 'applicant',
+      forEmail: email,
+      title: 'Application under review',
+      body: 'Your application has moved to the review stage. No action is required.',
+      href: '/apply/applications/app-ui-2027',
+      ctaLabel: 'View application',
+      tier: 'info',
+      createdAt: new Date().toISOString(),
+      read: false,
+    };
+    localStorage.setItem(KEY, JSON.stringify([notification, ...existing]));
+    window.dispatchEvent(new Event(NOTIF_CHANGED_EVENT));
+  } catch {}
+}
+
+export function ensureApplicantMentorInterviewNotification(email: string): void {
+  try {
+    const existing = loadNotifications();
+    if (existing.some((notification) => notification.id === APPLICANT_MENTOR_INTERVIEW_NOTIFICATION_ID)) return;
+
+    const notification: AppNotification = {
+      id: APPLICANT_MENTOR_INTERVIEW_NOTIFICATION_ID,
+      forRole: 'applicant',
+      forEmail: email,
+      title: 'Interview invitation received',
+      body: 'Choose a timeslot for your Designing Mission-Critical Digital Services interview with Marcus Tan by 28 Aug 2026.',
+      href: '/apply/applicant-interview-review?applicationId=app-ui-2027',
+      ctaLabel: 'Choose a timeslot',
+      tier: 'action',
+      createdAt: new Date().toISOString(),
+      read: false,
+    };
+    localStorage.setItem(KEY, JSON.stringify([notification, ...existing]));
+    window.dispatchEvent(new Event(NOTIF_CHANGED_EVENT));
+  } catch {}
+}
+
+export function ensureApplicantInterviewConfirmedNotification(
+  email: string,
+  interviewDateTime: string,
+): void {
+  try {
+    const existing = loadNotifications().filter(
+      (notification) => notification.id !== APPLICANT_INTERVIEW_CONFIRMED_NOTIFICATION_ID,
+    );
+    const notification: AppNotification = {
+      id: APPLICANT_INTERVIEW_CONFIRMED_NOTIFICATION_ID,
+      forRole: 'applicant',
+      forEmail: email,
+      title: 'Interview confirmed',
+      body: `Your interview is scheduled for ${interviewDateTime}.`,
+      href: '/apply/interviews',
+      ctaLabel: 'View interview',
+      tier: 'info',
+      createdAt: new Date().toISOString(),
+      read: false,
+    };
+    localStorage.setItem(KEY, JSON.stringify([notification, ...existing]));
+    window.dispatchEvent(new Event(NOTIF_CHANGED_EVENT));
+  } catch {}
+}
+
+export function ensureApplicantOfferReceivedNotification(
+  email: string,
+  responseDeadline: string,
+): void {
+  try {
+    const existing = loadNotifications().filter(
+      (notification) => notification.id !== APPLICANT_OFFER_RECEIVED_NOTIFICATION_ID,
+    );
+    const notification: AppNotification = {
+      id: APPLICANT_OFFER_RECEIVED_NOTIFICATION_ID,
+      forRole: 'applicant',
+      forEmail: email,
+      title: 'Offer received',
+      body: `Review and respond to your internship offer by ${responseDeadline}.`,
+      href: '/apply/applicant-offer-detail?applicationId=app-ui-2027',
+      ctaLabel: 'Review offer',
+      tier: 'action',
+      createdAt: new Date().toISOString(),
+      read: false,
+    };
+    localStorage.setItem(KEY, JSON.stringify([notification, ...existing]));
     window.dispatchEvent(new Event(NOTIF_CHANGED_EVENT));
   } catch {}
 }
@@ -62,6 +168,14 @@ export function markAllRead(role: UserRole): void {
 export function clearAllNotifications(): void {
   try {
     localStorage.setItem(KEY, '[]');
+    window.dispatchEvent(new Event(NOTIF_CHANGED_EVENT));
+  } catch {}
+}
+
+export function clearApplicantNotifications(): void {
+  try {
+    const next = loadNotifications().filter((notification) => notification.forRole !== 'applicant');
+    localStorage.setItem(KEY, JSON.stringify(next));
     window.dispatchEvent(new Event(NOTIF_CHANGED_EVENT));
   } catch {}
 }

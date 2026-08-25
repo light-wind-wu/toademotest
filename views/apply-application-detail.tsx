@@ -24,6 +24,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import Modal from '@/components/ui-legacy/modal';
 import { loadApplicantApplications, saveApplicantApplications } from '@/lib/applicant-applications';
+import { useApplicantScenarioData } from '@/lib/applicant-scenario-data';
+import { formatStatusLabel } from '@/lib/status-label';
 import type { ApplicantApplicationRecord, CandidateApplicationStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -33,7 +35,70 @@ function statusVariant(status: CandidateApplicationStatus) {
   if (status === 'OFFER ACCEPTED') return 'success' as const;
   if (status === 'OFFER RECEIVED' || status === 'INTERVIEW') return 'warning' as const;
   if (status === 'UNDER REVIEW' || status === 'SUBMITTED') return 'info' as const;
+  if (status === 'OFFER DECLINED' || status === 'OFFER EXPIRED' || status === 'UNSUCCESSFUL') return 'danger' as const;
   return 'subtle' as const;
+}
+
+function currentStepForStatus(status: CandidateApplicationStatus) {
+  if (status === 'DRAFT') return 0;
+  if (status === 'SUBMITTED') return 1;
+  if (status === 'UNDER REVIEW') return 2;
+  if (status === 'INTERVIEW') return 3;
+  if (status === 'OFFER RECEIVED') return 4;
+  return 5;
+}
+
+function nextStepForStatus(status: CandidateApplicationStatus) {
+  const copy: Record<CandidateApplicationStatus, string> = {
+    DRAFT: 'Complete and submit your application before the closing date.',
+    SUBMITTED: 'The Talent Acquisition team will review your application next.',
+    'UNDER REVIEW': 'We will contact you if you are shortlisted for an interview.',
+    INTERVIEW: 'Review and complete the required interview action.',
+    'OFFER RECEIVED': 'Review and respond to your internship offer before the deadline.',
+    'OFFER ACCEPTED': 'Your application is closed. Continue with the required onboarding actions.',
+    'OFFER DECLINED': 'This application is closed and remains available for your records.',
+    'OFFER EXPIRED': 'This application is closed because the offer response deadline has passed.',
+    UNSUCCESSFUL: 'This application is closed and remains available for your records.',
+    WITHDRAWN: 'This application is closed and remains available for your records.',
+  };
+  return copy[status];
+}
+
+function timelineForStatus(record: ApplicantApplicationRecord, status: CandidateApplicationStatus) {
+  if (status === 'DRAFT') {
+    return [{ title: 'Draft saved', description: 'Your latest application details have been saved.', date: record.updatedAt, tone: 'current' as const }];
+  }
+
+  const currentTitle: Record<Exclude<CandidateApplicationStatus, 'DRAFT'>, string> = {
+    SUBMITTED: 'Application submitted',
+    'UNDER REVIEW': 'Screening in progress',
+    INTERVIEW: 'Interview stage',
+    'OFFER RECEIVED': 'Offer received',
+    'OFFER ACCEPTED': 'Offer accepted',
+    'OFFER DECLINED': 'Offer declined',
+    'OFFER EXPIRED': 'Offer expired',
+    UNSUCCESSFUL: 'Application unsuccessful',
+    WITHDRAWN: 'Application withdrawn',
+  };
+  const currentEvent = {
+    title: currentTitle[status],
+    description: status === 'SUBMITTED'
+      ? 'Your application and supporting documents were received successfully.'
+      : record.statusMessage,
+    date: status === 'SUBMITTED' ? record.submittedAt : record.updatedAt,
+    tone: 'current' as const,
+  };
+
+  if (status === 'SUBMITTED') return [currentEvent];
+  return [
+    currentEvent,
+    {
+      title: 'Application submitted',
+      description: 'Your application and supporting documents were received successfully.',
+      date: record.submittedAt,
+      tone: 'complete' as const,
+    },
+  ];
 }
 
 function downloadMockDocument(fileName: string) {
@@ -150,6 +215,7 @@ function InterviewDetailsCard({
 export default function ApplyApplicationDetail() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { applications: scenarioApplications } = useApplicantScenarioData();
   const [record, setRecord] = useState<ApplicantApplicationRecord | null>(null);
   const [ready, setReady] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
@@ -157,9 +223,25 @@ export default function ApplyApplicationDetail() {
 
   useEffect(() => {
     const records = loadApplicantApplications();
-    setRecord(records.find((item) => item.id === params.id) ?? null);
+    const storedRecord = records.find((item) => item.id === params.id) ?? null;
+    const scenarioRecord = storedRecord
+      ? scenarioApplications.find((item) => item.applicationId === storedRecord.applicationId)
+      : null;
+    setRecord(storedRecord && scenarioRecord ? {
+      ...storedRecord,
+      status: scenarioRecord.statusBadge,
+      filter: scenarioRecord.tabGroup,
+      statusMessage: scenarioRecord.cardMessage,
+      currentStep: currentStepForStatus(scenarioRecord.statusBadge),
+      nextStep: nextStepForStatus(scenarioRecord.statusBadge),
+      deadline: scenarioRecord.actionDeadline ?? undefined,
+      timeline: timelineForStatus(
+        { ...storedRecord, statusMessage: scenarioRecord.cardMessage },
+        scenarioRecord.statusBadge,
+      ),
+    } : storedRecord);
     setReady(true);
-  }, [params.id]);
+  }, [params.id, scenarioApplications]);
 
   const canWithdraw = useMemo(
     () => !!record && ['SUBMITTED', 'UNDER REVIEW', 'INTERVIEW'].includes(record.status),
@@ -235,7 +317,7 @@ export default function ApplyApplicationDetail() {
             <div>
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-[30px] font-semibold leading-9 tracking-[-0.5px] text-fg">{record.programmeName}</h1>
-                <Badge variant={statusVariant(record.status)}>{record.status}</Badge>
+                <Badge variant={statusVariant(record.status)}>{formatStatusLabel(record.status)}</Badge>
               </div>
               <p className="mt-2 text-[14px] leading-5 text-fg-muted">
                 {record.intake} · {record.applicationId}

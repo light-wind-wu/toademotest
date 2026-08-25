@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Search, Bell, Settings, HelpCircle, ChevronDown, LayoutGrid, ListTodo, PanelsTopLeft, Check } from 'lucide-react';
+import { Search, Bell, Settings, HelpCircle, ChevronDown, LayoutGrid, ListTodo, PanelsTopLeft, Check, RotateCcw, MonitorUp } from 'lucide-react';
 import { useRole, ROLE_LABELS } from '@/lib/role';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +20,30 @@ import {
   saveApplicantHomeScenario,
 } from '@/lib/applicant-home-scenario';
 import type { ApplicantHomeScenario } from '@/lib/types';
+import { resetApplicantData } from '@/lib/applicant-data-reset';
+import NotificationCentre from '@/components/layout/notification-centre';
+import {
+  APPLICANT_UNDER_REVIEW_NOTIFICATION_ID,
+  ensureApplicantUnderReviewNotification,
+  getNotificationsForRole,
+  markAllRead,
+  markRead,
+  NOTIF_CHANGED_EVENT,
+  type AppNotification,
+} from '@/lib/notifications';
+import { transitionApplicantApplicationToUnderReview } from '@/lib/applicant-applications';
+import {
+  deliverMentorInterviewInvitation,
+  getOrStartApplicantReviewTimer,
+  MENTOR_INTERVIEW_DELAY_MS,
+  restartApplicantReviewTimer,
+} from '@/lib/applicant-mentor-interview';
+import {
+  APPLICANT_OFFER_DELAY_MS,
+  deliverApplicantOffer,
+  getOrStartApplicantOfferTimer,
+  restartApplicantOfferTimer,
+} from '@/lib/applicant-offer';
 
 export default function Topbar({
   navigationHidden = false,
@@ -35,8 +59,12 @@ export default function Topbar({
   const onStartTasks = pathname === '/start-tasks';
   const onCatlog = pathname === '/catlog';
   const [open,      setOpen]      = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationFilter, setNotificationFilter] = useState<'all' | 'unread'>('all');
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [homeScenario, setHomeScenario] = useState<ApplicantHomeScenario>('interview-action');
   const ref       = useRef<HTMLDivElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
   const isApplicant = role === 'new-applicant' || role === 'existing-scholar-applicant';
 
   useEffect(() => {
@@ -46,10 +74,65 @@ export default function Topbar({
   useEffect(() => {
     function onClick(e: MouseEvent) {
       if (ref.current       && !ref.current.contains(e.target as Node))       setOpen(false);
+      if (notificationRef.current && !notificationRef.current.contains(e.target as Node)) setNotificationsOpen(false);
     }
     document.addEventListener('click', onClick);
     return () => document.removeEventListener('click', onClick);
   }, []);
+
+  useEffect(() => {
+    function refreshNotifications() {
+      setNotifications(getNotificationsForRole(role, profile.email, profile.email));
+    }
+
+    if (isApplicant && loadApplicantHomeScenario() === 'submitted') {
+      ensureApplicantUnderReviewNotification(profile.email);
+    }
+    refreshNotifications();
+    window.addEventListener(NOTIF_CHANGED_EVENT, refreshNotifications);
+    return () => window.removeEventListener(NOTIF_CHANGED_EVENT, refreshNotifications);
+  }, [isApplicant, profile.email, role]);
+
+  useEffect(() => {
+    if (!isApplicant || homeScenario !== 'under-review') return;
+
+    const startedAt = getOrStartApplicantReviewTimer();
+    const remaining = Math.max(0, startedAt + MENTOR_INTERVIEW_DELAY_MS - Date.now());
+    const timer = window.setTimeout(() => {
+      deliverMentorInterviewInvitation(profile.email);
+      setHomeScenario('interview-action');
+    }, remaining);
+
+    return () => window.clearTimeout(timer);
+  }, [homeScenario, isApplicant, profile.email]);
+
+  useEffect(() => {
+    if (!isApplicant || homeScenario !== 'interview-completed') return;
+
+    const startedAt = getOrStartApplicantOfferTimer();
+    const remaining = Math.max(0, startedAt + APPLICANT_OFFER_DELAY_MS - Date.now());
+    const timer = window.setTimeout(() => {
+      deliverApplicantOffer(profile.email);
+      setHomeScenario('offer-action');
+    }, remaining);
+
+    return () => window.clearTimeout(timer);
+  }, [homeScenario, isApplicant, profile.email]);
+
+  const unreadCount = notifications.filter((notification) => !notification.read).length;
+
+  function openNotification(notification: AppNotification) {
+    markRead(notification.id);
+    if (notification.id === APPLICANT_UNDER_REVIEW_NOTIFICATION_ID) {
+      transitionApplicantApplicationToUnderReview('app-ui-2027');
+      restartApplicantReviewTimer();
+      saveApplyDashboardVersion('v1');
+      saveApplicantHomeScenario('under-review');
+      setHomeScenario('under-review');
+    }
+    setNotificationsOpen(false);
+    router.push(notification.href);
+  }
 
   return (
     <header className={cn(
@@ -98,21 +181,53 @@ export default function Topbar({
           </div>
         </OutOfScopeTooltip>
 
-        {/* Notifications — disabled for usability test. */}
-        <OutOfScopeTooltip>
+        {/* App-shell notification centre */}
+        <div className="relative" ref={notificationRef}>
           <button
             type="button"
             aria-label="Notifications"
-            className="relative p-2 text-topbar-fg-muted hover:bg-topbar-fg/10 rounded-full transition-all cursor-pointer"
+            aria-expanded={notificationsOpen}
+            aria-controls="applicant-notification-centre"
+            onClick={(event) => {
+              event.stopPropagation();
+              setNotificationsOpen((current) => !current);
+              setOpen(false);
+            }}
+            className={cn(
+              'relative cursor-pointer rounded-lg p-2 text-topbar-fg-muted transition-colors hover:bg-topbar-fg/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-topbar-fg/40',
+              notificationsOpen && 'bg-topbar-fg/10 text-topbar-fg',
+            )}
           >
             <Bell size={20} />
+            {unreadCount > 0 ? (
+              <span
+                aria-hidden
+                className="absolute -right-0.5 -top-0.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold leading-4 text-surface"
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            ) : null}
           </button>
-        </OutOfScopeTooltip>
+          {notificationsOpen ? (
+            <NotificationCentre
+              notifications={notifications}
+              filter={notificationFilter}
+              onFilterChange={setNotificationFilter}
+              onClose={() => setNotificationsOpen(false)}
+              onMarkAllRead={() => markAllRead(role)}
+              onSelect={openNotification}
+            />
+          ) : null}
+        </div>
 
         {/* Profile */}
         <div className="relative border-l border-topbar-fg/10 pl-4" ref={ref}>
           <button
-            onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen((current) => !current);
+              setNotificationsOpen(false);
+            }}
             className="flex items-center gap-3 rounded-xl hover:bg-topbar-fg/10 px-2 py-1 transition-all cursor-pointer"
           >
             <div className="text-right hidden sm:block">
@@ -164,6 +279,8 @@ export default function Topbar({
                             aria-selected={selected}
                             onClick={() => {
                               saveApplyDashboardVersion('v1');
+                              if (scenario.value === 'under-review') restartApplicantReviewTimer();
+                              if (scenario.value === 'interview-completed') restartApplicantOfferTimer();
                               saveApplicantHomeScenario(scenario.value);
                               setHomeScenario(scenario.value);
                               setOpen(false);
@@ -187,6 +304,25 @@ export default function Topbar({
                     <p className="mt-1.5 text-[11px] leading-4 text-fg-subtle">
                       Switch between the APP-01 required state variants.
                     </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const confirmed = window.confirm(
+                          'Reset applicant data? This will clear application progress and scenario changes. Your demo profile and sign-in will be kept.',
+                        );
+                        if (!confirmed) return;
+                        resetApplicantData();
+                        saveApplyDashboardVersion('v1');
+                        saveApplicantHomeScenario('no-application');
+                        setHomeScenario('no-application');
+                        setOpen(false);
+                        router.push('/apply/dashboard');
+                      }}
+                      className="mt-2 flex w-full items-center gap-2 rounded-md border border-border px-2.5 py-2 text-left text-xs font-medium text-fg transition-colors hover:bg-bg-subtle"
+                    >
+                      <RotateCcw size={14} className="shrink-0 text-fg-muted" aria-hidden />
+                      Reset applicant data
+                    </button>
                   </div>
                 )}
                 <button
@@ -221,6 +357,19 @@ export default function Topbar({
                 </Link>
               </div>
               <div className="border-t border-border p-1.5">
+                {isApplicant ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      router.push('/desktop');
+                    }}
+                    className="mb-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-body-md text-fg transition-colors hover:bg-bg-subtle"
+                  >
+                    <MonitorUp size={18} className="shrink-0 text-fg-muted" />
+                    Return to Desktop
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => {
