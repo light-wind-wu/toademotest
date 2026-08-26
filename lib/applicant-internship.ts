@@ -5,7 +5,7 @@ import type {
   ApplicantInternshipRecord,
 } from '@/lib/types';
 
-const APPLICANT_INTERNSHIP_KEY = 'dsta_applicant_internship_records';
+export const APPLICANT_INTERNSHIP_KEY = 'dsta_applicant_internship_records';
 
 export function loadApplicantInternshipRecords(): ApplicantInternshipRecord[] {
   const seed = applicantInternshipSeed as ApplicantInternshipRecord[];

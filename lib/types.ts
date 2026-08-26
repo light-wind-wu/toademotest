@@ -793,19 +793,149 @@ export interface ApplicantApplicationRecord {
   };
 }
 
+export interface ApplicantMockEmail {
+  id: string;
+  subject: string;
+  senderName: string;
+  senderEmail: string;
+  recipientName: string;
+  recipientEmail: string;
+  programmeName: string;
+  projectName: string;
+  mentorName: string;
+  responseDeadline: string;
+  receivedAt: string;
+  read: boolean;
+}
+
+export interface ApplicantInterviewSlotSelection {
+  id: string;
+  dateLabel: string;
+  timeLabel: string;
+  displayDateTime: string;
+}
+
+export interface ApplicantInterviewConfirmationEmail {
+  id: string;
+  subject: string;
+  senderName: string;
+  senderEmail: string;
+  recipientName: string;
+  recipientEmail: string;
+  projectName: string;
+  mentorName: string;
+  interviewDateTime: string;
+  format: string;
+  duration: string;
+  teamsMeetingPath: string;
+  meetingId: string;
+  meetingPasscode: string;
+  receivedAt: string;
+  read: boolean;
+}
+
+export interface ApplicantOfferEmail {
+  id: string;
+  subject: string;
+  senderName: string;
+  senderEmail: string;
+  recipientName: string;
+  recipientEmail: string;
+  programmeName: string;
+  projectName: string;
+  internshipPeriod: string;
+  reportingLocation: string;
+  workArrangement: string;
+  allowance: string;
+  responseDeadline: string;
+  offerId: string;
+  receivedAt: string;
+  read: boolean;
+}
+
 /** Prototype-only Applicant Home states from APP-01 in the UX design brief. */
 export type ApplicantHomeScenario =
   | 'no-application'
   | 'draft-application'
+  | 'submitted'
   | 'under-review'
   | 'interview-action'
   | 'interview-scheduled'
   | 'interview-rescheduling'
+  | 'interview-completed'
   | 'offer-action'
   | 'onboarding-action'
   | 'active-internship'
   | 'completion-action'
   | 'journey-completed';
+
+export type ApplicantScenarioId =
+  | 'SUBMITTED'
+  | 'S01' | 'S02' | 'S03' | 'S04' | 'S05' | 'S06'
+  | 'S07' | 'S08' | 'S09' | 'S10' | 'S11';
+
+export interface ApplicantScenarioApplicationRecord {
+  applicationId: string;
+  programme: string;
+  statusBadge: CandidateApplicationStatus;
+  tabGroup: 'in-progress' | 'closed';
+  cardMessage: string;
+  actionDeadline: string | null;
+  primaryCta: string;
+  secondaryCta: string | null;
+  focal: boolean;
+}
+
+export interface ApplicantScenarioInterviewRecord {
+  interviewId: string;
+  project: string;
+  status: 'ACTION REQUIRED' | 'AWAITING MENTOR CONFIRMATION' | 'CONFIRMED' | 'COMPLETED';
+  tabGroup: 'needs-action' | 'in-progress' | 'upcoming' | 'past';
+  respondBy: string;
+  applicantAlternativeAvailability: string | null;
+  confirmedStart: string | null;
+  statusMessage: string;
+  primaryCta: string;
+}
+
+export interface ApplicantScenarioOfferRecord {
+  offerId: string;
+  project: string;
+  status: 'RESPONSE REQUIRED' | 'ACCEPTED — ONBOARDING' | 'ACCEPTED';
+  issuedDate: string;
+  responseDeadline: string;
+  decision: 'Accepted' | null;
+  onboardingProgress: string;
+  onboardingStatus: string;
+  statusMessage: string;
+  primaryCta: string;
+}
+
+export interface ApplicantScenarioInternshipRecord {
+  internshipId: string;
+  project: string;
+  status: 'UPCOMING — ONBOARDING' | 'IN PROGRESS' | 'ENDING SOON — ACTION REQUIRED' | 'COMPLETED';
+  startDate: string;
+  endDate: string;
+  exitClearance: string;
+  internshipFeedback: string;
+  testimonial: string;
+  certificate: string;
+  statusMessage: string;
+  primaryCta: string;
+}
+
+export interface ApplicantScenarioCertificationRecord {
+  certificateId: string | null;
+  internshipId: string | null;
+  project: string | null;
+  status: 'EMPTY' | 'PENDING' | 'AVAILABLE';
+  certificateNumber: string | null;
+  issueDate: string | null;
+  availableDate: string | null;
+  statusMessage: string;
+  primaryCta: string | null;
+}
 
 export type ApplicantInternshipPhase = 'onboarding' | 'offboarding';
 
@@ -890,6 +1020,9 @@ export interface ApplicantHomeTaskContent {
   title: string;
   body: string;
   cta: string;
+  route: string | null;
+  imageDesktop: string;
+  imageMobile: string;
 }
 
 export interface ApplicantHomeActivityContent {
@@ -943,6 +1076,8 @@ export interface ApplicantWorkflowPageConfig {
 }
 
 export interface ApplicantHomeScenarioContent {
+  scenarioId: string | null;
+  label: string;
   heroLines: readonly [string, string];
   heroMessage: string;
   heroBadge: string;
@@ -970,4 +1105,21 @@ export interface ApplicantHomeScenarioContent {
   tasksDeadline: string;
   tasks: readonly [ApplicantHomeTaskContent, ApplicantHomeTaskContent];
   activity: readonly ApplicantHomeActivityContent[];
+}
+
+export interface ApplicantHomeDashboardAssets {
+  heroDesktop: { v1: string; v2: string };
+  heroMobile: { v1: string; v2: string };
+  statusRadar: { v1: string; v2: string };
+  bannerDesktop: string;
+  bannerMobile: string;
+  activityIllustration: string;
+  mapTopDesktop: string;
+  mapTopMobile: string;
+  mapBottomDesktop: string;
+}
+
+export interface ApplicantHomeDashboardData {
+  assets: ApplicantHomeDashboardAssets;
+  scenarios: Record<ApplicantHomeScenario, ApplicantHomeScenarioContent>;
 }

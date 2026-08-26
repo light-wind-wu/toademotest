@@ -2,7 +2,7 @@
    V3 / V4 are follow-up interview tasks cloned from V1 / V2. */
 
 export type ApplyDashboardBase = 'v1' | 'v2';
-export type ApplyDashboardVersion = ApplyDashboardBase | 'v3' | 'v4';
+export type ApplyDashboardVersion = ApplyDashboardBase | 'v3' | 'v4' | 'v5';
 
 export const APPLY_DASHBOARD_VERSION_KEY = 'dsta_apply_dashboard_version';
 
@@ -10,7 +10,7 @@ export function loadApplyDashboardVersion(): ApplyDashboardVersion {
   if (typeof window === 'undefined') return 'v1';
   try {
     const raw = localStorage.getItem(APPLY_DASHBOARD_VERSION_KEY);
-    if (raw === 'v1' || raw === 'v2' || raw === 'v3' || raw === 'v4') return raw;
+    if (raw === 'v1' || raw === 'v2' || raw === 'v3' || raw === 'v4' || raw === 'v5') return raw;
   } catch {
     /* ignore */
   }

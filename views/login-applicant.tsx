@@ -79,6 +79,7 @@ export default function LoginApplicant() {
 
   function handleCreateAccount(e: MouseEvent) {
     e.preventDefault();
+    router.push('/register');
   }
 
   return (
@@ -159,16 +160,14 @@ export default function LoginApplicant() {
 
         <p className="mt-5 text-left text-[14px]" style={{ color: BODY }}>
           Don&apos;t have an account?{' '}
-          <OutOfScopeTooltip>
-            <a
-              href="#create"
-              onClick={handleCreateAccount}
-              className="cursor-pointer font-semibold hover:underline"
-              style={{ color: CTA_BG }}
-            >
-              Create an account
-            </a>
-          </OutOfScopeTooltip>
+          <a
+            href="#create"
+            onClick={handleCreateAccount}
+            className="cursor-pointer font-semibold hover:underline"
+            style={{ color: CTA_BG }}
+          >
+            Create an account
+          </a>
         </p>
       </LoginShell>
 

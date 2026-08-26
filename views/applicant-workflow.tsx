@@ -30,20 +30,24 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { loadApplicantApplications, saveApplicantApplications } from '@/lib/applicant-applications';
+import {
+  confirmApplicantMentorInterview,
+  loadApplicantInterviewSelection,
+} from '@/lib/applicant-mentor-interview';
 import { APPLICANT_WORKFLOW_CONFIG } from '@/lib/applicant-workflows';
+import { formatStatusLabel } from '@/lib/status-label';
 import type { ApplicantWorkflowPageId } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 const INTERVIEW_SLOTS = [
-  { id: 'slot-1', date: '27 Aug 2026', time: '2:30 PM - 3:15 PM' },
-  { id: 'slot-2', date: '28 Aug 2026', time: '10:00 AM - 10:45 AM' },
-  { id: 'slot-3', date: '31 Aug 2026', time: '4:00 PM - 4:45 PM' },
+  { id: 'slot-1', date: '27 Aug 2026', time: '2:30 PM - 3:30 PM' },
+  { id: 'slot-2', date: '28 Aug 2026', time: '10:00 AM - 11:00 AM' },
+  { id: 'slot-3', date: '31 Aug 2026', time: '4:00 PM - 5:00 PM' },
 ] as const;
 
 const interviewSlotSchema = z.enum(['slot-1', 'slot-2', 'slot-3']);
 const alternativeAvailabilitySchema = z.string().trim().min(10, 'Please provide a little more detail about your availability.').max(500);
 const INTERVIEW_AVAILABILITY_REQUEST_KEY = 'dsta_interview_availability_request';
-const INTERVIEW_SELECTED_SLOT_KEY = 'dsta_interview_selected_slot';
 
 function pageIdFromPath(pathname: string): ApplicantWorkflowPageId {
   return pathname.split('/').filter(Boolean).at(-1) as ApplicantWorkflowPageId;
@@ -92,6 +96,7 @@ export default function ApplicantWorkflowPage() {
   const isLinkedIn = pageId === 'applicant-linkedin-share';
   const isCertificate = pageId === 'applicant-certificate-viewer';
   const isOffboarding = pageId === 'applicant-offboarding';
+  const isOfferWorkflow = pageId.startsWith('applicant-offer-');
   const decision = searchParams.get('decision');
   const isAlternativeInterviewRequest = isInterviewConfirmation && searchParams.get('request') === 'alternate';
 
@@ -101,7 +106,7 @@ export default function ApplicantWorkflowPage() {
       if (isAlternativeInterviewRequest) {
         setSubmittedAlternativeAvailability(sessionStorage.getItem(INTERVIEW_AVAILABILITY_REQUEST_KEY) ?? 'Availability shared with the interview team.');
       } else {
-        setSubmittedInterviewSlot(sessionStorage.getItem(INTERVIEW_SELECTED_SLOT_KEY) ?? 'Selected timeslot shared with the interview team.');
+        setSubmittedInterviewSlot(loadApplicantInterviewSelection()?.displayDateTime ?? 'Selected timeslot shared with the interview team.');
       }
     } catch {
       if (isAlternativeInterviewRequest) setSubmittedAlternativeAvailability('Availability shared with the interview team.');
@@ -122,7 +127,7 @@ export default function ApplicantWorkflowPage() {
     : isAlternativeInterviewRequest
       ? 'Back to My Interviews'
     : isInterviewReview
-      ? requestingAlternative ? 'Submit Time Request' : 'Submit Timeslot'
+      ? requestingAlternative ? 'Submit Time Request' : 'Confirm Timeslot'
       : config?.primaryLabel;
   const effectiveStatus = isAlternativeInterviewRequest ? 'Awaiting interview team confirmation' : config?.status;
   const effectiveSecondaryLabel = isAlternativeInterviewRequest ? 'View Application' : config?.secondaryLabel;
@@ -138,9 +143,9 @@ export default function ApplicantWorkflowPage() {
       ]
     : isInterviewConfirmation
       ? [
-          { label: 'Submitted', value: '21 Aug 2026 · 10:42 AM SGT' },
-          { label: 'Selected timeslot', value: submittedInterviewSlot },
-          { label: 'Expected update', value: 'Within 2 working days' },
+          { label: 'Status', value: 'Confirmed' },
+          { label: 'Interview time', value: submittedInterviewSlot },
+          { label: 'Format', value: 'Microsoft Teams · 1 hour' },
         ]
     : config?.details ?? [];
   const effectiveNotice = isAlternativeInterviewRequest
@@ -207,7 +212,7 @@ export default function ApplicantWorkflowPage() {
             mentorRole: 'Digital Hub',
             format: 'Online interview',
             location: 'Microsoft Teams',
-            duration: '45 minutes',
+            duration: '1 hour',
             originalDate: '27, 28 or 31 Aug 2026',
             originalTime: 'Timeslots offered in the invitation',
             requestStatus: 'Awaiting interview team confirmation',
@@ -228,13 +233,13 @@ export default function ApplicantWorkflowPage() {
       }
       if (!interviewSlotSchema.safeParse(selectedInterviewSlot).success) return;
       const selectedSlot = INTERVIEW_SLOTS.find((slot) => slot.id === selectedInterviewSlot);
-      try {
-        sessionStorage.setItem(
-          INTERVIEW_SELECTED_SLOT_KEY,
-          selectedSlot ? `${selectedSlot.date} · ${selectedSlot.time} · Singapore Time (SGT)` : 'Selected timeslot shared with the interview team.',
-        );
-      } catch {
-        /* Prototype storage can be unavailable in restricted browser modes. */
+      if (selectedSlot) {
+        confirmApplicantMentorInterview({
+          id: selectedSlot.id,
+          dateLabel: selectedSlot.date,
+          timeLabel: selectedSlot.time,
+          displayDateTime: `${selectedSlot.date} at ${selectedSlot.time} SGT`,
+        });
       }
       router.push(`/apply/applicant-interview-confirmation?applicationId=${applicationId}`);
       return;
@@ -279,7 +284,7 @@ export default function ApplicantWorkflowPage() {
                 <h1 className="mt-2 text-[34px] font-semibold leading-[42px] tracking-[-0.6px] text-fg">{effectiveTitle}</h1>
                 <p className="mt-3 max-w-2xl text-[15px] leading-6 text-fg-muted">{effectiveDescription}</p>
               </div>
-              {effectiveStatus ? <Badge variant={config.statusTone ?? 'subtle'} className="whitespace-nowrap">{effectiveStatus}</Badge> : null}
+              {effectiveStatus ? <Badge variant={config.statusTone ?? 'subtle'} className="whitespace-nowrap">{formatStatusLabel(effectiveStatus)}</Badge> : null}
             </header>
           </div>
         </div>
@@ -350,16 +355,16 @@ export default function ApplicantWorkflowPage() {
                       <div>
                         <div className="grid gap-5 border-b border-border pb-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
                           <div className="flex items-center gap-3">
-                            <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-bg-muted text-[13px] font-medium text-fg">AR</span>
+                            <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-bg-muted text-[13px] font-medium text-fg">MT</span>
                             <div>
-                              <p className="text-[14px] font-medium text-fg">Aisha Rahman</p>
+                              <p className="text-[14px] font-medium text-fg">Marcus Tan</p>
                               <p className="mt-1 text-[13px] text-fg-muted">Mentor · Digital Hub</p>
                             </div>
                           </div>
                           <div className="grid grid-cols-3 gap-5 text-left sm:text-right">
                             <div><p className="text-[11px] text-fg-muted">Format</p><p className="mt-1 text-[13px] font-medium text-fg">Microsoft Teams</p></div>
-                            <div><p className="text-[11px] text-fg-muted">Duration</p><p className="mt-1 text-[13px] font-medium text-fg">45 minutes</p></div>
-                            <div><p className="text-[11px] text-fg-muted">Respond by</p><p className="mt-1 text-[13px] font-medium text-warning">21 Aug 2026</p></div>
+                            <div><p className="text-[11px] text-fg-muted">Duration</p><p className="mt-1 text-[13px] font-medium text-fg">1 hour</p></div>
+                            <div><p className="text-[11px] text-fg-muted">Respond by</p><p className="mt-1 text-[13px] font-medium text-warning">28 Aug 2026</p></div>
                           </div>
                         </div>
 
@@ -562,9 +567,9 @@ export default function ApplicantWorkflowPage() {
                 <CardHeader><CardTitle className="text-[17px]">Record context</CardTitle></CardHeader>
                 <CardContent>
                   <dl className="space-y-4">
-                    <div className="flex gap-3"><FileCheck2 className="mt-0.5 size-4 shrink-0 text-fg-muted" aria-hidden /><div><dt className="text-[12px] text-fg-muted">Programme</dt><dd className="mt-1 text-[14px] font-medium text-fg">{isInterviewReview || isInterviewConfirmation ? 'Polytechnic Internship 2027' : 'Undergraduate Internship 2027'}</dd></div></div>
+                    <div className="flex gap-3"><FileCheck2 className="mt-0.5 size-4 shrink-0 text-fg-muted" aria-hidden /><div><dt className="text-[12px] text-fg-muted">Programme</dt><dd className="mt-1 text-[14px] font-medium text-fg">{isInterviewReview || isInterviewConfirmation || isOfferWorkflow ? 'University Internship 2027' : 'Undergraduate Internship 2027'}</dd></div></div>
                     <div className="flex gap-3"><UserRound className="mt-0.5 size-4 shrink-0 text-fg-muted" aria-hidden /><div><dt className="text-[12px] text-fg-muted">Applicant</dt><dd className="mt-1 text-[14px] font-medium text-fg">Jenny Aw</dd></div></div>
-                    <div className="flex gap-3"><CalendarDays className="mt-0.5 size-4 shrink-0 text-fg-muted" aria-hidden /><div><dt className="text-[12px] text-fg-muted">Last updated</dt><dd className="mt-1 text-[14px] font-medium text-fg">21 Aug 2026</dd></div></div>
+                    <div className="flex gap-3"><CalendarDays className="mt-0.5 size-4 shrink-0 text-fg-muted" aria-hidden /><div><dt className="text-[12px] text-fg-muted">Last updated</dt><dd className="mt-1 text-[14px] font-medium text-fg">{isOfferWorkflow ? '29 Aug 2026' : '21 Aug 2026'}</dd></div></div>
                   </dl>
                 </CardContent>
               </Card>
@@ -574,7 +579,7 @@ export default function ApplicantWorkflowPage() {
                 <CardContent>
                   <div className="flex gap-3">
                     <Clock3 className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
-                    <p className="text-[14px] leading-6 text-fg-muted">{isInterviewReview ? 'The interview team will review your selection or alternative availability, then notify you when the interview time is confirmed.' : isAlternativeInterviewRequest ? 'The interview team will review your schedule update request and notify you when a new time is confirmed.' : isInterviewConfirmation ? 'No action is needed while the interview team confirms the final time.' : 'Complete this step to update the relevant application or internship record. You can return through Home, the menu index or the record timeline.'}</p>
+                    <p className="text-[14px] leading-6 text-fg-muted">{isInterviewReview ? 'Choose a listed timeslot to confirm it immediately. You will receive a confirmation email and portal notification.' : isAlternativeInterviewRequest ? 'The interview team will review your schedule update request and notify you when a new time is confirmed.' : isInterviewConfirmation ? 'Your interview is scheduled. Review the details in My Interviews and join Microsoft Teams 5 minutes early.' : 'Complete this step to update the relevant application or internship record. You can return through Home, the menu index or the record timeline.'}</p>
                   </div>
                 </CardContent>
               </Card>

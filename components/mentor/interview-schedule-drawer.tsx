@@ -6,7 +6,6 @@ import Button from '@/components/ui-legacy/button';
 import DatePicker from '@/components/ui-legacy/date-picker';
 import { CalendarClock, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { loadSystemConfig, interviewDurationLabel } from '@/lib/portal-config';
 import type { Application } from '@/lib/types';
 
 const TIME_OPTIONS = Array.from({ length: 26 }, (_, i) => {
@@ -15,7 +14,7 @@ const TIME_OPTIONS = Array.from({ length: 26 }, (_, i) => {
   return `${String(h).padStart(2, '0')}:${m}`;
 });
 
-const DURATION_OPTIONS = ['30 min', '45 min', '1 hour', '1.5 hours', '2 hours'];
+const DURATION_OPTIONS = ['1 hour'];
 
 const SELECT_CLS =
   'w-full rounded-lg border border-border bg-surface px-3 py-2 text-body-md text-fg outline-none ' +
@@ -33,13 +32,11 @@ export default function InterviewScheduleDrawer({
   onClose: () => void;
 }) {
   const existing = app.interviewSlots ?? [];
-  // Default slot length comes from Admin → System config (interviewMins).
-  const defaultDuration = interviewDurationLabel(loadSystemConfig().interviewMins);
   const [slots, setSlots] = useState<{ date: string; time: string; duration: string }[]>(
     Array.from({ length: 3 }, (_, i) => ({
       date:     existing[i]?.date     ?? '',
       time:     existing[i]?.time     ?? '09:00',
-      duration: existing[i]?.duration ?? defaultDuration,
+      duration: '1 hour',
     }))
   );
   function setSlot(i: number, field: 'date' | 'time' | 'duration', val: string) {

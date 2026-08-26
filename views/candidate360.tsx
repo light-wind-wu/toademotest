@@ -1694,7 +1694,7 @@ export default function Candidate360() {
   const [dstaEngagements, setDstaEngagements] = useState<DSTAEngagementEntry[] | undefined>(undefined);
 
   /* IO action state */
-  const [localMentorDecision, setLocalMentorDecision] = useState<'Accepted' | 'Rejected' | 'Referred' | null>(null);
+  const [localMentorDecision, setLocalMentorDecision] = useState<Application['mentorDecision']>(null);
   const [rejectModal,         setRejectModal]         = useState<{ onConfirm: (remark: string) => void; isPostInterview: boolean } | null>(null);
   const [rejectRemark,        setRejectRemark]        = useState('');
   const [overrideOpen,        setOverrideOpen]        = useState(false);
@@ -2102,7 +2102,7 @@ export default function Candidate360() {
     assessments.push({ label: `Best project fit (${topFit.title})`, note: 'How well this candidate fits the project (0–100), from discipline, skills & academic standing. Advisory — the decision stays with you.', by: 'Project-fit scoring', score: `${topFit.fit} / 100`, cls: 'bg-accent/10 text-accent' });
   }
   if (EVAL_ONWARDS.has(viewApp.status) && avgScore != null) {
-    assessments.push({ label: 'Interview', note: `Panel evaluation · ${viewApp.mentorDecision === 'Accepted' ? 'recommended to proceed' : viewApp.mentorDecision === 'Rejected' ? 'not recommended' : 'on file'}.`, by: 'Interview panel', score: `${avgScore.toFixed(1)} / 10`, cls: viewApp.mentorDecision === 'Rejected' ? 'bg-danger-bg text-danger' : 'bg-success-bg text-success' });
+    assessments.push({ label: 'Interview', note: `Panel evaluation · ${viewApp.mentorDecision === 'Accepted' ? 'recommended to proceed' : viewApp.mentorDecision === 'Rejected' ? 'recommended to reject' : viewApp.mentorDecision === 'Referred' ? 'recommended for referral' : 'on file'}.`, by: 'Interview panel', score: `${avgScore.toFixed(1)} / 10`, cls: viewApp.mentorDecision === 'Rejected' ? 'bg-danger-bg text-danger' : viewApp.mentorDecision === 'Referred' ? 'bg-warning-bg text-warning' : 'bg-success-bg text-success' });
   } else if (viewApp.status === 'Interview Scheduled' && confirmedSlotData) {
     assessments.push({ label: 'Interview', note: `Scheduled for ${fmtSlot(confirmedSlotData)}.`, by: 'Interview panel', score: 'Upcoming', cls: 'bg-accent/10 text-accent' });
   }
@@ -2115,7 +2115,7 @@ export default function Candidate360() {
     cycleEvents.push({ icon: Mail, title: 'Offer extended', body: `Offer prepared for ${topFit?.title ?? 'the placement'}.`, actor: 'Internship Officer', when: 'Recent', dot: 'bg-accent/10 text-accent' });
   }
   if (EVAL_ONWARDS.has(viewApp.status)) {
-    cycleEvents.push({ icon: ClipboardList, title: 'Interview evaluation submitted', body: viewApp.mentorDecision === 'Rejected' ? 'Panel did not recommend proceeding.' : 'Recommended to proceed.', actor: 'Interview panel', when: 'Recent', dot: viewApp.mentorDecision === 'Rejected' ? 'bg-danger-bg text-danger' : 'bg-success-bg text-success' });
+    cycleEvents.push({ icon: ClipboardList, title: 'Interview evaluation submitted', body: viewApp.mentorDecision === 'Rejected' ? 'Panel recommended rejection.' : viewApp.mentorDecision === 'Referred' ? 'Panel recommended referral.' : 'Recommended to proceed.', actor: 'Interview panel', when: 'Recent', dot: viewApp.mentorDecision === 'Rejected' ? 'bg-danger-bg text-danger' : viewApp.mentorDecision === 'Referred' ? 'bg-warning-bg text-warning' : 'bg-success-bg text-success' });
   }
   if (viewApp.status === 'Interview Scheduled' && confirmedSlotData) {
     cycleEvents.push({ icon: CalendarDays, title: 'Interview scheduled', body: fmtSlot(confirmedSlotData), actor: 'Scheduling', when: 'Recent', dot: 'bg-accent/10 text-accent' });
@@ -2286,7 +2286,7 @@ export default function Candidate360() {
                 {isIntComp && localMentorDecision === 'Accepted' && (
                   <Button onClick={doExtendOffer}><Mail size={14} />Advance to Offer</Button>
                 )}
-                {isIntComp && localMentorDecision === 'Rejected' && nextPrefProj && (
+                {isIntComp && (localMentorDecision === 'Rejected' || localMentorDecision === 'Referred') && nextPrefProj && (
                   <Button variant="secondary" title={`Move to next preference: ${nextPrefProj.title}`} onClick={() => doRematch(nextPrefProj.id)}><Repeat size={14} />Rematch to next preference</Button>
                 )}
                 {isDateChangeReq && (
@@ -2525,8 +2525,8 @@ export default function Candidate360() {
               </p>
             )}
             {mentorEvalDone && (
-              <p className={cn('text-body-sm font-semibold', app.mentorDecision === 'Accepted' ? 'text-success' : 'text-danger')}>
-                {app.mentorDecision === 'Accepted' ? 'Recommended for offer' : 'Not recommended'}
+              <p className={cn('text-body-sm font-semibold', app.mentorDecision === 'Accepted' ? 'text-success' : app.mentorDecision === 'Referred' ? 'text-warning' : 'text-danger')}>
+                {app.mentorDecision === 'Accepted' ? 'Recommend for offer' : app.mentorDecision === 'Referred' ? 'Refer' : 'Reject'}
               </p>
             )}
           </div>
@@ -2782,4 +2782,3 @@ export default function Candidate360() {
     </Shell>
   );
 }
-

@@ -28,7 +28,11 @@ export const IO_SHORTLIST_CATEGORIES: IoShortlistCategoryFixture[] = [
     programmeId: 'PROG-0009',
     intakeId: 'INT-0009-2',
     projectIds: ['swarm', 'cyber'],
-    applicantIds: ['marcus', 'amelia', 'kenji', 'wei', 'priya', 'daniel-ong', 'sofia-rahman'],
+    applicantIds: [
+      'marcus', 'amelia', 'kenji', 'wei', 'priya', 'daniel-ong', 'sofia-rahman',
+      'maya-talent-pool', 'ryan-talent-pool', 'alyssa-interview-review', 'jeremy-interview-review',
+      'cheryl-interview-refer',
+    ],
   },
   {
     year: '2026',
@@ -40,6 +44,7 @@ export const IO_SHORTLIST_CATEGORIES: IoShortlistCategoryFixture[] = [
     applicantIds: [
       'farhan-techup', 'nadia-techup', 'zhihao-techup', 'aarav-techup',
       'meilin-techup', 'ethan-techup', 'nurul-techup',
+      'serena-techup-pool', 'hafiz-techup-pool',
     ],
   },
   {
@@ -52,6 +57,7 @@ export const IO_SHORTLIST_CATEGORIES: IoShortlistCategoryFixture[] = [
     applicantIds: [
       'hakim-poly', 'chloe-poly', 'jonas-poly', 'alyssa-poly',
       'bryan-poly', 'kavya-poly', 'syafiq-poly',
+      'iman-poly-pool', 'rachel-poly-pool',
     ],
   },
 ];

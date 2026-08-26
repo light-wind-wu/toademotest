@@ -1,0 +1,9 @@
+{
+  "SUBMITTED": [],
+  "S01": [], "S02": [], "S03": [], "S04": [], "S05": [], "S06": [],
+  "S07": [{ "offerId": "OFFER-UI27-0008", "project": "Designing Mission-Critical Digital Services", "status": "RESPONSE REQUIRED", "issuedDate": "29 Aug 2026", "responseDeadline": "05 Sep 2026", "decision": null, "onboardingProgress": "0 / 4", "onboardingStatus": "Not started", "statusMessage": "Your internship offer is ready for review. Respond by 5 Sep 2026.", "primaryCta": "Review offer" }],
+  "S08": [{ "offerId": "OFFER-UI27-0008", "project": "AI Threat Detection", "status": "ACCEPTED — ONBOARDING", "issuedDate": "01 Sep 2026", "responseDeadline": "04 Sep 2026", "decision": "Accepted", "onboardingProgress": "2 / 4", "onboardingStatus": "In progress", "statusMessage": "Your offer has been accepted. Complete the remaining onboarding actions.", "primaryCta": "Continue onboarding" }],
+  "S09": [{ "offerId": "OFFER-UI27-0008", "project": "AI Threat Detection", "status": "ACCEPTED", "issuedDate": "01 Sep 2026", "responseDeadline": "04 Sep 2026", "decision": "Accepted", "onboardingProgress": "4 / 4", "onboardingStatus": "Completed", "statusMessage": "Your offer was accepted and onboarding is complete.", "primaryCta": "View offer" }],
+  "S10": [{ "offerId": "OFFER-UI27-0008", "project": "AI Threat Detection", "status": "ACCEPTED", "issuedDate": "01 Sep 2026", "responseDeadline": "04 Sep 2026", "decision": "Accepted", "onboardingProgress": "4 / 4", "onboardingStatus": "Completed", "statusMessage": "Your offer was accepted and onboarding is complete.", "primaryCta": "View offer" }],
+  "S11": [{ "offerId": "OFFER-UI27-0008", "project": "AI Threat Detection", "status": "ACCEPTED", "issuedDate": "01 Sep 2026", "responseDeadline": "04 Sep 2026", "decision": "Accepted", "onboardingProgress": "4 / 4", "onboardingStatus": "Completed", "statusMessage": "Your offer was accepted and onboarding is complete.", "primaryCta": "View offer" }]
+}

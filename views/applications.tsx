@@ -18,6 +18,7 @@ import {
   History, Briefcase, Check, X, CalendarClock, CalendarCheck, Mail,
   FileText, Star, Users, ExternalLink, User, SlidersHorizontal,
   Filter, ArrowUp, ArrowDown, ArrowUpDown, Send,
+  LayoutList, Columns3, CalendarRange, RotateCcw,
 } from 'lucide-react';
 import { cn, exportToCSV } from '@/lib/utils';
 import { addNotification } from '@/lib/notifications';
@@ -586,6 +587,21 @@ function ProjectVacancyCard({
 
 
 type TabFilter = 'All' | 'Eligible' | 'Ineligible' | 'In Progress' | 'Closed' | ApplicationStatus;
+type ApplicationsView = 'list' | 'board';
+
+const BOARD_COLUMNS: {
+  key: string;
+  label: string;
+  description: string;
+  statuses: ApplicationStatus[];
+  accent: string;
+}[] = [
+  { key: 'screening', label: 'Screening', description: 'Eligibility checks', statuses: ['Pending Screening', 'Auto-rejected'], accent: 'bg-fg-muted' },
+  { key: 'review', label: 'Review', description: 'Ready for shortlisting', statuses: ['Pending Review'], accent: 'bg-warning' },
+  { key: 'interview', label: 'Interview', description: 'Shortlist and outcome', statuses: ['Shortlisted for Interview', 'Interview Scheduled', 'Interview Completed'], accent: 'bg-accent' },
+  { key: 'offer', label: 'Offer', description: 'Checks and response', statuses: ['Offer Extended', 'Date Change Requested'], accent: 'bg-success' },
+  { key: 'closed', label: 'Closed', description: 'Completed or exited', statuses: ['Accepted', 'Rejected', 'Offer Accepted', 'Offer Declined', 'Active Intern', 'Internship Completed', 'Withdrawn', 'Terminated'], accent: 'bg-fg-subtle' },
+];
 
 /* ── Offer letter helpers (for bulk offer) ──────────────────────────── */
 const OL_KEY      = 'dsta_offer_letter_templates';
@@ -766,6 +782,10 @@ export default function ApplicationsPage() {
     return 'Eligible';
   });
   const [search, setSearch]     = useState('');
+  const [viewMode, setViewMode] = useState<ApplicationsView>(() => {
+    if (typeof window === 'undefined') return 'list';
+    return localStorage.getItem('dsta_applications_view') === 'board' ? 'board' : 'list';
+  });
   const [appFilters, setAppFilters] = useState<ActiveFilter[]>([]);
   const [visibleCols, setVisibleCols] = useState<Record<ColKey, boolean>>({
     name: true, firstChoice: true, eligible: true, status: true, preOfferChecks: true, appliedDate: false,
@@ -864,6 +884,11 @@ export default function ApplicationsPage() {
   function setActiveProg(id: string) {
     setActiveProgLocal(id);
     setStatusFilter('Eligible');
+  }
+
+  function changeView(next: ApplicationsView) {
+    setViewMode(next);
+    try { localStorage.setItem('dsta_applications_view', next); } catch {}
   }
 
   const reservedByProject = useMemo(() => {
@@ -1070,6 +1095,23 @@ export default function ApplicationsPage() {
     return list;
   }, [progApps, statusFilter, search, colHeaderFilters, sortCol, sortDir]);
 
+  // Board columns represent the complete workflow, so status tabs are intentionally
+  // replaced by columns while shared search and column filters remain active.
+  const boardVisible = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return progApps.filter(a => {
+      if (q && !a.name.toLowerCase().includes(q) && !a.school.toLowerCase().includes(q) && !a.course.toLowerCase().includes(q)) return false;
+      if (colHeaderFilters.name && !a.name.toLowerCase().includes(colHeaderFilters.name.toLowerCase())) return false;
+      if (colHeaderFilters.school.length > 0 && !colHeaderFilters.school.includes(a.school)) return false;
+      if (colHeaderFilters.eligible.length > 0) {
+        const label = a.eligibilityPass ? 'Eligible' : 'Ineligible';
+        if (!colHeaderFilters.eligible.includes(label)) return false;
+      }
+      if (colHeaderFilters.status.length > 0 && !colHeaderFilters.status.includes(a.status)) return false;
+      return true;
+    }).sort((a, b) => b.appliedDate.localeCompare(a.appliedDate));
+  }, [progApps, search, colHeaderFilters]);
+
   const allVisibleSelected = visible.length > 0 && visible.every(a => bulkSelected.has(a.id));
   const someVisibleSelected = visible.some(a => bulkSelected.has(a.id));
   function toggleSelectAll() {
@@ -1090,13 +1132,36 @@ export default function ApplicationsPage() {
   return (
     <Shell activeRoute="/applications">
       {/* Header */}
-      <div className="mb-4 flex items-start justify-between gap-4">
+      <div className="mb-4 flex flex-col items-start justify-between gap-4 sm:flex-row">
         <div>
           <h1 className="text-headline-lg text-fg">Applications</h1>
+          <p className="mt-1 text-body-sm text-fg-muted">
+            Review eligibility, shortlist candidates and track each application through offer.
+          </p>
         </div>
-        <Button variant="outline" onClick={() => router.push('/shortlisting-review')}>
-          <Send size={14} /> Shortlisting Review
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center rounded-lg border border-border bg-bg-subtle p-0.5" role="group" aria-label="Applications view">
+            <button
+              type="button"
+              onClick={() => changeView('list')}
+              aria-pressed={viewMode === 'list'}
+              className={cn('inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-body-sm font-semibold transition-colors', viewMode === 'list' ? 'bg-surface text-fg shadow-sm' : 'text-fg-muted hover:text-fg')}
+            >
+              <LayoutList size={14} />List
+            </button>
+            <button
+              type="button"
+              onClick={() => changeView('board')}
+              aria-pressed={viewMode === 'board'}
+              className={cn('inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-body-sm font-semibold transition-colors', viewMode === 'board' ? 'bg-surface text-fg shadow-sm' : 'text-fg-muted hover:text-fg')}
+            >
+              <Columns3 size={14} />Board
+            </button>
+          </div>
+          <Button variant="outline" onClick={() => router.push('/shortlisting-review')}>
+            <Send size={14} /> Shortlisting Review
+          </Button>
+        </div>
       </div>
 
       {/* Programme selector */}
@@ -1143,8 +1208,8 @@ export default function ApplicationsPage() {
           }
         />
 
-        {/* Filter tabs */}
-        <div className="border-b border-border px-3 py-3 overflow-x-auto">
+        {/* In board view, the pipeline columns replace status tabs. */}
+        {viewMode === 'list' && <div className="border-b border-border px-3 py-3 overflow-x-auto">
           <TabBar
             ariaLabel="Application filter"
             value={statusFilter}
@@ -1161,10 +1226,10 @@ export default function ApplicationsPage() {
               })),
             ]}
           />
-        </div>
+        </div>}
 
         {/* Bulk action bar */}
-        {bulkSelected.size > 0 && statusFilter !== 'Closed' && (() => {
+        {bulkSelected.size > 0 && (viewMode === 'board' || statusFilter !== 'Closed') && (() => {
           const selectedApps = apps.filter(a => bulkSelected.has(a.id));
           const PAST_PRE_OFFER = new Set(['Offer Extended','Offer Accepted','Active Intern','Internship Completed','Withdrawn','Terminated']);
           const canBulkPreOffer = selectedApps.some(a =>
@@ -1201,6 +1266,121 @@ export default function ApplicationsPage() {
 
 
 
+        {viewMode === 'board' ? (
+          <div className="overflow-x-auto bg-bg-subtle/50 p-3 sm:p-4">
+            <div className="mb-3 flex items-center justify-between gap-3 px-1">
+              <div>
+                <p className="text-label-sm font-semibold text-fg">Application pipeline</p>
+                <p className="text-[13px] text-fg-muted">{boardVisible.length} application{boardVisible.length === 1 ? '' : 's'} across all stages</p>
+              </div>
+              {(search || colHeaderFilters.name || colHeaderFilters.school.length > 0 || colHeaderFilters.eligible.length > 0 || colHeaderFilters.status.length > 0) && (
+                <button
+                  type="button"
+                  onClick={() => { setSearch(''); setColHeaderFilters({ name: '', school: [], eligible: [], status: [] }); }}
+                  className="inline-flex items-center gap-1.5 text-body-sm font-semibold text-accent hover:underline"
+                >
+                  <RotateCcw size={13} />Reset filters
+                </button>
+              )}
+            </div>
+            <div className="grid min-w-[1220px] grid-cols-5 items-start gap-3">
+              {BOARD_COLUMNS.map(column => {
+                const columnApps = boardVisible.filter(app => column.statuses.includes(app.status));
+                return (
+                  <section key={column.key} aria-labelledby={`board-${column.key}`} className="min-w-0 rounded-xl border border-border bg-surface">
+                    <div className="border-b border-border px-3 py-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className={cn('h-2 w-2 shrink-0 rounded-full', column.accent)} />
+                          <h2 id={`board-${column.key}`} className="text-body-sm font-bold text-fg">{column.label}</h2>
+                        </div>
+                        <span className="inline-flex min-w-6 justify-center rounded-full bg-bg-muted px-2 py-0.5 text-[12px] font-bold tabular-nums text-fg-muted">{columnApps.length}</span>
+                      </div>
+                      <p className="mt-0.5 pl-4 text-[12px] text-fg-subtle">{column.description}</p>
+                    </div>
+                    <div className="space-y-2 p-2">
+                      {columnApps.length === 0 ? (
+                        <div className="rounded-lg border border-dashed border-border px-3 py-8 text-center">
+                          <p className="text-[13px] text-fg-subtle">No applications</p>
+                        </div>
+                      ) : columnApps.map(app => {
+                        const topSui = [...(app.suitabilityScores ?? [])].sort((a, b) => reweightScore(b, weights) - reweightScore(a, weights))[0];
+                        const topScore = topSui ? Math.round(reweightScore(topSui, weights)) : 0;
+                        const firstChoice = projects.find(project => project.id === app.projectRankings?.[0]);
+                        const attempted = app.triedProjects?.length ?? 0;
+                        const availabilityWarning = !!app.projectArchived || !!app.rescheduleNote;
+                        return (
+                          <article
+                            key={app.id}
+                            tabIndex={0}
+                            role="button"
+                            onClick={() => router.push(openApplicantHref(app))}
+                            onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') router.push(openApplicantHref(app)); }}
+                            className={cn('group cursor-pointer rounded-lg border bg-surface p-3 transition-all hover:border-accent/40 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-accent/30', bulkSelected.has(app.id) ? 'border-accent bg-accent/5' : 'border-border')}
+                          >
+                            <div className="mb-2 flex items-start gap-2">
+                              {column.key !== 'closed' && (
+                                <input
+                                  type="checkbox"
+                                  checked={bulkSelected.has(app.id)}
+                                  onChange={() => {}}
+                                  onClick={event => toggleBulkSelect(app.id, event)}
+                                  aria-label={`Select ${app.name}`}
+                                  className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-border accent-accent"
+                                />
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-body-sm font-bold text-fg group-hover:text-accent">{app.name}</p>
+                                <p className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-fg-muted">{app.course} · {app.school}</p>
+                              </div>
+                              {topScore > 0 && <SuitabilityBadge score={topScore} sui={topSui} weights={weights} variant="plain" />}
+                            </div>
+
+                            <div className="mb-2 flex flex-wrap gap-1.5">
+                              <StatusBadge status={app.status} />
+                              <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-semibold', app.eligibilityPass ? 'border-success/20 bg-success-bg text-success' : app.provisionalResults ? 'border-warning/20 bg-warning-bg text-warning' : 'border-danger/20 bg-danger-bg text-danger')}>
+                                {app.eligibilityPass ? <Check size={10} /> : app.provisionalResults ? <AlertTriangle size={10} /> : <X size={10} />}
+                                {app.eligibilityPass ? 'Eligible' : app.provisionalResults ? 'Conditional' : 'Ineligible'}
+                              </span>
+                              {app.status === 'Interview Completed' && <MentorDecisionBadge decision={app.mentorDecision} />}
+                            </div>
+
+                            <div className="space-y-1.5 border-t border-border pt-2 text-[12px]">
+                              <div className="flex items-start gap-1.5 text-fg-muted">
+                                <Star size={12} className="mt-0.5 shrink-0 text-fg-subtle" />
+                                <span className="line-clamp-2"><span className="font-semibold text-fg">1st choice:</span> {firstChoice?.title ?? topSui?.projectTitle ?? 'Not ranked'}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-fg-muted">
+                                <CalendarRange size={12} className="shrink-0 text-fg-subtle" />
+                                <span>{app.availability?.weeks ? `${app.availability.weeks} weeks` : 'Availability not stated'}</span>
+                              </div>
+                              {(attempted > 0 || app.previousDSTA) && (
+                                <div className="flex items-center gap-1.5 text-fg-muted">
+                                  <History size={12} className="shrink-0 text-fg-subtle" />
+                                  <span>{attempted > 0 ? `${attempted} project attempt${attempted === 1 ? '' : 's'}` : 'Previous DSTA engagement'}</span>
+                                </div>
+                              )}
+                              {availabilityWarning && (
+                                <div className="flex items-start gap-1.5 rounded-md bg-warning-bg px-2 py-1.5 font-medium text-warning">
+                                  <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                                  <span>{app.projectArchived ? 'Assigned project requires rematching' : 'Interview reschedule requested'}</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="mt-2 flex items-center justify-between border-t border-border pt-2 text-[12px] text-fg-subtle">
+                              <span>{app.id}</span>
+                              <span>Applied {app.appliedDate}</span>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          </div>
+        ) : <>
         {/* Mobile card list */}
         <div className="sm:hidden divide-y divide-border">
           {visible.length === 0 ? (
@@ -1495,6 +1675,7 @@ export default function ApplicationsPage() {
           </tbody>
         </table>
         </div>
+        </>}
       </div>
 
 

@@ -9,10 +9,12 @@ export const APPLICANT_HOME_SCENARIOS: ReadonlyArray<{
 }> = [
   { value: 'no-application', label: 'No application yet' },
   { value: 'draft-application', label: 'Draft application' },
+  { value: 'submitted', label: 'Application submitted' },
   { value: 'under-review', label: 'Application under review' },
   { value: 'interview-action', label: 'Interview action required' },
   { value: 'interview-scheduled', label: 'Interview slot selected' },
   { value: 'interview-rescheduling', label: 'Alternative interview time suggested' },
+  { value: 'interview-completed', label: 'Interview completed — outcome pending' },
   { value: 'offer-action', label: 'Offer action required' },
   { value: 'onboarding-action', label: 'Onboarding action required' },
   { value: 'active-internship', label: 'Active internship' },

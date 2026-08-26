@@ -1,32 +1,55 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, Clock3, Video } from 'lucide-react';
 import Shell from '@/components/layout/shell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { loadApplicantApplications } from '@/lib/applicant-applications';
-import type { ApplicantApplicationRecord } from '@/lib/types';
+import { useApplicantScenarioData } from '@/lib/applicant-scenario-data';
+import {
+  APPLICANT_INTERVIEW_CONFIRMED_EVENT,
+  loadApplicantInterviewSelection,
+} from '@/lib/applicant-mentor-interview';
+import { formatStatusLabel } from '@/lib/status-label';
+import type { ApplicantScenarioInterviewRecord } from '@/lib/types';
 
-function routeFor(record: ApplicantApplicationRecord) {
-  if (record.primaryAction === 'confirm-interview' || record.primaryAction === 'confirm-slot') {
-    return `/apply/applicant-interview-review?applicationId=${record.id}`;
+function routeFor(record: ApplicantScenarioInterviewRecord) {
+  if (record.status === 'ACTION REQUIRED') {
+    return '/apply/applicant-interview-review?applicationId=app-ui-2027';
   }
-  if (record.primaryAction === 'await-interview-confirmation' && record.interviewDetails?.availabilityNote) {
-    return `/apply/applicant-interview-confirmation?request=alternate&applicationId=${record.id}`;
+  if (record.status === 'AWAITING MENTOR CONFIRMATION') {
+    return '/apply/applicant-interview-confirmation?request=alternate&applicationId=app-ui-2027';
   }
-  return `/apply/applications/${record.id}`;
+  return '/apply/applications/app-ui-2027';
 }
 
 export default function ApplyInterviews() {
   const router = useRouter();
-  const [records, setRecords] = useState<ApplicantApplicationRecord[]>([]);
+  const { interviews: scenarioRecords } = useApplicantScenarioData();
+  const [selectedSlot, setSelectedSlot] = useState(() =>
+    typeof window === 'undefined' ? null : loadApplicantInterviewSelection(),
+  );
 
   useEffect(() => {
-    setRecords(loadApplicantApplications().filter((record) => record.status === 'INTERVIEW'));
+    const refresh = () => setSelectedSlot(loadApplicantInterviewSelection());
+    window.addEventListener(APPLICANT_INTERVIEW_CONFIRMED_EVENT, refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener(APPLICANT_INTERVIEW_CONFIRMED_EVENT, refresh);
+      window.removeEventListener('storage', refresh);
+    };
   }, []);
+
+  const records = useMemo(() => scenarioRecords.map((record) => {
+    if (record.status !== 'CONFIRMED' || !selectedSlot) return record;
+    return {
+      ...record,
+      confirmedStart: selectedSlot.displayDateTime,
+      statusMessage: `Your mentor interview with Marcus Tan is confirmed for ${selectedSlot.displayDateTime}.`,
+    };
+  }), [scenarioRecords, selectedSlot]);
 
   return (
     <Shell activeRoute="/apply/interviews" flushTop>
@@ -42,28 +65,29 @@ export default function ApplyInterviews() {
         <div className="mx-auto w-full max-w-[1440px] px-[clamp(24px,2.6vw,40px)] py-8">
           <div className="grid gap-4 lg:grid-cols-2">
             {records.map((record) => {
-              const isPending = record.interviewDetails?.card === 'rescheduling';
-              const isScheduled = record.interviewDetails?.card === 'scheduled';
-              const needsAction = record.primaryAction === 'confirm-interview' || record.primaryAction === 'confirm-slot';
+              const isPending = record.status === 'AWAITING MENTOR CONFIRMATION';
+              const isScheduled = record.status === 'CONFIRMED';
+              const needsAction = record.status === 'ACTION REQUIRED';
+              const isCompleted = record.status === 'COMPLETED';
               return (
-                <Card key={record.id} className="shadow-none">
+                <Card key={record.interviewId} className="shadow-none">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-fg-muted">{record.applicationId}</p>
-                        <h2 className="mt-2 text-[19px] font-semibold text-fg">{record.programmeName}</h2>
-                        <p className="mt-1 text-[13px] text-fg-muted">{record.intake}</p>
+                        <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-fg-muted">{record.interviewId}</p>
+                        <h2 className="mt-2 text-[19px] font-semibold text-fg">{record.project}</h2>
+                        <p className="mt-1 text-[13px] text-fg-muted">University Internship 2027</p>
                       </div>
-                      <Badge variant={needsAction ? 'warning' : isPending ? 'info' : 'success'}>
-                        {needsAction ? 'Action required' : isPending ? 'Awaiting confirmation' : isScheduled ? 'Scheduled' : 'Interview'}
+                      <Badge variant={needsAction ? 'warning' : isPending ? 'info' : isCompleted ? 'subtle' : 'success'}>
+                        {formatStatusLabel(record.status)}
                       </Badge>
                     </div>
 
                     <p className="mt-5 text-[14px] leading-6 text-fg">{record.statusMessage}</p>
-                    {isPending && record.interviewDetails?.availabilityNote ? (
+                    {isPending && record.applicantAlternativeAvailability ? (
                       <div className="mt-5 rounded-lg bg-bg-muted p-4">
                         <p className="text-[11px] text-fg-muted">Requested availability</p>
-                        <p className="mt-1 line-clamp-2 text-[13px] font-medium leading-5 text-fg">{record.interviewDetails.availabilityNote}</p>
+                        <p className="mt-1 line-clamp-2 text-[13px] font-medium leading-5 text-fg">{record.applicantAlternativeAvailability}</p>
                         <div className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
                           <div className="flex gap-2"><Clock3 className="mt-0.5 size-4 text-fg-muted" aria-hidden /><div><p className="text-[11px] text-fg-muted">Request status</p><p className="mt-1 text-[13px] font-medium text-fg">Awaiting confirmation</p></div></div>
                           <div className="flex gap-2"><CalendarDays className="mt-0.5 size-4 text-fg-muted" aria-hidden /><div><p className="text-[11px] text-fg-muted">Original invitation</p><p className="mt-1 text-[13px] font-medium text-fg">3 proposed timeslots</p></div></div>
@@ -71,20 +95,23 @@ export default function ApplyInterviews() {
                       </div>
                     ) : (
                       <div className="mt-5 grid gap-3 rounded-lg bg-bg-muted p-4 sm:grid-cols-3">
-                        <div className="flex gap-2"><CalendarDays className="mt-0.5 size-4 text-fg-muted" aria-hidden /><div><p className="text-[11px] text-fg-muted">Date</p><p className="mt-1 text-[13px] font-medium text-fg">{record.interviewDetails?.selectedDate ?? 'Choose a date'}</p></div></div>
-                        <div className="flex gap-2"><Clock3 className="mt-0.5 size-4 text-fg-muted" aria-hidden /><div><p className="text-[11px] text-fg-muted">Time</p><p className="mt-1 text-[13px] font-medium text-fg">{record.interviewDetails?.selectedTime ?? 'Choose a time'}</p></div></div>
-                        <div className="flex gap-2"><Video className="mt-0.5 size-4 text-fg-muted" aria-hidden /><div><p className="text-[11px] text-fg-muted">Format</p><p className="mt-1 text-[13px] font-medium text-fg">{record.interviewDetails?.location ?? 'Microsoft Teams'}</p></div></div>
+                        <div className="flex gap-2"><CalendarDays className="mt-0.5 size-4 text-fg-muted" aria-hidden /><div><p className="text-[11px] text-fg-muted">Confirmed start</p><p className="mt-1 text-[13px] font-medium text-fg">{record.confirmedStart ?? 'Choose a timeslot'}</p></div></div>
+                        <div className="flex gap-2"><Clock3 className="mt-0.5 size-4 text-fg-muted" aria-hidden /><div><p className="text-[11px] text-fg-muted">{isScheduled ? 'Status' : 'Respond by'}</p><p className="mt-1 text-[13px] font-medium text-fg">{isScheduled ? 'Confirmed' : record.respondBy}</p></div></div>
+                        <div className="flex gap-2"><Video className="mt-0.5 size-4 text-fg-muted" aria-hidden /><div><p className="text-[11px] text-fg-muted">Format</p><p className="mt-1 text-[13px] font-medium text-fg">Microsoft Teams</p></div></div>
                       </div>
                     )}
 
                     <div className="mt-5 flex flex-wrap gap-2">
-                      <Button onClick={() => router.push(routeFor(record))}>{needsAction ? 'Select Interview Timeslots' : isPending ? 'View Request Details' : 'View / Manage Interview'}</Button>
-                      <Button variant="outline" onClick={() => router.push(`/apply/applications/${record.id}`)}>View Application</Button>
+                      <Button onClick={() => router.push(routeFor(record))}>{record.primaryCta}</Button>
+                      <Button variant="outline" onClick={() => router.push('/apply/applications/app-ui-2027')}>View Application</Button>
                     </div>
                   </CardContent>
                 </Card>
               );
             })}
+            {records.length === 0 ? (
+              <Card className="lg:col-span-2 shadow-none"><CardContent className="p-10 text-center"><p className="text-[16px] font-semibold text-fg">No interviews yet</p><p className="mt-2 text-[14px] text-fg-muted">Interview invitations and completed interviews will appear here.</p></CardContent></Card>
+            ) : null}
           </div>
         </div>
       </div>

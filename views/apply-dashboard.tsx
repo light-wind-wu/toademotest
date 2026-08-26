@@ -7,6 +7,7 @@ import ApplyDashboardV1 from '@/views/apply-dashboard-v1';
 import ApplyDashboardV2 from '@/views/apply-dashboard-v2';
 import ApplyDashboardV3 from '@/views/apply-dashboard-v3';
 import ApplyDashboardV4 from '@/views/apply-dashboard-v4';
+import ApplyDashboardV5 from '@/views/apply-dashboard-v5';
 import {
   loadApplyDashboardVersion,
   type ApplyDashboardVersion,
@@ -22,7 +23,7 @@ export default function ApplyDashboardPage() {
 
     function onVersion(e: Event) {
       const detail = (e as CustomEvent<ApplyDashboardVersion>).detail;
-      if (detail === 'v1' || detail === 'v2' || detail === 'v3' || detail === 'v4') {
+      if (detail === 'v1' || detail === 'v2' || detail === 'v3' || detail === 'v4' || detail === 'v5') {
         setVersion(detail);
       }
     }
@@ -38,6 +39,7 @@ export default function ApplyDashboardPage() {
     );
   }
 
+  if (version === 'v5') return <ApplyDashboardV5 />;
   if (version === 'v4') return <ApplyDashboardV4 />;
   if (version === 'v3') return <ApplyDashboardV3 />;
   if (version === 'v2') return <ApplyDashboardV2 />;
