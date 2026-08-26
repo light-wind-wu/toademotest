@@ -1,7 +1,10 @@
 'use client';
 
-/* Shared shell for email registration steps 1/2/3/5 — black masthead + subtitle,
-   "Back to login" below header, large centered white card with form left + illustration right. */
+/* Shared shell for email registration steps 1/2/3/4/5 — black masthead + subtitle,
+   optional "Back to login" breadcrumb, optional hero banner.
+   - layout="card" (default): centered white card, form left + illustration right.
+   - layout="stack": full-width hero + centered card stack below, no illustration, no background.
+*/
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -9,8 +12,12 @@ import { cn } from '@/lib/utils';
 
 interface RegisterShellProps {
   children: React.ReactNode;
-  illustrationSrc: string;
+  illustrationSrc?: string;
   illustrationAlt?: string;
+  showBackLink?: boolean;
+  hero?: React.ReactNode;
+  footer?: React.ReactNode;
+  layout?: 'card' | 'stack';
   className?: string;
 }
 
@@ -18,8 +25,14 @@ export default function RegisterShell({
   children,
   illustrationSrc,
   illustrationAlt = '',
+  showBackLink = true,
+  hero,
+  footer,
+  layout = 'card',
   className,
 }: RegisterShellProps) {
+  const isStack = layout === 'stack';
+
   return (
     <div
       data-zone="enterprise"
@@ -45,59 +58,89 @@ export default function RegisterShell({
       </header>
 
       {/* Back to login breadcrumb */}
-      <div className="relative z-20 w-full px-5 py-4 lg:px-10">
-        <Link
-          href="/login"
-          className="inline-flex items-center gap-1.5 text-[14px] font-medium"
-          style={{ color: 'rgba(69, 85, 108, 1)' }}
-        >
-          <ArrowLeft className="size-4" />
-          Back to login
-        </Link>
-      </div>
+      {showBackLink && (
+        <div className="relative z-20 w-full px-5 py-4 lg:px-10">
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-1.5 text-[14px] font-medium"
+            style={{ color: 'rgba(69, 85, 108, 1)' }}
+          >
+            <ArrowLeft className="size-4" />
+            Back to login
+          </Link>
+        </div>
+      )}
 
-      {/* Centered background image */}
-      <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center">
-        <Image
-          src="/images/create-account-bg.png"
-          alt=""
-          fill
-          className="object-contain object-center max-lg:hidden"
-          sizes="100vw"
-          priority
-        />
-        <Image
-          src="/images/create-account-bg-m.png"
-          alt=""
-          fill
-          className="object-contain object-center lg:hidden"
-          sizes="100vw"
-          priority
-        />
-      </div>
-
-      {/* Main content: large centered card */}
-      <main className="relative z-10 flex flex-1 items-start justify-center px-5 pb-10 lg:items-center">
+      {/* Optional hero banner */}
+      {hero && (
         <div
-          className="grid w-full max-w-[1000px] grid-cols-1 overflow-hidden rounded-2xl border bg-white lg:grid-cols-[1fr_1fr]"
-          style={{ borderColor: 'rgba(231, 228, 221, 1)' }}
+          className={cn(
+            'relative z-10 w-full',
+            isStack ? '' : 'flex flex-1 items-center justify-center px-5 py-10',
+          )}
         >
-          {/* Form column */}
-          <div className="p-6 lg:p-10">{children}</div>
+          {hero}
+        </div>
+      )}
 
-          {/* Illustration column */}
-          <div className="pointer-events-none relative hidden min-h-[360px] lg:block">
-            <Image
-              src={illustrationSrc}
-              alt={illustrationAlt}
-              fill
-              className="object-contain object-center"
-              sizes="(min-width: 1024px) 50vw, 0px"
-              priority
-            />
+      {/* Centered background image (only for card layout) */}
+      {!isStack && (
+        <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center">
+          <Image
+            src="/images/create-account-bg.png"
+            alt=""
+            fill
+            className="object-contain object-center max-lg:hidden"
+            sizes="100vw"
+            priority
+          />
+          <Image
+            src="/images/create-account-bg-m.png"
+            alt=""
+            fill
+            className="object-contain object-center lg:hidden"
+            sizes="100vw"
+            priority
+          />
+        </div>
+      )}
+
+      {/* Main content */}
+      {!isStack ? (
+        /* Card layout: centered card with form + illustration */
+        <main className="relative z-10 flex flex-1 items-center justify-center px-5 pb-10">
+          <div
+            className="grid w-full max-w-[1000px] grid-cols-1 overflow-hidden rounded-2xl border bg-white lg:grid-cols-[1fr_1fr]"
+            style={{ borderColor: 'rgba(231, 228, 221, 1)' }}
+          >
+            <div className="p-6 lg:p-10">{children}</div>
+            <div className="pointer-events-none relative hidden min-h-[360px] lg:block">
+              <Image
+                src={illustrationSrc || '/images/create-account-right.png'}
+                alt={illustrationAlt}
+                fill
+                className="object-contain object-center"
+                sizes="(min-width: 1024px) 50vw, 0px"
+                priority
+              />
+            </div>
+          </div>
+        </main>
+      ) : (
+        /* Stack layout: full-width hero already above, cards below */
+        <main className="relative z-10 flex flex-1 flex-col px-6">{children}</main>
+      )}
+
+      {/* Optional footer — full-width bar, same outer padding as content */}
+      {footer && isStack && (
+        <div
+          className="z-30 flex h-[68px] w-full items-center border-t border-border bg-surface px-6"
+        >
+          <div className="mx-auto flex w-full max-w-none items-center justify-between gap-3">
+            {footer}
           </div>
         </div>
-      </main>
+      )}
     </div>
   );
 }
