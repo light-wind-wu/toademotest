@@ -8,6 +8,7 @@ export type UtCatalogPath =
   | 'io-programme'
   | 'io-shortlist'
   | 'ad-pnc'
+  | 'mentor'
   | 'applicant'
   | 'probing';
 
@@ -53,6 +54,7 @@ export function loadUtCatalogPath(): UtCatalogPath {
       raw === 'io-programme' ||
       raw === 'io-shortlist' ||
       raw === 'ad-pnc' ||
+      raw === 'mentor' ||
       raw === 'applicant' ||
       raw === 'probing'
     ) {

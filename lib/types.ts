@@ -326,9 +326,18 @@ export interface Application {
   previousDSTA:        boolean;
   previousDSTADetails?: string;
   achievements:        string[];
+  /** Mentor-facing due date shown in the Interview workspace (YYYY-MM-DD). */
+  interviewDueDate?: string;
+  /** Short project-fit summary shown in the Mentor Interview workspace side panel. */
+  projectFitSummary?: string;
   // Interview scheduling
+  interviewSetupMethod?: 'scheduled' | 'shared' | 'direct'; // how the interview was arranged
   interviewSlots?:   { date: string; time: string; duration?: string }[];   // mentor's proposed slots
   confirmedSlot?:    number;                              // applicant-selected index
+  /** Reference to a project-level shared interview session (group interview). */
+  sharedSessionId?: string;
+  /** For direct/offline scheduling (Skip Scheduling), mentor-provided contact note. */
+  directSchedulingNote?: string;
   // Mentor evaluation (set after Interview Completed)
   mentorDecision?:          'Accepted' | 'Rejected' | 'Referred' | null;
   mentorNotes?:             string;
@@ -441,8 +450,10 @@ export interface Application {
   // Uploaded documents (data URLs — mock storage) for IO view/download
   cvFileName?:          string;
   cvFileData?:          string;
+  cvFileSize?:          string;
   transcriptFileName?:  string;
   transcriptFileData?:  string;
+  transcriptFileSize?:  string;
   // Leadership / CCA detected from the CV (keyword extraction — mock for a future LLM)
   cvLeadership?:        string[];
   cvActivities?:        string[];
@@ -562,6 +573,8 @@ export interface ProjectEntry {
   sourceSubmissionBatchId?:   string;
   sourceSubmissionProjectId?: string;
   programme:   string;
+  /** Optional human-readable programme title, used by the Mentor workspace. */
+  programmeName?: string;
   pc?:               string;
   techDomain?:       string;
   emergingArea?:     string;
@@ -596,6 +609,21 @@ export interface ProjectAttachment {
   intakeId:    string;
   programmeId: string;
   placements?: number;
+}
+
+/** A project-level shared interview session that can host multiple applicants
+ *  in the same time slot (group interview). */
+export interface SharedInterviewSession {
+  id: string;
+  projectId: string;
+  date: string;          // YYYY-MM-DD
+  time: string;          // HH:mm
+  duration?: string;
+  location?: string;     // e.g. "Meeting room 4B"
+  capacity: number;
+  invitedApplicantIds: string[];
+  confirmedApplicantIds: string[];
+  status: 'available' | 'invited' | 'confirmed';
 }
 
 /* ── Project Submissions ───────────────────────────────────────────────── */

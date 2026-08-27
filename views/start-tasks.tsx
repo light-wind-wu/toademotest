@@ -97,6 +97,24 @@ const IO_SHORTLIST_TASKS: TaskDef[] = [
   },
 ];
 
+const MENTOR_TASKS: TaskDef[] = [
+  {
+    id: 1,
+    title: 'UT-02.1 — Review applicants and set up interviews',
+    href: '/mentor/projects',
+  },
+  {
+    id: 2,
+    title: 'UT-02.2 — Arrange interviews on the calendar',
+    href: '/mentor/projects/ut-mentor-cyber/workspace',
+  },
+  {
+    id: 3,
+    title: 'UT-02.3 — Submit interview recommendations',
+    href: '/mentor/interviews',
+  },
+];
+
 const APPLICANT_TASKS: TaskDef[] = [
   {
     id: 1,
@@ -128,6 +146,7 @@ function briefingFor(path: UtCatalogPath, track: UtTrack): TaskDef[] {
   }
   if (path === 'io-admin') return IO_ADMIN_TASKS;
   if (path === 'ad-pnc') return AD_PNC_TASKS;
+  if (path === 'mentor') return MENTOR_TASKS;
   if (path === 'io-programme') return IO_PROGRAMME_TASKS;
   return IO_SHORTLIST_TASKS;
 }

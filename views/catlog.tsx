@@ -65,6 +65,7 @@ const CATALOG: CatalogRow[] = [
   { id: 'io-programme', label: 'A2.1 Creates Programme (IO)', kind: 'staff', role: 'io' },
   { id: 'io-shortlist', label: 'B2.2 Shortlists Applicants (IO)', kind: 'staff', role: 'io' },
   { id: 'ad-pnc', label: 'A1.3 - A1.5 (AD&PC)', kind: 'staff', role: 'ad-pnc' },
+  { id: 'mentor', label: 'UT-02 Mentor Interview Setup', kind: 'staff', role: 'mentor' },
   { id: 'applicant', label: 'B1.1 - B3.2 (Applicant)', kind: 'expand-applicant' },
   { id: 'probing', label: 'Probing - Applicant Homepage', kind: 'expand-probing' },
 ];

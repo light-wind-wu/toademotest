@@ -22,6 +22,7 @@ import type {
   ProjectRequestAuditEntry,
   ProjectSubmissionBatch,
   ProjectAttachment,
+  SharedInterviewSession,
 } from './types';
 import {
   DEFAULT_PROGRAMMES,
@@ -52,6 +53,7 @@ export const STORAGE_KEYS = {
   projectDrafts: { key: 'dsta_project_drafts' },
   projectResponseDrafts: { key: 'dsta_project_response_drafts' },
   requestAuditLogs: { key: 'dsta_request_audit_logs' },
+  sharedInterviewSessions: { key: 'dsta_shared_interview_sessions' },
 } as const;
 
 /**
@@ -140,3 +142,8 @@ export const loadRequestAuditLogs = (): ProjectRequestAuditEntry[] =>
   loadJSON<ProjectRequestAuditEntry[]>(STORAGE_KEYS.requestAuditLogs.key, []);
 export const saveRequestAuditLogs = (v: ProjectRequestAuditEntry[]): void =>
   save(STORAGE_KEYS.requestAuditLogs.key, v);
+
+export const loadSharedInterviewSessions = (): SharedInterviewSession[] =>
+  loadJSON<SharedInterviewSession[]>(STORAGE_KEYS.sharedInterviewSessions.key, []);
+export const saveSharedInterviewSessions = (v: SharedInterviewSession[]): void =>
+  save(STORAGE_KEYS.sharedInterviewSessions.key, v);

@@ -10,16 +10,22 @@ import {
   FileText, ChevronDown, ChevronUp, GripVertical,
   AlertCircle, Hourglass, UserCheck, Briefcase, XCircle, Calendar,
   CheckCircle2, CheckCircle, Bell, Clock, ChevronRight,
-  Video, Copy, CalendarPlus, CalendarClock, CalendarSearch,
+  Video, Copy, CalendarPlus, CalendarClock, CalendarSearch, Users,
   type LucideIcon,
 } from 'lucide-react';
 import DatePicker from '@/components/ui-legacy/date-picker';
 import DateRangePicker from '@/components/ui-legacy/date-range-picker';
 import applicationsSeed from '@/data/applications.json';
-import type { Application, ApplicationStatus, MyApplication, Programme } from '@/lib/types';
+import type { Application, ApplicationStatus, MyApplication, Programme, SharedInterviewSession } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { addNotification } from '@/lib/notifications';
-import { loadProgrammes, loadProjects, saveProjects } from '@/lib/storage';
+import {
+  loadProgrammes,
+  loadProjects,
+  saveProjects,
+  loadSharedInterviewSessions,
+  saveSharedInterviewSessions,
+} from '@/lib/storage';
 
 const MY_APPS_KEY     = 'dsta_my_applications';
 const IO_APPS_KEY     = 'dsta_applications';
@@ -484,10 +490,81 @@ function InterviewInvitationCard({
   );
 }
 
+/* ── Shared interview invitation card ─────────────────────────────────────── */
+function SharedInterviewInvitationCard({
+  app,
+  projectTitle,
+  session,
+  onConfirm,
+}: {
+  app: Application;
+  projectTitle: string;
+  session: SharedInterviewSession;
+  onConfirm: () => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
+
+  function fmtSlot() {
+    const d = new Date(session.date + 'T00:00:00');
+    const dateStr = d.toLocaleDateString('en-SG', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+    const [h, m] = session.time.split(':').map(Number);
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    const timeStr = `${h % 12 || 12}:${String(m).padStart(2, '0')} ${suffix}`;
+    return `${dateStr} · ${timeStr}${session.duration ? ` · ${session.duration}` : ''}`;
+  }
+
+  return (
+    <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 space-y-3">
+      <div className="flex items-start gap-3">
+        <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+          <Users size={16} className="text-accent" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-body-md font-semibold text-fg leading-snug">Group Interview Invitation</p>
+          <p className="text-body-sm text-fg-muted truncate">{app.programmeName}</p>
+          {projectTitle && <p className="text-body-sm text-fg-muted truncate">Project: {projectTitle}</p>}
+        </div>
+        <span className="text-[12px] font-bold bg-warning/10 text-warning px-2 py-0.5 rounded shrink-0">Action Required</span>
+      </div>
+
+      <div className="px-3 py-2.5 bg-surface rounded-lg border border-border space-y-0.5">
+        <p className="text-body-sm font-semibold text-fg">{fmtSlot()}</p>
+        {session.location && (
+          <p className="text-body-sm text-fg-muted">Location: {session.location}</p>
+        )}
+      </div>
+
+      <Button className="w-full" onClick={() => setConfirming(true)}>
+        <Calendar size={14} /> Confirm Group Interview
+      </Button>
+
+      <Modal open={confirming} onClose={() => setConfirming(false)} labelledBy="confirm-shared-slot-title">
+        <h2 id="confirm-shared-slot-title" className="text-headline-sm font-bold text-fg mb-1">Confirm group interview?</h2>
+        <p className="text-body-sm text-fg-muted mb-5">{fmtSlot()}</p>
+        <div className="flex gap-2 justify-end">
+          <Button onClick={() => { setConfirming(false); onConfirm(); }}>
+            <Calendar size={14} /> Confirm
+          </Button>
+          <Button variant="ghost" onClick={() => setConfirming(false)}>Cancel</Button>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
 /* ── Scheduled interview card ─────────────────────────────────────────────── */
-function ScheduledInterviewCard({ app, projectTitle }: { app: Application; projectTitle: string }) {
-  const slot = app.interviewSlots && app.confirmedSlot !== undefined
-    ? app.interviewSlots[app.confirmedSlot] : null;
+function ScheduledInterviewCard({ app, projectTitle, sessions }: { app: Application; projectTitle: string; sessions: SharedInterviewSession[] }) {
+  const session = app.sharedSessionId ? sessions.find(s => s.id === app.sharedSessionId) : null;
+  const slot = session
+    ? { date: session.date, time: session.time, duration: session.duration }
+    : app.interviewSlots && app.confirmedSlot !== undefined
+      ? app.interviewSlots[app.confirmedSlot]
+      : null;
   const [copied, setCopied] = useState(false);
 
   function fmtSlotLong(s: { date: string; time: string; duration?: string }) {
@@ -808,13 +885,15 @@ function DateChangePendingCard({ app, projectTitle }: { app: Application; projec
 
 /* ── Dashboard view (post-application) ───────────────────────────────────── */
 function ApplicantDashboard({
-  myApps, ioApps, projectMap, drafts, onConfirmSlot, onOfferAccepted, onOfferDeclined, onStartDateRequested, onRescheduleRequest,
+  myApps, ioApps, projectMap, drafts, sessions, onConfirmSlot, onConfirmSharedSession, onOfferAccepted, onOfferDeclined, onStartDateRequested, onRescheduleRequest,
 }: {
   myApps:              MyApplication[];
   ioApps:              Application[];
   projectMap:          Map<string, string>;
   drafts:              DraftInfo[];
+  sessions:            SharedInterviewSession[];
   onConfirmSlot:         (appId: string, slotIndex: number) => void;
+  onConfirmSharedSession: (appId: string, sessionId: string) => void;
   onOfferAccepted:       (appId: string, creditBearing: boolean, details: string, startDate: string, endDate: string) => void;
   onOfferDeclined:       (appId: string) => void;
   onStartDateRequested:  (appId: string, requestedDate: string, reason: string) => void;
@@ -827,21 +906,30 @@ function ApplicantDashboard({
   // Apps needing an action from the applicant
   const pendingSlotApps   = ioApps.filter(
     a => a.status === 'Shortlisted for Interview' &&
+         a.interviewSetupMethod !== 'shared' &&
          (a.interviewSlots ?? []).length > 0 &&
          a.confirmedSlot === undefined,
+  );
+  const sharedSessionInvitedApps = ioApps.filter(
+    a =>
+      a.status === 'Shortlisted for Interview' &&
+      a.interviewSetupMethod === 'shared' &&
+      a.sharedSessionId &&
+      sessions.find(s => s.id === a.sharedSessionId)?.status === 'invited',
   );
   const scheduledApps     = ioApps.filter(a => a.status === 'Interview Scheduled');
   const offerApps         = ioApps.filter(a => a.status === 'Offer Extended');
   const dateChangeApps    = ioApps.filter(a => a.status === 'Date Change Requested');
   const actionAppIds      = new Set([
     ...pendingSlotApps.map(a => a.id),
+    ...sharedSessionInvitedApps.map(a => a.id),
     ...scheduledApps.map(a => a.id),
     ...offerApps.map(a => a.id),
     ...dateChangeApps.map(a => a.id),
   ]);
 
   const passiveTasks     = buildTasks(myApps.filter(a => !actionAppIds.has(a.id)));
-  const totalActionCount = pendingSlotApps.length + scheduledApps.length + offerApps.length + dateChangeApps.length + drafts.length;
+  const totalActionCount = pendingSlotApps.length + sharedSessionInvitedApps.length + scheduledApps.length + offerApps.length + dateChangeApps.length + drafts.length;
 
   return (
     <Shell activeRoute="/apply">
@@ -917,11 +1005,25 @@ function ApplicantDashboard({
                 onRescheduleRequest={note => onRescheduleRequest(app.id, note)}
               />
             ))}
+            {sharedSessionInvitedApps.map(app => {
+              const session = sessions.find(s => s.id === app.sharedSessionId);
+              if (!session) return null;
+              return (
+                <SharedInterviewInvitationCard
+                  key={app.id}
+                  app={app}
+                  projectTitle={projectMap.get(app.shortlistedFor ?? '') ?? ''}
+                  session={session}
+                  onConfirm={() => onConfirmSharedSession(app.id, session.id)}
+                />
+              );
+            })}
             {scheduledApps.map(app => (
               <ScheduledInterviewCard
                 key={app.id}
                 app={app}
                 projectTitle={projectMap.get(app.shortlistedFor ?? '') ?? ''}
+                sessions={sessions}
               />
             ))}
             {offerApps.map(app => (
@@ -981,6 +1083,7 @@ export default function ApplyPage() {
   const [ioApps,     setIoApps]     = useState<Application[]>([]);
   const [projectMap, setProjectMap] = useState<Map<string, string>>(new Map());
   const [drafts,     setDrafts]     = useState<DraftInfo[]>([]);
+  const [sessions,   setSessions]   = useState<SharedInterviewSession[]>([]);
 
   useEffect(() => {
     const projects = loadProjects();
@@ -990,6 +1093,9 @@ export default function ApplyPage() {
     const allIo = loadIoApps();
     const myIoApps = allIo.filter(a => a.email === profile.email);
     setIoApps(myIoApps);
+
+    // Load shared interview sessions
+    setSessions(loadSharedInterviewSessions());
 
     // Load my applications and sync status from IO side
     const loaded = loadMyApps();
@@ -1035,6 +1141,48 @@ export default function ApplyPage() {
       a.id === appId
         ? { ...a, confirmedSlot: slotIndex, status: 'Interview Scheduled' as const, meetingLink }
         : a
+    );
+    saveIoApps(updated);
+    setIoApps(updated.filter(a => a.email === profile.email));
+    setMyApps(prev => {
+      if (!prev) return prev;
+      const next = prev.map(a => a.id === appId ? { ...a, status: 'Interview Scheduled' as const } : a);
+      localStorage.setItem(MY_APPS_KEY, JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function confirmSharedSession(appId: string, sessionId: string) {
+    const allSessions = loadSharedInterviewSessions();
+    const sessionIndex = allSessions.findIndex(s => s.id === sessionId);
+    if (sessionIndex === -1) return;
+
+    const session = allSessions[sessionIndex];
+    if (session.confirmedApplicantIds.includes(appId)) return;
+
+    const nextConfirmed = [...session.confirmedApplicantIds, appId];
+    const nextSession: SharedInterviewSession = {
+      ...session,
+      confirmedApplicantIds: nextConfirmed,
+      status: nextConfirmed.length >= session.capacity ? 'confirmed' : 'invited',
+    };
+    const nextSessions = [
+      ...allSessions.slice(0, sessionIndex),
+      nextSession,
+      ...allSessions.slice(sessionIndex + 1),
+    ];
+    saveSharedInterviewSessions(nextSessions);
+    setSessions(nextSessions);
+
+    const allIo = loadIoApps();
+    const updated = allIo.map(a =>
+      a.id === appId
+        ? {
+            ...a,
+            status: 'Interview Scheduled' as const,
+            meetingLink: session.location ?? generateMeetingLink(appId),
+          }
+        : a,
     );
     saveIoApps(updated);
     setIoApps(updated.filter(a => a.email === profile.email));
@@ -1142,7 +1290,9 @@ export default function ApplyPage() {
       ioApps={ioApps}
       projectMap={projectMap}
       drafts={drafts}
+      sessions={sessions}
       onConfirmSlot={confirmSlot}
+      onConfirmSharedSession={confirmSharedSession}
       onOfferAccepted={acceptOffer}
       onOfferDeclined={declineOffer}
       onStartDateRequested={requestStartDateChange}

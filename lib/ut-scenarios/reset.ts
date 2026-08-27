@@ -10,10 +10,12 @@ import type { UtResetHandler, UtScenarioContext } from './types';
 import {
   clearSessionState,
   COMMON_TRANSIENT_KEYS,
+  loadApplications,
   loadSessionJSON,
   removeProjectDraftsByTokens,
   removeProjectResponseDraftsByTokens,
   removeSubmissionsByTokens,
+  saveApplications,
   setSessionJSON,
   upsertApplications,
   upsertProgrammes,
@@ -21,6 +23,12 @@ import {
   upsertRequests,
   upsertSubmissions,
 } from './utils';
+import {
+  loadProjects,
+  saveProjects,
+  loadSharedInterviewSessions,
+  saveSharedInterviewSessions,
+} from '@/lib/storage';
 import {
   AD_PNC_ALL_TOKENS,
   task1ClosedRequests,
@@ -41,6 +49,15 @@ import {
   ioShortlistProjects,
   type IoShortlistCategoryFixture,
 } from './fixtures/io-shortlist';
+import {
+  MENTOR_APPLICATION_IDS,
+  MENTOR_PROJECT_IDS,
+  MENTOR_SESSION_IDS,
+  mentorApplications,
+  mentorProgramme,
+  mentorProjects,
+  mentorSharedInterviewSessions,
+} from './fixtures/mentor';
 import { loadNotifications, NOTIF_CHANGED_EVENT } from '@/lib/notifications';
 
 const AD_PNC_TASK_1_ALLOWLIST_KEY = 'dsta_ut_adpnc_allowlist';
@@ -128,6 +145,23 @@ const resetAdPncTask2: UtResetHandler = () => {
   clearSessionState(COMMON_TRANSIENT_KEYS);
 };
 
+const resetMentorTask: UtResetHandler = () => {
+  upsertProgrammes([mentorProgramme()]);
+
+  const projects = loadProjects().filter(project => !MENTOR_PROJECT_IDS.includes(project.id));
+  const applications = loadApplications().filter(application =>
+    !MENTOR_APPLICATION_IDS.includes(application.id),
+  );
+  const sessions = loadSharedInterviewSessions().filter(
+    session => !MENTOR_SESSION_IDS.includes(session.id),
+  );
+
+  saveProjects([...projects, ...mentorProjects()]);
+  saveApplications([...applications, ...mentorApplications()]);
+  saveSharedInterviewSessions([...sessions, ...mentorSharedInterviewSessions()]);
+  clearSessionState(COMMON_TRANSIENT_KEYS);
+};
+
 const HANDLERS: Record<import('./types').UtCatalogPath, Partial<Record<number, UtResetHandler>>> = {
   'io-admin': {
     // TODO: IO Admin Task 1/2 fixtures (placeholder: no destructive reset yet).
@@ -144,6 +178,11 @@ const HANDLERS: Record<import('./types').UtCatalogPath, Partial<Record<number, U
   },
   applicant: {
     // TODO: Applicant Task 1/2 fixtures.
+  },
+  mentor: {
+    1: resetMentorTask,
+    2: resetMentorTask,
+    3: resetMentorTask,
   },
   probing: {
     // Not in the formal UT schedule; no reset required.
