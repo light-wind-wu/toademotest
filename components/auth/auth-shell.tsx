@@ -1,6 +1,6 @@
 'use client';
 
-/* Shared shell for email registration steps 1/2/3/4/5 — black masthead + subtitle,
+/* Shared shell for auth flows (registration, forgot password, etc.) — black masthead + subtitle,
    optional "Back to login" breadcrumb, optional hero banner.
    - layout="card" (default): centered white card, form left + illustration right.
    - layout="stack": full-width hero + centered card stack below, no illustration, no background.
@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface RegisterShellProps {
+interface AuthShellProps {
   children: React.ReactNode;
   illustrationSrc?: string;
   illustrationAlt?: string;
@@ -21,7 +21,7 @@ interface RegisterShellProps {
   className?: string;
 }
 
-export default function RegisterShell({
+export default function AuthShell({
   children,
   illustrationSrc,
   illustrationAlt = '',
@@ -30,7 +30,7 @@ export default function RegisterShell({
   footer,
   layout = 'card',
   className,
-}: RegisterShellProps) {
+}: AuthShellProps) {
   const isStack = layout === 'stack';
 
   return (

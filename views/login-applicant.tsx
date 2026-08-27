@@ -146,6 +146,15 @@ export default function LoginApplicant() {
               placeholder="Password"
               className="h-11 rounded-lg border-border bg-white"
             />
+            <div className="mt-2 text-right">
+              <a
+                href="/forgot-password"
+                className="text-[14px] font-semibold hover:underline"
+                style={{ color: CTA_BG }}
+              >
+                Forgot password?
+              </a>
+            </div>
           </div>
           <OutOfScopeTooltip>
             <button

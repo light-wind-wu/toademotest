@@ -1,25 +1,32 @@
 'use client';
 
-/* Email registration step 2 — 6-digit OTP verification (mock). */
+/* Forgot password step 2 — verify 6-digit OTP sent to email. */
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AuthShell from '@/components/auth/auth-shell';
 import OtpForm from '@/components/auth/otp-form';
-import { loadRegisterState, saveRegisterState } from '@/lib/register-store';
+import { loadForgotPasswordState } from '@/lib/forgot-password-store';
 
 const BODY = 'rgba(69, 85, 108, 1)';
 const TITLE = 'rgba(15, 23, 43, 1)';
 
-export default function RegisterVerify() {
+function maskEmail(value: string): string {
+  const [local, domain] = value.split('@');
+  if (!local || !domain) return value;
+  const maskedLocal = local.length > 2 ? `${local.slice(0, 1)}******${local.slice(-1)}` : '******';
+  return `${maskedLocal}@${domain}`;
+}
+
+export default function ForgotPasswordVerify() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const state = loadRegisterState();
+    const state = loadForgotPasswordState();
     if (!state.email) {
-      router.replace('/register');
+      router.replace('/forgot-password');
       return;
     }
     setEmail(state.email);
@@ -32,8 +39,7 @@ export default function RegisterVerify() {
       return;
     }
     setLoading(true);
-    saveRegisterState({ email });
-    router.push('/register/password');
+    router.push('/forgot-password/reset');
   }
 
   function handleResend() {
@@ -55,7 +61,7 @@ export default function RegisterVerify() {
               className="mt-3 text-[14px] font-normal leading-[20px]"
               style={{ color: BODY }}
             >
-              Enter the 6-digit code we sent to {email || 'your email'}
+              We&apos;ve sent a 6-digit OTP to {email ? maskEmail(email) : 'your email'}
             </p>
           }
           onVerify={handleVerify}

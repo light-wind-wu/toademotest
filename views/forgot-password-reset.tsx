@@ -1,18 +1,18 @@
 'use client';
 
-/* Email registration step 3 — set password with real-time rule checking. */
+/* Forgot password step 3 — set a new password. */
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, Eye, EyeOff } from 'lucide-react';
 import AuthShell from '@/components/auth/auth-shell';
 import { Input } from '@/components/ui-legacy/input';
-import { loadRegisterState, saveRegisterState } from '@/lib/register-store';
+import { loadForgotPasswordState } from '@/lib/forgot-password-store';
 
 const BODY = 'rgba(69, 85, 108, 1)';
 const TITLE = 'rgba(15, 23, 43, 1)';
 const CTA_BG = 'rgba(26, 101, 248, 1)';
 
-export default function RegisterPassword() {
+export default function ForgotPasswordReset() {
   const router = useRouter();
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -22,9 +22,9 @@ export default function RegisterPassword() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const state = loadRegisterState();
+    const state = loadForgotPasswordState();
     if (!state.email) {
-      router.replace('/register');
+      router.replace('/forgot-password');
     }
   }, [router]);
 
@@ -39,7 +39,7 @@ export default function RegisterPassword() {
     [password],
   );
 
-  function handleContinue() {
+  function handleReset() {
     setError('');
     if (!rules.every((r) => r.pass)) {
       setError('Your password must meet all requirements.');
@@ -50,48 +50,41 @@ export default function RegisterPassword() {
       return;
     }
     setLoading(true);
-    saveRegisterState({ password });
-    router.push('/register/profile');
+    router.push('/forgot-password/success');
   }
 
   return (
-    <AuthShell illustrationSrc="/images/set-password-right.png" illustrationAlt="Set your password">
+    <AuthShell illustrationSrc="/images/set-password-right.png" illustrationAlt="Set a new password">
       <div className="w-full rounded-2xl p-6 lg:p-8">
-        <p
-          className="text-[12px] font-semibold uppercase tracking-[0.12em]"
-          style={{ color: 'rgba(26, 101, 248, 1)' }}
-        >
-          Set your password
-        </p>
         <h1
-          className="mt-2 text-[24px] font-bold leading-[28px] tracking-[-0.4px] lg:text-[30px] lg:leading-[34px]"
+          className="text-[24px] font-bold leading-[28px] tracking-[-0.4px] lg:text-[30px] lg:leading-[34px]"
           style={{ color: TITLE }}
         >
-          Create a secure password
+          Set a new password
         </h1>
         <p
           className="mt-3 text-[14px] font-normal leading-[20px]"
           style={{ color: BODY }}
         >
-          You&apos;ll use this password to sign in next time.
+          Enter your new password below to regain access.
         </p>
 
         <div className="mt-6 space-y-4">
           <div className="relative">
             <label
-              htmlFor="register-password"
+              htmlFor="forgot-password"
               className="mb-1.5 block text-[14px] font-medium leading-5"
               style={{ color: TITLE }}
             >
               Password
             </label>
             <Input
-              id="register-password"
+              id="forgot-password"
               type={showPassword ? 'text' : 'password'}
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Create a password"
+              placeholder="Enter new password"
               className="h-11 rounded-lg border-border bg-white pr-10"
             />
             <button
@@ -106,19 +99,19 @@ export default function RegisterPassword() {
 
           <div className="relative">
             <label
-              htmlFor="register-confirm"
+              htmlFor="forgot-confirm"
               className="mb-1.5 block text-[14px] font-medium leading-5"
               style={{ color: TITLE }}
             >
               Confirm password
             </label>
             <Input
-              id="register-confirm"
+              id="forgot-confirm"
               type={showConfirm ? 'text' : 'password'}
               autoComplete="new-password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              placeholder="Re-enter your password"
+              placeholder="Confirm new password"
               className="h-11 rounded-lg border-border bg-white pr-10"
             />
             <button
@@ -148,18 +141,16 @@ export default function RegisterPassword() {
             ))}
           </ul>
 
-          {error ? (
-            <p className="text-[13px] font-medium text-danger">{error}</p>
-          ) : null}
+          {error ? <p className="text-[13px] font-medium text-danger">{error}</p> : null}
 
           <button
             type="button"
             disabled={loading}
-            onClick={handleContinue}
+            onClick={handleReset}
             className="flex h-11 w-full cursor-pointer items-center justify-center rounded-lg text-[14px] font-semibold text-white disabled:opacity-60"
             style={{ background: CTA_BG }}
           >
-            Continue
+            Reset Password
           </button>
         </div>
       </div>

@@ -1,18 +1,17 @@
 'use client';
 
-/* Email registration step 1 — collect email address. */
+/* Forgot password step 1 — collect account email and request OTP. */
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight } from 'lucide-react';
 import AuthShell from '@/components/auth/auth-shell';
 import { Input } from '@/components/ui-legacy/input';
-import { saveRegisterState } from '@/lib/register-store';
+import { saveForgotPasswordState } from '@/lib/forgot-password-store';
 
 const BODY = 'rgba(69, 85, 108, 1)';
 const TITLE = 'rgba(15, 23, 43, 1)';
 const CTA_BG = 'rgba(26, 101, 248, 1)';
 
-export default function RegisterEmail() {
+export default function ForgotPasswordEmail() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
@@ -24,7 +23,7 @@ export default function RegisterEmail() {
     return '';
   }
 
-  function handleContinue() {
+  function handleSendOtp() {
     setError('');
     const msg = validate(email);
     if (msg) {
@@ -32,37 +31,38 @@ export default function RegisterEmail() {
       return;
     }
     setLoading(true);
-    saveRegisterState({ email: email.trim() });
-    router.push('/register/verify');
+    saveForgotPasswordState({ email: email.trim() });
+    router.push('/forgot-password/verify');
   }
 
   return (
-    <AuthShell illustrationSrc="/images/create-account-right.png" illustrationAlt="Create an account">
+    <AuthShell illustrationSrc="/images/create-account-right.png" illustrationAlt="Reset your password">
       <div className="w-full rounded-2xl p-6 lg:p-8">
         <h1
           className="text-[24px] font-bold leading-[28px] tracking-[-0.4px] lg:text-[30px] lg:leading-[34px]"
           style={{ color: TITLE }}
         >
-          Create an account
+          Reset your password
         </h1>
         <p
           className="mt-3 text-[14px] font-normal leading-[20px]"
           style={{ color: BODY }}
         >
-          Get started by entering your email address
+          Enter your account email and we&apos;ll send you a one-time pass code (OTP) to verify
+          your identity.
         </p>
 
         <div className="mt-6 space-y-4">
           <div>
             <label
-              htmlFor="register-email"
+              htmlFor="forgot-email"
               className="mb-1.5 block text-[14px] font-medium leading-5"
               style={{ color: TITLE }}
             >
-              Email Address
+              Email
             </label>
             <Input
-              id="register-email"
+              id="forgot-email"
               type="email"
               autoComplete="email"
               value={email}
@@ -72,28 +72,18 @@ export default function RegisterEmail() {
             />
           </div>
 
-          {error ? (
-            <p className="text-[13px] font-medium text-danger">{error}</p>
-          ) : null}
+          {error ? <p className="text-[13px] font-medium text-danger">{error}</p> : null}
 
           <button
             type="button"
             disabled={loading}
-            onClick={handleContinue}
-            className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg text-[14px] font-semibold text-white disabled:opacity-60"
+            onClick={handleSendOtp}
+            className="flex h-11 w-full cursor-pointer items-center justify-center rounded-lg text-[14px] font-semibold text-white disabled:opacity-60"
             style={{ background: CTA_BG }}
           >
-            Continue
-            <ArrowRight className="size-4" />
+            Send OTP
           </button>
         </div>
-
-        <p className="mt-5 text-center text-[14px]" style={{ color: BODY }}>
-          Already have an account ?{' '}
-          <a href="/login" className="font-semibold hover:underline" style={{ color: CTA_BG }}>
-            Login
-          </a>
-        </p>
       </div>
     </AuthShell>
   );

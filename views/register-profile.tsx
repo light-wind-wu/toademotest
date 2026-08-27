@@ -1,12 +1,12 @@
 'use client';
 
 /* Email registration step 4 — collect profile details + consent.
-   Uses RegisterShell with hero banner; matches prototype layout. */
+   Uses AuthShell with hero banner; matches prototype layout. */
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import RegisterShell from '@/components/register/register-shell';
+import AuthShell from '@/components/auth/auth-shell';
 import { Input } from '@/components/ui-legacy/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useRole } from '@/lib/role';
@@ -190,7 +190,7 @@ export default function RegisterProfile() {
   );
 
   return (
-    <RegisterShell layout="stack" showBackLink={false} hero={hero} footer={footer}>
+    <AuthShell layout="stack" showBackLink={false} hero={hero} footer={footer}>
       <div className="flex flex-1 flex-col">
         <section className={cn(CARD_BOX_CLASS, '-mt-6')}>
           <h3 className={CARD_TITLE_CLASS}>Basic Information</h3>
@@ -302,7 +302,7 @@ export default function RegisterProfile() {
         <p className="text-[14px] font-semibold text-warning">{prompt}</p>
       ) : null}
       </div>
-    </RegisterShell>
+    </AuthShell>
   );
 }
 
