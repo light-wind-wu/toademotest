@@ -325,128 +325,136 @@ export default function MentorInterviewOutcomePage() {
         </p>
       </div>
 
-      {/* Top summary row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-        <div className="rounded-xl border border-border bg-surface p-4">
-          <p className="text-[12px] font-bold uppercase tracking-widest text-fg-subtle mb-1">Project</p>
-          <p className="text-body-sm font-semibold text-fg">{project?.title ?? '—'}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-surface p-4">
-          <p className="text-[12px] font-bold uppercase tracking-widest text-fg-subtle mb-1">Interview</p>
-          <p className="text-body-sm font-semibold text-fg">{interviewText}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-surface p-4">
-          <p className="text-[12px] font-bold uppercase tracking-widest text-fg-subtle mb-1">Applicant</p>
-          <p className="text-body-sm font-semibold text-fg">
-            {app.name} · {getSchoolShort(app.school)} · Year {app.year}
-          </p>
-        </div>
-      </div>
-
-      {/* Main form */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-24 items-start">
-        {/* Left: transcript + notes */}
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-border bg-surface px-5 py-4">
-            <h2 className="text-label-md font-semibold text-fg mb-1">Interview transcript</h2>
-            <p className="text-[13px] text-fg-muted mb-4">
-              Use the transcript as evidence when reviewing the AI-assisted summary.
+      {/* Unified white card */}
+      <div className="rounded-2xl border border-border bg-surface overflow-hidden">
+        {/* Top summary row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 border-b border-border">
+          <div className="p-5">
+            <p className="text-[12px] font-bold uppercase tracking-widest text-fg-subtle mb-1">Project</p>
+            <p className="text-body-sm font-semibold text-fg">{project?.title ?? '—'}</p>
+          </div>
+          <div className="relative p-5">
+            <div className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 w-px h-8 bg-border" />
+            <p className="text-[12px] font-bold uppercase tracking-widest text-fg-subtle mb-1">Interview</p>
+            <p className="text-body-sm font-semibold text-fg">{interviewText}</p>
+          </div>
+          <div className="relative p-5">
+            <div className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 w-px h-8 bg-border" />
+            <p className="text-[12px] font-bold uppercase tracking-widest text-fg-subtle mb-1">Applicant</p>
+            <p className="text-body-sm font-semibold text-fg">
+              {app.name} · {getSchoolShort(app.school)} · Year {app.year}
             </p>
-
-            {transcript ? (
-              <div className="flex items-center gap-3 rounded-xl border border-border bg-bg-subtle p-3">
-                <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
-                  <FileText size={16} className="text-accent" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-body-sm font-semibold text-fg">{deriveTranscriptFileName(app)}</p>
-                  <p className="text-[12px] text-fg-muted truncate">{transcriptFileName} · {(transcript.length / 1024).toFixed(1)} kB</p>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setTranscriptOpen(true)}>
-                  View Transcript
-                </Button>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-bg-subtle p-6 cursor-pointer hover:bg-bg-subtle/80 transition-colors">
-                <Upload size={20} className="text-fg-muted" />
-                <span className="text-body-sm text-fg-muted">Upload transcript .txt</span>
-                <input type="file" accept=".txt" className="hidden" onChange={handleUpload} />
-              </label>
-            )}
-          </div>
-
-          <div className="rounded-2xl border border-border bg-surface px-5 py-4">
-            <h2 className="text-label-md font-semibold text-fg mb-3">Interview notes</h2>
-            <textarea
-              className="w-full rounded-xl border border-border bg-bg-subtle px-3 py-2.5 text-body-sm text-fg resize-none focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
-              rows={10}
-              placeholder="Capture evidence, strengths, and areas to verify..."
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-            />
-            <p className="mt-2 text-[12px] text-fg-subtle">Notes can be saved as a draft before submission.</p>
           </div>
         </div>
 
-        {/* Right: AI summary + recommendation */}
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-border bg-surface px-5 py-4">
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <div>
-                <h2 className="text-label-md font-semibold text-fg">AI-assisted summary</h2>
-                <p className="text-[13px] text-fg-muted mt-0.5">
-                  Generated from interview. Please review before submitting.
-                </p>
-              </div>
-              <Button variant="outline" size="sm" onClick={handleGenerate}>
-                Customize
-              </Button>
-            </div>
+        {/* Main form */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-6 p-5 pb-24 items-start">
+          {/* Left: transcript + notes */}
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-label-md font-semibold text-fg mb-1">Interview transcript</h2>
+              <p className="text-[13px] text-fg-muted mb-4">
+                Use the transcript as evidence when reviewing the AI-assisted summary.
+              </p>
 
-            <div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
-              {summary ? (
-                <>
-                  <SectionBlock title="Strengths" items={summary.strengths} />
-                  <SectionBlock title="Weaknesses" items={summary.weaknesses} />
-                  <SectionBlock title="Role fit" items={summary.roleFit} />
-                  <SectionBlock title="Recommended next steps" items={summary.nextSteps} />
-                </>
-              ) : (
-                <div className="text-center py-6">
-                  <p className="text-body-sm text-fg-muted mb-3">
-                    Generate a structured summary from your notes and transcript.
-                  </p>
-                  <Button variant="outline" size="sm" onClick={handleGenerate}>
-                    <Sparkles size={13} className="mr-1.5" /> Generate summary
+              {transcript ? (
+                <div className="flex items-center gap-3 rounded-xl border border-border bg-bg-subtle p-3">
+                  <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                    <FileText size={16} className="text-accent" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-body-sm font-semibold text-fg">{deriveTranscriptFileName(app)}</p>
+                    <p className="text-[12px] text-fg-muted truncate">{transcriptFileName} · {(transcript.length / 1024).toFixed(1)} kB</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setTranscriptOpen(true)}>
+                    View Transcript
                   </Button>
                 </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-bg-subtle p-6 cursor-pointer hover:bg-bg-subtle/80 transition-colors">
+                  <Upload size={20} className="text-fg-muted" />
+                  <span className="text-body-sm text-fg-muted">Upload transcript .txt</span>
+                  <input type="file" accept=".txt" className="hidden" onChange={handleUpload} />
+                </label>
               )}
+            </div>
+
+            <div>
+              <h2 className="text-label-md font-semibold text-fg mb-3">Interview notes</h2>
+              <textarea
+                className="w-full rounded-xl border border-border bg-bg-subtle px-3 py-2.5 text-body-sm text-fg resize-none focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
+                rows={10}
+                placeholder="Capture evidence, strengths, and areas to verify..."
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+              />
+              <p className="mt-2 text-[12px] text-fg-subtle">Notes can be saved as a draft before submission.</p>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border bg-surface px-5 py-4">
-            <label className="block text-label-md font-semibold text-fg mb-3">Recommendation</label>
-            <Select
-              value={recommendation ?? ''}
-              onValueChange={(value: string | null) => setRecommendation(value as Recommendation)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a recommendation" />
-              </SelectTrigger>
-              <SelectContent>
-                {(Object.keys(RECOMMENDATION_LABELS) as Recommendation[]).map(key => (
-                  <SelectItem key={key} value={key}>
-                    {RECOMMENDATION_LABELS[key]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Vertical divider */}
+          <div className="hidden lg:block w-px bg-border self-stretch" />
+
+          {/* Right: AI summary + recommendation */}
+          <div className="space-y-6">
+            <div>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <h2 className="text-label-md font-semibold text-fg">AI-assisted summary</h2>
+                  <p className="text-[13px] text-fg-muted mt-0.5">
+                    Generated from interview. Please review before submitting.
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={handleGenerate}>
+                  Customize
+                </Button>
+              </div>
+
+              <div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
+                {summary ? (
+                  <>
+                    <SectionBlock title="Strengths" items={summary.strengths} />
+                    <SectionBlock title="Weaknesses" items={summary.weaknesses} />
+                    <SectionBlock title="Role fit" items={summary.roleFit} />
+                    <SectionBlock title="Recommended next steps" items={summary.nextSteps} />
+                  </>
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-body-sm text-fg-muted mb-3">
+                      Generate a structured summary from your notes and transcript.
+                    </p>
+                    <Button variant="outline" size="sm" onClick={handleGenerate}>
+                      <Sparkles size={13} className="mr-1.5" /> Generate summary
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-label-md font-semibold text-fg mb-3">Recommendation</label>
+              <Select
+                value={recommendation ?? ''}
+                onValueChange={(value: string | null) => setRecommendation(value as Recommendation)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a recommendation" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(RECOMMENDATION_LABELS) as Recommendation[]).map(key => (
+                    <SelectItem key={key} value={key}>
+                      {RECOMMENDATION_LABELS[key]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Sticky footer */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-surface/95 backdrop-blur-sm px-6 py-3.5 flex items-center justify-between">
+      <div className="sticky bottom-0 z-30 -mx-[clamp(24px,2.6vw,40px)] -mb-8 mt-6 flex items-center justify-between border-t border-border bg-surface/95 px-[clamp(24px,2.6vw,40px)] py-3.5 backdrop-blur-sm">
         <Button variant="ghost" onClick={() => router.push(workspaceHref)}>
           <ChevronLeft size={14} /> Back to workspace
         </Button>
