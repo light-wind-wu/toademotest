@@ -262,7 +262,7 @@ export default function MentorInterviewsPage() {
                   app={app}
                   projectTitle={projects.find(p => p.id === app.shortlistedFor)?.title ?? ''}
                   section="eval"
-                  onClick={() => router.push(`/mentor/interviews/${app.id}/evaluate`)}
+                  onClick={() => router.push(`/mentor/interviews/${app.id}/outcome`)}
                 />
               ))}
             </div>

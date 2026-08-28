@@ -353,10 +353,25 @@ export interface Application {
   meetingLink?:      string;
   // Set by applicant when no proposed slots work — cleared when mentor proposes new slots
   rescheduleNote?:   string;
+  /** Optional date the applicant left the reschedule note (YYYY-MM-DD). */
+  rescheduleNoteDate?: string;
+  /** Optional date the mentor sent the proposed interview slots (YYYY-MM-DD). */
+  interviewSlotsSentAt?: string;
   // AI-generated interview summary (set after mentor triggers generation)
   mentorAiSummary?:   string;
+  /** Structured AI summary sections shown on the Interview Outcome page. */
+  mentorAiSummaryStructured?: {
+    strengths: string[];
+    weaknesses: string[];
+    roleFit: string[];
+    nextSteps: string[];
+  };
   // Interview transcript uploaded by mentor (plain text)
   mentorTranscript?:  string;
+  /** Mentor's recommendation draft on the Interview Outcome page (not yet sent to IO). */
+  mentorOutcomeRecommendation?: 'Accepted' | 'Rejected' | 'Referred' | null;
+  /** Date the mentor submitted the outcome to the IO (YYYY-MM-DD). */
+  mentorOutcomeSubmittedAt?: string;
   // Offer response
   offerResponse?:    'Accepted' | 'Declined';
   // Offer deadline & reminder (set when offer is extended)

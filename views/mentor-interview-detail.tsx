@@ -66,7 +66,7 @@ export default function MentorInterviewDetailPage() {
   const project = app?.shortlistedFor ? projects.find(p => p.id === app.shortlistedFor) : null;
   const slot    = app?.interviewSlots?.[app?.confirmedSlot ?? -1];
   const isUpcoming = app?.status === 'Interview Scheduled';
-  const evalHref = `/mentor/interviews/${id}/evaluate`;
+  const outcomeHref = `/mentor/interviews/${id}/outcome`;
 
   /* ── Local form state ──────────────────────────────────────────────────── */
   const [notes,             setNotes]             = useState('');
@@ -110,7 +110,7 @@ export default function MentorInterviewDetailPage() {
       mentorTranscript: transcript || undefined,
     });
     setConfirmComplete(false);
-    router.push(evalHref);
+    router.push(outcomeHref);
   }
 
   function handleTranscriptUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -279,16 +279,16 @@ export default function MentorInterviewDetailPage() {
               <ClipboardCheck size={18} className="text-accent shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-body-sm font-semibold text-fg">
-                  {app.mentorDecision ? 'Evaluation recorded' : 'Ready to evaluate'}
+                  {app.mentorDecision ? 'Outcome recorded' : 'Ready to submit outcome'}
                 </p>
                 <p className="text-[13px] text-fg-muted">
                   {app.mentorDecision
-                    ? `You ${app.mentorDecision === 'Accepted' ? 'recommended' : 'did not recommend'} ${app.name.split(' ')[0]}.`
-                    : 'Scoring and your recommendation are on a dedicated page.'}
+                    ? `You recommended ${app.mentorDecision === 'Accepted' ? 'for offer' : app.mentorDecision === 'Rejected' ? 'do not recommend' : 'refer to another project'} for ${app.name.split(' ')[0]}.`
+                    : 'Record evidence and send your recommendation on the outcome page.'}
                 </p>
               </div>
-              <Button variant={app.mentorDecision ? 'outline' : 'primary'} size="sm" onClick={() => router.push(evalHref)}>
-                {app.mentorDecision ? 'View evaluation' : 'Evaluate & score'}
+              <Button variant={app.mentorDecision ? 'outline' : 'primary'} size="sm" onClick={() => router.push(outcomeHref)}>
+                {app.mentorDecision ? 'View outcome' : 'Add notes & outcome'}
               </Button>
             </div>
           )}
@@ -309,8 +309,8 @@ export default function MentorInterviewDetailPage() {
               <CalendarCheck size={14} />Mark as Completed
             </Button>
           ) : (
-            <Button onClick={() => router.push(evalHref)}>
-              <ClipboardCheck size={14} />{app.mentorDecision ? 'View evaluation' : 'Evaluate & score'}
+            <Button onClick={() => router.push(outcomeHref)}>
+              <ClipboardCheck size={14} />{app.mentorDecision ? 'View outcome' : 'Add notes & outcome'}
             </Button>
           )}
         </div>

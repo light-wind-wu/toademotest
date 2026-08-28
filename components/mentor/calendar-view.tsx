@@ -1,7 +1,10 @@
 'use client';
 
 /**
- * Mentor interview calendar (read-only + click-to-schedule).
+ * Mentor interview calendar (per-date time slots + click-to-schedule).
+ *
+ * Each day has its own set of interview time slots. Days are rendered as
+ * independent flex columns so they only occupy the rows they actually have.
  *
  * TODO: Implement drag-and-drop scheduling so a shortlisted candidate can be
  * dragged from the left panel directly onto an available time slot. Current
@@ -17,12 +20,18 @@ import {
   getSchoolShort,
 } from '@/lib/mentor-workspace';
 
-const SLOTS = [
-  '09:30',
-  '11:00',
-  '14:30',
-  '16:00',
-];
+/**
+ * Per-date available time slots for the Mentor UT calendar week.
+ * Times are rendered without a leading zero (e.g. "9:30").
+ */
+const DEFAULT_SLOTS = ['09:30', '11:00', '14:30', '16:00'];
+const WEEK_SLOTS: Record<string, string[]> = {
+  '2026-07-20': ['09:50', '11:00', '14:30', '16:00'],
+  '2026-07-21': ['09:30', '10:00', '11:00', '14:30', '16:00'],
+  '2026-07-22': ['09:30', '11:00', '15:00', '16:00'],
+  '2026-07-23': ['09:30', '11:00', '14:30', '16:00'],
+  '2026-07-24': ['09:30', '10:00', '11:00', '14:30', '16:00'],
+};
 
 const DEFAULT_DURATION = '1 hour';
 const DEFAULT_LOCATION = 'Meeting room 4B';
@@ -46,6 +55,12 @@ function initials(name: string): string {
 
 function generateId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function displayTime(time: string): string {
+  const [hour, minute] = time.split(':');
+  const h = hour ? parseInt(hour, 10).toString() : '0';
+  return `${h}:${minute ?? '00'}`;
 }
 
 export default function CalendarView({
@@ -99,6 +114,8 @@ export default function CalendarView({
     [shortlistedCandidates, selectedCandidateId],
   );
 
+  const daySlotsFor = (date: string) => WEEK_SLOTS[date] ?? DEFAULT_SLOTS;
+
   function eventNames(session: SharedInterviewSession): string {
     const ids =
       session.confirmedApplicantIds.length > 0
@@ -127,8 +144,58 @@ export default function CalendarView({
     onCreateSession(session, selectedCandidate.id);
   }
 
+  function renderAvailableCell(date: string, time: string) {
+    return (
+      <button
+        type="button"
+        disabled={!selectedCandidate}
+        onClick={() => handleSlotClick(date, time)}
+        className={cn(
+          'h-full w-full rounded-lg border border-dashed border-border flex items-center justify-between px-2 py-1.5 text-body-sm transition-colors',
+          selectedCandidate
+            ? 'hover:border-accent hover:text-accent hover:bg-accent/5'
+            : 'cursor-not-allowed opacity-60',
+        )}
+      >
+        <span className="text-fg">{displayTime(time)}</span>
+        <span className="text-[12px] text-fg-muted">Available</span>
+      </button>
+    );
+  }
+
+  function renderEventCard(session: SharedInterviewSession, time: string) {
+    const confirmed = session.status === 'confirmed';
+    const names = eventNames(session);
+    return (
+      <div
+        key={session.id}
+        className={cn(
+          'w-full rounded-lg border px-2.5 py-2 text-[12px] leading-4',
+          confirmed
+            ? 'bg-accent/10 border-accent/20'
+            : 'bg-warning/10 border-warning/20',
+        )}
+      >
+        <p className="font-semibold text-fg">{displayTime(time)}</p>
+        <p className="font-semibold text-fg">Sent to: {names}</p>
+        <p
+          className={cn(
+            'mt-0.5 text-[11px]',
+            confirmed ? 'text-accent' : 'text-warning',
+          )}
+        >
+          {confirmed
+            ? `Confirmed · ${session.location ?? DEFAULT_LOCATION}`
+            : 'Shared slot · Awaiting confirmation'}
+        </p>
+      </div>
+    );
+  }
+
+  const mondaySlots = daySlotsFor(dayStr(days[0]));
+
   return (
-    <div className="rounded-xl border border-border bg-surface overflow-hidden">
+    <div className="rounded-xl border border-border bg-surface overflow-hidden w-full m-5 mt-0">
       {/* Inner calendar header */}
       <div className="px-5 py-3 border-b border-border bg-bg-subtle/50 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
@@ -147,7 +214,7 @@ export default function CalendarView({
             <span className="w-2 h-2 rounded-full bg-warning" /> Awaiting confirmation
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full border border-dashed border-fg-muted" /> Available
+            <span className="w-2 h-2 rounded-full border border-fg-muted bg-surface" /> Available
           </span>
         </div>
       </div>
@@ -167,7 +234,7 @@ export default function CalendarView({
               const stage = getMentorApplicantStage(candidate, sessions);
               const selected = selectedCandidateId === candidate.id;
               const note = candidate.rescheduleNote ?? candidate.notes ?? '';
-              const statusLabel = stage === 'rescheduling-required' ? 'Reschedule requested' : 'Shortlisted';
+              const isRescheduling = stage === 'rescheduling-required';
               return (
                 <button
                   key={candidate.id}
@@ -186,8 +253,14 @@ export default function CalendarView({
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-body-sm font-semibold text-fg truncate">{candidate.name}</p>
-                      <p className="text-[12px] text-fg-muted">
-                        {statusLabel} · {getSchoolShort(candidate.school)} | Year {candidate.year}
+                      <p className="text-[12px]">
+                        {isRescheduling ? (
+                          <span className="text-warning">Reschedule requested</span>
+                        ) : (
+                          <span className="text-fg-muted">
+                            Shortlisted · {getSchoolShort(candidate.school)} | Year {candidate.year}
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>
@@ -202,19 +275,21 @@ export default function CalendarView({
           </div>
         </div>
 
-        {/* Calendar grid */}
-        <div className="p-4">
+        {/* Calendar */}
+        <div>
           {!selectedCandidate && shortlistedCandidates.length > 0 && (
-            <p className="text-body-sm text-fg-muted mb-3">Select a candidate from the left to schedule.</p>
+            <p className="text-body-sm text-fg-muted mb-3 px-4 pt-4">Select a candidate from the left to schedule.</p>
           )}
 
-          <div className="grid grid-cols-[80px_repeat(5,1fr)]">
-            {/* Header row */}
-            <div className="border-b border-r border-border bg-bg-subtle/30 p-2" />
+          {/* Header row */}
+          <div className="grid grid-cols-5 border-b border-border bg-bg-subtle/30">
             {days.map((d, i) => (
               <div
                 key={i}
-                className="border-b border-r border-border bg-bg-subtle/30 p-3 text-center"
+                className={cn(
+                  'border-r border-border p-3 text-center',
+                  i === days.length - 1 && 'border-r-0',
+                )}
               >
                 <p className="text-[12px] font-bold text-fg-subtle">
                   {format(d, 'EEE')}
@@ -222,66 +297,40 @@ export default function CalendarView({
                 <p className="text-body-md font-semibold text-fg">{format(d, 'dd MMM')}</p>
               </div>
             ))}
+          </div>
 
-            {/* Time slots */}
-            {SLOTS.map(time => (
-              <div key={time} className="contents">
-                <div className="border-b border-r border-border p-2 text-center text-body-sm text-fg-muted">
-                  {time}
-                </div>
-                {days.map(d => {
-                  const key = `${dayStr(d)}|${time}`;
-                  const slotSessions = sessionsBySlot.get(key) ?? [];
-                  return (
-                    <div
-                      key={key}
-                      className="border-b border-r border-border p-2 min-h-[90px]"
-                    >
-                      {slotSessions.length === 0 ? (
-                        <button
-                          type="button"
-                          disabled={!selectedCandidate}
-                          onClick={() => handleSlotClick(dayStr(d), time)}
-                          className={cn(
-                            'h-full w-full rounded-lg border border-dashed border-border flex items-center justify-center text-[12px] text-fg-muted transition-colors',
-                            selectedCandidate
-                              ? 'hover:border-accent hover:text-accent hover:bg-accent/5'
-                              : 'cursor-not-allowed opacity-60',
-                          )}
-                        >
-                          Available
-                        </button>
-                      ) : (
-                        <div className="space-y-1.5">
-                          {slotSessions.map(session => {
-                            const confirmed = session.status === 'confirmed';
-                            const names = eventNames(session);
-                            return (
-                              <div
-                                key={session.id}
-                                className={cn(
-                                  'w-full rounded-lg border px-2 py-1.5 text-[12px] leading-4',
-                                  confirmed
-                                    ? 'bg-accent/10 border-accent/20 text-accent'
-                                    : 'bg-warning-bg border-warning/20 text-warning',
-                                )}
-                              >
-                                <p className="font-semibold">Sent to: {names}</p>
-                                <p className="text-[11px] opacity-90">
-                                  {confirmed
-                                    ? `Confirmed · ${session.location ?? DEFAULT_LOCATION}`
-                                    : 'Shared slot · Awaiting confirmation'}
-                                </p>
-                              </div>
-                            );
-                          })}
+          {/* Body columns */}
+          <div className="grid grid-cols-5">
+            {days.map((d, dayIdx) => {
+              const date = dayStr(d);
+              const slots = daySlotsFor(date);
+              return (
+                <div
+                  key={date}
+                  className={cn(
+                    'flex flex-col min-w-0 py-2 space-y-2',
+                    dayIdx < days.length - 1 && 'border-r border-border',
+                  )}
+                >
+                  {slots.map((time) => {
+                    const key = `${date}|${time}`;
+                    const slotSessions = sessionsBySlot.get(key) ?? [];
+                    if (slotSessions.length === 0) {
+                      return (
+                        <div key={key} className="min-h-[48px] mx-2">
+                          {renderAvailableCell(date, time)}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+                      );
+                    }
+                    return (
+                      <div key={key} className="space-y-1.5 min-h-[80px] mx-2">
+                        {slotSessions.map(session => renderEventCard(session, time))}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { format } from 'date-fns';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
 import Modal from '@/components/ui-legacy/modal';
-import { ChevronLeft, FileText, Mail, CalendarClock, BookOpen, ChevronsUpDown, Download } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ChevronLeft, FileText, Mail, CalendarClock, BookOpen, ChevronsUpDown, Download, AlertTriangle } from 'lucide-react';
 import { cn, mentorIdMatches } from '@/lib/utils';
 import { useRole } from '@/lib/role';
 import type { Application, ProjectEntry, SharedInterviewSession } from '@/lib/types';
@@ -14,6 +16,7 @@ import { loadApplications, saveApplications } from '@/lib/ut-scenarios/utils';
 import { seedMentorFixtures } from '@/lib/ut-scenarios/fixtures/mentor';
 import CalendarView from '@/components/mentor/calendar-view';
 import InterviewSetupModal from '@/components/mentor/interview-setup-modal';
+import InterviewEditSlotsDialog from '@/components/mentor/interview-edit-slots-dialog';
 import {
   getMentorApplicantStage,
   getMentorNextAction,
@@ -32,6 +35,23 @@ const VIEW_TABS = [
 ] as const;
 
 type ViewTab = typeof VIEW_TABS[number]['key'];
+
+function isOverdue(dueDate?: string): boolean {
+  if (!dueDate) return false;
+  const due = new Date(`${dueDate}T00:00:00`);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return due < today;
+}
+
+function overdueText(dueDate?: string): string | null {
+  if (!dueDate || !isOverdue(dueDate)) return null;
+  const due = new Date(`${dueDate}T00:00:00`);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diff = Math.ceil((today.getTime() - due.getTime()) / (1000 * 60 * 60 * 24));
+  return diff === 1 ? '1 day overdue' : `${diff} days overdue`;
+}
 
 function ApplicantDocuments({ app }: { app: Application }) {
   const items: { label: string; fileName?: string; fileSize?: string; icon: React.ReactNode }[] = [
@@ -75,6 +95,7 @@ export default function MentorWorkspace() {
   const [view, setView] = useState<ViewTab>('records');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [setupApp, setSetupApp] = useState<Application | null>(null);
+  const [editApp, setEditApp] = useState<Application | null>(null);
   const [scopeOpen, setScopeOpen] = useState(false);
 
   useEffect(() => {
@@ -113,6 +134,24 @@ export default function MentorWorkspace() {
   function persistApps(next: Application[]) {
     setApps(next);
     saveApplications(next);
+  }
+
+  function handleEditSlotsSave(slots: { date: string; time: string; duration?: string }[]) {
+    if (!editApp) return;
+    const updated: Application = {
+      ...editApp,
+      status: 'Shortlisted for Interview',
+      interviewSetupMethod: 'scheduled',
+      interviewSlots: slots,
+      interviewSlotsSentAt: format(new Date(), 'yyyy-MM-dd'),
+      confirmedSlot: undefined,
+      sharedSessionId: undefined,
+      rescheduleNote: undefined,
+      rescheduleNoteDate: undefined,
+    };
+    const nextApps = apps.map(a => (a.id === editApp.id ? updated : a));
+    persistApps(nextApps);
+    setEditApp(null);
   }
 
   function persistSessions(next: SharedInterviewSession[]) {
@@ -248,7 +287,12 @@ export default function MentorWorkspace() {
       </div>
 
       <div className="rounded-2xl border border-border bg-surface overflow-hidden">
-        <div className="px-5 py-3 border-b border-border bg-bg-subtle/50 flex items-center justify-between">
+        <div
+          className={cn(
+            'px-5 py-3 bg-bg-subtle/50 flex items-center justify-between',
+            view === 'records' && 'border-b border-border',
+          )}
+        >
           <div>
             {view === 'records' ? (
               <>
@@ -259,7 +303,7 @@ export default function MentorWorkspace() {
               </>
             ) : (
               <>
-                <p className="text-label-md font-semibold text-fg">Interview calendar</p>
+                <p className="text-headline-sm font-bold text-fg">Interview calendar</p>
                 <p className="text-body-sm text-fg-muted">
                   Place shortlisted candidates into an available interview time for {project.title}.
                 </p>
@@ -270,27 +314,15 @@ export default function MentorWorkspace() {
             <p className="text-body-sm text-fg-muted">
               {view === 'records' ? `${projectApps.length} records` : `${projectSessions.length} calendar events`}
             </p>
-            <div className="flex gap-4 border-b border-border">
-              {VIEW_TABS.map(tab => {
-                const selected = view === tab.key;
-                return (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => setView(tab.key)}
-                    className={cn(
-                      'relative pb-2 text-body-sm font-semibold transition-colors',
-                      selected ? 'text-accent' : 'text-fg-muted hover:text-fg',
-                    )}
-                  >
+            <Tabs value={view} onValueChange={v => setView(v as ViewTab)}>
+              <TabsList>
+                {VIEW_TABS.map(tab => (
+                  <TabsTrigger key={tab.key} value={tab.key}>
                     {tab.label}
-                    {selected && (
-                      <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-full" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
           </div>
         </div>
 
@@ -301,7 +333,7 @@ export default function MentorWorkspace() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-border bg-bg-subtle/30">
-                      <th className="px-3 py-2 w-10">
+                      <th className="pl-5 px-3 py-4 w-10">
                         <input
                           type="checkbox"
                           checked={allSelected}
@@ -344,7 +376,7 @@ export default function MentorWorkspace() {
                             selected ? 'bg-bg-subtle' : 'hover:bg-bg-subtle/50',
                           )}
                         >
-                          <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
+                          <td className="pl-5 px-3 py-3" onClick={e => e.stopPropagation()}>
                             <input
                               type="checkbox"
                               checked={selectedIds.has(app.id)}
@@ -391,10 +423,22 @@ export default function MentorWorkspace() {
               {selectedApp && (
                 <div className="w-full lg:w-[360px] lg:border-l border-border p-5 space-y-4">
                   <div className="rounded-2xl border border-border bg-surface p-5">
-                    <p className="text-headline-sm font-bold text-fg">{selectedApp.name}</p>
-                    <p className="text-body-sm text-fg-muted mt-0.5">
-                      {getSchoolShort(selectedApp.school)} · Year {selectedApp.year}
-                    </p>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-headline-sm font-bold text-fg">{selectedApp.name}</p>
+                        <p className="text-body-sm text-fg-muted mt-0.5">
+                          {getSchoolShort(selectedApp.school)} · Year {selectedApp.year}
+                        </p>
+                      </div>
+                      <span
+                        className={cn(
+                          'inline-flex items-center px-2 py-0.5 rounded-full text-[12px] font-semibold border',
+                          getMentorRecordsBadgeClass(getMentorRecordsStage(selectedApp, sessions)),
+                        )}
+                      >
+                        {MENTOR_RECORDS_STAGE_LABELS[getMentorRecordsStage(selectedApp, sessions)]}
+                      </span>
+                    </div>
 
                     {selectedApp.projectFitSummary && (
                       <div className="mt-4 rounded-xl bg-bg-subtle border border-border p-3">
@@ -404,9 +448,53 @@ export default function MentorWorkspace() {
                     )}
 
                     {selectedApp.interviewDueDate && (
-                      <div className="mt-3 flex items-center gap-2 text-body-sm text-fg-muted">
-                        <CalendarClock size={14} />
-                        Due {formatSlot({ date: selectedApp.interviewDueDate, time: '00:00' }, { includeTime: false })}
+                      <div className="mt-3 rounded-xl border border-border bg-bg-subtle p-3">
+                        <p className="text-[12px] font-bold uppercase tracking-widest text-fg-subtle mb-1">Due</p>
+                        <p className={cn('text-body-sm font-semibold', isOverdue(selectedApp.interviewDueDate) ? 'text-danger' : 'text-fg')}>
+                          {overdueText(selectedApp.interviewDueDate) ?? formatSlot({ date: selectedApp.interviewDueDate, time: '00:00' }, { includeTime: false })}
+                        </p>
+                      </div>
+                    )}
+
+                    {(selectedApp.interviewSlots?.length || selectedApp.rescheduleNote) && (
+                      <div className="mt-5">
+                        <p className="text-[12px] font-bold uppercase tracking-widest text-fg-subtle mb-3">Interview setup history</p>
+                        <div className="space-y-4">
+                          {selectedApp.interviewSlots && selectedApp.interviewSlots.length > 0 && (
+                            <div className="flex gap-3">
+                              <span className="mt-1.5 w-2 h-2 rounded-full bg-accent shrink-0" />
+                              <div>
+                                <p className="text-body-sm font-semibold text-fg">
+                                  Mentor sent {selectedApp.interviewSlots.length} shared {selectedApp.interviewSlots.length === 1 ? 'slot' : 'slots'}
+                                </p>
+                                <p className="text-[12px] text-fg-muted mt-0.5">
+                                  {selectedApp.interviewSlots.map(s => formatSlot(s, { includeTime: true })).join(' · ')}
+                                </p>
+                                {selectedApp.interviewSlotsSentAt && (
+                                  <p className="text-[12px] text-fg-muted mt-1 flex items-center gap-1">
+                                    <CalendarClock size={12} />
+                                    {formatSlot({ date: selectedApp.interviewSlotsSentAt, time: '00:00' }, { includeTime: false })}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          {selectedApp.rescheduleNote && (
+                            <div className="flex gap-3">
+                              <span className="mt-1.5 w-2 h-2 rounded-full bg-warning shrink-0" />
+                              <div>
+                                <p className="text-body-sm font-semibold text-fg">Applicant comment</p>
+                                <p className="text-[12px] text-fg-muted mt-0.5">{selectedApp.rescheduleNote}</p>
+                                {selectedApp.rescheduleNoteDate && (
+                                  <p className="text-[12px] text-fg-muted mt-1 flex items-center gap-1">
+                                    <CalendarClock size={12} />
+                                    {formatSlot({ date: selectedApp.rescheduleNoteDate, time: '00:00' }, { includeTime: false })}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
 
@@ -416,12 +504,63 @@ export default function MentorWorkspace() {
                     </div>
 
                     <div className="mt-5">
-                      <Button
-                        onClick={() => setSetupApp(selectedApp)}
-                        disabled={selectedApp.status === 'Interview Completed' && !!selectedApp.mentorDecision}
-                      >
-                        Set Up Interview
-                      </Button>
+                      {(() => {
+                        const stage = getMentorApplicantStage(selectedApp, sessions);
+                        const isRescheduling =
+                          stage === 'rescheduling-required' ||
+                          (stage === 'needs-scheduled' && !!selectedApp.rescheduleNote);
+                        if (stage === 'interview-completed' || stage === 'outcome-submitted') {
+                          const isSubmitted = stage === 'outcome-submitted';
+                          return (
+                            <div className="mt-5 space-y-3">
+                              <div className="rounded-xl border border-warning/20 bg-warning/8 p-3">
+                                <p className="text-body-sm font-semibold text-fg">
+                                  {isSubmitted ? 'Outcome submitted' : 'Complete notes and submit outcome'}
+                                </p>
+                                <p className="text-[13px] text-fg-muted mt-1">
+                                  {isSubmitted
+                                    ? 'Your recommendation has been sent to the IO.'
+                                    : 'Record interview evidence, score the applicant, and send your recommendation to IO.'}
+                                </p>
+                              </div>
+                              {!isSubmitted && (
+                                <div className="rounded-xl border border-warning/20 bg-warning/8 px-3 py-2.5 flex items-start gap-2.5">
+                                  <AlertTriangle size={14} className="text-warning shrink-0 mt-0.5" />
+                                  <p className="text-[13px] text-warning">Outcome required before IO can proceed.</p>
+                                </div>
+                              )}
+                              <Button
+                                variant={isSubmitted ? 'outline' : 'primary'}
+                                className="w-full"
+                                onClick={() =>
+                                  router.push(`/mentor/interviews/${selectedApp.id}/outcome`)
+                                }
+                              >
+                                {isSubmitted ? 'View Outcome' : 'Add Notes And Outcome'}
+                              </Button>
+                            </div>
+                          );
+                        }
+                        if (stage === 'interview-invited') {
+                          return (
+                            <Button onClick={() => setEditApp(selectedApp)}>
+                              Edit Interview Setup
+                            </Button>
+                          );
+                        }
+                        if (isRescheduling) {
+                          return (
+                            <Button onClick={() => setEditApp(selectedApp)}>
+                              Send Replacement Slots
+                            </Button>
+                          );
+                        }
+                        return (
+                          <Button onClick={() => setSetupApp(selectedApp)}>
+                            Set Up Interview
+                          </Button>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -471,6 +610,14 @@ export default function MentorWorkspace() {
           projectApplicants={projectApps}
           onClose={() => setSetupApp(null)}
           onSave={handleSetupSave}
+        />
+      )}
+
+      {editApp && (
+        <InterviewEditSlotsDialog
+          applicant={editApp}
+          onClose={() => setEditApp(null)}
+          onSave={handleEditSlotsSave}
         />
       )}
 

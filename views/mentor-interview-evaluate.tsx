@@ -4,12 +4,20 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Button from '@/components/ui-legacy/button';
-import Slider from '@/components/ui-legacy/slider';
+import { ScoreSlider } from '@/components/ui-legacy/score-slider';
 import {
   Check, X, ChevronLeft, ChevronDown, Loader2, CalendarCheck, ClipboardCheck, ExternalLink,
   MessageSquare, Send,
 } from 'lucide-react';
 import AiSparkleIcon from '@/components/ui-legacy/ai-sparkle-icon';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { getCvHighlights } from '@/lib/cv-extract';
 import { getEngagements } from '@/lib/participants';
 import { cn, mentorIdMatches } from '@/lib/utils';
@@ -57,9 +65,6 @@ const DEFAULT_SCORES: Scores = {
 function avgScore(s: Scores): number {
   const v = Object.values(s);
   return v.reduce((a, b) => a + b, 0) / v.length;
-}
-function scoreColor(v: number) {
-  return v >= 8 ? 'text-success' : v >= 6 ? 'text-accent' : v >= 4 ? 'text-warning' : 'text-danger';
 }
 
 function generateAiSummary(
@@ -387,23 +392,18 @@ export default function MentorInterviewEvaluatePage() {
           <div className="rounded-2xl border border-border bg-surface px-5 py-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-label-md font-semibold text-fg">Scoring</h2>
-              <span className={cn('text-[22px] font-black tabular-nums leading-none', scoreColor(avg))}>
+              <span className="text-[22px] font-black tabular-nums leading-none text-success">
                 {avg.toFixed(1)}<span className="text-body-sm font-normal text-fg-muted ml-1">/ 10</span>
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
               {SCORE_ATTRS.map(attr => (
-                <div key={attr.key} className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <p className="text-body-sm text-fg">{attr.label}</p>
-                    <span className={cn('text-body-sm font-bold tabular-nums', scoreColor(scores[attr.key]))}>{scores[attr.key].toFixed(1)}</span>
-                  </div>
-                  <Slider
-                    min={0} max={10} step={0.5}
-                    value={scores[attr.key]}
-                    onChange={v => setScores(p => ({ ...p, [attr.key]: v }))}
-                  />
-                </div>
+                <ScoreSlider
+                  key={attr.key}
+                  label={attr.label}
+                  value={scores[attr.key]}
+                  onValueChange={v => setScores(p => ({ ...p, [attr.key]: v }))}
+                />
               ))}
             </div>
           </div>
@@ -428,7 +428,7 @@ export default function MentorInterviewEvaluatePage() {
               </div>
             )}
             {aiSummary && (
-              <div className="mt-3 rounded-xl border border-accent/20 bg-accent/5 p-3 space-y-2.5">
+              <div className="mt-3 rounded-xl border border-border bg-bg-subtle p-3 space-y-2.5">
                 {aiSummary.split('\n\n').map((para, i, arr) => (
                   <p key={i} className="text-body-sm text-fg leading-relaxed">
                     {para}
@@ -476,48 +476,48 @@ export default function MentorInterviewEvaluatePage() {
         </div>
       </div>
 
-      {/* Accept / Reject confirm modal */}
-      {pendingDecision && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40">
-          <div className="bg-surface rounded-2xl border border-border shadow-xl p-6 w-full max-w-sm mx-4">
-            <h2 className="text-headline-md text-fg mb-2">
+      {/* Accept / Reject confirm dialog */}
+      <Dialog open={!!pendingDecision} onOpenChange={(open) => { if (!open) setPendingDecision(null); }}>
+        <DialogContent showCloseButton={false} className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
               {pendingDecision === 'Accepted' ? `Recommend ${app.name.split(' ')[0]}?` : `Don't recommend ${app.name.split(' ')[0]}?`}
-            </h2>
-            <p className="text-body-md text-fg-muted mb-4">
+            </DialogTitle>
+            <DialogDescription>
               {pendingDecision === 'Accepted'
                 ? 'Your recommendation will be recorded and the IO notified to proceed with an offer.'
                 : 'Please provide a brief reason for not recommending this candidate.'}
-            </p>
-            {pendingDecision === 'Rejected' && (
-              <div className="mb-4">
-                <label className="block text-label-sm text-fg mb-1.5">
-                  Reason <span className="text-danger">*</span>
-                </label>
-                <textarea
-                  rows={3}
-                  value={rejectionRemark}
-                  onChange={e => setRejectionRemark(e.target.value)}
-                  placeholder="e.g. Technical knowledge below the level required for the project…"
-                  className="w-full rounded-xl border border-border bg-bg-subtle px-3 py-2.5 text-body-sm text-fg resize-none focus:outline-none focus:ring-2 focus:ring-danger/20 focus:border-danger/40"
-                />
-              </div>
-            )}
-            <div className="flex gap-2">
-              <Button
-                variant={pendingDecision === 'Accepted' ? 'primary' : 'danger'}
-                disabled={pendingDecision === 'Rejected' && !rejectionRemark.trim()}
-                onClick={handleDecisionConfirm}
-                className="flex-1 justify-center"
-              >
-                {pendingDecision === 'Accepted' ? <><Check size={14} />Recommend</> : <><X size={14} />Confirm</>}
-              </Button>
-              <Button variant="ghost" onClick={() => setPendingDecision(null)} className="flex-1 justify-center">
-                Back
-              </Button>
+            </DialogDescription>
+          </DialogHeader>
+          {pendingDecision === 'Rejected' && (
+            <div className="mb-2">
+              <label className="block text-label-sm text-fg mb-1.5">
+                Reason <span className="text-danger">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={rejectionRemark}
+                onChange={e => setRejectionRemark(e.target.value)}
+                placeholder="e.g. Technical knowledge below the level required for the project…"
+                className="w-full rounded-xl border border-border bg-bg-subtle px-3 py-2.5 text-body-sm text-fg resize-none focus:outline-none focus:ring-2 focus:ring-danger/20 focus:border-danger/40"
+              />
             </div>
-          </div>
-        </div>
-      )}
+          )}
+          <DialogFooter>
+            <Button
+              variant={pendingDecision === 'Accepted' ? 'primary' : 'danger'}
+              disabled={pendingDecision === 'Rejected' && !rejectionRemark.trim()}
+              onClick={handleDecisionConfirm}
+              className="flex-1 justify-center"
+            >
+              {pendingDecision === 'Accepted' ? <><Check size={14} />Recommend</> : <><X size={14} />Confirm</>}
+            </Button>
+            <Button variant="ghost" onClick={() => setPendingDecision(null)} className="flex-1 justify-center">
+              Back
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ── AI Chat FAB ─────────────────────────────────────────────────────── */}
       <div className="fixed bottom-20 right-6 z-30 flex flex-col items-end gap-3">

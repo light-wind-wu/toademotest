@@ -55,9 +55,6 @@ export const MENTOR_SESSION_ISAAC_WED = 'ut-mentor-session-isaac-wed';
 export const MENTOR_SESSION_ETHAN = 'ut-mentor-session-ethan';
 
 export const MENTOR_SESSION_IDS = [
-  MENTOR_SESSION_ISAAC_TUE,
-  MENTOR_SESSION_ISAAC_MON,
-  MENTOR_SESSION_ISAAC_WED,
   MENTOR_SESSION_ETHAN,
 ];
 
@@ -225,42 +222,6 @@ function baseApplicant(
 export function mentorSharedInterviewSessions(): SharedInterviewSession[] {
   return [
     {
-      id: MENTOR_SESSION_ISAAC_TUE,
-      projectId: MENTOR_PROJECT_CYPHER,
-      date: '2026-07-21',
-      time: '10:00',
-      duration: '1 hour',
-      location: 'Meeting room 4B',
-      capacity: 1,
-      invitedApplicantIds: ['ut-mentor-isaac'],
-      confirmedApplicantIds: [],
-      status: 'invited',
-    },
-    {
-      id: MENTOR_SESSION_ISAAC_MON,
-      projectId: MENTOR_PROJECT_CYPHER,
-      date: '2026-07-20',
-      time: '14:30',
-      duration: '1 hour',
-      location: 'Meeting room 4B',
-      capacity: 1,
-      invitedApplicantIds: ['ut-mentor-isaac'],
-      confirmedApplicantIds: [],
-      status: 'invited',
-    },
-    {
-      id: MENTOR_SESSION_ISAAC_WED,
-      projectId: MENTOR_PROJECT_CYPHER,
-      date: '2026-07-22',
-      time: '15:00',
-      duration: '1 hour',
-      location: 'Meeting room 4B',
-      capacity: 1,
-      invitedApplicantIds: ['ut-mentor-isaac'],
-      confirmedApplicantIds: [],
-      status: 'invited',
-    },
-    {
       id: MENTOR_SESSION_ETHAN,
       projectId: MENTOR_PROJECT_CYPHER,
       date: '2026-07-24',
@@ -298,8 +259,13 @@ export function mentorApplications(): Application[] {
       gpa: 3.6,
       status: 'Shortlisted for Interview',
       shortlistedFor: MENTOR_PROJECT_CYPHER,
-      interviewSetupMethod: 'shared',
-      sharedSessionId: MENTOR_SESSION_ISAAC_TUE,
+      interviewSetupMethod: 'scheduled',
+      interviewSlots: [
+        { date: '2026-07-20', time: '14:30', duration: '1 hour' },
+        { date: '2026-07-21', time: '10:00', duration: '1 hour' },
+        { date: '2026-07-22', time: '15:00', duration: '1 hour' },
+      ],
+      interviewSlotsSentAt: '2026-07-24',
       interviewDueDate: '2026-08-18',
       cvFileName: 'CV_Isaac_Ng.pdf',
       transcriptFileName: 'Transcript_Isaac_Ng.pdf',
@@ -325,8 +291,16 @@ export function mentorApplications(): Application[] {
       gpa: 3.5,
       status: 'Shortlisted for Interview',
       shortlistedFor: MENTOR_PROJECT_CYPHER,
+      interviewSetupMethod: 'scheduled',
+      interviewSlots: [
+        { date: '2026-07-20', time: '14:30', duration: '1 hour' },
+        { date: '2026-07-21', time: '10:00', duration: '1 hour' },
+        { date: '2026-07-22', time: '15:00', duration: '1 hour' },
+      ],
+      interviewSlotsSentAt: '2026-07-24',
       rescheduleNote:
-        'Original slot no longer works. Requested a weekday morning.',
+        'Original slot no longer works. Please arrange another time.',
+      rescheduleNoteDate: '2026-07-24',
       interviewDueDate: '2026-08-19',
       cvFileName: 'CV_Marcus_Chia.pdf',
       transcriptFileName: 'Transcript_Marcus_Chia.pdf',
@@ -338,9 +312,16 @@ export function mentorApplications(): Application[] {
       gpa: 3.9,
       status: 'Interview Completed',
       shortlistedFor: MENTOR_PROJECT_CYPHER,
+      interviewSetupMethod: 'scheduled',
+      interviewSlots: [
+        { date: '2026-07-21', time: '10:00', duration: '45 min' },
+      ],
+      confirmedSlot: 0,
       mentorNotes:
-        'Good communication, solid technical foundation, asked insightful questions.',
-      interviewDueDate: '2026-07-29',
+        'Strong technical depth and clear communication during scenario discussion.',
+      mentorTranscript:
+        'Mock transcript for UT-04: candidate walked through a threat-modelling exercise and demonstrated clear risk prioritisation.',
+      projectFitSummary: 'Interview completed. Evidence supports a strong project match.',
       cvFileName: 'CV_Chloe_Tan.pdf',
       transcriptFileName: 'Transcript_Chloe_Tan.pdf',
     }),
@@ -398,8 +379,8 @@ function upsertById<T extends { id: string }>(records: T[], updates: T[]): T[] {
 /**
  * Idempotently seed mentor fixtures into localStorage.
  *
- * Safe to call on every Mentor page mount: it only adds records whose IDs are
- * not already present, leaving existing user-created data untouched.
+ * Safe to call on every Mentor page mount: fixture records are upserted by ID,
+ * while user-created records (those without a matching fixture ID) are left untouched.
  */
 export function seedMentorFixtures(): void {
   if (typeof window === 'undefined') return;
@@ -415,18 +396,8 @@ export function seedMentorFixtures(): void {
   }
 
   const apps = loadApplications();
-  const fixtureAppIds = new Set(mentorApplications().map(a => a.id));
-  const hasAppFixtures = apps.some(a => fixtureAppIds.has(a.id));
-
-  if (!hasAppFixtures) {
-    saveApplications(upsertById(apps, mentorApplications()));
-  }
+  saveApplications(upsertById(apps, mentorApplications()));
 
   const sessions = loadSharedInterviewSessions();
-  const fixtureSessionIds = new Set(mentorSharedInterviewSessions().map(s => s.id));
-  const hasSessionFixtures = sessions.some(s => fixtureSessionIds.has(s.id));
-
-  if (!hasSessionFixtures) {
-    saveSharedInterviewSessions(upsertById(sessions, mentorSharedInterviewSessions()));
-  }
+  saveSharedInterviewSessions(upsertById(sessions, mentorSharedInterviewSessions()));
 }
