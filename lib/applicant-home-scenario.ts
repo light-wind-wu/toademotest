@@ -6,21 +6,22 @@ export const APPLICANT_HOME_SCENARIO_CHANGED = 'dsta-applicant-home-scenario';
 export const APPLICANT_HOME_SCENARIOS: ReadonlyArray<{
   value: ApplicantHomeScenario;
   label: string;
+  group: 'Overview' | 'Application' | 'Interview' | 'Offer and onboarding' | 'Internship and completion';
 }> = [
-  { value: 'multiple-applications', label: 'Multiple active applications' },
-  { value: 'no-application', label: 'No application yet' },
-  { value: 'draft-application', label: 'Draft application' },
-  { value: 'submitted', label: 'Application submitted' },
-  { value: 'under-review', label: 'Application under review' },
-  { value: 'interview-action', label: 'Interview invitation' },
-  { value: 'interview-pending-confirmation', label: 'Interview pending confirmation' },
-  { value: 'interview-scheduled', label: 'Interview confirmed' },
-  { value: 'interview-rescheduling', label: 'Interview rescheduling' },
-  { value: 'offer-action', label: 'Offer received' },
-  { value: 'onboarding-action', label: 'Onboarding' },
-  { value: 'active-internship', label: 'Internship in progress' },
-  { value: 'completion-action', label: 'Offboarding required' },
-  { value: 'journey-completed', label: 'Internship completed' },
+  { value: 'multiple-applications', label: 'Multiple active applications', group: 'Overview' },
+  { value: 'no-application', label: 'No application yet', group: 'Overview' },
+  { value: 'draft-application', label: 'Draft application', group: 'Application' },
+  { value: 'submitted', label: 'Application submitted', group: 'Application' },
+  { value: 'under-review', label: 'Application under review', group: 'Application' },
+  { value: 'interview-action', label: 'Interview action required', group: 'Interview' },
+  { value: 'interview-pending-confirmation', label: 'Interview pending confirmation', group: 'Interview' },
+  { value: 'interview-scheduled', label: 'Interview confirmed', group: 'Interview' },
+  { value: 'interview-rescheduling', label: 'Interview rescheduling required', group: 'Interview' },
+  { value: 'offer-action', label: 'Offer action required', group: 'Offer and onboarding' },
+  { value: 'onboarding-action', label: 'Onboarding action required', group: 'Offer and onboarding' },
+  { value: 'active-internship', label: 'Active internship', group: 'Internship and completion' },
+  { value: 'completion-action', label: 'Completion action required', group: 'Internship and completion' },
+  { value: 'journey-completed', label: 'Journey completed', group: 'Internship and completion' },
 ];
 
 const VALID_SCENARIOS = new Set<ApplicantHomeScenario>(

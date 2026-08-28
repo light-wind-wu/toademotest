@@ -270,47 +270,55 @@ export default function Topbar({
                   <div className="px-3 py-2">
                     <p className="mb-1.5 flex items-center gap-2 text-[12px] font-semibold text-fg-muted">
                       <PanelsTopLeft size={14} className="shrink-0" />
-                      Applicant Home scenario
+                      Applicant stage
                     </p>
                     <div
                       role="listbox"
-                      aria-label="Applicant Home scenario"
-                      className="max-h-52 overflow-y-auto rounded-lg border border-border bg-surface p-1"
+                      aria-label="Applicant stage"
+                      className="max-h-[min(48vh,420px)] overflow-y-auto rounded-lg border border-border bg-surface p-1"
                     >
-                      {APPLICANT_HOME_SCENARIOS.map((scenario) => {
+                      {APPLICANT_HOME_SCENARIOS.map((scenario, index) => {
                         const selected = homeScenario === scenario.value;
+                        const showGroup = index === 0 || APPLICANT_HOME_SCENARIOS[index - 1]?.group !== scenario.group;
                         return (
-                          <button
-                            key={scenario.value}
-                            type="button"
-                            role="option"
-                            aria-selected={selected}
-                            onClick={() => {
-                              saveApplyDashboardVersion('v1');
-                              if (scenario.value === 'under-review') restartApplicantReviewTimer();
-                              if (scenario.value === 'interview-pending-confirmation') restartApplicantOfferTimer();
-                              saveApplicantHomeScenario(scenario.value);
-                              setHomeScenario(scenario.value);
-                              setOpen(false);
-                              if (pathname !== '/apply/dashboard' && pathname !== '/apply' && pathname !== '/apply/internship') {
-                                router.push('/apply/dashboard');
-                              }
-                            }}
-                            className={cn(
-                              'flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-xs transition-colors',
-                              selected
-                                ? 'bg-accent/10 font-semibold text-accent'
-                                : 'text-fg hover:bg-bg-subtle',
-                            )}
-                          >
-                            <span>{scenario.label}</span>
-                            {selected ? <Check size={14} className="shrink-0" aria-hidden /> : null}
-                          </button>
+                          <div key={scenario.value}>
+                            {showGroup ? (
+                              <p role="presentation" className="px-2.5 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-fg-subtle first:pt-1">
+                                {scenario.group}
+                              </p>
+                            ) : null}
+                            <button
+                              type="button"
+                              role="option"
+                              aria-selected={selected}
+                              aria-label={`${scenario.group}: ${scenario.label}`}
+                              onClick={() => {
+                                saveApplyDashboardVersion('v1');
+                                if (scenario.value === 'under-review') restartApplicantReviewTimer();
+                                if (scenario.value === 'interview-pending-confirmation') restartApplicantOfferTimer();
+                                saveApplicantHomeScenario(scenario.value);
+                                setHomeScenario(scenario.value);
+                                setOpen(false);
+                                if (pathname !== '/apply/dashboard' && pathname !== '/apply' && pathname !== '/apply/internship') {
+                                  router.push('/apply/dashboard');
+                                }
+                              }}
+                              className={cn(
+                                'flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-xs transition-colors',
+                                selected
+                                  ? 'bg-accent/10 font-semibold text-accent'
+                                  : 'text-fg hover:bg-bg-subtle',
+                              )}
+                            >
+                              <span>{scenario.label}</span>
+                              {selected ? <Check size={14} className="shrink-0" aria-hidden /> : null}
+                            </button>
+                          </div>
                         );
                       })}
                     </div>
                     <p className="mt-1.5 text-[11px] leading-4 text-fg-subtle">
-                      Switch between the APP-01 required state variants.
+                      Switch between applicant overview and lifecycle stages.
                     </p>
                     <button
                       type="button"
