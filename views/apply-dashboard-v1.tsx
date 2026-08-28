@@ -15,6 +15,8 @@ import { loadApplyDraft } from '@/lib/apply-application';
 import { cn } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import InterviewTimeslotSheet from '@/components/apply/interview-timeslot-sheet';
+import LifecycleDashboardStage from '@/components/apply/applicant-dashboard/lifecycle-dashboard-stage';
+import MultipleApplicationsDashboard from '@/components/apply/applicant-dashboard/multiple-applications-dashboard';
 import OutOfScopeTooltip from '@/components/apply/out-of-scope-tooltip';
 import DstaPublicFooter from '@/components/apply/dsta-public-footer';
 import HeroRadarOverlay from '@/components/apply/hero-radar-overlay';
@@ -33,6 +35,12 @@ import {
   isApplicantHomeScenario,
   loadApplicantHomeScenario,
 } from '@/lib/applicant-home-scenario';
+import {
+  APPLICANT_DASHBOARD_STATES,
+  APPLICANT_DASHBOARD_STATE_TO_SCENARIO,
+  APPLICANT_HOME_SCENARIO_TO_STATE,
+  isApplicantDashboardState,
+} from '@/lib/applicant-dashboard-states';
 import type {
   ApplicantHomeScenario,
   ApplicantHomeScenarioContent,
@@ -66,7 +74,16 @@ export default function ApplyDashboardV1({
     const d = loadApplyDraft();
     setQuizTaken(d.quizTaken);
     setAnswers(d.quizAnswers);
-    setScenario(loadApplicantHomeScenario());
+    const searchParams = new URLSearchParams(window.location.search);
+    const stateParam = searchParams.get('state');
+    const scenarioParam = searchParams.get('scenario');
+    if (isApplicantDashboardState(stateParam)) {
+      setScenario(APPLICANT_DASHBOARD_STATE_TO_SCENARIO[stateParam]);
+    } else if (isApplicantHomeScenario(scenarioParam)) {
+      setScenario(scenarioParam);
+    } else {
+      setScenario(loadApplicantHomeScenario());
+    }
     function onScenarioChange(event: Event) {
       const detail = (event as CustomEvent<ApplicantHomeScenario>).detail;
       if (isApplicantHomeScenario(detail)) setScenario(detail);
@@ -79,7 +96,21 @@ export default function ApplyDashboardV1({
     () => (quizTaken ? resolveArchetype(answers) : resolveArchetype([])),
     [quizTaken, answers],
   );
-  const content = HOME_SCENARIO_CONTENT[scenario];
+  const isMultipleApplications = scenario === 'multiple-applications';
+  const contentScenario = isMultipleApplications
+    ? 'interview-action'
+    : scenario === 'interview-pending-confirmation'
+      ? 'interview-scheduled'
+      : scenario;
+  const content = HOME_SCENARIO_CONTENT[contentScenario];
+  const dashboardState = APPLICANT_HOME_SCENARIO_TO_STATE[scenario];
+  const lifecycleConfig = dashboardState === 'no_active_application' || dashboardState === 'multiple_active_applications'
+    ? null
+    : APPLICANT_DASHBOARD_STATES[dashboardState];
+  const heroCopy = isMultipleApplications
+    ? 'You have 2 active applications. One action needs your attention.'
+    : lifecycleConfig?.heroCopy ?? content.heroMessage;
+  const heroBadge = isMultipleApplications ? '2 active applications' : lifecycleConfig?.badge ?? content.heroBadge;
   const assets = APPLICANT_HOME_DASHBOARD_ASSETS;
   const displayProgrammeTitle = 'University Internship 2027';
   const steps = useMemo(
@@ -130,6 +161,15 @@ export default function ApplyDashboardV1({
     router.push(content.primaryRoute);
   }
 
+  function handleLifecyclePrimaryAction() {
+    if (!lifecycleConfig?.primaryAction) return;
+    if (dashboardState === 'interview_invitation') {
+      setTimeslotOpen(true);
+      return;
+    }
+    if (lifecycleConfig.primaryAction.route) router.push(lifecycleConfig.primaryAction.route);
+  }
+
   return (
     <Shell activeRoute="/apply/dashboard" flushTop flushBottom>
       {/* Cancel shell gutter; Part1 bg full-bleed */}
@@ -137,8 +177,10 @@ export default function ApplyDashboardV1({
           {/* ── Part 1: Hero — mobile aspect from bg (780×1108); PC 345 */}
           <header
             className={cn(
-              'relative z-0 w-full overflow-hidden max-lg:aspect-[780/1108] lg:overflow-visible',
-              scenario === 'no-application' ? 'lg:h-[300px]' : 'lg:h-[345px]',
+              'relative z-0 w-full overflow-hidden lg:overflow-visible',
+              scenario === 'no-application'
+                ? 'max-lg:aspect-[780/1108] lg:h-[300px]'
+                : 'h-[300px] lg:h-[345px]',
             )}
             style={{ background: 'rgba(254, 253, 251, 1)' }}
           >
@@ -163,16 +205,16 @@ export default function ApplyDashboardV1({
                   className="text-[28px] font-semibold leading-8 tracking-[-0.48px] lg:text-[48px] lg:leading-[47px]"
                   style={{ color: 'rgba(15, 23, 43, 1)' }}
                 >
-                  {content.heroLines[0]}
-                  <br />
-                  {content.heroLines[1]}
+                  Welcome back, {firstName}
                 </h1>
                 <p
-                  className="mt-2 text-[14px] font-normal leading-[100%] lg:mt-4 lg:text-[16px]"
+                  className={cn(
+                    'mt-2 text-[14px] font-normal lg:mt-4 lg:text-[16px]',
+                    lifecycleConfig || isMultipleApplications ? 'max-w-[680px] leading-5 lg:leading-6' : 'leading-[100%]',
+                  )}
                   style={{ color: 'rgba(74, 85, 104, 1)' }}
                 >
-                  {scenario === 'no-application' ? 'Welcome' : 'Welcome back'}, {firstName}.{' '}
-                  {content.heroMessage}
+                  {heroCopy}
                 </p>
                 <span
                   className="mt-6 inline-flex h-[22px] items-center gap-1.5 rounded-full px-2.5 text-[12px] font-normal leading-4 lg:mt-4"
@@ -182,7 +224,7 @@ export default function ApplyDashboardV1({
                   }}
                 >
                   <span className="size-1.5 rounded-full bg-current" aria-hidden />
-                  {content.heroBadge}
+                  {heroBadge}
                 </span>
               </div>
             </div>
@@ -196,6 +238,24 @@ export default function ApplyDashboardV1({
             </div>
           ) : null}
 
+          {isMultipleApplications ? (
+            <MultipleApplicationsDashboard
+              archetypeImage={archetypeResultImage(archetype.id, 'pc')}
+              activityIllustration={assets.activityIllustration}
+              onSelectTimeslots={() => setTimeslotOpen(true)}
+            />
+          ) : lifecycleConfig ? (
+            <LifecycleDashboardStage
+              config={lifecycleConfig}
+              archetypeImage={archetypeResultImage(archetype.id, 'pc')}
+              statusIllustration={assets.statusRadar[visualVariant]}
+              activityIllustration={assets.activityIllustration}
+              journeyTopDecoration={assets.mapTopDesktop}
+              journeyTopMobileDecoration={assets.mapTopMobile}
+              onPrimaryAction={handleLifecyclePrimaryAction}
+            />
+          ) : (
+          <>
           {/* New applicants do not yet have an application status card. */}
           {scenario !== 'no-application' ? (
           <div className="relative z-20 mx-auto w-full max-w-[1440px] max-lg:mt-0 lg:-mt-[345px]">
@@ -335,7 +395,7 @@ export default function ApplyDashboardV1({
           <div
             className={cn(
               'relative mx-auto w-full max-w-[1440px] px-4 pb-8 lg:px-6',
-              scenario === 'no-application' ? 'pt-4 lg:pt-4' : 'pt-6 lg:pt-0',
+              scenario === 'no-application' ? 'pt-4 lg:-mt-4 lg:pt-0' : 'pt-6 lg:pt-0',
             )}
           >
             <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_314px] lg:items-start lg:gap-5">
@@ -650,6 +710,8 @@ export default function ApplyDashboardV1({
               )}
             </div>
           </div>
+          </>
+          )}
       </div>
 
       <DstaPublicFooter className="mx-[calc(-1*clamp(24px,2.6vw,40px))] mt-10" />
@@ -864,7 +926,7 @@ function NoApplicationAside() {
   return (
     <aside className="relative mx-auto min-h-[360px] w-full shrink-0 overflow-hidden rounded-2xl border border-border bg-white p-6 shadow-sm max-lg:max-w-none lg:mx-0 lg:min-h-[423px] lg:w-[314px] lg:max-w-[314px]">
       <p className="text-[12px] leading-5 text-fg-muted">Application guide</p>
-      <h3 className="mt-1 text-[24px] font-semibold leading-8 text-fg">Before you apply</h3>
+      <h3 className="mt-1 text-[18px] font-semibold leading-6 text-fg">Before you apply</h3>
       <p className="mt-3 text-[14px] leading-5 text-fg-muted">
         Have these ready when you start your application.
       </p>

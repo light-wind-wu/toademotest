@@ -37,11 +37,13 @@ export function scenarioIdForApplicantHomeScenario(
   scenario: ApplicantHomeScenario,
 ): ApplicantScenarioId | null {
   const mapping: Record<ApplicantHomeScenario, ApplicantScenarioId | null> = {
+    'multiple-applications': null,
     'no-application': null,
     'draft-application': 'S01',
     'submitted': 'SUBMITTED',
     'under-review': 'S02',
     'interview-action': 'S03',
+    'interview-pending-confirmation': 'S05',
     'interview-rescheduling': 'S04',
     'interview-scheduled': 'S05',
     'interview-completed': 'S06',

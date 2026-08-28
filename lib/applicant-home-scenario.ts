@@ -7,19 +7,20 @@ export const APPLICANT_HOME_SCENARIOS: ReadonlyArray<{
   value: ApplicantHomeScenario;
   label: string;
 }> = [
+  { value: 'multiple-applications', label: 'Multiple active applications' },
   { value: 'no-application', label: 'No application yet' },
   { value: 'draft-application', label: 'Draft application' },
   { value: 'submitted', label: 'Application submitted' },
   { value: 'under-review', label: 'Application under review' },
-  { value: 'interview-action', label: 'Interview action required' },
-  { value: 'interview-scheduled', label: 'Interview slot selected' },
-  { value: 'interview-rescheduling', label: 'Alternative interview time suggested' },
-  { value: 'interview-completed', label: 'Interview completed — outcome pending' },
-  { value: 'offer-action', label: 'Offer action required' },
-  { value: 'onboarding-action', label: 'Onboarding action required' },
-  { value: 'active-internship', label: 'Active internship' },
-  { value: 'completion-action', label: 'Completion action required' },
-  { value: 'journey-completed', label: 'Journey completed' },
+  { value: 'interview-action', label: 'Interview invitation' },
+  { value: 'interview-pending-confirmation', label: 'Interview pending confirmation' },
+  { value: 'interview-scheduled', label: 'Interview confirmed' },
+  { value: 'interview-rescheduling', label: 'Interview rescheduling' },
+  { value: 'offer-action', label: 'Offer received' },
+  { value: 'onboarding-action', label: 'Onboarding' },
+  { value: 'active-internship', label: 'Internship in progress' },
+  { value: 'completion-action', label: 'Offboarding required' },
+  { value: 'journey-completed', label: 'Internship completed' },
 ];
 
 const VALID_SCENARIOS = new Set<ApplicantHomeScenario>(
@@ -34,6 +35,7 @@ export function loadApplicantHomeScenario(): ApplicantHomeScenario {
   if (typeof window === 'undefined') return 'interview-action';
   try {
     const value = localStorage.getItem(APPLICANT_HOME_SCENARIO_KEY);
+    if (value === 'interview-completed') return 'interview-pending-confirmation';
     return isApplicantHomeScenario(value) ? value : 'interview-action';
   } catch {
     return 'interview-action';
