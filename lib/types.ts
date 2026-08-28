@@ -1107,6 +1107,17 @@ export interface ApplicantHomeScenarioContent {
   activity: readonly ApplicantHomeActivityContent[];
 }
 
+export interface ApplicantHomeProgrammeContent {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  statusTone: 'success' | 'warning' | 'danger';
+  dateLabel: string;
+  route: string;
+  iconImage: string;
+}
+
 export interface ApplicantHomeDashboardAssets {
   heroDesktop: { v1: string; v2: string };
   heroMobile: { v1: string; v2: string };
@@ -1121,5 +1132,6 @@ export interface ApplicantHomeDashboardAssets {
 
 export interface ApplicantHomeDashboardData {
   assets: ApplicantHomeDashboardAssets;
+  programmes: readonly ApplicantHomeProgrammeContent[];
   scenarios: Record<ApplicantHomeScenario, ApplicantHomeScenarioContent>;
 }
