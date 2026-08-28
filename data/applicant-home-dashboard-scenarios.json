@@ -10,6 +10,38 @@
     "mapTopMobile": "/images/map-right-top-v1-m.png",
     "mapBottomDesktop": "/images/map-left-down-v1.png"
   },
+  "programmes": [
+    {
+      "id": "undergraduate-internship-2027",
+      "title": "Undergraduate Internship 2027",
+      "description": "For university undergraduates interested in defence science and technology.",
+      "status": "Open for application",
+      "statusTone": "success",
+      "dateLabel": "Closes 30 Sep 2026",
+      "route": "/join-us/student/internships?programme=undergraduate",
+      "iconImage": "/images/programme-undergraduate-icon.svg"
+    },
+    {
+      "id": "young-defence-scientists-programme",
+      "title": "Young Defence Scientists Programme",
+      "description": "For outstanding students who are passionate about research and innovation.",
+      "status": "Opening soon",
+      "statusTone": "warning",
+      "dateLabel": "Opens 15 Oct 2026",
+      "route": "/join-us/student/internships?programme=young-defence-scientists",
+      "iconImage": "/images/programme-scientists-icon.svg"
+    },
+    {
+      "id": "cyber-digital-security-internship",
+      "title": "Cyber & Digital Security Internship",
+      "description": "Gain real-world experience in cyber security and digital defence.",
+      "status": "Closing soon",
+      "statusTone": "danger",
+      "dateLabel": "Closes in 3 days - 30 Sep 2026",
+      "route": "/join-us/student/internships?programme=cyber-digital-security",
+      "iconImage": "/images/programme-cyber-icon.svg"
+    }
+  ],
   "scenarios": {
     "no-application": {
       "scenarioId": null,
@@ -23,9 +55,9 @@
       "statusLabel": "Not started",
       "summary": "University Internship 2027 is open for applications across cyber, digital and engineering teams.",
       "dueText": "Start any time before 30 Sep 2026.",
-      "primaryLabel": "Explore programmes",
+      "primaryLabel": "Explore Programmes",
       "primaryRoute": "/join-us/student/internships",
-      "secondaryLabel": "View programme",
+      "secondaryLabel": "View Programme",
       "progressIndex": -1,
       "progressHint": "Start an application",
       "detailLabel": "Getting started",
@@ -38,7 +70,7 @@
       "tasksDeadline": "Applications close 30 Sep 2026",
       "tasks": [
         { "title": "Explore programmes", "body": "Compare internship pathways and eligibility.", "cta": "Explore", "route": "/join-us/student/internships", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
-        { "title": "Discover your archetype", "body": "Find projects that match your interests.", "cta": "Take quiz", "route": "/apply/project-fit", "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
+        { "title": "Discover your Defender Archetype", "body": "Take a short quiz to discover areas and projects that may match your interests.", "cta": "Take Quiz", "route": "/apply/project-fit", "imageDesktop": "/images/archetype-quiz-illustration.svg", "imageMobile": "/images/archetype-quiz-illustration.svg" }
       ],
       "activity": []
     },
@@ -54,9 +86,9 @@
       "statusLabel": "Draft",
       "summary": "Your profile and education details are saved for University Internship 2027.",
       "dueText": "Submit by 30 Sep 2026.",
-      "primaryLabel": "Resume application",
+      "primaryLabel": "Resume Application",
       "primaryRoute": "/apply/review",
-      "secondaryLabel": "View draft",
+      "secondaryLabel": "View Draft",
       "progressIndex": -1,
       "progressHint": "Draft application",
       "detailLabel": "Draft application",
@@ -88,9 +120,9 @@
       "statusLabel": "Submitted",
       "summary": "Your University Internship 2027 application has been received successfully.",
       "dueText": "We will notify you when there is an update.",
-      "primaryLabel": "View application",
+      "primaryLabel": "View Application",
       "primaryRoute": "/apply/applications",
-      "secondaryLabel": "View details",
+      "secondaryLabel": "View Details",
       "progressIndex": 0,
       "progressHint": "Application submitted",
       "detailLabel": "Application received",
@@ -102,8 +134,8 @@
       "tasksTitle": "No action is required",
       "tasksDeadline": "We will notify you of any updates",
       "tasks": [
-        { "title": "Monitor your application", "body": "Check the Applicant Portal for status updates.", "cta": "View application", "route": "/apply/applications", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
-        { "title": "Keep your profile current", "body": "Make sure your contact details remain up to date.", "cta": "View profile", "route": null, "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
+        { "title": "Monitor your application", "body": "Check the Applicant Portal for status updates.", "cta": "View Application", "route": "/apply/applications", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
+        { "title": "Keep your profile current", "body": "Make sure your contact details remain up to date.", "cta": "View Profile", "route": null, "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
       ],
       "activity": [{ "title": "Application submitted", "body": "Your University Internship 2027 application was received successfully.", "date": "Today", "tone": "accent" }]
     },
@@ -119,9 +151,9 @@
       "statusLabel": "Under review",
       "summary": "Your University Internship 2027 application is being reviewed for suitable project matches.",
       "dueText": "No action is required right now.",
-      "primaryLabel": "View application",
+      "primaryLabel": "View Application",
       "primaryRoute": "/apply/applications",
-      "secondaryLabel": "View details",
+      "secondaryLabel": "View Details",
       "progressIndex": 1,
       "progressHint": "Application review",
       "detailLabel": "Application review",
@@ -133,8 +165,8 @@
       "tasksTitle": "No tasks need your attention",
       "tasksDeadline": "We will notify you of any updates",
       "tasks": [
-        { "title": "Keep your profile current", "body": "Check that your contact details are up to date.", "cta": "View profile", "route": null, "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
-        { "title": "Explore DSTA events", "body": "Discover upcoming talks and experiences.", "cta": "View events", "route": null, "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
+        { "title": "Keep your profile current", "body": "Check that your contact details are up to date.", "cta": "View Profile", "route": null, "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
+        { "title": "Explore DSTA events", "body": "Discover upcoming talks and experiences.", "cta": "View Events", "route": null, "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
       ],
       "activity": [
         { "title": "Application under review", "body": "Your application has moved to the review stage.", "date": "25 Jul 2026", "tone": "accent" },
@@ -153,9 +185,9 @@
       "statusLabel": "Interview invited",
       "summary": "You have been shortlisted for an interview for Designing Mission-Critical Digital Services under University Internship 2027.",
       "dueText": "Choose a timeslot by 28 Aug 2026.",
-      "primaryLabel": "Choose a timeslot",
+      "primaryLabel": "Choose A Timeslot",
       "primaryRoute": "/apply/interviews",
-      "secondaryLabel": "View application",
+      "secondaryLabel": "View Application",
       "progressIndex": 2,
       "progressHint": "Choose a timeslot",
       "detailLabel": "Interview invitation",
@@ -167,8 +199,8 @@
       "tasksTitle": "Your mentor interview needs a response",
       "tasksDeadline": "Respond by 28 Aug 2026",
       "tasks": [
-        { "title": "Choose a timeslot", "body": "Select an available time to meet Marcus Tan.", "cta": "Choose timeslot", "route": "/apply/interviews", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
-        { "title": "Review your application", "body": "Check the application linked to this interview.", "cta": "View application", "route": "/apply/applications/app-ui-2027", "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
+        { "title": "Choose a timeslot", "body": "Select an available time to meet Marcus Tan.", "cta": "Choose Timeslot", "route": "/apply/interviews", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
+        { "title": "Review your application", "body": "Check the application linked to this interview.", "cta": "View Application", "route": "/apply/applications/app-ui-2027", "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
       ],
       "activity": [
         { "title": "Interview invitation received", "body": "Marcus Tan invited you to interview for Designing Mission-Critical Digital Services.", "date": "25 Aug 2026", "tone": "accent" },
@@ -187,9 +219,9 @@
       "statusLabel": "Timeslot selected",
       "summary": "Your interview for Designing Mission-Critical Digital Services is scheduled with Marcus Tan.",
       "dueText": "28 Aug 2026 · 10:00 AM–11:00 AM · Singapore Time (SGT)",
-      "primaryLabel": "View or manage interview",
+      "primaryLabel": "View Or Manage Interview",
       "primaryRoute": "/apply/applications/app-ui-2027",
-      "secondaryLabel": "View application",
+      "secondaryLabel": "View Application",
       "progressIndex": 2,
       "progressHint": "Timeslot selected",
       "detailLabel": "Interview scheduled",
@@ -201,8 +233,8 @@
       "tasksTitle": "Everything you need for the conversation",
       "tasksDeadline": "28 Aug 2026 · 10:00 AM SGT",
       "tasks": [
-        { "title": "View interview details", "body": "Review the mentor, format and Teams joining link.", "cta": "View details", "route": "/apply/applications/app-ui-2027", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
-        { "title": "Suggest another time", "body": "Request a different time if your availability changes.", "cta": "Suggest time", "route": "/apply/interview-proposed", "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
+        { "title": "View interview details", "body": "Review the mentor, format and Teams joining link.", "cta": "View Details", "route": "/apply/applications/app-ui-2027", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
+        { "title": "Suggest another time", "body": "Request a different time if your availability changes.", "cta": "Suggest Time", "route": "/apply/interview-proposed", "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
       ],
       "activity": []
     },
@@ -218,9 +250,9 @@
       "statusLabel": "Reschedule requested",
       "summary": "Your request to reschedule the Designing Mission-Critical Digital Services interview is awaiting confirmation from Marcus Tan.",
       "dueText": "Suggested: 29 Aug 2026 · 2:00 PM–3:00 PM SGT",
-      "primaryLabel": "View request",
+      "primaryLabel": "View Request",
       "primaryRoute": "/apply/applications/app-ui-2027",
-      "secondaryLabel": "View application",
+      "secondaryLabel": "View Application",
       "progressIndex": 2,
       "progressHint": "Alternative time suggested",
       "detailLabel": "Reschedule request",
@@ -232,8 +264,8 @@
       "tasksTitle": "No further action is required",
       "tasksDeadline": "We will notify you after review",
       "tasks": [
-        { "title": "View request", "body": "Review the alternative time you suggested.", "cta": "View request", "route": "/apply/applications/app-ui-2027", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
-        { "title": "Prepare for your interview", "body": "Review the project and prepare your questions.", "cta": "View project", "route": null, "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
+        { "title": "View request", "body": "Review the alternative time you suggested.", "cta": "View Request", "route": "/apply/applications/app-ui-2027", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
+        { "title": "Prepare for your interview", "body": "Review the project and prepare your questions.", "cta": "View Project", "route": null, "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
       ],
       "activity": []
     },
@@ -249,9 +281,9 @@
       "statusLabel": "Interview completed",
       "summary": "Your interview for Designing Mission-Critical Digital Services is complete and the outcome is pending.",
       "dueText": "No action is required right now.",
-      "primaryLabel": "View interview",
+      "primaryLabel": "View Interview",
       "primaryRoute": "/apply/applications/app-ui-2027",
-      "secondaryLabel": "View application",
+      "secondaryLabel": "View Application",
       "progressIndex": 2,
       "progressHint": "Interview completed",
       "detailLabel": "Interview completed",
@@ -263,7 +295,7 @@
       "tasksTitle": "The outcome is being prepared",
       "tasksDeadline": "We will notify you of any updates",
       "tasks": [
-        { "title": "Review interview details", "body": "Keep a record of your completed interview.", "cta": "View details", "route": "/apply/applications/app-ui-2027", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
+        { "title": "Review interview details", "body": "Keep a record of your completed interview.", "cta": "View Details", "route": "/apply/applications/app-ui-2027", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
         { "title": "Explore DSTA", "body": "Learn more about teams and technology at DSTA.", "cta": "Explore", "route": null, "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
       ],
       "activity": [{ "title": "Interview completed", "body": "Your interview for Designing Mission-Critical Digital Services was completed.", "date": "28 Aug 2026", "tone": "accent" }]
@@ -280,9 +312,9 @@
       "statusLabel": "Offer received",
       "summary": "You have received an offer for Designing Mission-Critical Digital Services under University Internship 2027.",
       "dueText": "Respond by 4 Sep 2026.",
-      "primaryLabel": "Review offer",
+      "primaryLabel": "Review Offer",
       "primaryRoute": "/apply/applicant-offer-detail?applicationId=app-ui-2027",
-      "secondaryLabel": "View application",
+      "secondaryLabel": "View Application",
       "progressIndex": 3,
       "progressHint": "Offer received",
       "detailLabel": "Internship offer",
@@ -294,7 +326,7 @@
       "tasksTitle": "Your offer needs a response",
       "tasksDeadline": "Respond by 4 Sep 2026",
       "tasks": [
-        { "title": "Review offer details", "body": "Check the project, dates and offer conditions.", "cta": "Review offer", "route": "/apply/applicant-offer-detail?applicationId=app-ui-2027", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
+        { "title": "Review offer details", "body": "Check the project, dates and offer conditions.", "cta": "Review Offer", "route": "/apply/applicant-offer-detail?applicationId=app-ui-2027", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
         { "title": "Respond to your offer", "body": "Accept or decline before the deadline.", "cta": "Respond", "route": "/apply/applicant-offer-detail?applicationId=app-ui-2027", "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
       ],
       "activity": [{ "title": "Offer received", "body": "Your internship offer is ready for review.", "date": "31 Aug 2026", "tone": "accent" }]
@@ -311,9 +343,9 @@
       "statusLabel": "Onboarding",
       "summary": "Your place on Designing Mission-Critical Digital Services is confirmed. Three onboarding tasks remain.",
       "dueText": "Complete by 9 Sep 2026.",
-      "primaryLabel": "Continue onboarding",
+      "primaryLabel": "Continue Onboarding",
       "primaryRoute": "/apply/applicant-onboarding-requirement",
-      "secondaryLabel": "View offer",
+      "secondaryLabel": "View Offer",
       "progressIndex": 4,
       "progressHint": "Onboarding",
       "detailLabel": "Onboarding progress",
@@ -342,9 +374,9 @@
       "statusLabel": "Active internship",
       "summary": "You are completing Designing Mission-Critical Digital Services with Digital Hub.",
       "dueText": "Next mentor check-in: 16 Oct 2026.",
-      "primaryLabel": "View internship",
+      "primaryLabel": "View Internship",
       "primaryRoute": "/apply/internship",
-      "secondaryLabel": "View project",
+      "secondaryLabel": "View Project",
       "progressIndex": 4,
       "progressHint": "Active internship",
       "detailLabel": "Current internship",
@@ -356,8 +388,8 @@
       "tasksTitle": "Stay prepared for your next milestone",
       "tasksDeadline": "Next check-in 16 Oct 2026",
       "tasks": [
-        { "title": "Prepare for mentor check-in", "body": "Review your progress and discussion points.", "cta": "View details", "route": "/apply/internship", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
-        { "title": "Review your internship plan", "body": "Check milestones and expected outcomes.", "cta": "View plan", "route": "/apply/internship", "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
+        { "title": "Prepare for mentor check-in", "body": "Review your progress and discussion points.", "cta": "View Details", "route": "/apply/internship", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
+        { "title": "Review your internship plan", "body": "Check milestones and expected outcomes.", "cta": "View Plan", "route": "/apply/internship", "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
       ],
       "activity": [{ "title": "Internship started", "body": "Welcome to Designing Mission-Critical Digital Services.", "date": "14 Sep 2026", "tone": "accent" }]
     },
@@ -373,9 +405,9 @@
       "statusLabel": "Completion action",
       "summary": "You completed Designing Mission-Critical Digital Services under University Internship 2027.",
       "dueText": "Submit feedback by 18 Dec 2026.",
-      "primaryLabel": "Complete feedback",
+      "primaryLabel": "Complete Feedback",
       "primaryRoute": "/apply/applicant-offboarding",
-      "secondaryLabel": "View internship",
+      "secondaryLabel": "View Internship",
       "progressIndex": 4,
       "progressHint": "Completion action",
       "detailLabel": "Internship completion",
@@ -387,8 +419,8 @@
       "tasksTitle": "1 task needs your attention",
       "tasksDeadline": "Submit by 18 Dec 2026",
       "tasks": [
-        { "title": "Share internship feedback", "body": "Tell us about your project and mentor experience.", "cta": "Start feedback", "route": "/apply/applicant-offboarding", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
-        { "title": "Review completed internship", "body": "View your project record and completed milestones.", "cta": "View internship", "route": "/apply/internship", "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
+        { "title": "Share internship feedback", "body": "Tell us about your project and mentor experience.", "cta": "Start Feedback", "route": "/apply/applicant-offboarding", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
+        { "title": "Review completed internship", "body": "View your project record and completed milestones.", "cta": "View Internship", "route": "/apply/internship", "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
       ],
       "activity": [{ "title": "Internship completed", "body": "Your project period has ended successfully.", "date": "11 Dec 2026", "tone": "accent" }]
     },
@@ -404,9 +436,9 @@
       "statusLabel": "Journey completed",
       "summary": "Your Designing Mission-Critical Digital Services internship and all completion actions are finished.",
       "dueText": "No further action is required.",
-      "primaryLabel": "View certificate",
+      "primaryLabel": "View Certificate",
       "primaryRoute": "/apply/certification",
-      "secondaryLabel": "View internship",
+      "secondaryLabel": "View Internship",
       "progressIndex": 4,
       "progressHint": "Journey completed",
       "detailLabel": "Achievement unlocked",
@@ -418,8 +450,8 @@
       "tasksTitle": "Keep and share your internship record",
       "tasksDeadline": "Available any time",
       "tasks": [
-        { "title": "Download certificate", "body": "Save your official internship certificate.", "cta": "View certificate", "route": "/apply/certification", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
-        { "title": "View recommendation", "body": "Review the recommendation shared by your mentor.", "cta": "View letter", "route": "/apply/internship", "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
+        { "title": "Download certificate", "body": "Save your official internship certificate.", "cta": "View Certificate", "route": "/apply/certification", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
+        { "title": "View recommendation", "body": "Review the recommendation shared by your mentor.", "cta": "View Letter", "route": "/apply/internship", "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
       ],
       "activity": [
         { "title": "Certificate issued", "body": "Your internship certificate is ready.", "date": "18 Dec 2026", "tone": "accent" },

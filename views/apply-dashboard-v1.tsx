@@ -6,7 +6,7 @@
    Part3 inset 24px: 1fr | 20 | 314 (fills width, right aligned).
    Map 143 | 40 | 1fr · Activity 676 | 16 | 270 */
 import Image from 'next/image';
-import { Calendar } from 'lucide-react';
+import { ArrowRight, Calendar } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import { useRole } from '@/lib/role';
@@ -15,22 +15,36 @@ import { loadApplyDraft } from '@/lib/apply-application';
 import { cn } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import InterviewTimeslotSheet from '@/components/apply/interview-timeslot-sheet';
+import LifecycleDashboardStage from '@/components/apply/applicant-dashboard/lifecycle-dashboard-stage';
+import MultipleApplicationsDashboard from '@/components/apply/applicant-dashboard/multiple-applications-dashboard';
 import OutOfScopeTooltip from '@/components/apply/out-of-scope-tooltip';
+import DstaPublicFooter from '@/components/apply/dsta-public-footer';
 import HeroRadarOverlay from '@/components/apply/hero-radar-overlay';
 import { HeroV2Bg, HeroV2Fx } from '@/components/apply/hero-v2-art';
 import {
   APPLICANT_HOME_DASHBOARD_ASSETS,
   APPLICANT_HOME_DASHBOARD_CONTENT,
+  APPLICANT_HOME_DASHBOARD_PROGRAMMES,
 } from '@/lib/applicant-home-dashboard-content';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ApplyDashboardBase } from '@/lib/apply-dashboard-version';
 import {
   APPLICANT_HOME_SCENARIO_CHANGED,
   isApplicantHomeScenario,
   loadApplicantHomeScenario,
 } from '@/lib/applicant-home-scenario';
+import {
+  APPLICANT_DASHBOARD_STATES,
+  APPLICANT_DASHBOARD_STATE_TO_SCENARIO,
+  APPLICANT_HOME_SCENARIO_TO_STATE,
+  isApplicantDashboardState,
+} from '@/lib/applicant-dashboard-states';
 import type {
   ApplicantHomeScenario,
   ApplicantHomeScenarioContent,
+  ApplicantHomeProgrammeContent,
 } from '@/lib/types';
 
 const INTERVIEW_PROJECT_NAME = 'Designing Mission-Critical Digital Services';
@@ -60,7 +74,16 @@ export default function ApplyDashboardV1({
     const d = loadApplyDraft();
     setQuizTaken(d.quizTaken);
     setAnswers(d.quizAnswers);
-    setScenario(loadApplicantHomeScenario());
+    const searchParams = new URLSearchParams(window.location.search);
+    const stateParam = searchParams.get('state');
+    const scenarioParam = searchParams.get('scenario');
+    if (isApplicantDashboardState(stateParam)) {
+      setScenario(APPLICANT_DASHBOARD_STATE_TO_SCENARIO[stateParam]);
+    } else if (isApplicantHomeScenario(scenarioParam)) {
+      setScenario(scenarioParam);
+    } else {
+      setScenario(loadApplicantHomeScenario());
+    }
     function onScenarioChange(event: Event) {
       const detail = (event as CustomEvent<ApplicantHomeScenario>).detail;
       if (isApplicantHomeScenario(detail)) setScenario(detail);
@@ -73,7 +96,21 @@ export default function ApplyDashboardV1({
     () => (quizTaken ? resolveArchetype(answers) : resolveArchetype([])),
     [quizTaken, answers],
   );
-  const content = HOME_SCENARIO_CONTENT[scenario];
+  const isMultipleApplications = scenario === 'multiple-applications';
+  const contentScenario = isMultipleApplications
+    ? 'interview-action'
+    : scenario === 'interview-pending-confirmation'
+      ? 'interview-scheduled'
+      : scenario;
+  const content = HOME_SCENARIO_CONTENT[contentScenario];
+  const dashboardState = APPLICANT_HOME_SCENARIO_TO_STATE[scenario];
+  const lifecycleConfig = dashboardState === 'no_active_application' || dashboardState === 'multiple_active_applications'
+    ? null
+    : APPLICANT_DASHBOARD_STATES[dashboardState];
+  const heroCopy = isMultipleApplications
+    ? 'You have 2 active applications. One action needs your attention.'
+    : lifecycleConfig?.heroCopy ?? content.heroMessage;
+  const heroBadge = isMultipleApplications ? '2 active applications' : lifecycleConfig?.badge ?? content.heroBadge;
   const assets = APPLICANT_HOME_DASHBOARD_ASSETS;
   const displayProgrammeTitle = 'University Internship 2027';
   const steps = useMemo(
@@ -107,14 +144,14 @@ export default function ApplyDashboardV1({
       ? 'My internship'
       : scenario === 'draft-application'
         ? 'Application progress'
-        : 'Explore internships';
+        : 'Explore internship opportunities';
   const sectionTitle = showApplicationMap
     ? 'Where you are now'
     : showInternshipHome
       ? INTERVIEW_PROJECT_NAME
       : scenario === 'draft-application'
         ? 'Finish your application'
-        : 'Find your starting point';
+        : 'Find the right programme for you';
 
   function handlePrimaryAction() {
     if (scenario === 'interview-action') {
@@ -124,15 +161,26 @@ export default function ApplyDashboardV1({
     router.push(content.primaryRoute);
   }
 
+  function handleLifecyclePrimaryAction() {
+    if (!lifecycleConfig?.primaryAction) return;
+    if (dashboardState === 'interview_invitation') {
+      setTimeslotOpen(true);
+      return;
+    }
+    if (lifecycleConfig.primaryAction.route) router.push(lifecycleConfig.primaryAction.route);
+  }
+
   return (
-    <Shell activeRoute="/apply/dashboard" flushTop>
+    <Shell activeRoute="/apply/dashboard" flushTop flushBottom>
       {/* Cancel shell gutter; Part1 bg full-bleed */}
       <div className="relative mx-[calc(-1*clamp(24px,2.6vw,40px))]">
           {/* ── Part 1: Hero — mobile aspect from bg (780×1108); PC 345 */}
           <header
             className={cn(
-              'relative z-0 w-full overflow-hidden max-lg:aspect-[780/1108] lg:overflow-visible',
-              scenario === 'no-application' ? 'lg:h-[300px]' : 'lg:h-[345px]',
+              'relative z-0 w-full overflow-hidden lg:overflow-visible',
+              scenario === 'no-application'
+                ? 'max-lg:aspect-[780/1108] lg:h-[300px]'
+                : 'h-[300px] lg:h-[345px]',
             )}
             style={{ background: 'rgba(254, 253, 251, 1)' }}
           >
@@ -157,16 +205,16 @@ export default function ApplyDashboardV1({
                   className="text-[28px] font-semibold leading-8 tracking-[-0.48px] lg:text-[48px] lg:leading-[47px]"
                   style={{ color: 'rgba(15, 23, 43, 1)' }}
                 >
-                  {content.heroLines[0]}
-                  <br />
-                  {content.heroLines[1]}
+                  Welcome back, {firstName}
                 </h1>
                 <p
-                  className="mt-2 text-[14px] font-normal leading-[100%] lg:mt-4 lg:text-[16px]"
+                  className={cn(
+                    'mt-2 text-[14px] font-normal lg:mt-4 lg:text-[16px]',
+                    lifecycleConfig || isMultipleApplications ? 'max-w-[680px] leading-5 lg:leading-6' : 'leading-[100%]',
+                  )}
                   style={{ color: 'rgba(74, 85, 104, 1)' }}
                 >
-                  {scenario === 'no-application' ? 'Welcome' : 'Welcome back'}, {firstName}.{' '}
-                  {content.heroMessage}
+                  {heroCopy}
                 </p>
                 <span
                   className="mt-6 inline-flex h-[22px] items-center gap-1.5 rounded-full px-2.5 text-[12px] font-normal leading-4 lg:mt-4"
@@ -176,7 +224,7 @@ export default function ApplyDashboardV1({
                   }}
                 >
                   <span className="size-1.5 rounded-full bg-current" aria-hidden />
-                  {content.heroBadge}
+                  {heroBadge}
                 </span>
               </div>
             </div>
@@ -190,6 +238,24 @@ export default function ApplyDashboardV1({
             </div>
           ) : null}
 
+          {isMultipleApplications ? (
+            <MultipleApplicationsDashboard
+              archetypeImage={archetypeResultImage(archetype.id, 'pc')}
+              activityIllustration={assets.activityIllustration}
+              onSelectTimeslots={() => setTimeslotOpen(true)}
+            />
+          ) : lifecycleConfig ? (
+            <LifecycleDashboardStage
+              config={lifecycleConfig}
+              archetypeImage={archetypeResultImage(archetype.id, 'pc')}
+              statusIllustration={assets.statusRadar[visualVariant]}
+              activityIllustration={assets.activityIllustration}
+              journeyTopDecoration={assets.mapTopDesktop}
+              journeyTopMobileDecoration={assets.mapTopMobile}
+              onPrimaryAction={handleLifecyclePrimaryAction}
+            />
+          ) : (
+          <>
           {/* New applicants do not yet have an application status card. */}
           {scenario !== 'no-application' ? (
           <div className="relative z-20 mx-auto w-full max-w-[1440px] max-lg:mt-0 lg:-mt-[345px]">
@@ -329,7 +395,7 @@ export default function ApplyDashboardV1({
           <div
             className={cn(
               'relative mx-auto w-full max-w-[1440px] px-4 pb-8 lg:px-6',
-              scenario === 'no-application' ? 'pt-4 lg:pt-4' : 'pt-6 lg:pt-0',
+              scenario === 'no-application' ? 'pt-4 lg:-mt-4 lg:pt-0' : 'pt-6 lg:pt-0',
             )}
           >
             <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_314px] lg:items-start lg:gap-5">
@@ -446,8 +512,9 @@ export default function ApplyDashboardV1({
                   </div>
                 </section>
 
-                {/* Latest activity — intentionally hidden while an interview slot state is active. */}
-                {!hideLatestActivity ? (
+                {scenario === 'no-application' ? (
+                  <ArchetypeDiscoveryCard content={content} />
+                ) : !hideLatestActivity ? (
                 <section className="relative overflow-hidden rounded-2xl border border-border bg-white p-6">
                   <div className="relative z-[1] flex flex-col lg:flex-row lg:items-start lg:justify-between lg:gap-3">
                     <div>
@@ -470,7 +537,7 @@ export default function ApplyDashboardV1({
                           type="button"
                           className="mt-4 self-start cursor-pointer text-[14px] font-medium leading-5 text-[rgba(26,101,248,1)] lg:mt-0"
                         >
-                          Mark all read
+                          Mark All Read
                         </button>
                       </OutOfScopeTooltip>
                     ) : null}
@@ -643,7 +710,11 @@ export default function ApplyDashboardV1({
               )}
             </div>
           </div>
+          </>
+          )}
       </div>
+
+      <DstaPublicFooter className="mx-[calc(-1*clamp(24px,2.6vw,40px))] mt-10" />
 
       <InterviewTimeslotSheet
         open={timeslotOpen}
@@ -664,18 +735,12 @@ function PreApplicationSection({
   content: ApplicantHomeScenarioContent;
 }) {
   const isDraft = scenario === 'draft-application';
-  const stages = isDraft
-    ? [
-        { label: 'Profile', state: 'done' },
-        { label: 'Education', state: 'done' },
-        { label: 'Preferences', state: 'current' },
-        { label: 'Review', state: 'upcoming' },
-      ]
-    : [
-        { label: 'Explore', state: 'current' },
-        { label: 'Match', state: 'upcoming' },
-        { label: 'Apply', state: 'upcoming' },
-      ];
+  const stages = [
+    { label: 'Profile', state: 'done' },
+    { label: 'Education', state: 'done' },
+    { label: 'Preferences', state: 'current' },
+    { label: 'Review', state: 'upcoming' },
+  ];
 
   return (
     <div className="mt-8 space-y-4">
@@ -707,11 +772,102 @@ function PreApplicationSection({
       </div>
       ) : null}
 
-      <div className={cn('grid gap-4', isDraft && 'lg:grid-cols-2')}>
-        {isDraft ? <JourneyDetailCard content={content} mobile /> : null}
-        <TasksCard content={content} stacked={isDraft} />
-      </div>
+      {isDraft ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <JourneyDetailCard content={content} mobile />
+          <TasksCard content={content} stacked />
+        </div>
+      ) : (
+        <ProgrammeCards />
+      )}
     </div>
+  );
+}
+
+function ProgrammeCards() {
+  const router = useRouter();
+
+  return (
+    <section aria-label="Programme options">
+      <div className="grid gap-4 md:grid-cols-3">
+        {APPLICANT_HOME_DASHBOARD_PROGRAMMES.map((programme) => (
+          <ProgrammeCard
+            key={programme.id}
+            programme={programme}
+            onView={() => router.push(programme.route)}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProgrammeCard({
+  programme,
+  onView,
+}: {
+  programme: ApplicantHomeProgrammeContent;
+  onView: () => void;
+}) {
+  return (
+    <Card className="flex min-h-[280px] flex-col overflow-hidden shadow-none">
+      <CardHeader className="flex-row items-start justify-between gap-4 p-5 pb-3">
+        <Badge variant={programme.statusTone} className="shrink-0">
+          {programme.status}
+        </Badge>
+        <Image
+          src={programme.iconImage}
+          alt=""
+          width={44}
+          height={44}
+          className="size-11 shrink-0 rounded-lg object-cover"
+        />
+      </CardHeader>
+      <CardContent className="flex-1 px-5 pb-4 pt-0">
+        <CardTitle className="text-[16px] leading-6">{programme.title}</CardTitle>
+        <p className="mt-2 text-[13px] leading-5 text-fg-muted">{programme.description}</p>
+        <p className="mt-5 inline-flex items-center gap-2 text-[13px] font-medium leading-5 text-fg">
+          <Calendar className="size-4 shrink-0" strokeWidth={1.5} aria-hidden />
+          {programme.dateLabel}
+        </p>
+      </CardContent>
+      <CardFooter className="p-5 pt-0">
+        <Button onClick={onView} className="w-full justify-between">
+          View Programme
+          <ArrowRight className="size-4" strokeWidth={1.5} aria-hidden />
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
+
+function ArchetypeDiscoveryCard({ content }: { content: ApplicantHomeScenarioContent }) {
+  const router = useRouter();
+  const task = content.tasks[1];
+
+  return (
+    <Card className="overflow-hidden rounded-2xl shadow-none">
+      <div className="grid min-h-[220px] items-center gap-6 p-6 md:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="max-w-xl">
+          <p className="text-[14px] leading-5 text-fg-muted">Not sure which opportunity suits you?</p>
+          <h3 className="mt-1 text-[20px] font-semibold leading-7 text-fg">{task.title}</h3>
+          <p className="mt-2 text-[14px] leading-5 text-fg-muted">{task.body}</p>
+          <Button className="mt-5" onClick={() => task.route && router.push(task.route)}>
+            {task.cta}
+            <ArrowRight className="size-4" strokeWidth={1.5} aria-hidden />
+          </Button>
+        </div>
+        <div className="relative hidden aspect-[334/247] overflow-hidden md:block" aria-hidden>
+          <Image
+            src={task.imageDesktop}
+            alt=""
+            fill
+            className="scale-[1.02] object-cover"
+            sizes="300px"
+          />
+        </div>
+      </div>
+    </Card>
   );
 }
 
@@ -764,15 +920,15 @@ function NoApplicationAside() {
   const preparationItems = [
     'Check programme eligibility',
     'Prepare your education details',
-    'Review available project areas',
+    'Prepare supporting documents',
   ];
 
   return (
     <aside className="relative mx-auto min-h-[360px] w-full shrink-0 overflow-hidden rounded-2xl border border-border bg-white p-6 shadow-sm max-lg:max-w-none lg:mx-0 lg:min-h-[423px] lg:w-[314px] lg:max-w-[314px]">
       <p className="text-[12px] leading-5 text-fg-muted">Application guide</p>
-      <h3 className="mt-1 text-[24px] font-semibold leading-8 text-fg">Before you apply</h3>
+      <h3 className="mt-1 text-[18px] font-semibold leading-6 text-fg">Before you apply</h3>
       <p className="mt-3 text-[14px] leading-5 text-fg-muted">
-        Have these details ready when you decide to start an application.
+        Have these ready when you start your application.
       </p>
 
       <ol className="mt-6 space-y-4" aria-label="Application preparation checklist">
@@ -786,18 +942,24 @@ function NoApplicationAside() {
         ))}
       </ol>
 
-      <div className="mt-7 rounded-xl bg-bg-subtle p-4">
-        <p className="text-[12px] leading-4 text-fg-muted">Application window</p>
-        <p className="mt-1 text-[14px] font-semibold leading-5 text-fg">Open until 30 Sep 2026</p>
+      <div className="mt-7 flex items-center gap-4 rounded-xl bg-bg-muted px-5 py-4">
+        <Image
+          src="/images/application-window-calendar.svg"
+          alt=""
+          width={16}
+          height={16}
+          className="size-4 shrink-0"
+        />
+        <div>
+          <p className="text-[14px] leading-5 text-fg-muted">Application window</p>
+          <p className="mt-1 text-[14px] font-medium leading-5 text-fg">Open until 30 Sep 2026</p>
+        </div>
       </div>
 
       <OutOfScopeTooltip>
-        <button
-          type="button"
-          className="mt-5 h-9 cursor-pointer rounded-md border border-border bg-white px-4 text-[13px] font-medium text-accent"
-        >
-          View application guide
-        </button>
+        <Button className="mt-5">
+          View Application Guide
+        </Button>
       </OutOfScopeTooltip>
     </aside>
   );
@@ -813,12 +975,12 @@ function InternshipStageAside({
   onOpen: () => void;
 }) {
   const copy = scenario === 'onboarding-action'
-    ? { eyebrow: 'Onboarding progress', value: '3 of 6', body: 'Complete your remaining tasks before day one.', cta: 'Continue onboarding' }
+    ? { eyebrow: 'Onboarding progress', value: '3 of 6', body: 'Complete your remaining tasks before day one.', cta: 'Continue Onboarding' }
     : scenario === 'active-internship'
-      ? { eyebrow: 'Internship progress', value: 'Week 5 of 12', body: 'Your next mentor check-in is on 16 Oct 2026.', cta: 'View internship' }
+      ? { eyebrow: 'Internship progress', value: 'Week 5 of 12', body: 'Your next mentor check-in is on 16 Oct 2026.', cta: 'View Internship' }
       : scenario === 'completion-action'
-        ? { eyebrow: 'Completion checklist', value: '1 action left', body: 'Submit your internship feedback by 18 Dec 2026.', cta: 'Start feedback' }
-        : { eyebrow: 'Your achievement', value: 'Certificate ready', body: 'Your certificate and completed record are available any time.', cta: 'View certificate' };
+        ? { eyebrow: 'Completion checklist', value: '1 action left', body: 'Submit your internship feedback by 18 Dec 2026.', cta: 'Start Feedback' }
+        : { eyebrow: 'Your achievement', value: 'Certificate ready', body: 'Your certificate and completed record are available any time.', cta: 'View Certificate' };
 
   return (
     <aside

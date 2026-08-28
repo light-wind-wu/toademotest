@@ -108,7 +108,7 @@ export default function Topbar({
   }, [homeScenario, isApplicant, profile.email]);
 
   useEffect(() => {
-    if (!isApplicant || homeScenario !== 'interview-completed') return;
+    if (!isApplicant || homeScenario !== 'interview-pending-confirmation') return;
 
     // INT-07: notify the applicant that the interview is completed and no action is required.
     ensureApplicantInterviewCompletedNotification(
@@ -288,7 +288,7 @@ export default function Topbar({
                             onClick={() => {
                               saveApplyDashboardVersion('v1');
                               if (scenario.value === 'under-review') restartApplicantReviewTimer();
-                              if (scenario.value === 'interview-completed') restartApplicantOfferTimer();
+                              if (scenario.value === 'interview-pending-confirmation') restartApplicantOfferTimer();
                               saveApplicantHomeScenario(scenario.value);
                               setHomeScenario(scenario.value);
                               setOpen(false);

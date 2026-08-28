@@ -898,11 +898,13 @@ export interface ApplicantOfferEmail {
 
 /** Prototype-only Applicant Home states from APP-01 in the UX design brief. */
 export type ApplicantHomeScenario =
+  | 'multiple-applications'
   | 'no-application'
   | 'draft-application'
   | 'submitted'
   | 'under-review'
   | 'interview-action'
+  | 'interview-pending-confirmation'
   | 'interview-scheduled'
   | 'interview-rescheduling'
   | 'interview-completed'
@@ -911,6 +913,81 @@ export type ApplicantHomeScenario =
   | 'active-internship'
   | 'completion-action'
   | 'journey-completed';
+
+export type ApplicantDashboardState =
+  | 'multiple_active_applications'
+  | 'no_active_application'
+  | 'draft_application'
+  | 'application_submitted'
+  | 'application_under_review'
+  | 'interview_invitation'
+  | 'interview_pending_confirmation'
+  | 'interview_confirmed'
+  | 'interview_rescheduling'
+  | 'offer_received'
+  | 'onboarding'
+  | 'internship_in_progress'
+  | 'offboarding_required'
+  | 'internship_completed';
+
+export type ApplicantDashboardPattern = 'action' | 'waiting' | 'progress' | 'completed';
+
+export type ApplicantDashboardJourneyStage =
+  | 'application'
+  | 'review'
+  | 'interview'
+  | 'offer'
+  | 'onboarding'
+  | 'internship'
+  | 'completion';
+
+export interface ApplicantDashboardActionConfig {
+  label: string;
+  route: string | null;
+}
+
+export interface ApplicantDashboardMetadataItem {
+  label: string;
+  value: string;
+}
+
+export interface ApplicantDashboardActivityItem {
+  title: string;
+  date: string;
+}
+
+export interface ApplicantDashboardPostInternshipItem {
+  title: string;
+  status: string;
+  action: string;
+  route: string | null;
+  optional?: boolean;
+}
+
+export interface ApplicantDashboardStateConfig {
+  state: ApplicantDashboardState;
+  pattern: ApplicantDashboardPattern;
+  heroLines: readonly [string, string];
+  heroCopy: string;
+  badge: string;
+  spotlightTitle: string;
+  spotlightCopy: string;
+  spotlightImage?: string;
+  metadata: readonly ApplicantDashboardMetadataItem[];
+  dueText?: string;
+  progressText?: string;
+  primaryAction: ApplicantDashboardActionConfig | null;
+  secondaryAction: ApplicantDashboardActionConfig | null;
+  journeyStage: ApplicantDashboardJourneyStage;
+  completedStages: readonly ApplicantDashboardJourneyStage[];
+  journeyTitle: string;
+  journeyItems: readonly string[];
+  guideTitle: string;
+  guideItems: readonly string[];
+  guideActionLabel?: string;
+  activity: readonly ApplicantDashboardActivityItem[];
+  postInternshipItems?: readonly ApplicantDashboardPostInternshipItem[];
+}
 
 export type ApplicantScenarioId =
   | 'SUBMITTED'
@@ -1150,6 +1227,17 @@ export interface ApplicantHomeScenarioContent {
   activity: readonly ApplicantHomeActivityContent[];
 }
 
+export interface ApplicantHomeProgrammeContent {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  statusTone: 'success' | 'warning' | 'danger';
+  dateLabel: string;
+  route: string;
+  iconImage: string;
+}
+
 export interface ApplicantHomeDashboardAssets {
   heroDesktop: { v1: string; v2: string };
   heroMobile: { v1: string; v2: string };
@@ -1164,5 +1252,6 @@ export interface ApplicantHomeDashboardAssets {
 
 export interface ApplicantHomeDashboardData {
   assets: ApplicantHomeDashboardAssets;
+  programmes: readonly ApplicantHomeProgrammeContent[];
   scenarios: Record<ApplicantHomeScenario, ApplicantHomeScenarioContent>;
 }

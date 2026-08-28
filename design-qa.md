@@ -40,6 +40,47 @@ final result: passed
 
 ---
 
+# Multi-application Applicant Home design QA
+
+## Visual truth and IA
+
+- IA source: `/Users/jiangxiaoming/Downloads/applicant-dashboard-application-ia-updated (1).xlsx`, `Multi-App IA!A1:H54`
+- Visual reference: `/var/folders/cy/xls3c3zs60q8z3k0hnj3_hpm0000gp/T/codex-clipboard-602a5bf9-3df7-4ba8-87fe-3c54d52bffe8.png`
+- Implementation evidence: `/Users/jiangxiaoming/Documents/ChatGPT/UT Prototype/multiple-applications-dashboard-implementation.jpg`
+
+The reference defines the multi-application hierarchy and content density. The implementation intentionally retains the portal's current top bar, compact rail, ship hero, PRIZM tokens, card radii, typography, and existing dashboard artwork.
+
+## Test state
+
+- URL: `http://127.0.0.1:3061/apply/dashboard?state=multiple_active_applications`
+- Browser evidence: 1281 px wide full-page capture
+- Applicant: Jenny Aw
+- Applications: University Internship 2027 (Interview invitation) and Research Internship 2027 (Under review)
+- Priority rule: one required action with the nearest deadline
+
+## Findings and fixes
+
+- The user-level hero remains application-neutral and reports two active applications with one attention item.
+- Only the University Internship interview task receives the dominant Primary Spotlight and CTA.
+- Both applications use compact, independent lifecycle summaries; no duplicate full Journey, Guide, or Activity module is rendered per application.
+- The Interview Guide follows the highest-priority task, the Defender Archetype appears once, and activity is aggregated with programme labels.
+- The research application CTA was routed to the existing applications overview because this prototype has no separate research detail record.
+- Intentional visual difference: the supplied screenshot uses a separate concept shell; this implementation preserves the established applicant dashboard shell and PRIZM visual system as requested.
+
+## Interaction and technical checks
+
+- `Select Timeslots` opens the existing interview-timeslot dialog.
+- The profile scenario switcher includes `Multiple active applications`.
+- Application CTAs route only to existing views.
+- Browser console has no runtime errors; only an existing Next Image performance warning was observed.
+- TypeScript strict check and `git diff --check` pass.
+
+## Result
+
+final result: passed
+
+---
+
 # Applicant applications design QA
 
 ## Visual truth
