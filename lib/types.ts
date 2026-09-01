@@ -1176,6 +1176,27 @@ export interface ApplicantWorkflowDetail {
   value: string;
 }
 
+export interface ApplicantOfferPeriod {
+  offerId: string;
+  applicationId: string;
+  originalStartDate: string;
+  originalEndDate: string;
+  selectedStartDate: string;
+  selectedEndDate: string;
+  windowStartDate: string;
+  windowEndDate: string;
+  applicantSubmitted: boolean;
+  updatedAt?: string;
+}
+
+export interface ApplicantOfferResponseDraft {
+  offerId: string;
+  applicationId: string;
+  decision: 'accept';
+  remarks: string;
+  updatedAt?: string;
+}
+
 export interface ApplicantWorkflowPageConfig {
   id: ApplicantWorkflowPageId;
   eyebrow: string;

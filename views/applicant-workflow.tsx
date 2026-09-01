@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { z } from 'zod';
 import {
@@ -34,8 +34,19 @@ import {
   confirmApplicantMentorInterview,
   loadApplicantInterviewSelection,
 } from '@/lib/applicant-mentor-interview';
+import {
+  APPLICANT_OFFER_PERIOD_SEED,
+  loadApplicantOfferPeriod,
+  saveApplicantOfferPeriod,
+} from '@/lib/applicant-offer-period';
+import {
+  APPLICANT_OFFER_RESPONSE_SEED,
+  loadApplicantOfferResponse,
+  saveApplicantOfferResponse,
+} from '@/lib/applicant-offer-response';
 import { APPLICANT_WORKFLOW_CONFIG } from '@/lib/applicant-workflows';
 import { formatStatusLabel } from '@/lib/status-label';
+import type { ApplicantOfferPeriod } from '@/lib/types';
 import type { ApplicantWorkflowPageId } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -47,6 +58,15 @@ const INTERVIEW_SLOTS = [
 
 const interviewSlotSchema = z.enum(['slot-1', 'slot-2', 'slot-3']);
 const alternativeAvailabilitySchema = z.string().trim().min(10, 'Please provide a little more detail about your availability.').max(500);
+const offerPeriodSelectionSchema = z.object({
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Choose a valid start date.'),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Choose a valid end date.'),
+}).superRefine((value, context) => {
+  if (value.endDate < value.startDate) {
+    context.addIssue({ code: 'custom', path: ['endDate'], message: 'End date must be on or after the start date.' });
+  }
+});
+const acceptanceRemarksSchema = z.string().trim().max(500, 'Remarks must be 500 characters or fewer.');
 const INTERVIEW_AVAILABILITY_REQUEST_KEY = 'dsta_interview_availability_request';
 
 function pageIdFromPath(pathname: string): ApplicantWorkflowPageId {
@@ -70,6 +90,19 @@ function downloadCertificate() {
   URL.revokeObjectURL(url);
 }
 
+function formatOfferDate(isoDate: string) {
+  return new Intl.DateTimeFormat('en-SG', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${isoDate}T00:00:00Z`));
+}
+
+function formatOfferPeriod(period: Pick<ApplicantOfferPeriod, 'selectedStartDate' | 'selectedEndDate'>) {
+  return `${formatOfferDate(period.selectedStartDate)} – ${formatOfferDate(period.selectedEndDate)}`;
+}
+
 export default function ApplicantWorkflowPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -87,6 +120,13 @@ export default function ApplicantWorkflowPage() {
   const [alternativeError, setAlternativeError] = useState('');
   const [submittedAlternativeAvailability, setSubmittedAlternativeAvailability] = useState('');
   const [submittedInterviewSlot, setSubmittedInterviewSlot] = useState('Selected timeslot shared with the interview team.');
+  const [offerPeriod, setOfferPeriod] = useState<ApplicantOfferPeriod>({ ...APPLICANT_OFFER_PERIOD_SEED });
+  const [editingOfferPeriod, setEditingOfferPeriod] = useState(false);
+  const [offerPeriodStart, setOfferPeriodStart] = useState(APPLICANT_OFFER_PERIOD_SEED.selectedStartDate);
+  const [offerPeriodEnd, setOfferPeriodEnd] = useState(APPLICANT_OFFER_PERIOD_SEED.selectedEndDate);
+  const [offerPeriodError, setOfferPeriodError] = useState('');
+  const [offerPeriodSaved, setOfferPeriodSaved] = useState(false);
+  const [acceptanceRemarksError, setAcceptanceRemarksError] = useState('');
 
   const isInterviewReview = pageId === 'applicant-interview-review';
   const isInterviewConfirmation = pageId === 'applicant-interview-confirmation';
@@ -97,7 +137,10 @@ export default function ApplicantWorkflowPage() {
   const isCertificate = pageId === 'applicant-certificate-viewer';
   const isOffboarding = pageId === 'applicant-offboarding';
   const isOfferWorkflow = pageId.startsWith('applicant-offer-');
+  const isOfferDetail = pageId === 'applicant-offer-detail';
+  const isOfferReview = pageId === 'applicant-offer-review';
   const decision = searchParams.get('decision');
+  const isAcceptedOfferConfirmation = pageId === 'applicant-offer-confirmation' && decision === 'accepted';
   const isAlternativeInterviewRequest = isInterviewConfirmation && searchParams.get('request') === 'alternate';
 
   useEffect(() => {
@@ -112,6 +155,19 @@ export default function ApplicantWorkflowPage() {
       if (isAlternativeInterviewRequest) setSubmittedAlternativeAvailability('Availability shared with the interview team.');
     }
   }, [isAlternativeInterviewRequest, isInterviewConfirmation]);
+
+  useEffect(() => {
+    if (!isOfferWorkflow) return;
+    const storedPeriod = loadApplicantOfferPeriod();
+    setOfferPeriod(storedPeriod);
+    setOfferPeriodStart(storedPeriod.selectedStartDate);
+    setOfferPeriodEnd(storedPeriod.selectedEndDate);
+  }, [isOfferWorkflow]);
+
+  useEffect(() => {
+    if (!isOfferReview && !isAcceptedOfferConfirmation) return;
+    setNotes(loadApplicantOfferResponse().remarks);
+  }, [isAcceptedOfferConfirmation, isOfferReview]);
 
   const effectiveTitle = isAlternativeInterviewRequest
     ? 'Interview time change requested'
@@ -134,7 +190,7 @@ export default function ApplicantWorkflowPage() {
   const effectiveSecondaryRoute = isAlternativeInterviewRequest
     ? `/apply/applications/${searchParams.get('applicationId') ?? 'app-poly-2027'}`
     : config?.secondaryRoute;
-  const effectiveDetails = isAlternativeInterviewRequest
+  const baseDetails = isAlternativeInterviewRequest
     ? [
         { label: 'Request type', value: 'Alternative interview time' },
         { label: 'Availability provided', value: submittedAlternativeAvailability || 'Availability shared with the interview team.' },
@@ -148,6 +204,16 @@ export default function ApplicantWorkflowPage() {
           { label: 'Format', value: 'Microsoft Teams · 1 hour' },
         ]
     : config?.details ?? [];
+  const periodAwareDetails = baseDetails.map((detail) => detail.label === 'Internship period'
+    ? { ...detail, value: formatOfferPeriod(offerPeriod) }
+    : detail);
+  const effectiveDetails = isAcceptedOfferConfirmation && notes.trim()
+    ? [...periodAwareDetails, { label: 'Remarks', value: notes.trim() }]
+    : periodAwareDetails;
+  const hasRequestedPeriodChange = offerPeriod.applicantSubmitted
+    && (offerPeriod.selectedStartDate !== offerPeriod.originalStartDate
+      || offerPeriod.selectedEndDate !== offerPeriod.originalEndDate);
+  const originalOfferPeriod = `${formatOfferDate(offerPeriod.originalStartDate)} – ${formatOfferDate(offerPeriod.originalEndDate)}`;
   const effectiveNotice = isAlternativeInterviewRequest
     ? 'No further action is needed. Your original invitation remains on record while the interview team coordinates a suitable time.'
     : isInterviewReview && requestingAlternative
@@ -156,7 +222,8 @@ export default function ApplicantWorkflowPage() {
 
   const primaryDisabled = useMemo(() => {
     if (config?.checklist?.length && pageId === 'applicant-offer-review') {
-      return config.checklist.some((_, index) => !checks[index]);
+      return config.checklist.some((_, index) => !checks[index])
+        || !acceptanceRemarksSchema.safeParse(notes).success;
     }
     if (isRequirement) return !contactName.trim() || !contactPhone.trim();
     if (isTestimonial) return notes.trim().length < 10;
@@ -244,6 +311,20 @@ export default function ApplicantWorkflowPage() {
       router.push(`/apply/applicant-interview-confirmation?applicationId=${applicationId}`);
       return;
     }
+    if (isOfferReview) {
+      const result = acceptanceRemarksSchema.safeParse(notes);
+      if (!result.success) {
+        setAcceptanceRemarksError(result.error.issues[0]?.message ?? 'Review your remarks before continuing.');
+        return;
+      }
+      saveApplicantOfferResponse({
+        ...APPLICANT_OFFER_RESPONSE_SEED,
+        remarks: result.data,
+        updatedAt: new Date().toISOString(),
+      });
+      router.push(config.primaryRoute);
+      return;
+    }
     if (isCertificate) {
       downloadCertificate();
       setConfirmed(true);
@@ -262,6 +343,43 @@ export default function ApplicantWorkflowPage() {
       return;
     }
     router.push(config.primaryRoute);
+  }
+
+  function saveOfferPeriodChange(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const result = offerPeriodSelectionSchema.safeParse({
+      startDate: String(formData.get('startDate') ?? ''),
+      endDate: String(formData.get('endDate') ?? ''),
+    });
+    if (!result.success) {
+      setOfferPeriodError(result.error.issues[0]?.message ?? 'Choose a valid internship period.');
+      return;
+    }
+    if (result.data.startDate < offerPeriod.windowStartDate || result.data.endDate > offerPeriod.windowEndDate) {
+      setOfferPeriodError(`Choose dates between ${formatOfferDate(offerPeriod.windowStartDate)} and ${formatOfferDate(offerPeriod.windowEndDate)}.`);
+      return;
+    }
+    const hasChange = result.data.startDate !== offerPeriod.originalStartDate
+      || result.data.endDate !== offerPeriod.originalEndDate;
+    const nextPeriod: ApplicantOfferPeriod = {
+      ...offerPeriod,
+      selectedStartDate: result.data.startDate,
+      selectedEndDate: result.data.endDate,
+      applicantSubmitted: hasChange,
+      updatedAt: hasChange ? new Date().toISOString() : undefined,
+    };
+    saveApplicantOfferPeriod(nextPeriod);
+    setOfferPeriod(nextPeriod);
+    setEditingOfferPeriod(false);
+    setOfferPeriodError('');
+    setOfferPeriodSaved(hasChange);
+  }
+
+  function restoreOfferedPeriod() {
+    setOfferPeriodStart(offerPeriod.originalStartDate);
+    setOfferPeriodEnd(offerPeriod.originalEndDate);
+    setOfferPeriodError('');
   }
 
   return (
@@ -474,15 +592,154 @@ export default function ApplicantWorkflowPage() {
                     ) : isLinkedIn ? (
                       <label className="block text-[13px] font-medium text-fg">Post content<Textarea className="mt-2 min-h-48" defaultValue="I’m grateful to have completed my University Internship 2026 with DSTA, where I contributed to the Cybersecurity Threat Analysis project. Thank you to my mentor and the Digital Hub team for the guidance and learning experience." /></label>
                     ) : (
-                      <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
-                        {effectiveDetails.map((detail) => (
-                          <div key={detail.label} className="border-b border-border pb-4 last:border-b-0 sm:last:border-b">
-                            <dt className="text-[12px] leading-5 text-fg-muted">{detail.label}</dt>
-                            <dd className="mt-1 text-[14px] font-medium leading-5 text-fg">{detail.value}</dd>
-                          </div>
-                        ))}
-                      </dl>
+                      <div>
+                        <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
+                          {effectiveDetails.map((detail) => (
+                            <div key={detail.label} className="border-b border-border pb-4 last:border-b-0 sm:last:border-b">
+                              <dt className="text-[12px] leading-5 text-fg-muted">
+                                {isOfferDetail && detail.label === 'Internship period' && hasRequestedPeriodChange
+                                  ? 'Requested period'
+                                  : detail.label}
+                              </dt>
+                              {isOfferDetail && detail.label === 'Internship period' ? (
+                                <dd className="mt-1 flex flex-wrap items-start justify-between gap-3 text-[14px] font-medium leading-5 text-fg">
+                                  <span className="min-w-0">
+                                    <span className="flex flex-wrap items-center gap-2">
+                                      <span>{detail.value}</span>
+                                      {hasRequestedPeriodChange ? <Badge variant="info">Change requested</Badge> : null}
+                                    </span>
+                                    {hasRequestedPeriodChange ? (
+                                      <span className="mt-1 block text-[12px] font-normal leading-5 text-fg-muted">
+                                        Original offer period: {originalOfferPeriod}
+                                      </span>
+                                    ) : null}
+                                  </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 px-2 text-accent"
+                                    onClick={() => {
+                                      setOfferPeriodStart(offerPeriod.selectedStartDate);
+                                      setOfferPeriodEnd(offerPeriod.selectedEndDate);
+                                      setOfferPeriodError('');
+                                      setOfferPeriodSaved(false);
+                                      setEditingOfferPeriod(true);
+                                    }}
+                                  >
+                                    {hasRequestedPeriodChange ? 'Edit request' : 'Request change period'}
+                                  </Button>
+                                </dd>
+                              ) : (
+                                <dd className="mt-1 text-[14px] font-medium leading-5 text-fg">{detail.value}</dd>
+                              )}
+                            </div>
+                          ))}
+                        </dl>
+
+                        {isOfferDetail && editingOfferPeriod ? (
+                          <form className="mt-6 rounded-lg border border-border bg-bg p-5" onSubmit={saveOfferPeriodChange} noValidate>
+                            <div className="flex gap-3">
+                              <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-md bg-bg-muted text-accent">
+                                <CalendarDays className="size-4" aria-hidden />
+                              </span>
+                              <div>
+                                <p className="text-[14px] font-medium text-fg">Change internship period</p>
+                                <p className="mt-1 text-[13px] leading-5 text-fg-muted">
+                                  Choose dates within the available window: {formatOfferDate(offerPeriod.windowStartDate)} – {formatOfferDate(offerPeriod.windowEndDate)}.
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                              <Field invalid={Boolean(offerPeriodError)}>
+                                <FieldLabel htmlFor="offer-period-start">Start date</FieldLabel>
+                                <Input
+                                  id="offer-period-start"
+                                  name="startDate"
+                                  className="mt-2"
+                                  type="date"
+                                  min={offerPeriod.windowStartDate}
+                                  max={offerPeriod.windowEndDate}
+                                  value={offerPeriodStart}
+                                  onChange={(event) => {
+                                    setOfferPeriodStart(event.target.value);
+                                    setOfferPeriodError('');
+                                  }}
+                                />
+                              </Field>
+                              <Field invalid={Boolean(offerPeriodError)}>
+                                <FieldLabel htmlFor="offer-period-end">End date</FieldLabel>
+                                <Input
+                                  id="offer-period-end"
+                                  name="endDate"
+                                  className="mt-2"
+                                  type="date"
+                                  min={offerPeriodStart || offerPeriod.windowStartDate}
+                                  max={offerPeriod.windowEndDate}
+                                  value={offerPeriodEnd}
+                                  onChange={(event) => {
+                                    setOfferPeriodEnd(event.target.value);
+                                    setOfferPeriodError('');
+                                  }}
+                                />
+                              </Field>
+                            </div>
+
+                            {offerPeriodError ? <p role="alert" className="mt-3 text-[13px] text-danger">{offerPeriodError}</p> : null}
+                            <p className="mt-3 text-[12px] leading-5 text-fg-muted">
+                              Offered dates: {formatOfferDate(offerPeriod.originalStartDate)} – {formatOfferDate(offerPeriod.originalEndDate)}. Your selected dates will be included when you accept the offer.
+                            </p>
+                            <div className="mt-5 flex flex-wrap gap-2 border-t border-border pt-4">
+                              <Button size="sm" type="submit">Save period</Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingOfferPeriod(false);
+                                  setOfferPeriodStart(offerPeriod.selectedStartDate);
+                                  setOfferPeriodEnd(offerPeriod.selectedEndDate);
+                                  setOfferPeriodError('');
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={restoreOfferedPeriod}>Restore offered dates</Button>
+                            </div>
+                          </form>
+                        ) : null}
+
+                        {isOfferDetail && offerPeriodSaved ? (
+                          <Alert variant="info" className="mt-6">
+                            <Info aria-hidden />
+                            <AlertDescription>Your requested period has been saved. The original offer period remains visible for reference, and the requested dates will carry through to offer acceptance.</AlertDescription>
+                          </Alert>
+                        ) : null}
+                      </div>
                     )}
+
+                    {isOfferReview ? (
+                      <Field className="mt-6 border-t border-border pt-5" invalid={Boolean(acceptanceRemarksError)}>
+                        <FieldLabel htmlFor="offer-acceptance-remarks">
+                          Remarks <span className="font-normal text-fg-muted">(optional)</span>
+                        </FieldLabel>
+                        <FieldDescription className="mt-1">Share any information the internship team should know about your acceptance.</FieldDescription>
+                        <Textarea
+                          id="offer-acceptance-remarks"
+                          className="mt-3 min-h-28"
+                          value={notes}
+                          onChange={(event) => {
+                            setNotes(event.target.value);
+                            setAcceptanceRemarksError('');
+                          }}
+                          placeholder="Add any remarks about your internship dates, arrangements or onboarding."
+                          maxLength={500}
+                        />
+                        <div className="mt-2 flex items-start justify-between gap-4">
+                          {acceptanceRemarksError ? <FieldError>{acceptanceRemarksError}</FieldError> : <span />}
+                          <span className="shrink-0 text-[12px] text-fg-muted">{notes.length}/500</span>
+                        </div>
+                      </Field>
+                    ) : null}
 
                     {config.checklist && !isOffboarding ? (
                       <div className="mt-6 border-t border-border pt-5">
