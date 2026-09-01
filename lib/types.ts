@@ -910,6 +910,10 @@ export type ApplicantHomeScenario =
   | 'interview-completed'
   | 'offer-action'
   | 'onboarding-action'
+  | 'application-unsuccessful'
+  | 'application-withdrawn'
+  | 'offer-declined'
+  | 'offer-expired'
   | 'active-internship'
   | 'completion-action'
   | 'journey-completed';
@@ -926,11 +930,15 @@ export type ApplicantDashboardState =
   | 'interview_rescheduling'
   | 'offer_received'
   | 'onboarding'
+  | 'application_unsuccessful'
+  | 'application_withdrawn'
+  | 'offer_declined'
+  | 'offer_expired'
   | 'internship_in_progress'
   | 'offboarding_required'
   | 'internship_completed';
 
-export type ApplicantDashboardPattern = 'action' | 'waiting' | 'progress' | 'completed';
+export type ApplicantDashboardPattern = 'action' | 'waiting' | 'progress' | 'closed' | 'completed';
 
 export type ApplicantDashboardJourneyStage =
   | 'application'
@@ -979,7 +987,10 @@ export interface ApplicantDashboardStateConfig {
   primaryAction: ApplicantDashboardActionConfig | null;
   secondaryAction: ApplicantDashboardActionConfig | null;
   journeyStage: ApplicantDashboardJourneyStage;
+  journeyStageHint?: string;
   completedStages: readonly ApplicantDashboardJourneyStage[];
+  terminalStage?: ApplicantDashboardJourneyStage;
+  terminalLabel?: string;
   journeyTitle: string;
   journeyItems: readonly string[];
   guideTitle: string;

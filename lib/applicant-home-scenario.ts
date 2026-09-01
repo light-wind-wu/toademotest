@@ -6,7 +6,7 @@ export const APPLICANT_HOME_SCENARIO_CHANGED = 'dsta-applicant-home-scenario';
 export const APPLICANT_HOME_SCENARIOS: ReadonlyArray<{
   value: ApplicantHomeScenario;
   label: string;
-  group: 'Overview' | 'Application' | 'Interview' | 'Offer and onboarding' | 'Internship and completion';
+  group: 'Overview' | 'Application' | 'Interview' | 'Offer and onboarding' | 'Closed outcomes' | 'Internship and completion';
 }> = [
   { value: 'multiple-applications', label: 'Multiple active applications', group: 'Overview' },
   { value: 'no-application', label: 'No application yet', group: 'Overview' },
@@ -19,6 +19,10 @@ export const APPLICANT_HOME_SCENARIOS: ReadonlyArray<{
   { value: 'interview-rescheduling', label: 'Interview rescheduling required', group: 'Interview' },
   { value: 'offer-action', label: 'Offer action required', group: 'Offer and onboarding' },
   { value: 'onboarding-action', label: 'Onboarding action required', group: 'Offer and onboarding' },
+  { value: 'application-unsuccessful', label: 'Application unsuccessful', group: 'Closed outcomes' },
+  { value: 'application-withdrawn', label: 'Application withdrawn', group: 'Closed outcomes' },
+  { value: 'offer-declined', label: 'Offer declined', group: 'Closed outcomes' },
+  { value: 'offer-expired', label: 'Offer expired', group: 'Closed outcomes' },
   { value: 'active-internship', label: 'Active internship', group: 'Internship and completion' },
   { value: 'completion-action', label: 'Completion action required', group: 'Internship and completion' },
   { value: 'journey-completed', label: 'Journey completed', group: 'Internship and completion' },

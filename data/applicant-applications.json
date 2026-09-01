@@ -244,7 +244,7 @@
     "status": "UNSUCCESSFUL",
     "filter": "closed",
     "statusMessage": "Your application was not selected for this intake.",
-    "currentStep": 5,
+    "currentStep": 2,
     "nextStep": "This application is closed and remains available for your records.",
     "primaryAction": "view-outcome",
     "location": "Singapore",

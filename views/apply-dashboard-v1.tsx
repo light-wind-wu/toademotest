@@ -49,7 +49,7 @@ import type {
 
 const INTERVIEW_PROJECT_NAME = 'Designing Mission-Critical Digital Services';
 
-const BASE_STEP_LABELS = ['Submitted', 'Under review', 'Interview', 'Offer', 'Outcome'] as const;
+const BASE_STEP_LABELS = ['Submitted', 'Under review', 'Interview', 'Outcome'] as const;
 
 const HOME_SCENARIO_CONTENT = APPLICANT_HOME_DASHBOARD_CONTENT;
 
@@ -101,6 +101,10 @@ export default function ApplyDashboardV1({
     ? 'interview-action'
     : scenario === 'interview-pending-confirmation'
       ? 'interview-scheduled'
+      : scenario === 'application-unsuccessful' || scenario === 'application-withdrawn'
+        ? 'under-review'
+        : scenario === 'offer-declined' || scenario === 'offer-expired'
+          ? 'offer-action'
       : scenario;
   const content = HOME_SCENARIO_CONTENT[contentScenario];
   const dashboardState = APPLICANT_HOME_SCENARIO_TO_STATE[scenario];

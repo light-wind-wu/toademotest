@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Check, CheckCircle2, Circle, Clock3, ListChecks } from 'lucide-react';
+import { ArrowRight, Check, CheckCircle2, Circle, Clock3, ListChecks, X } from 'lucide-react';
 import OutOfScopeTooltip from '@/components/apply/out-of-scope-tooltip';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -16,10 +16,7 @@ const journeyStages: ReadonlyArray<{ id: ApplicantDashboardJourneyStage; label: 
   { id: 'application', label: 'Submitted' },
   { id: 'review', label: 'Under review' },
   { id: 'interview', label: 'Interview' },
-  { id: 'offer', label: 'Offer' },
-  { id: 'onboarding', label: 'Onboarding' },
-  { id: 'internship', label: 'Internship' },
-  { id: 'completion', label: 'Completion' },
+  { id: 'offer', label: 'Outcome' },
 ];
 
 export default function LifecycleDashboardStage({
@@ -41,10 +38,21 @@ export default function LifecycleDashboardStage({
 }) {
   const router = useRouter();
   const isWaiting = config.pattern === 'waiting';
+  const isClosed = config.pattern === 'closed';
   const isCompleted = config.pattern === 'completed';
   const priorityImage = config.spotlightImage
     ?? (config.state === 'draft_application' ? '/images/applicant-dashboard-priority-banner.png' : null);
-  const useMutedPriority = (isWaiting || isCompleted) && !priorityImage;
+  const useMutedPriority = (isWaiting || isClosed || isCompleted) && !priorityImage;
+  const visibleJourneyStages = config.terminalStage
+    ? journeyStages.slice(0, journeyStages.findIndex((stage) => stage.id === config.terminalStage) + 1)
+    : journeyStages;
+  const activityHeading = isClosed
+    ? 'Application history'
+    : config.state === 'draft_application'
+      ? 'Recent draft changes'
+      : config.state === 'internship_in_progress' || config.state === 'offboarding_required' || config.state === 'internship_completed'
+        ? 'Recent internship activity'
+        : 'Recent application activity';
 
   return (
     <section className="relative -mt-4 mx-auto w-full max-w-[1440px] px-4 pb-8 pt-0 lg:px-6" aria-label={`${config.badge} dashboard content`}>
@@ -103,14 +111,16 @@ export default function LifecycleDashboardStage({
               />
             ) : null}
             <div className="relative z-[1]">
-              <span className={cn('inline-flex size-10 items-center justify-center rounded-full', useMutedPriority ? 'bg-success/15 text-success' : 'bg-surface/15 text-accent-fg')} aria-hidden>
-                {isWaiting || isCompleted ? <Check className="size-5" strokeWidth={2} /> : <ListChecks className="size-5" />}
+              <span className={cn('inline-flex size-10 items-center justify-center rounded-full', isClosed ? 'bg-danger/15 text-danger' : useMutedPriority ? 'bg-success/15 text-success' : 'bg-surface/15 text-accent-fg')} aria-hidden>
+                {isClosed ? <X className="size-5" strokeWidth={2} /> : isWaiting || isCompleted ? <Check className="size-5" strokeWidth={2} /> : <ListChecks className="size-5" />}
               </span>
               <p className={cn('mt-5 text-[18px] font-semibold leading-6', useMutedPriority ? 'text-fg' : 'text-accent-fg')} role="status">
-                {isWaiting ? 'You’re all caught up' : isCompleted ? 'Journey completed' : 'Your next priority'}
+                {isClosed ? 'Application closed' : isWaiting ? 'You’re all caught up' : isCompleted ? 'Journey completed' : 'Your next priority'}
               </p>
               <p className={cn('mt-2 text-[14px] leading-5', useMutedPriority ? 'text-fg-muted' : 'text-accent-fg/80')}>
-                {isWaiting
+                {isClosed
+                  ? 'No further action is required. This record remains available to you.'
+                  : isWaiting
                   ? 'Nothing is required from you right now.'
                   : isCompleted
                     ? 'Your completed record and resources remain available.'
@@ -136,22 +146,39 @@ export default function LifecycleDashboardStage({
             <div>
               <p className="text-[13px] text-fg-muted">Application map</p>
               <h2 className="mt-1 text-[18px] font-semibold leading-6 text-fg">Your journey</h2>
-              <p className="mt-1 text-[13px] leading-5 text-fg-muted">Completed, current and upcoming stages</p>
             </div>
 
-            <ol className="mt-6 grid grid-cols-1 gap-0 sm:grid-cols-7" aria-label="Applicant journey progress">
-              {journeyStages.map((stage, index) => {
+            <ol
+              className={cn(
+                'mt-6 grid grid-cols-1 gap-0',
+                visibleJourneyStages.length === 2 && 'sm:grid-cols-2',
+                visibleJourneyStages.length === 3 && 'sm:grid-cols-3',
+                visibleJourneyStages.length === 4 && 'sm:grid-cols-4',
+              )}
+              aria-label="Applicant journey progress"
+            >
+              {visibleJourneyStages.map((stage, index) => {
                 const done = config.completedStages.includes(stage.id);
                 const current = config.journeyStage === stage.id;
+                const terminal = config.terminalStage === stage.id;
                 return (
                   <li key={stage.id} className="relative flex min-h-14 items-start gap-3 pb-4 sm:min-h-0 sm:flex-col sm:gap-2 sm:pb-0" aria-current={current ? 'step' : undefined}>
-                    {index < journeyStages.length - 1 ? (
+                    {index < visibleJourneyStages.length - 1 ? (
                       <span className={cn('absolute left-[13px] top-7 h-[calc(100%-20px)] w-px bg-border sm:left-7 sm:right-0 sm:top-[13px] sm:h-px sm:w-auto', done && 'bg-accent')} aria-hidden />
                     ) : null}
-                    <span className={cn('relative z-[1] inline-flex size-7 shrink-0 items-center justify-center rounded-full border text-[12px] font-medium', done ? 'border-accent bg-accent text-accent-fg' : current ? 'border-accent bg-surface text-accent' : 'border-border bg-bg text-fg-muted')} aria-hidden>
-                      {done ? <Check className="size-4" strokeWidth={2} /> : index + 1}
+                    <span className={cn('relative z-[1] inline-flex size-7 shrink-0 items-center justify-center rounded-full border text-[12px] font-medium', done ? 'border-accent bg-accent text-accent-fg' : terminal ? 'border-danger bg-danger text-accent-fg' : current ? 'border-accent bg-surface text-accent' : 'border-border bg-bg text-fg-muted')} aria-hidden>
+                      {done ? <Check className="size-4" strokeWidth={2} /> : terminal ? <X className="size-4" strokeWidth={2} /> : index + 1}
                     </span>
-                    <span className={cn('text-[11px] leading-4', done || current ? 'font-semibold text-fg' : 'text-fg-muted')}>{stage.label}</span>
+                    <span>
+                      <span className={cn('block text-[11px] leading-4', done || current || terminal ? 'font-semibold text-fg' : 'text-fg-muted')}>
+                        {terminal ? config.terminalLabel : stage.label}
+                      </span>
+                      {current && config.journeyStageHint ? (
+                        <span className="mt-0.5 block text-[10px] font-normal leading-4 text-fg-muted">
+                          {config.journeyStageHint}
+                        </span>
+                      ) : null}
+                    </span>
                   </li>
                 );
               })}
@@ -181,12 +208,12 @@ export default function LifecycleDashboardStage({
             </div>
             <div className="relative z-[1] sm:max-w-[calc(100%-210px)]">
             <p className="text-[13px] text-fg-muted">Latest activity</p>
-            <h2 className="mt-1 text-[18px] font-semibold leading-6 text-fg">Updates from your journey</h2>
+            <h2 className="mt-1 text-[18px] font-semibold leading-6 text-fg">{activityHeading}</h2>
             <ol className="mt-5 divide-y divide-border">
               {config.activity.map((item, index) => (
                 <li key={`${item.title}-${item.date}`} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
                   <span className="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-bg-muted text-accent" aria-hidden>
-                    {index === 0 ? <CheckCircle2 className="size-4" /> : <Circle className="size-3" />}
+                    {index === 0 ? (isClosed ? <X className="size-4" /> : <CheckCircle2 className="size-4" />) : <Circle className="size-3" />}
                   </span>
                   <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:justify-between sm:gap-4">
                     <p className="text-[13px] font-medium leading-5 text-fg">{item.title}</p>

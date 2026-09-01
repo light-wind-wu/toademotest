@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-const compactStages = ['Submitted', 'Under review', 'Interview', 'Offer', 'Onboarding'] as const;
+const compactStages = ['Submitted', 'Under review', 'Interview', 'Outcome'] as const;
 
 const applications = [
   {
@@ -106,7 +106,7 @@ export default function MultipleApplicationsDashboard({
                   </div>
 
                   <div className="min-w-0">
-                    <ol className="grid grid-cols-5" aria-label={`${application.programme} progress`}>
+                    <ol className="grid grid-cols-4" aria-label={`${application.programme} progress`}>
                       {compactStages.map((stage, index) => {
                         const done = index < application.completedStages;
                         const current = index === application.currentStage;
@@ -143,9 +143,9 @@ export default function MultipleApplicationsDashboard({
               <h2 id="multi-activity-title" className="mt-1 text-[18px] font-semibold leading-6 text-fg">Updates across your applications</h2>
               <ol className="mt-5 divide-y divide-border">
                 {[
-                  ['Interview invitation received', 'University Internship 2027', 'Today, 10:30 AM'],
-                  ['Application under review', 'Research Internship 2027', 'Yesterday, 4:15 PM'],
-                  ['Application submitted', 'Research Internship 2027', '2 Sep 2026'],
+                  ['Interview invitation received', 'University Internship 2027', '1 Sep 2026, 10:30 AM'],
+                  ['Application under review', 'Research Internship 2027', '31 Aug 2026, 4:15 PM'],
+                  ['Application submitted', 'Research Internship 2027', '30 Aug 2026, 2:00 PM'],
                 ].map(([title, programme, date], index) => (
                   <li key={`${title}-${programme}`} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
                     <span className="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-bg-muted text-accent" aria-hidden>

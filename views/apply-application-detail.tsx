@@ -16,6 +16,7 @@ import {
   MapPin,
   UserRound,
   Video,
+  X,
 } from 'lucide-react';
 import Shell from '@/components/layout/shell';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +30,13 @@ import { formatStatusLabel } from '@/lib/status-label';
 import type { ApplicantApplicationRecord, CandidateApplicationStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
-const JOURNEY_STEPS = ['Submitted', 'Under review', 'Interview', 'Offer', 'Outcome'];
+const JOURNEY_STEPS = ['Submitted', 'Under review', 'Interview', 'Outcome'] as const;
+const TERMINAL_STATUSES: ReadonlyArray<CandidateApplicationStatus> = [
+  'OFFER DECLINED',
+  'OFFER EXPIRED',
+  'UNSUCCESSFUL',
+  'WITHDRAWN',
+];
 
 function statusVariant(status: CandidateApplicationStatus) {
   if (status === 'OFFER ACCEPTED') return 'success' as const;
@@ -45,7 +52,23 @@ function currentStepForStatus(status: CandidateApplicationStatus) {
   if (status === 'UNDER REVIEW') return 2;
   if (status === 'INTERVIEW') return 3;
   if (status === 'OFFER RECEIVED') return 4;
-  return 5;
+  return 4;
+}
+
+function reachedStepForTerminalStatus(record: ApplicantApplicationRecord, status: CandidateApplicationStatus) {
+  if (status === 'OFFER DECLINED' || status === 'OFFER EXPIRED') return 3;
+  if (status === 'WITHDRAWN') return Math.max(1, Math.min(record.currentStep, 3));
+  const timelineCopy = record.timeline.map((event) => `${event.title} ${event.description}`).join(' ').toLowerCase();
+  if (timelineCopy.includes('interview')) return 3;
+  if (timelineCopy.includes('review') || timelineCopy.includes('screen')) return 2;
+  return 1;
+}
+
+function terminalLabel(status: CandidateApplicationStatus) {
+  if (status === 'WITHDRAWN') return 'Withdrawn';
+  if (status === 'UNSUCCESSFUL') return 'Unsuccessful';
+  if (status === 'OFFER DECLINED') return 'Offer declined';
+  return 'Offer expired';
 }
 
 function nextStepForStatus(status: CandidateApplicationStatus) {
@@ -232,7 +255,9 @@ export default function ApplyApplicationDetail() {
       status: scenarioRecord.statusBadge,
       filter: scenarioRecord.tabGroup,
       statusMessage: scenarioRecord.cardMessage,
-      currentStep: currentStepForStatus(scenarioRecord.statusBadge),
+      currentStep: TERMINAL_STATUSES.includes(scenarioRecord.statusBadge)
+        ? reachedStepForTerminalStatus(storedRecord, scenarioRecord.statusBadge)
+        : currentStepForStatus(scenarioRecord.statusBadge),
       nextStep: nextStepForStatus(scenarioRecord.statusBadge),
       deadline: scenarioRecord.actionDeadline ?? undefined,
       timeline: timelineForStatus(
@@ -247,6 +272,35 @@ export default function ApplyApplicationDetail() {
     () => !!record && ['SUBMITTED', 'UNDER REVIEW', 'INTERVIEW'].includes(record.status),
     [record],
   );
+
+  const journeyItems = useMemo(() => {
+    if (!record) return [];
+    if (TERMINAL_STATUSES.includes(record.status)) {
+      const reachedStep = Math.max(1, Math.min(record.currentStep, 3));
+      return [
+        ...JOURNEY_STEPS.slice(0, reachedStep).map((label) => ({ label, state: 'complete' as const, hint: undefined })),
+        { label: terminalLabel(record.status), state: 'terminal' as const, hint: undefined },
+      ];
+    }
+
+    return JOURNEY_STEPS.map((label, index) => {
+      const stepNumber = index + 1;
+      const accepted = record.status === 'OFFER ACCEPTED';
+      const state = accepted || stepNumber < record.currentStep
+        ? 'complete' as const
+        : stepNumber === record.currentStep
+          ? 'current' as const
+          : 'upcoming' as const;
+      const hint = label === 'Outcome'
+        ? record.status === 'OFFER RECEIVED'
+          ? 'Offer received'
+          : record.status === 'OFFER ACCEPTED'
+            ? 'Offer accepted'
+            : undefined
+        : undefined;
+      return { label, state, hint };
+    });
+  }, [record]);
 
   function withdrawApplication() {
     if (!record) return;
@@ -330,28 +384,30 @@ export default function ApplyApplicationDetail() {
           </div>
 
             <div className="mt-9 overflow-x-auto pb-2">
-              <ol className="flex min-w-[720px] items-center" aria-label="Application journey progress">
-              {JOURNEY_STEPS.map((step, index) => {
-                const stepNumber = index + 1;
-                const complete = stepNumber < record.currentStep;
-                const current = stepNumber === record.currentStep;
+              <ol className="flex min-w-[620px] items-center" aria-label="Application journey progress">
+              {journeyItems.map((step, index) => {
+                const complete = step.state === 'complete';
+                const current = step.state === 'current';
+                const terminal = step.state === 'terminal';
                 return (
-                  <li key={step} className={cn('flex items-center', index < JOURNEY_STEPS.length - 1 && 'flex-1')}>
+                  <li key={`${step.label}-${index}`} className={cn('flex items-center', index < journeyItems.length - 1 && 'flex-1')}>
                     <span
                       className={cn(
                         'inline-flex size-6 shrink-0 items-center justify-center rounded-full border text-[12px] font-medium',
                         complete && 'border-success bg-success text-accent-fg',
                         current && 'border-accent bg-accent text-accent-fg',
-                        !complete && !current && 'border-border bg-bg-muted text-fg-muted',
+                        terminal && 'border-danger bg-danger text-accent-fg',
+                        !complete && !current && !terminal && 'border-border bg-bg-muted text-fg-muted',
                       )}
                     >
-                      {complete ? <Check className="size-4" aria-hidden /> : stepNumber}
+                      {complete ? <Check className="size-4" aria-hidden /> : terminal ? <X className="size-4" aria-hidden /> : index + 1}
                     </span>
-                    <span className={cn('ml-2 whitespace-nowrap text-[14px]', complete || current ? 'text-fg' : 'text-fg-muted')}>
-                      {step}
+                    <span className={cn('ml-2 whitespace-nowrap text-[14px]', complete || current || terminal ? 'text-fg' : 'text-fg-muted')}>
+                      {step.label}
+                      {step.hint ? <span className="block text-[11px] font-normal text-fg-muted">{step.hint}</span> : null}
                     </span>
-                    {index < JOURNEY_STEPS.length - 1 ? (
-                      <span className={cn('mx-3 h-px min-w-8 flex-1', complete ? 'bg-success' : 'bg-border')} aria-hidden />
+                    {index < journeyItems.length - 1 ? (
+                      <span className={cn('mx-2 h-px min-w-8 flex-1 sm:mx-3', complete ? 'bg-success' : 'bg-border')} aria-hidden />
                     ) : null}
                   </li>
                 );
