@@ -1090,6 +1090,29 @@ export interface ApplicantInternshipProject {
   skills: string[];
 }
 
+export type PublicInternshipProgrammeStatus = 'open' | 'upcoming' | 'not-open';
+
+export interface PublicInternshipProject {
+  id: string;
+  title: string;
+  techDomain: string;
+  duration: string;
+  workingLocation: string;
+  description: string;
+  skills: string[];
+}
+
+export interface PublicInternshipProgramme {
+  id: string;
+  title: string;
+  audience: string;
+  period: string;
+  status: PublicInternshipProgrammeStatus;
+  statusLabel: string;
+  availabilityLabel: string;
+  projects: PublicInternshipProject[];
+}
+
 export interface ApplicantInternshipDocument {
   status: 'pending' | 'available';
   date?: string;

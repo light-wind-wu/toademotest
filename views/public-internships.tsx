@@ -2,71 +2,42 @@
 
 import Image from 'next/image';
 import {
-  ArrowRight, CalendarDays, GraduationCap, Mail, Users,
+  ArrowRight,
+  CalendarDays,
+  ChevronDown,
+  Clock3,
+  GraduationCap,
+  Mail,
+  MapPin,
+  Users,
 } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DstaPublicFooter from '@/components/apply/dsta-public-footer';
 import DstaPublicHeader from '@/components/apply/dsta-public-header';
 import { Badge } from '@/components/ui/badge';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
+import programmesJson from '@/data/public-internship-programmes.json';
 import { signOut } from '@/lib/session';
+import type { PublicInternshipProgramme } from '@/lib/types';
 import { saveUtApplicantTaskIntent, saveUtApplicantVariant, saveUtCatalogPath, saveUtTrack } from '@/lib/ut-track';
+import { cn } from '@/lib/utils';
 
-type BrowsableProgrammeId = 'PROG-0009' | 'PROG-0011';
+const internshipProgrammes = programmesJson as PublicInternshipProgramme[];
 
-type InternshipType = {
-  id: string;
-  title: string;
-  description: string;
-  audience: string;
-  period: string;
-  availability: 'open' | 'upcoming' | 'project-based';
-  availabilityLabel: string;
-};
-
-const internshipTypes: InternshipType[] = [
-  {
-    id: 'jc-june',
-    title: 'JC Internship (June)',
-    description: 'For JC1 and JC2 students who want an internship during the June holidays.',
-    audience: 'JC1 and JC2 students',
-    period: 'June · 1 month',
-    availability: 'upcoming',
-    availabilityLabel: 'Applications open in February',
-  },
-  {
-    id: 'jc-december',
-    title: 'JC Internship (December)',
-    description: 'For JC1 students who want an internship during the December holidays.',
-    audience: 'JC1 students',
-    period: '1–30 Dec 2026',
-    availability: 'open',
-    availabilityLabel: 'Applications open until 6 Sep 2026',
-  },
-  {
-    id: 'post-school',
-    title: 'Post-JC / Post-Polytechnic Internship',
-    description: 'For students seeking experience before starting their undergraduate studies.',
-    audience: 'Post-JC and post-polytechnic students',
-    period: 'January–June · 2–6 months',
-    availability: 'upcoming',
-    availabilityLabel: 'Applications open in October',
-  },
-  {
-    id: 'poly-university',
-    title: 'Polytechnic and University Internship',
-    description: 'Browse available projects that match your institution, discipline and availability.',
-    audience: 'Polytechnic students and undergraduates',
-    period: '3–6 months',
-    availability: 'project-based',
-    availabilityLabel: 'Projects available now',
-  },
-];
+function statusVariant(status: PublicInternshipProgramme['status']) {
+  return status === 'open' ? 'success' as const : 'subtle' as const;
+}
 
 export default function PublicInternships() {
   const router = useRouter();
+  const projectsRef = useRef<HTMLElement>(null);
+  const [selectedProgrammeId, setSelectedProgrammeId] = useState('polytechnic');
+  const selectedProgramme = internshipProgrammes.find(programme => programme.id === selectedProgrammeId) ?? internshipProgrammes[0];
 
-  function beginApplication() {
+  function beginApplication(programmeId: string) {
+    if (programmeId === 'polytechnic') saveUtApplicantVariant('polytechnic');
+    if (programmeId === 'undergraduate-student' || programmeId === 'undergraduate-scholar') saveUtApplicantVariant('undergraduate');
     saveUtTrack('applicant');
     saveUtCatalogPath('applicant');
     saveUtApplicantTaskIntent('apply');
@@ -74,9 +45,9 @@ export default function PublicInternships() {
     router.push('/login');
   }
 
-  function beginProgrammeApplication(programmeId: BrowsableProgrammeId) {
-    saveUtApplicantVariant(programmeId === 'PROG-0011' ? 'polytechnic' : 'undergraduate');
-    beginApplication();
+  function viewProjects(programmeId: string) {
+    setSelectedProgrammeId(programmeId);
+    window.requestAnimationFrame(() => projectsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   return (
@@ -98,67 +69,114 @@ export default function PublicInternships() {
           <div className="max-w-2xl bg-surface py-3 pr-6 sm:w-[48%] sm:pr-8 lg:w-[46%]">
             <p className="text-sm font-semibold uppercase tracking-[0.12em] text-accent">Internships</p>
             <h1 className="mt-2 text-4xl font-semibold tracking-tight text-fg sm:whitespace-nowrap sm:text-[38px] lg:text-5xl">Choose an internship that fits</h1>
-            <p className="mt-3 text-lg leading-7 text-fg-muted">Compare internship types by study stage, period and application availability.</p>
+            <p className="mt-3 text-lg leading-7 text-fg-muted">Compare internship programmes by study stage, period and application availability.</p>
           </div>
         </div>
       </section>
 
-      <section className="px-4 py-10 sm:px-6 lg:px-10 lg:py-12" aria-labelledby="internship-types-title">
+      <section className="px-4 py-10 sm:px-6 lg:px-10 lg:py-12" aria-labelledby="internship-programmes-title">
         <div className="mx-auto w-full max-w-[1360px]">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 id="internship-types-title" className="text-3xl font-semibold tracking-tight text-fg">Types of internship</h2>
-              <p className="mt-2 text-fg-muted">Select an open programme or note when applications begin.</p>
+              <h2 id="internship-programmes-title" className="text-3xl font-semibold tracking-tight text-fg">Internship programmes</h2>
+              <p className="mt-2 text-fg-muted">Select a programme to view its projects and application status.</p>
             </div>
-            <Badge variant="subtle">4 internship types</Badge>
+            <Badge variant="subtle">7 programmes</Badge>
           </div>
 
-          <div className="mt-7 grid gap-5 md:grid-cols-2">
-            {internshipTypes.map((internship) => (
-              <article key={internship.id} className="flex min-h-[310px] flex-col overflow-hidden rounded-xl border border-border bg-surface">
-                <div className="flex flex-1 flex-col p-6 sm:p-7">
-                  <div className="flex items-start justify-between gap-4">
-                    <span className="inline-flex size-10 items-center justify-center rounded-lg bg-bg-muted text-accent"><GraduationCap className="size-5" /></span>
-                    <Badge variant={internship.availability === 'open' || internship.availability === 'project-based' ? 'success' : 'subtle'}>
-                      {internship.availability === 'open' ? 'Open now' : internship.availability === 'project-based' ? 'Projects available' : 'Not open yet'}
-                    </Badge>
+          <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {internshipProgrammes.map(programme => {
+              const selected = programme.id === selectedProgramme.id;
+              return (
+                <article
+                  key={programme.id}
+                  className={cn(
+                    'flex min-h-[280px] flex-col overflow-hidden rounded-xl border bg-surface transition-shadow',
+                    selected ? 'border-accent shadow-md' : 'border-border',
+                  )}
+                >
+                  <div className="flex flex-1 flex-col p-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <span className="inline-flex size-10 items-center justify-center rounded-lg bg-bg-muted text-accent"><GraduationCap className="size-5" /></span>
+                      <Badge variant={statusVariant(programme.status)}>{programme.statusLabel}</Badge>
+                    </div>
+                    <h3 className="mt-5 text-lg font-semibold leading-6 text-fg">{programme.title}</h3>
+                    <dl className="mt-5 grid gap-4 border-t border-border pt-5 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                      <div>
+                        <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-fg-subtle">Who may apply</dt>
+                        <dd className="mt-1.5 text-sm leading-5 text-fg">{programme.audience}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-fg-subtle">Internship period</dt>
+                        <dd className="mt-1.5 text-sm leading-5 text-fg">{programme.period}</dd>
+                      </div>
+                    </dl>
                   </div>
-                  <h3 className="mt-5 text-xl font-semibold text-fg">{internship.title}</h3>
-                  <p className="mt-2 max-w-xl text-sm leading-6 text-fg-muted">{internship.description}</p>
-                  <dl className="mt-5 grid gap-4 border-t border-border pt-5 sm:grid-cols-2">
-                    <div>
-                      <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-fg-subtle">Who may apply</dt>
-                      <dd className="mt-1.5 text-sm font-medium text-fg">{internship.audience}</dd>
+                  <div className="border-t border-border bg-bg-subtle p-4">
+                    <div className={cn('grid gap-2', programme.status === 'open' && 'sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2')}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        aria-expanded={selected}
+                        aria-controls="programme-projects"
+                        onClick={() => viewProjects(programme.id)}
+                      >
+                        {selected ? 'Viewing projects' : 'View projects'}
+                        <ChevronDown className="size-4" />
+                      </Button>
+                      {programme.status === 'open' ? (
+                        <Button size="sm" className="w-full" onClick={() => beginApplication(programme.id)}>
+                          Apply programme<ArrowRight className="size-4" />
+                        </Button>
+                      ) : null}
                     </div>
-                    <div>
-                      <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-fg-subtle">Internship period</dt>
-                      <dd className="mt-1.5 text-sm font-medium text-fg">{internship.period}</dd>
-                    </div>
-                  </dl>
+                    <p className="mt-2 text-center text-xs text-fg-muted">{programme.availabilityLabel}</p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section
+        ref={projectsRef}
+        id="programme-projects"
+        className="scroll-mt-6 border-t border-border bg-surface px-4 py-10 sm:px-6 lg:px-10 lg:py-12"
+        aria-labelledby="programme-projects-title"
+      >
+        <div className="mx-auto w-full max-w-[1360px]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.1em] text-accent">Selected programme</p>
+              <h2 id="programme-projects-title" className="mt-2 text-3xl font-semibold tracking-tight text-fg">{selectedProgramme.title}</h2>
+              <p className="mt-2 text-fg-muted">Explore projects available for this programme.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant={statusVariant(selectedProgramme.status)}>{selectedProgramme.statusLabel}</Badge>
+              <Badge variant="subtle">{selectedProgramme.projects.length} {selectedProgramme.projects.length === 1 ? 'project' : 'projects'}</Badge>
+            </div>
+          </div>
+
+          <div className="mt-7 grid gap-5 lg:grid-cols-2">
+            {selectedProgramme.projects.map(project => (
+              <article key={project.id} className="flex flex-col rounded-xl border border-border bg-bg p-6 shadow-sm sm:p-7">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">{project.techDomain}</p>
+                <h3 className="mt-2 text-xl font-semibold text-fg">{project.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-fg-muted">{project.description}</p>
+                <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-border pt-5 text-sm text-fg-muted">
+                  <span className="inline-flex items-center gap-2"><Clock3 className="size-4" />{project.duration}</span>
+                  <span className="inline-flex items-center gap-2"><MapPin className="size-4" />{project.workingLocation}</span>
                 </div>
-
-                {internship.availability === 'upcoming' ? (
-                  <div className="flex items-center gap-2 border-t border-border bg-bg-muted px-6 py-4 text-sm font-medium text-fg-muted sm:px-7">
-                    <CalendarDays className="size-4" />{internship.availabilityLabel}
-                  </div>
-                ) : null}
-
-                {internship.availability === 'open' ? (
-                  <div className="border-t border-border p-4 sm:px-7">
-                    <Button className="w-full sm:w-auto" onClick={beginApplication}>Apply now<ArrowRight className="size-4" /></Button>
-                    <span className="mt-2 block text-xs text-fg-muted sm:ml-3 sm:inline">{internship.availabilityLabel}</span>
-                  </div>
-                ) : null}
-
-                {internship.availability === 'project-based' ? (
-                  <div className="grid gap-2 border-t border-border p-4 sm:grid-cols-2 sm:px-7">
-                    <a
-                      href="https://secure.dc5.pageuppeople.com/apply/845/gateway/Default.aspx?c=apply&sJobIDs=2003775&SourceTypeID=805&sLanguage=en"
-                      className={buttonVariants({ variant: 'solid', size: 'sm' })}
-                    >
-                      Explore Polytechnic Students<ArrowRight className="size-4" />
-                    </a>
-                    <Button size="sm" onClick={() => beginProgrammeApplication('PROG-0009')}>Explore University<ArrowRight className="size-4" /></Button>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {project.skills.map(skill => <Badge key={skill} variant="subtle">{skill}</Badge>)}
+                </div>
+                {selectedProgramme.status !== 'open' ? (
+                  <div className="mt-auto pt-6">
+                    <p className="inline-flex items-center gap-2 rounded-lg bg-bg-muted px-4 py-3 text-sm font-medium text-fg-muted">
+                      <CalendarDays className="size-4" />{selectedProgramme.availabilityLabel}
+                    </p>
                   </div>
                 ) : null}
               </article>

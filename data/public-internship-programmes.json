@@ -1,0 +1,87 @@
+[
+  {
+    "id": "undergraduate-scholar",
+    "title": "Undergraduate Scholar / Merit Scholar",
+    "audience": "DSTA undergraduate scholars and merit scholars",
+    "period": "May–August · 8–12 weeks",
+    "status": "upcoming",
+    "statusLabel": "Opening soon",
+    "availabilityLabel": "Applications open in November",
+    "projects": [
+      { "id": "scholar-secure-ai", "title": "Assured AI for Mission Systems", "techDomain": "Artificial Intelligence", "duration": "12 weeks", "workingLocation": "Hybrid", "description": "Evaluate robust machine-learning techniques for high-assurance operational systems.", "skills": ["Python", "Machine Learning", "Model Evaluation"] }
+    ]
+  },
+  {
+    "id": "tech-up",
+    "title": "Tech UP",
+    "audience": "Students selected for the Tech UP programme",
+    "period": "May–September · 4 months",
+    "status": "open",
+    "statusLabel": "Open now",
+    "availabilityLabel": "Applications close 30 September 2026",
+    "projects": [
+      { "id": "techup-edge-ai", "title": "Edge AI for Autonomous Platforms", "techDomain": "Artificial Intelligence", "duration": "4 months", "workingLocation": "Hybrid", "description": "Optimise compact perception models for deployment on autonomous edge platforms.", "skills": ["Machine Learning", "Python", "Edge Computing"] }
+    ]
+  },
+  {
+    "id": "undergraduate-student",
+    "title": "Undergraduate Student",
+    "audience": "Students currently pursuing an undergraduate degree",
+    "period": "3–6 months",
+    "status": "open",
+    "statusLabel": "Open now",
+    "availabilityLabel": "Projects are available for application",
+    "projects": [
+      { "id": "undergrad-cyber", "title": "Cyber Threat Detection", "techDomain": "Cybersecurity", "duration": "3 months", "workingLocation": "Hybrid", "description": "Prototype anomaly-detection capabilities for classifying suspicious network traffic.", "skills": ["Cybersecurity", "Python", "Networks"] }
+    ]
+  },
+  {
+    "id": "junior-college",
+    "title": "Junior College Scholar / Junior College Student",
+    "audience": "JC1 and JC2 students",
+    "period": "June or December · 1 month",
+    "status": "upcoming",
+    "statusLabel": "Opening soon",
+    "availabilityLabel": "December applications open in October",
+    "projects": [
+      { "id": "jc-data-discovery", "title": "Defence Data Discovery", "techDomain": "Data Analytics", "duration": "4 weeks", "workingLocation": "On-site", "description": "Explore how data visualisation supports engineering and operational decision-making.", "skills": ["Data Visualisation", "Problem Solving", "Presentation"] }
+    ]
+  },
+  {
+    "id": "polytechnic",
+    "title": "Polytechnic Scholar / Polytechnic Student",
+    "audience": "Polytechnic scholars and students",
+    "period": "March–August · 6 months",
+    "status": "open",
+    "statusLabel": "Open now",
+    "availabilityLabel": "Projects are available for application",
+    "projects": [
+      { "id": "poly-radar", "title": "Radar Signal Classification", "techDomain": "Sensors and Signal Processing", "duration": "6 months", "workingLocation": "On-site", "description": "Develop and evaluate signal-classification models using representative radar datasets.", "skills": ["Signal Processing", "Python", "Machine Learning"] },
+      { "id": "poly-maintenance", "title": "Predictive Maintenance Dashboard", "techDomain": "Data Analytics", "duration": "6 months", "workingLocation": "On-site", "description": "Create a dashboard that predicts equipment maintenance needs from sensor telemetry.", "skills": ["Data Visualisation", "Python", "IoT"] }
+    ]
+  },
+  {
+    "id": "post-jc-polytechnic",
+    "title": "Post Junior College / Post Polytechnic Student",
+    "audience": "Students awaiting entry into undergraduate studies",
+    "period": "January–June · 2–6 months",
+    "status": "not-open",
+    "statusLabel": "Not open yet",
+    "availabilityLabel": "Applications open in October",
+    "projects": [
+      { "id": "post-school-robotics", "title": "Robotics Systems Prototyping", "techDomain": "Robotics and Autonomous Systems", "duration": "3 months", "workingLocation": "On-site", "description": "Support rapid prototyping and testing of robotic systems in a multidisciplinary team.", "skills": ["Robotics", "Prototyping", "Python"] }
+    ]
+  },
+  {
+    "id": "young-defence-scientist",
+    "title": "Young Defence Scientist Programme",
+    "audience": "Students selected for the Young Defence Scientist Programme",
+    "period": "School holidays · Programme-based",
+    "status": "upcoming",
+    "statusLabel": "Opening soon",
+    "availabilityLabel": "The next project cycle will be announced soon",
+    "projects": [
+      { "id": "ydsp-autonomy", "title": "Autonomous Systems Discovery", "techDomain": "Robotics and Autonomous Systems", "duration": "4 weeks", "workingLocation": "On-site", "description": "Investigate sensing and autonomy concepts through a guided defence technology project.", "skills": ["Research", "Systems Thinking", "Programming"] }
+    ]
+  }
+]
