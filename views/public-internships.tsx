@@ -153,9 +153,14 @@ export default function PublicInternships() {
               <h2 id="programme-projects-title" className="mt-2 text-3xl font-semibold tracking-tight text-fg">{selectedProgramme.title}</h2>
               <p className="mt-2 text-fg-muted">Explore projects available for this programme.</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge variant={statusVariant(selectedProgramme.status)}>{selectedProgramme.statusLabel}</Badge>
               <Badge variant="subtle">{selectedProgramme.projects.length} {selectedProgramme.projects.length === 1 ? 'project' : 'projects'}</Badge>
+              {selectedProgramme.status === 'open' ? (
+                <Button className="ml-0 sm:ml-2" onClick={() => beginApplication(selectedProgramme.id)}>
+                  Apply programme<ArrowRight className="size-4" />
+                </Button>
+              ) : null}
             </div>
           </div>
 

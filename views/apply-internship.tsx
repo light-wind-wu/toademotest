@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ArrowRight, Briefcase, CalendarDays, MapPin, Clock, User2,
   Mail as MailIcon, Award, FileText,
-  ShieldCheck, MessageSquareHeart, Quote, Share2,
+  CheckCircle2, ShieldCheck, MessageSquareHeart, Share2, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { loadApplicantInternshipRecord } from '@/lib/applicant-internship';
@@ -34,7 +34,7 @@ function fmtDateShort(iso?: string) {
 
 const COMPLETION_TASK_ICONS: Record<ApplicantInternshipTaskId, typeof Award> = {
   feedback: MessageSquareHeart,
-  testimonial: Quote,
+  resume: Sparkles,
   linkedin: Share2,
   certificate: Award,
 };
@@ -71,6 +71,7 @@ export default function ApplyInternship() {
 
   const phase = homeScenario === 'completion-action' || homeScenario === 'journey-completed' ? 'offboarding' : 'onboarding';
   const baseInternship = loadApplicantInternshipRecord(phase);
+  const feedbackCompleted = Boolean(baseInternship.feedback);
   const isCompleted = scenarioInternship.status === 'COMPLETED';
   const isEnding = scenarioInternship.status === 'ENDING SOON — ACTION REQUIRED';
   const internship: ApplicantInternshipRecord = {
@@ -90,12 +91,29 @@ export default function ApplyInternship() {
     },
     project: { ...baseInternship.project, id: 'ai-threat-detection', title: scenarioInternship.project },
     certificate: isCompleted ? { status: 'available', date: '2027-07-08' } : { status: 'pending' },
-    completionTasks: baseInternship.completionTasks.map((task) => task.id === 'certificate' && isCompleted
-      ? { ...task, status: 'Available', statusTone: 'success', body: 'Your internship certificate is ready to view and download.', cta: 'View Certificate' }
-      : task),
+    completionTasks: baseInternship.completionTasks.map((task) => {
+      if (task.id === 'feedback' && feedbackCompleted) {
+        return {
+          ...task,
+          status: 'Completed',
+          statusTone: 'success',
+          title: 'Internship feedback submitted',
+          body: 'Required offboarding task completed. Certificate eligibility is unlocked.',
+        };
+      }
+      if (task.id === 'certificate' && isCompleted) {
+        return { ...task, status: 'Available', statusTone: 'success', body: 'Your internship certificate is ready to view and download.', cta: 'View Certificate' };
+      }
+      return task;
+    }),
   };
   const { action, project } = internship;
   const isOffboarding = internship.phase === 'offboarding';
+  const completionTaskOrder: ApplicantInternshipTaskId[] = ['feedback', 'linkedin', 'resume'];
+  const visibleCompletionTasks = internship.completionTasks
+    .filter((task) => task.id !== 'certificate')
+    .sort((left, right) => completionTaskOrder.indexOf(left.id) - completionTaskOrder.indexOf(right.id));
+  const certificateTask = internship.completionTasks.find((task) => task.id === 'certificate');
 
   return (
     <Shell activeRoute="/apply/internship" flushTop>
@@ -136,27 +154,41 @@ export default function ApplyInternship() {
                   <p className="text-[13px] font-medium text-fg-muted">Offboarding</p>
                   <h2 id="completion-tasks-title" className="mt-1 text-[20px] font-semibold text-fg">Completion tasks</h2>
                 </div>
-                <p className="text-[13px] text-fg-muted">Complete the required task first. Optional actions remain available afterwards.</p>
+                <p className="text-[13px] text-fg-muted">
+                  {feedbackCompleted
+                    ? 'Required action completed. Optional actions remain available.'
+                    : 'Complete the required task first. Optional actions remain available afterwards.'}
+                </p>
               </div>
 
-              <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {internship.completionTasks.map((task) => {
-                  const TaskIcon = COMPLETION_TASK_ICONS[task.id];
+              <div className="mt-4 grid gap-4 md:grid-cols-3">
+                {visibleCompletionTasks.map((task) => {
+                  const taskCompleted = task.id === 'feedback' && feedbackCompleted;
+                  const TaskIcon = taskCompleted ? CheckCircle2 : COMPLETION_TASK_ICONS[task.id];
                   return (
                     <Card key={task.id} className="shadow-none">
                       <CardContent className="flex h-full flex-col p-5">
                         <div className="flex items-start justify-between gap-3">
-                          <span className="inline-flex size-9 items-center justify-center rounded-md bg-bg-muted text-accent"><TaskIcon className="size-4" aria-hidden /></span>
+                          <span className={cn('inline-flex size-9 items-center justify-center rounded-md bg-bg-muted', taskCompleted ? 'text-success' : 'text-accent')}><TaskIcon className="size-4" aria-hidden /></span>
                           <Badge variant={task.statusTone}>{formatStatusLabel(task.status)}</Badge>
                         </div>
                         <h3 className="mt-4 text-[16px] font-semibold text-fg">{task.title}</h3>
                         <p className="mt-2 flex-1 text-[13px] leading-5 text-fg-muted">{task.body}</p>
-                        <Button className="mt-5 self-start" variant={task.id === 'feedback' ? 'solid' : 'outline'} onClick={() => router.push(task.route)}>{task.cta}</Button>
+                        {!taskCompleted ? (
+                          <Button className="mt-5 self-start" variant={task.id === 'feedback' ? 'solid' : 'outline'} onClick={() => router.push(task.route)}>{task.cta}</Button>
+                        ) : null}
                       </CardContent>
                     </Card>
                   );
                 })}
               </div>
+              {certificateTask ? (
+                <div className="mt-5 border-t border-border pt-5">
+                  <Button variant="outline" onClick={() => router.push(certificateTask.route)}>
+                    {certificateTask.cta === 'View Certificate' ? certificateTask.cta : 'View Certificate Status'}
+                  </Button>
+                </div>
+              ) : null}
             </section>
           ) : null}
 

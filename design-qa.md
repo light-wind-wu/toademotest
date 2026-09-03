@@ -40,6 +40,100 @@ final result: passed
 
 ---
 
+# LinkedIn Suggested Post Image — QA
+
+## Evidence
+
+- Route: `http://127.0.0.1:3000/apply/applicant-linkedin-share`
+- Screenshot: `/private/tmp/applicant-linkedin-share-with-poster.png`
+- Project asset: `public/images/internship-completed-linkedin.png`
+
+## Checks
+
+- The supplied square internship-completion poster is displayed beside the editable suggested copy.
+- The complete artwork remains visible at its original aspect ratio without cropping or distortion.
+- The post copy, external-navigation notice, and Continue/Cancel actions remain visible and usable.
+- The layout collapses naturally below the desktop breakpoint.
+- TypeScript strict check and `git diff --check` pass.
+
+## Result
+
+final result: passed
+
+---
+
+# Applicant Feedback Completion — QA
+
+## Evidence
+
+- Review route: `http://127.0.0.1:3000/apply/applicant-feedback-review`
+- Confirmation route: `http://127.0.0.1:3000/apply/applicant-feedback-confirmation`
+- Completed Offboarding route: `http://127.0.0.1:3000/apply/applicant-offboarding`
+- Completed-state screenshot: `/private/tmp/applicant-offboarding-feedback-completed-viewport.png`
+
+## Interaction and state checks
+
+- Submit Feedback persists the validated draft to the offboarding internship record and clears the saved draft.
+- Submission routes to the feedback confirmation page.
+- Return to Offboarding shows `Required action completed`, a success notice, and a completed feedback card.
+- The previous required-action warning and Start Feedback action are no longer shown after submission.
+- Certificate eligibility is clearly shown as unlocked, while the optional LinkedIn and resume actions remain available.
+- Refresh-safe completion is derived from the existing localStorage-backed internship record.
+- TypeScript strict check and `git diff --check` pass.
+
+## Result
+
+final result: passed
+
+---
+
+# Applicant offer detail — merged review and direct period editing QA
+
+## Evidence
+
+- Original offer detail: `/private/tmp/dsta-offer-period-audit/01-offer-detail.png`
+- Merged implementation: `/private/tmp/applicant-offer-detail-merged-final.png`
+- Period editing sheet: `/private/tmp/applicant-offer-period-sheet-final.png`
+- Corrected project date format: `/private/tmp/applicant-offer-period-sheet-date-format-final.png`
+- Combined date-range picker: `/private/tmp/applicant-offer-period-range-picker-final.png`
+- Offer rejection reason select: `/private/tmp/applicant-offer-reject-reason-select-final.png`
+- Side-by-side comparison: `/private/tmp/applicant-offer-detail-comparison-final.jpg`
+- Browser viewport: 1105 × 896 CSS pixels, DPR 1
+
+## Findings and fixes
+
+- Replaced the separate period-change request treatment with an `Edit` action inside the existing Internship period field.
+- Merged acceptance review into the offer detail card with exactly five review confirmations followed by `Remarks (optional)`.
+- Removed the intermediate accept-review route from the primary flow; Accept Offer now continues directly to the existing accepted confirmation route.
+- Added a right-side period editor with the programme window clearly stated and date inputs constrained to 1 Sept–31 Dec 2026.
+- A valid changed period saves immediately, updates the visible field, records an IO notification, and shows a success toast; no pending approval, approve, or reject state is introduced.
+- P1 found during validation — a standalone field error component caused a missing field-context runtime error. Replaced it with a semantic alert paragraph and rechecked the repaired sheet.
+- Annotation fix — replaced locale-dependent native date inputs with the existing project date picker, so field values now use the project format such as `1 Sept 2026` while retaining calendar selection.
+- Annotation fix — removed the redundant Remarks helper sentence while retaining the optional label, textarea placeholder, validation, and character counter.
+- Annotation fix — expanded the visible `IO notified` abbreviation to `Internship Officer notified` for clarity.
+- Annotation fix — renamed the date-range callout from `Available window` to `Internship duration` without changing its constraints.
+- Annotation fix — removed the `Restore offered dates` action and its unused handler; Cancel and Save changes remain available.
+- Annotation fix — combined Start date and End date into one split range control, opening a shared two-calendar panel modelled on the supplied reference.
+
+## Interaction and technical checks
+
+- `Edit` opens the right-side sheet; Cancel closes it without changing the saved dates.
+- Valid dates save and display the `Updated` and `IO notified` treatments.
+- Dates outside the programme window are rejected and the sheet stays open with an inline error.
+- Date picker calendars disable dates outside the programme window; the start picker also cannot select a date after the current end date.
+- The combined range control updates both dates, saves successfully, closes the sheet, updates the offer period, and shows the existing notification toast.
+- Offer rejection uses a PRIZM select with six common reasons; keyboard opening, option selection, selected-state display, and the unchanged optional Remarks field were verified.
+- All five review checkboxes are required before Accept Offer becomes enabled; Remarks remains optional and is limited to 500 characters.
+- The final acceptance destination is verified statically; the destructive final submission was not triggered during browser QA.
+- Typography, spacing, semantic colors, borders, radii, copy, focus treatment, and full-page composition were checked against the combined comparison image.
+- TypeScript strict check and `git diff --check` pass.
+
+## Result
+
+final result: passed
+
+---
+
 # Public Internships — Simplified Types QA
 
 ## Evidence
@@ -66,6 +160,32 @@ final result: passed
 - Project detail disclosure and application actions remain available within each project card.
 - The four type cards collapse to a single column at mobile width with no horizontal overflow.
 - Browser console reported no errors; TypeScript strict check and `git diff --check` pass.
+
+## Result
+
+final result: passed
+
+---
+
+# Applicant offboarding — resume description QA
+
+## Evidence
+
+- Source annotation: browser screenshot targeting the former Request testimonial card.
+- Updated offboarding card: `/private/tmp/applicant-offboarding-resume-card-final.png`
+- Reordered offboarding cards: `/private/tmp/applicant-offboarding-resume-card-last-final.png`
+- Editable generated draft: `/private/tmp/applicant-resume-description-page-final.png`
+
+## Findings and interaction checks
+
+- Replaced the testimonial card with `Build your resume entry` and a clear `Generate Resume Description` action.
+- The destination now generates realistic achievement-focused content from the internship and project context instead of opening a mentor request form.
+- The generated content is editable, limited to 800 characters and saved to prototype local storage.
+- Save Description returns to Offboarding; Not Now remains available.
+- Corrected the related Record context programme to `University Internship 2026` for consistency with the offboarding record.
+- Annotation fix — moved `Build your resume entry` to the third card and aligned the optional-action checklist order.
+- Feedback annotation — removed the duplicate header-level Save Draft and Review Feedback actions; the single form-bottom action set remains.
+- TypeScript strict check and `git diff --check` pass.
 
 ## Result
 

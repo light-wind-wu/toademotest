@@ -53,7 +53,7 @@ export const APPLICANT_WORKFLOW_CONFIG: Record<ApplicantWorkflowPageId, Applican
     description: 'Review the placement, internship period and offer documents before making your decision.',
     status: 'Respond by 5 Sep 2026', statusTone: 'warning', activeRoute: '/apply/offers',
     backLabel: 'My Offers', backRoute: '/apply/offers',
-    primaryLabel: 'Accept Offer', primaryRoute: '/apply/applicant-offer-review?decision=accept',
+    primaryLabel: 'Accept Offer', primaryRoute: '/apply/applicant-offer-confirmation?decision=accepted',
     secondaryLabel: 'Reject Offer', secondaryRoute: '/apply/applicant-offer-reject',
     notice: 'Your response must be submitted by 5 Sep 2026 at 11:59 PM SGT.',
     details: [
@@ -64,7 +64,13 @@ export const APPLICANT_WORKFLOW_CONFIG: Record<ApplicantWorkflowPageId, Applican
       { label: 'Mentor', value: 'Marcus Tan' },
       { label: 'Allowance', value: 'S$1,500 per month' },
     ],
-    checklist: ['Review internship dates', 'Review reporting location', 'Read the internship offer letter'],
+    checklist: [
+      'Review internship dates',
+      'Review reporting location',
+      'Read the internship offer letter',
+      'Confirm availability for the full internship period',
+      'Confirm understanding of the offer and onboarding requirements',
+    ],
   },
   'applicant-offer-review': {
     id: 'applicant-offer-review', eyebrow: 'Offer · Accept',
@@ -170,7 +176,7 @@ export const APPLICANT_WORKFLOW_CONFIG: Record<ApplicantWorkflowPageId, Applican
       { label: 'Completion date', value: '19 Sep 2026' },
       { label: 'Mentor', value: 'Wei Jian Lim' },
     ],
-    checklist: ['Submit internship feedback · Required', 'Request a testimonial · Optional', 'Share your experience · Optional'],
+    checklist: ['Submit internship feedback · Required', 'Share your experience · Optional', 'Create a resume description · Optional'],
   },
   'applicant-feedback-review': {
     id: 'applicant-feedback-review', eyebrow: 'Offboarding · Feedback review',
@@ -204,17 +210,18 @@ export const APPLICANT_WORKFLOW_CONFIG: Record<ApplicantWorkflowPageId, Applican
     ],
   },
   'applicant-testimonial-request': {
-    id: 'applicant-testimonial-request', eyebrow: 'Internship · Testimonial',
-    title: 'Request a testimonial',
-    description: 'Let your mentor know how you plan to use the testimonial and what you would like it to highlight.',
+    id: 'applicant-testimonial-request', eyebrow: 'Internship · Resume',
+    title: 'Create your resume description',
+    description: 'TOA has generated a draft from your internship record. Edit it to suit your resume.',
     status: 'Optional', statusTone: 'subtle', activeRoute: '/apply/internship',
     backLabel: 'Offboarding', backRoute: '/apply/applicant-offboarding',
-    primaryLabel: 'Submit Request', primaryRoute: '/apply/applicant-testimonial-status',
+    primaryLabel: 'Save Description', primaryRoute: '/apply/applicant-offboarding?resume=ready',
     secondaryLabel: 'Not Now', secondaryRoute: '/apply/applicant-offboarding',
+    notice: 'Review the generated content carefully before using it in job applications.',
     details: [
-      { label: 'Mentor', value: 'Wei Jian Lim · Senior Research Scientist' },
       { label: 'Internship', value: 'University Internship 2026' },
       { label: 'Project', value: 'Cybersecurity Threat Analysis' },
+      { label: 'Organisation', value: 'Defence Science and Technology Agency' },
     ],
   },
   'applicant-testimonial-status': {

@@ -1121,7 +1121,7 @@ export interface ApplicantInternshipDocument {
 
 export type ApplicantInternshipTaskId =
   | 'feedback'
-  | 'testimonial'
+  | 'resume'
   | 'linkedin'
   | 'certificate';
 

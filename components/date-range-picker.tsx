@@ -53,8 +53,14 @@ export interface DateRangePickerProps {
   hideFooter?: boolean;
   /** Positions the calendar icon on the left (default) or right side of the trigger. */
   iconPosition?: 'left' | 'right';
+  /** Shows start and end as adjacent labelled fields inside one range trigger. */
+  splitTrigger?: boolean;
   /** Called whenever the popover opens or closes (close = interaction end). */
   onOpenChange?: (open: boolean) => void;
+  /** Aligns the calendar popover to the range trigger. */
+  align?: 'start' | 'center' | 'end';
+  /** Optional portal host, useful when the picker is rendered inside a modal or sheet. */
+  portalContainer?: HTMLElement | null;
 }
 
 /** Midnight today — the boundary for "no dates in the past" rules. */
@@ -81,7 +87,7 @@ export function withinRanges(ranges: DateRange[]) {
 /** Formats a single date in British style, e.g. "21 Jun 2026". */
 function formatDate(date?: Date) {
   if (!date) return undefined;
-  return date.toLocaleDateString("en-GB", {
+  return date.toLocaleDateString("en-SG", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -119,7 +125,10 @@ export function DateRangePicker({
   hideLabels = false,
   hideFooter = false,
   iconPosition = 'left',
+  splitTrigger = false,
   onOpenChange,
+  align = 'center',
+  portalContainer,
 }: DateRangePickerProps) {
   // Forwarded to both calendars; relies on the local Calendar fork's dropdown header.
   const calendarYearProps = {
@@ -152,19 +161,41 @@ export function DateRangePicker({
       <PopoverTrigger
         disabled={disabled}
         className={cn(
-          "inline-flex h-9 min-w-64 items-center gap-2 rounded-md border border-border bg-surface px-3 text-sm text-fg shadow-sm",
+          "inline-flex min-w-64 items-center rounded-md border border-border bg-surface text-sm text-fg shadow-sm",
+          splitTrigger ? "h-auto overflow-hidden p-0" : "h-9 gap-2 px-3",
           "hover:bg-bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
           "disabled:cursor-not-allowed disabled:opacity-50",
-          iconPosition === 'right' && "flex-row-reverse",
+          !splitTrigger && iconPosition === 'right' && "flex-row-reverse",
           !range?.from && "text-fg-muted",
           className,
         )}
       >
-        <CalendarDays className="h-4 w-4 shrink-0 text-fg-muted" />
-        <span className="min-w-0 flex-1 truncate text-left">{formatRange(range, placeholder)}</span>
+        {splitTrigger ? (
+          <span className="grid w-full grid-cols-2 text-left">
+            <span className="flex min-w-0 items-center gap-2 border-r border-border px-3 py-2.5">
+              <span className="min-w-0 flex-1">
+                <span className="block text-[11px] font-medium uppercase tracking-wide text-fg-muted">Start date</span>
+                <span className="mt-0.5 block truncate text-[14px] font-medium text-fg">{formatDate(range?.from) ?? placeholder}</span>
+              </span>
+              <CalendarDays className="size-4 shrink-0 text-fg-muted" />
+            </span>
+            <span className="flex min-w-0 items-center gap-2 px-3 py-2.5">
+              <span className="min-w-0 flex-1">
+                <span className="block text-[11px] font-medium uppercase tracking-wide text-fg-muted">End date</span>
+                <span className="mt-0.5 block truncate text-[14px] font-medium text-fg">{formatDate(range?.to) ?? 'Select end date'}</span>
+              </span>
+              <CalendarDays className="size-4 shrink-0 text-fg-muted" />
+            </span>
+          </span>
+        ) : (
+          <>
+            <CalendarDays className="h-4 w-4 shrink-0 text-fg-muted" />
+            <span className="min-w-0 flex-1 truncate text-left">{formatRange(range, placeholder)}</span>
+          </>
+        )}
       </PopoverTrigger>
 
-      <PopoverContent className="w-auto p-0">
+      <PopoverContent align={align} portalContainer={portalContainer} className="z-[200] w-auto p-0">
         <div className="flex flex-col divide-y divide-border sm:flex-row sm:divide-x sm:divide-y-0">
           <div>
             {!hideLabels && (

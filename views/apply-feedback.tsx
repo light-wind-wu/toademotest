@@ -206,14 +206,6 @@ export default function ApplyFeedback() {
             <h1 className="text-headline-lg text-fg">Post-Internship Feedback</h1>
           </div>
         </div>
-        {!justSaved && !alreadyDone && (
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={saveDraft}><Save size={13} /> Save Draft</Button>
-            <Button disabled={!fbComplete || fbSubmitting} onClick={reviewFeedback}>
-              <Send size={13} />Review Feedback
-            </Button>
-          </div>
-        )}
       </div>
 
       {(justSaved || alreadyDone) ? (

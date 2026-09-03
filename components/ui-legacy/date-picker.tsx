@@ -8,11 +8,13 @@ import { cn } from '@/lib/utils';
 import { Popover as BasePopover } from '@base-ui-components/react/popover';
 
 interface DatePickerProps {
+  id?: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   disabled?: boolean;
   minDate?: string;
+  maxDate?: string;
   /** Which edge the calendar popover aligns to. Use 'right' when the field sits
    *  in a right-hand column so the calendar opens inward and isn't clipped. */
   align?: 'left' | 'right';
@@ -24,7 +26,13 @@ interface DatePickerProps {
 
 function displayDate(value: string) {
   const parsed = value ? parse(value, 'yyyy-MM-dd', new Date()) : null;
-  return parsed && isValid(parsed) ? format(parsed, 'dd MMM yyyy') : '';
+  return parsed && isValid(parsed)
+    ? new Intl.DateTimeFormat('en-SG', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }).format(parsed)
+    : '';
 }
 
 function parseDate(value?: string) {
@@ -34,11 +42,13 @@ function parseDate(value?: string) {
 }
 
 export default function DatePicker({
+  id,
   value,
   onChange,
   placeholder = 'Select date',
   disabled = false,
   minDate,
+  maxDate,
   align = 'left',
   error = false,
   onClose,
@@ -46,6 +56,7 @@ export default function DatePicker({
   const [open, setOpen] = useState(false);
   const selected = parseDate(value);
   const min = parseDate(minDate);
+  const max = parseDate(maxDate);
 
   if (disabled) {
     return (
@@ -59,6 +70,7 @@ export default function DatePicker({
   return (
     <BasePopover.Root open={open} onOpenChange={next => { setOpen(next); if (!next) onClose?.(); }}>
       <BasePopover.Trigger
+        id={id}
         type="button"
         aria-label={placeholder}
         aria-expanded={open}
@@ -94,7 +106,7 @@ export default function DatePicker({
               defaultMonth={selected ?? min}
               captionLayout="dropdown"
               className="w-full"
-              disabled={date => (min ? date < min : false)}
+              disabled={date => (min ? date < min : false) || (max ? date > max : false)}
               onSelect={date => {
                 onChange(format(date, 'yyyy-MM-dd'));
                 setOpen(false);

@@ -16,10 +16,19 @@ export function loadApplicantInternshipRecords(): ApplicantInternshipRecord[] {
     if (stored) {
       const savedRecords = JSON.parse(stored) as ApplicantInternshipRecord[];
       const savedByPhase = new Map(savedRecords.map((record) => [record.phase, record]));
-      return seed.map((record) => ({
-        ...record,
-        ...savedByPhase.get(record.phase),
-      }));
+      return seed.map((record) => {
+        const savedRecord = savedByPhase.get(record.phase);
+        return {
+          ...record,
+          ...savedRecord,
+          completionTasks: record.completionTasks.map((task) => {
+            const savedTask = savedRecord?.completionTasks.find((candidate) => candidate.id === task.id);
+            return savedTask
+              ? { ...task, status: savedTask.status, statusTone: savedTask.statusTone }
+              : task;
+          }),
+        };
+      });
     }
     localStorage.setItem(APPLICANT_INTERNSHIP_KEY, JSON.stringify(seed));
   } catch {

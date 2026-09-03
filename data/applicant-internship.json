@@ -50,7 +50,7 @@
     "action": {
       "label": "Completion action required",
       "title": "Complete your offboarding",
-      "body": "Submit the required internship feedback to complete your record. You can also request a testimonial, prepare a LinkedIn post and track certificate eligibility.",
+      "body": "Submit the required internship feedback to complete your record. You can also build a resume entry, prepare a LinkedIn post and track certificate eligibility.",
       "cta": "Start Offboarding",
       "route": "/apply/applicant-offboarding"
     },
@@ -84,12 +84,12 @@
         "route": "/apply/feedback/APP-0031"
       },
       {
-        "id": "testimonial",
+        "id": "resume",
         "status": "Optional",
         "statusTone": "subtle",
-        "title": "Request a testimonial",
-        "body": "Ask your mentor for a testimonial to support future applications.",
-        "cta": "Request Testimonial",
+        "title": "Build your resume entry",
+        "body": "Generate an editable summary of your internship achievements for your resume.",
+        "cta": "Generate Resume Description",
         "route": "/apply/applicant-testimonial-request"
       },
       {

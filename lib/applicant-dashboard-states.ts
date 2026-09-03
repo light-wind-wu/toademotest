@@ -420,11 +420,11 @@ export const APPLICANT_DASHBOARD_STATES: Record<
     journeyStage: 'completion', completedStages: ['application', 'review', 'interview', 'offer', 'onboarding', 'internship', 'completion'], journeyTitle: 'After your internship',
     journeyItems: [],
     guideTitle: 'After Your Internship Guide',
-    guideItems: ['Access your certificate', 'Complete any outstanding feedback', 'Submit or review your testimonial', 'Share your experience on LinkedIn (optional)'],
+    guideItems: ['Access your certificate', 'Complete any outstanding feedback', 'Build or update your resume entry', 'Share your experience on LinkedIn (optional)'],
     activity: [{ title: 'Certificate available', date: activityTime.certificateAvailable }, { title: 'Internship completed', date: activityTime.internshipCompleted }, { title: 'Offboarding completed', date: activityTime.offboardingCompleted }],
     postInternshipItems: [
       { title: 'Feedback', status: 'Completed', action: 'View', route: '/apply/internship' },
-      { title: 'Testimonial', status: 'Ready to submit', action: 'Submit', route: '/apply/applicant-testimonial-request' },
+      { title: 'Resume entry', status: 'Ready to generate', action: 'Generate', route: '/apply/applicant-testimonial-request' },
       { title: 'Certificate', status: 'Available', action: 'View', route: '/apply/certification' },
       { title: 'LinkedIn', status: 'Optional', action: 'Share', route: '/apply/applicant-linkedin-share', optional: true },
     ],
