@@ -59,12 +59,17 @@ import {
 } from '@/lib/applicant-offer-response';
 import { APPLICANT_WORKFLOW_CONFIG } from '@/lib/applicant-workflows';
 import {
+  APPLICANT_ONBOARDING_DRAFT_SEED,
+  loadApplicantOnboardingDraft,
+  submitApplicantOnboardingDraft,
+} from '@/lib/applicant-onboarding';
+import {
   hasSubmittedApplicantFeedback,
   submitApplicantFeedbackDraft,
 } from '@/lib/applicant-feedback';
 import { addNotification } from '@/lib/notifications';
 import { formatStatusLabel } from '@/lib/status-label';
-import type { ApplicantOfferPeriod } from '@/lib/types';
+import type { ApplicantOfferPeriod, ApplicantOnboardingDraft } from '@/lib/types';
 import type { ApplicantWorkflowPageId } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -177,6 +182,7 @@ export default function ApplicantWorkflowPage() {
   const [offerSheetElement, setOfferSheetElement] = useState<HTMLElement | null>(null);
   const [declineReason, setDeclineReason] = useState<string>(OFFER_DECLINE_REASONS[0]);
   const [feedbackCompleted, setFeedbackCompleted] = useState(false);
+  const [onboardingDraft, setOnboardingDraft] = useState<ApplicantOnboardingDraft>({ ...APPLICANT_ONBOARDING_DRAFT_SEED, completedTasks: [] });
 
   const isInterviewReview = pageId === 'applicant-interview-review';
   const isInterviewConfirmation = pageId === 'applicant-interview-confirmation';
@@ -187,6 +193,8 @@ export default function ApplicantWorkflowPage() {
   const isCertificate = pageId === 'applicant-certificate-viewer';
   const isOffboarding = pageId === 'applicant-offboarding';
   const isFeedbackReview = pageId === 'applicant-feedback-review';
+  const isOnboardingReview = pageId === 'applicant-onboarding-review';
+  const isOnboardingConfirmation = pageId === 'applicant-onboarding-confirmation';
   const isOfferWorkflow = pageId.startsWith('applicant-offer-');
   const isOfferDetail = pageId === 'applicant-offer-detail';
   const isOfferReview = pageId === 'applicant-offer-review';
@@ -234,6 +242,11 @@ export default function ApplicantWorkflowPage() {
     setFeedbackCompleted(hasSubmittedApplicantFeedback());
   }, [isFeedbackReview, isOffboarding]);
 
+  useEffect(() => {
+    if (!isOnboardingReview) return;
+    setOnboardingDraft(loadApplicantOnboardingDraft());
+  }, [isOnboardingReview]);
+
   const effectiveTitle = isAlternativeInterviewRequest
     ? 'Interview time change requested'
     : pageId === 'applicant-offer-confirmation'
@@ -260,6 +273,9 @@ export default function ApplicantWorkflowPage() {
   const effectiveSecondaryRoute = isAlternativeInterviewRequest
     ? `/apply/applications/${searchParams.get('applicationId') ?? 'app-poly-2027'}`
     : config?.secondaryRoute;
+  const maskedBankAccount = onboardingDraft.bankAccountNumber.length > 4
+    ? `•••• ${onboardingDraft.bankAccountNumber.slice(-4)}`
+    : onboardingDraft.bankAccountNumber || '—';
   const baseDetails = isAlternativeInterviewRequest
     ? [
         { label: 'Request type', value: 'Alternative interview time' },
@@ -273,7 +289,18 @@ export default function ApplicantWorkflowPage() {
           { label: 'Interview time', value: submittedInterviewSlot },
           { label: 'Format', value: 'Microsoft Teams · 1 hour' },
         ]
-    : config?.details ?? [];
+    : isOnboardingReview
+      ? [
+          { label: 'Bank Name', value: onboardingDraft.bankName || '—' },
+          { label: 'Bank Account Holder Name', value: onboardingDraft.bankAccountHolderName || '—' },
+          { label: 'Bank Account Number', value: maskedBankAccount },
+          { label: 'Bank Supporting Document', value: onboardingDraft.bankSupportingDocumentName || '—' },
+          { label: 'Profile Photograph', value: onboardingDraft.profilePhotographRequired ? onboardingDraft.profilePhotographName || 'Required' : 'Not required' },
+          { label: 'Mobile Device IMEI Number', value: onboardingDraft.bringingMobileDevice ? onboardingDraft.mobileDeviceImeiNumber || 'Required' : 'Not applicable' },
+          { label: 'Mobile Declaration', value: onboardingDraft.mobileDeclarationAccepted ? 'Accepted' : 'Not accepted' },
+          { label: 'Acceptable Use Policy Acknowledgement', value: onboardingDraft.acceptableUsePolicyAccepted ? 'Acknowledged' : 'Not acknowledged' },
+        ]
+      : config?.details ?? [];
   const periodAwareDetails = baseDetails.map((detail) => detail.label === 'Internship period'
     ? { ...detail, value: formatOfferPeriod(offerPeriod) }
     : detail);
@@ -302,6 +329,7 @@ export default function ApplicantWorkflowPage() {
         || !acceptanceRemarksSchema.safeParse(notes).success;
     }
     if (isRequirement) return !contactName.trim() || !contactPhone.trim();
+    if (isOnboardingReview) return onboardingDraft.completedTasks.length !== 3;
     if (isReject) return !declineReason;
     if (isTestimonial) return !resumeDescriptionSchema.safeParse(notes).success;
     if (isInterviewReview) {
@@ -310,7 +338,7 @@ export default function ApplicantWorkflowPage() {
         : !interviewSlotSchema.safeParse(selectedInterviewSlot).success;
     }
     return false;
-  }, [alternativeAvailability, checks, config?.checklist, contactName, contactPhone, declineReason, isInterviewReview, isOfferDetail, isOfferReview, isReject, isRequirement, isTestimonial, notes, requestingAlternative, selectedInterviewSlot]);
+  }, [alternativeAvailability, checks, config?.checklist, contactName, contactPhone, declineReason, isInterviewReview, isOfferDetail, isOfferReview, isOnboardingReview, isReject, isRequirement, isTestimonial, notes, onboardingDraft.completedTasks.length, requestingAlternative, selectedInterviewSlot]);
 
   if (!config) {
     return (
@@ -324,6 +352,19 @@ export default function ApplicantWorkflowPage() {
   }
 
   function continueFlow() {
+    if (isOnboardingReview) {
+      if (onboardingDraft.completedTasks.length !== 3) return;
+      submitApplicantOnboardingDraft();
+      addNotification({
+        forRole: 'io',
+        title: 'Onboarding submitted — Jenny Aw',
+        body: 'Jenny Aw completed bank information, additional information and required declarations.',
+        href: '/applications',
+        tier: 'info',
+      });
+      router.push(config.primaryRoute);
+      return;
+    }
     if (isFeedbackReview) {
       const wasAlreadySubmitted = hasSubmittedApplicantFeedback();
       submitApplicantFeedbackDraft('APP-0031');
@@ -915,7 +956,7 @@ export default function ApplicantWorkflowPage() {
                 <CardContent>
                   <div className="flex gap-3">
                     <Clock3 className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
-                    <p className="text-[14px] leading-6 text-fg-muted">{isInterviewReview ? 'Choose a listed timeslot to confirm it immediately. You will receive a confirmation email and portal notification.' : isAlternativeInterviewRequest ? 'The interview team will review your schedule update request and notify you when a new time is confirmed.' : isInterviewConfirmation ? 'Your interview is scheduled. Review the details in My Interviews and join Microsoft Teams 5 minutes early.' : 'Complete this step to update the relevant application or internship record. You can return through Home, the menu index or the record timeline.'}</p>
+                    <p className="text-[14px] leading-6 text-fg-muted">{isInterviewReview ? 'Choose a listed timeslot to confirm it immediately. You will receive a confirmation email and portal notification.' : isAlternativeInterviewRequest ? 'The interview team will review your schedule update request and notify you when a new time is confirmed.' : isInterviewConfirmation ? 'Your interview is scheduled. Review the details in My Interviews and join Microsoft Teams 5 minutes early.' : isOnboardingConfirmation ? 'No further action is required right now. You can return to the dashboard or continue to My Internship.' : 'Complete this step to update the relevant application or internship record. You can return through Home, the menu index or the record timeline.'}</p>
                   </div>
                 </CardContent>
               </Card>

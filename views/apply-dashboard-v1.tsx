@@ -148,14 +148,14 @@ export default function ApplyDashboardV1({
       ? 'My internship'
       : scenario === 'draft-application'
         ? 'Application progress'
-        : 'Explore internship opportunities';
+        : 'Find your starting point,';
   const sectionTitle = showApplicationMap
     ? 'Where you are now'
     : showInternshipHome
       ? INTERVIEW_PROJECT_NAME
       : scenario === 'draft-application'
         ? 'Finish your application'
-        : 'Find the right programme for you';
+        : 'Find your starting point';
 
   function handlePrimaryAction() {
     if (scenario === 'interview-action') {
@@ -183,17 +183,19 @@ export default function ApplyDashboardV1({
             className={cn(
               'relative z-0 w-full overflow-hidden lg:overflow-visible',
               scenario === 'no-application'
-                ? 'max-lg:aspect-[780/1108] lg:h-[300px]'
+                ? 'max-lg:aspect-[780/1108] lg:h-[323px]'
+                : scenario === 'draft-application' || scenario === 'submitted'
+                  ? 'h-[300px] md:h-[299px]'
                 : 'h-[300px] lg:h-[345px]',
             )}
             style={{ background: 'rgba(254, 253, 251, 1)' }}
           >
             <div className="relative mx-auto h-full w-full max-w-[1440px]">
               {/* Desktop ship bg + radar share one contain frame (sidebar-safe) */}
-              <div className="ship-float pointer-events-none absolute inset-0 z-0 hidden lg:block">
+              <div className={cn('ship-float pointer-events-none absolute inset-0 z-0 hidden', scenario === 'draft-application' || scenario === 'submitted' ? 'md:block' : 'lg:block')}>
                 {visualVariant === 'v2' ? <HeroV2Bg /> : <HeroRadarOverlay />}
               </div>
-              <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden lg:hidden">
+              <div className={cn('pointer-events-none absolute inset-0 z-0 overflow-hidden', scenario === 'draft-application' || scenario === 'submitted' ? 'md:hidden' : 'lg:hidden')}>
                 <Image
                   src={assets.heroMobile[visualVariant]}
                   alt=""
@@ -204,9 +206,12 @@ export default function ApplyDashboardV1({
                 />
               </div>
 
-              <div className="absolute inset-x-0 top-0 z-10 px-4 pt-10 lg:inset-x-auto lg:left-16 lg:top-[60px] lg:h-[200px] lg:w-[760px] lg:px-0 lg:pt-0">
+              <div className={cn('absolute inset-x-0 top-0 z-10 px-4 pt-10 lg:inset-x-auto lg:left-16 lg:top-[60px] lg:h-[200px] lg:w-[760px] lg:px-0 lg:pt-0', (scenario === 'draft-application' || scenario === 'submitted') && 'md:inset-x-auto md:left-16 md:top-[60px] md:h-[200px] md:w-[600px] md:px-0 md:pt-0')}>
                 <h1
-                  className="text-[28px] font-semibold leading-8 tracking-[-0.48px] lg:text-[48px] lg:leading-[47px]"
+                  className={cn(
+                    'text-[28px] font-semibold leading-8 tracking-[-0.48px] lg:text-[48px] lg:leading-[47px]',
+                    (scenario === 'draft-application' || scenario === 'submitted') && 'md:text-[48px] md:leading-[47px]',
+                  )}
                   style={{ color: 'rgba(15, 23, 43, 1)' }}
                 >
                   Welcome back, {firstName}
@@ -214,22 +219,28 @@ export default function ApplyDashboardV1({
                 <p
                   className={cn(
                     'mt-2 text-[14px] font-normal lg:mt-4 lg:text-[16px]',
+                    (scenario === 'draft-application' || scenario === 'submitted') && 'md:mt-4 md:text-[16px]',
                     lifecycleConfig || isMultipleApplications ? 'max-w-[680px] leading-5 lg:leading-6' : 'leading-[100%]',
                   )}
                   style={{ color: 'rgba(74, 85, 104, 1)' }}
                 >
                   {heroCopy}
                 </p>
-                <span
-                  className="mt-6 inline-flex h-[22px] items-center gap-1.5 rounded-full px-2.5 text-[12px] font-normal leading-4 lg:mt-4"
-                  style={{
-                    background: 'rgba(0, 166, 244, 0.15)',
-                    color: 'rgba(0, 105, 168, 1)',
-                  }}
-                >
-                  <span className="size-1.5 rounded-full bg-current" aria-hidden />
-                  {heroBadge}
-                </span>
+                {scenario !== 'no-application' ? (
+                  <span
+                    className={cn(
+                      'mt-6 inline-flex h-[22px] items-center gap-1.5 rounded-full px-2.5 text-[12px] font-normal leading-4 lg:mt-4',
+                      (scenario === 'draft-application' || scenario === 'submitted') && 'md:mt-4',
+                    )}
+                    style={{
+                      background: 'rgba(0, 166, 244, 0.15)',
+                      color: 'rgba(0, 105, 168, 1)',
+                    }}
+                  >
+                    <span className="size-1.5 rounded-full bg-current" aria-hidden />
+                    {heroBadge}
+                  </span>
+                ) : null}
               </div>
             </div>
           </header>
@@ -399,7 +410,7 @@ export default function ApplyDashboardV1({
           <div
             className={cn(
               'relative mx-auto w-full max-w-[1440px] px-4 pb-8 lg:px-6',
-              scenario === 'no-application' ? 'pt-4 lg:-mt-4 lg:pt-0' : 'pt-6 lg:pt-0',
+              scenario === 'no-application' ? 'pt-4 lg:-mt-[25px] lg:pt-0' : 'pt-6 lg:pt-0',
             )}
           >
             <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_314px] lg:items-start lg:gap-5">
@@ -516,9 +527,7 @@ export default function ApplyDashboardV1({
                   </div>
                 </section>
 
-                {scenario === 'no-application' ? (
-                  <ArchetypeDiscoveryCard content={content} />
-                ) : !hideLatestActivity ? (
+                {!hideLatestActivity ? (
                 <section className="relative overflow-hidden rounded-2xl border border-border bg-white p-6">
                   <div className="relative z-[1] flex flex-col lg:flex-row lg:items-start lg:justify-between lg:gap-3">
                     <div>
@@ -548,9 +557,9 @@ export default function ApplyDashboardV1({
                   </div>
 
                   {content.activity.length === 0 ? (
-                    <div className="relative z-[1] mt-6 flex min-h-[180px] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-bg-subtle px-6 text-center">
-                      <span className="mb-3 flex size-10 items-center justify-center rounded-full bg-bg text-fg-muted" aria-hidden>
-                        <Calendar className="size-5" strokeWidth={1.5} />
+                    <div className="relative z-[1] mt-6 flex min-h-[226px] flex-col items-center justify-center rounded-lg border border-border bg-surface px-6 text-center">
+                      <span className="mb-3 flex size-12 items-center justify-center rounded-full bg-bg-subtle text-fg-muted" aria-hidden>
+                        <Calendar className="size-6" strokeWidth={1.5} />
                       </span>
                       <p className="text-[16px] font-semibold leading-6 text-fg">No activity yet</p>
                       <p className="mt-1 max-w-md text-[14px] leading-5 text-fg-muted">
@@ -782,7 +791,7 @@ function PreApplicationSection({
           <TasksCard content={content} stacked />
         </div>
       ) : (
-        <ProgrammeCards />
+        <TasksCard content={content} />
       )}
     </div>
   );
@@ -924,21 +933,21 @@ function NoApplicationAside() {
   const preparationItems = [
     'Check programme eligibility',
     'Prepare your education details',
-    'Prepare supporting documents',
+    'Check programme eligibility',
   ];
 
   return (
-    <aside className="relative mx-auto min-h-[360px] w-full shrink-0 overflow-hidden rounded-2xl border border-border bg-white p-6 shadow-sm max-lg:max-w-none lg:mx-0 lg:min-h-[423px] lg:w-[314px] lg:max-w-[314px]">
+    <aside className="relative mx-auto min-h-[349px] w-full shrink-0 overflow-hidden rounded-lg border border-border bg-white p-6 shadow-sm max-lg:max-w-none lg:mx-0 lg:w-[314px] lg:max-w-[314px]">
       <p className="text-[12px] leading-5 text-fg-muted">Application guide</p>
       <h3 className="mt-1 text-[18px] font-semibold leading-6 text-fg">Before you apply</h3>
       <p className="mt-3 text-[14px] leading-5 text-fg-muted">
-        Have these ready when you start your application.
+        Have these details ready when you decide to start an application.
       </p>
 
       <ol className="mt-6 space-y-4" aria-label="Application preparation checklist">
         {preparationItems.map((item, index) => (
-          <li key={item} className="flex items-center gap-3">
-            <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-bg-subtle text-[12px] font-medium text-fg">
+          <li key={`${index}-${item}`} className="flex items-center gap-3">
+            <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-accent text-[12px] font-medium text-accent-fg">
               {index + 1}
             </span>
             <span className="text-[14px] leading-5 text-fg">{item}</span>
@@ -946,7 +955,7 @@ function NoApplicationAside() {
         ))}
       </ol>
 
-      <div className="mt-7 flex items-center gap-4 rounded-xl bg-bg-muted px-5 py-4">
+      <div className="mt-6 flex items-center gap-4 rounded-md bg-bg-muted px-5 py-4">
         <Image
           src="/images/application-window-calendar.svg"
           alt=""
@@ -960,11 +969,6 @@ function NoApplicationAside() {
         </div>
       </div>
 
-      <OutOfScopeTooltip>
-        <Button className="mt-5">
-          View Application Guide
-        </Button>
-      </OutOfScopeTooltip>
     </aside>
   );
 }
@@ -1280,7 +1284,7 @@ function TasksCard({
         >
           {content.tasksKicker}
         </p>
-        {!stacked && <RespondBy text={content.tasksDeadline} />}
+        {!stacked && content.tasksDeadline ? <RespondBy text={content.tasksDeadline} /> : null}
       </div>
       <p
         className="mt-1.5 text-[18px] font-semibold tracking-[-0.45px] leading-6"
@@ -1288,11 +1292,11 @@ function TasksCard({
       >
         {content.tasksTitle}
       </p>
-      {stacked && (
+      {stacked && content.tasksDeadline ? (
         <div className="mt-2">
           <RespondBy text={content.tasksDeadline} />
         </div>
-      )}
+      ) : null}
       <div
         className={cn(
           'mt-4 grid min-h-0 flex-1 gap-3',

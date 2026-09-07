@@ -16,6 +16,7 @@ import {
 } from '@/lib/applicant-offer';
 import { APPLICANT_OFFER_PERIOD_KEY } from '@/lib/applicant-offer-period';
 import { APPLICANT_OFFER_RESPONSE_KEY } from '@/lib/applicant-offer-response';
+import { APPLICANT_ONBOARDING_DRAFT_KEY } from '@/lib/applicant-onboarding';
 
 const APPLICANT_LOCAL_KEYS = [
   APPLICANT_APPLICATIONS_KEY,
@@ -33,6 +34,7 @@ const APPLICANT_LOCAL_KEYS = [
   APPLICANT_OFFER_STARTED_AT_KEY,
   APPLICANT_OFFER_PERIOD_KEY,
   APPLICANT_OFFER_RESPONSE_KEY,
+  APPLICANT_ONBOARDING_DRAFT_KEY,
   APPLICANT_REVIEW_STARTED_AT_KEY,
 ] as const;
 

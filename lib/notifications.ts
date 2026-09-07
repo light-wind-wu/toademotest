@@ -25,6 +25,7 @@ export const APPLICANT_INTERVIEW_CONFIRMED_NOTIFICATION_ID = 'notif-app-ui-2027-
 export const APPLICANT_OFFER_RECEIVED_NOTIFICATION_ID = 'notif-app-ui-2027-offer-received';
 export const APPLICANT_SUBMITTED_NOTIFICATION_ID = 'notif-app-ui-2027-submitted';
 export const APPLICANT_INTERVIEW_COMPLETED_NOTIFICATION_ID = 'notif-app-ui-2027-interview-completed';
+export const APPLICANT_RECOMMENDATION_LETTER_NOTIFICATION_ID = 'notif-app-ui-2027-recommendation-letter';
 
 export function loadNotifications(): AppNotification[] {
   try {
@@ -202,6 +203,35 @@ export function ensureApplicantInterviewCompletedNotification(
     localStorage.setItem(KEY, JSON.stringify([notification, ...existing]));
     window.dispatchEvent(new Event(NOTIF_CHANGED_EVENT));
   } catch {}
+}
+
+/** Seed the completed-internship recommendation letter notification once the mentor submits it. */
+export function ensureApplicantRecommendationLetterNotification(email: string): void {
+  try {
+    const existing = loadNotifications();
+    if (existing.some((notification) => notification.id === APPLICANT_RECOMMENDATION_LETTER_NOTIFICATION_ID)) return;
+
+    const notification: AppNotification = {
+      id: APPLICANT_RECOMMENDATION_LETTER_NOTIFICATION_ID,
+      forRole: 'applicant',
+      forEmail: email,
+      title: 'Recommendation letter available',
+      body: 'Marcus Tan has written a recommendation letter following your completed internship.',
+      href: '/apply/applicant-recommendation-letter',
+      ctaLabel: 'View and download letter',
+      tier: 'info',
+      createdAt: new Date().toISOString(),
+      read: false,
+    };
+    localStorage.setItem(KEY, JSON.stringify([notification, ...existing]));
+    window.dispatchEvent(new Event(NOTIF_CHANGED_EVENT));
+  } catch {}
+}
+
+export function hasApplicantRecommendationLetterNotification(): boolean {
+  return loadNotifications().some(
+    (notification) => notification.id === APPLICANT_RECOMMENDATION_LETTER_NOTIFICATION_ID,
+  );
 }
 
 export function markRead(id: string): void {

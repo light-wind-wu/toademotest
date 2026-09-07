@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/layout/shell';
 import Modal from '@/components/ui-legacy/modal';
@@ -11,12 +11,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ArrowRight, Briefcase, CalendarDays, MapPin, Clock, User2,
   Mail as MailIcon, Award, FileText,
-  CheckCircle2, ShieldCheck, MessageSquareHeart, Share2, Sparkles,
+  CheckCircle2, ShieldCheck, MessageSquareHeart, Share2, Sparkles, FileCheck2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { loadApplicantInternshipRecord } from '@/lib/applicant-internship';
+import { loadApplicantOnboardingDraft } from '@/lib/applicant-onboarding';
 import { useApplicantScenarioData } from '@/lib/applicant-scenario-data';
 import { formatStatusLabel } from '@/lib/status-label';
+import {
+  hasApplicantRecommendationLetterNotification,
+  NOTIF_CHANGED_EVENT,
+} from '@/lib/notifications';
 import type {
   ApplicantInternshipRecord,
   ApplicantInternshipTaskId,
@@ -55,8 +60,23 @@ function InfoRow({ icon: Icon, label, value }: { icon: typeof Briefcase; label: 
 export default function ApplyInternship() {
   const router = useRouter();
   const [showWelcomeLetter, setShowWelcomeLetter] = useState(false);
+  const [recommendationAvailable, setRecommendationAvailable] = useState(false);
+  const [onboardingSubmitted, setOnboardingSubmitted] = useState(false);
   const { homeScenario, internships } = useApplicantScenarioData();
   const scenarioInternship = internships[0];
+
+  useEffect(() => {
+    setOnboardingSubmitted(Boolean(loadApplicantOnboardingDraft().submittedAt));
+  }, []);
+
+  useEffect(() => {
+    const refreshRecommendationAvailability = () => {
+      setRecommendationAvailable(hasApplicantRecommendationLetterNotification());
+    };
+    refreshRecommendationAvailability();
+    window.addEventListener(NOTIF_CHANGED_EVENT, refreshRecommendationAvailability);
+    return () => window.removeEventListener(NOTIF_CHANGED_EVENT, refreshRecommendationAvailability);
+  }, []);
 
   if (!scenarioInternship) {
     return (
@@ -74,20 +94,24 @@ export default function ApplyInternship() {
   const feedbackCompleted = Boolean(baseInternship.feedback);
   const isCompleted = scenarioInternship.status === 'COMPLETED';
   const isEnding = scenarioInternship.status === 'ENDING SOON — ACTION REQUIRED';
+  const isUpcomingOnboarding = scenarioInternship.status === 'UPCOMING — ONBOARDING';
+  const isOnboardingComplete = isUpcomingOnboarding && onboardingSubmitted;
   const internship: ApplicantInternshipRecord = {
     ...baseInternship,
     applicationId: 'APP-UI27-00418',
     programmeName: 'University Internship 2027',
-    statusLabel: scenarioInternship.status,
-    statusTone: isCompleted ? 'success' : isEnding ? 'warning' : 'info',
+    statusLabel: isOnboardingComplete ? 'UPCOMING — ONBOARDING COMPLETE' : scenarioInternship.status,
+    statusTone: isCompleted || isOnboardingComplete ? 'success' : isEnding ? 'warning' : 'info',
     internshipStartDate: scenarioInternship.startDate,
     internshipEndDate: scenarioInternship.endDate,
     action: {
-      label: isCompleted ? 'Internship completed' : isEnding ? 'Completion action required' : scenarioInternship.status === 'IN PROGRESS' ? 'Current internship' : 'Prepare for your internship',
-      title: scenarioInternship.primaryCta,
-      body: scenarioInternship.statusMessage,
+      label: isCompleted ? 'Internship completed' : isEnding ? 'Completion action required' : scenarioInternship.status === 'IN PROGRESS' ? 'Current internship' : isOnboardingComplete ? 'Onboarding' : 'Prepare for your internship',
+      title: isOnboardingComplete ? 'Onboarding completed' : scenarioInternship.primaryCta,
+      body: isOnboardingComplete
+        ? `Your onboarding information has been submitted. No further action is required before your internship starts on ${fmtDateShort(scenarioInternship.startDate)}.`
+        : scenarioInternship.statusMessage,
       cta: scenarioInternship.primaryCta,
-      route: isCompleted ? '/apply/certification' : isEnding ? '/apply/applicant-offboarding' : scenarioInternship.status === 'UPCOMING — ONBOARDING' ? '/apply/onboarding' : '/apply/internship',
+      route: isCompleted ? '/apply/certification' : isEnding ? '/apply/applicant-offboarding' : isUpcomingOnboarding ? '/apply/onboarding' : '/apply/internship',
     },
     project: { ...baseInternship.project, id: 'ai-threat-detection', title: scenarioInternship.project },
     certificate: isCompleted ? { status: 'available', date: '2027-07-08' } : { status: 'pending' },
@@ -130,16 +154,24 @@ export default function ApplyInternship() {
         </header>
 
         <div className="mx-auto w-full max-w-[1440px] px-[clamp(24px,2.6vw,40px)] py-8">
-          <Card className="relative overflow-hidden border-accent/30 shadow-none">
+          <Card className={cn('relative overflow-hidden shadow-none', isOnboardingComplete ? 'border-success/40' : 'border-accent/30')}>
             <CardContent className="relative z-[1] flex min-h-[220px] flex-col justify-between gap-6 p-6 pr-6 sm:pr-52 lg:flex-row lg:items-center">
               <div className="max-w-2xl">
-                <p className="text-[13px] font-medium text-accent">{action.label}</p>
-                <h2 className="mt-2 text-[24px] font-semibold leading-8 text-fg">{action.title}</h2>
+                <div className="flex items-center gap-2">
+                  <p className={cn('text-[13px] font-medium', isOnboardingComplete ? 'text-success' : 'text-accent')}>{action.label}</p>
+                  {isOnboardingComplete ? <Badge variant="success">Completed</Badge> : null}
+                </div>
+                <h2 className="mt-2 flex items-center gap-2 text-[24px] font-semibold leading-8 text-fg">
+                  {isOnboardingComplete ? <CheckCircle2 className="size-6 shrink-0 text-success" aria-hidden /> : null}
+                  {action.title}
+                </h2>
                 <p className="mt-2 text-[14px] leading-6 text-fg-muted">{action.body}</p>
-                <Button className="mt-5" onClick={() => router.push(action.route)}>
-                  {action.cta}
-                  <ArrowRight className="size-4" aria-hidden />
-                </Button>
+                {!isOnboardingComplete ? (
+                  <Button className="mt-5" onClick={() => router.push(action.route)}>
+                    {action.cta}
+                    <ArrowRight className="size-4" aria-hidden />
+                  </Button>
+                ) : null}
               </div>
             </CardContent>
             <div className="pointer-events-none absolute bottom-0 right-0 hidden h-[180px] w-[180px] sm:block" aria-hidden>
@@ -250,6 +282,16 @@ export default function ApplyInternship() {
                       <Award className={cn('size-4 shrink-0', internship.certificate.status === 'available' ? 'text-success' : 'text-fg-muted')} aria-hidden />
                       <div className="min-w-0 flex-1"><p className="text-[14px] font-medium text-fg">Certificate of Completion</p><p className="mt-1 text-[12px] text-fg-muted">{internship.certificate.status === 'available' ? `Issued ${fmtDate(internship.certificate.date)}` : 'Pending final clearance'}</p></div>
                       <Button variant="outline" size="sm" onClick={() => router.push('/apply/certification')}>View status</Button>
+                    </div>
+                  ) : null}
+                  {recommendationAvailable ? (
+                    <div className="flex items-center gap-3 border-t border-border pt-4">
+                      <FileCheck2 className="size-4 shrink-0 text-success" aria-hidden />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[14px] font-medium text-fg">Recommendation letter</p>
+                        <p className="mt-1 text-[12px] text-fg-muted">Sent by Marcus Tan · 1 August 2027</p>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => router.push('/apply/applicant-recommendation-letter')}>View</Button>
                     </div>
                   ) : null}
                 </CardContent>

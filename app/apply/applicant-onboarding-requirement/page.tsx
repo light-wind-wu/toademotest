@@ -1,1 +1,1 @@
-export { default } from '@/views/applicant-workflow';
+export { default } from '@/views/applicant-onboarding-requirement';

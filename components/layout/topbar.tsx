@@ -25,6 +25,7 @@ import NotificationCentre from '@/components/layout/notification-centre';
 import {
   APPLICANT_UNDER_REVIEW_NOTIFICATION_ID,
   ensureApplicantInterviewCompletedNotification,
+  ensureApplicantRecommendationLetterNotification,
   ensureApplicantUnderReviewNotification,
   getNotificationsForRole,
   markAllRead,
@@ -105,6 +106,11 @@ export default function Topbar({
     }, remaining);
 
     return () => window.clearTimeout(timer);
+  }, [homeScenario, isApplicant, profile.email]);
+
+  useEffect(() => {
+    if (!isApplicant || homeScenario !== 'journey-completed') return;
+    ensureApplicantRecommendationLetterNotification(profile.email);
   }, [homeScenario, isApplicant, profile.email]);
 
   useEffect(() => {

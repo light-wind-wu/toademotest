@@ -79,6 +79,7 @@ const activityTime = {
   offboardingCompleted: '31 Jul 2027, 4:00 PM',
   internshipCompleted: '31 Jul 2027, 5:00 PM',
   certificateAvailable: '1 Aug 2027, 9:00 AM',
+  recommendationLetterAvailable: '1 Aug 2027, 2:00 PM',
 } as const;
 
 export const APPLICANT_DASHBOARD_STATES: Record<
@@ -89,7 +90,7 @@ export const APPLICANT_DASHBOARD_STATES: Record<
     state: 'draft_application', pattern: 'action',
     heroLines: ['Continue your', 'application'],
     heroCopy: 'Your application is in progress. Pick up where you left off and complete the remaining sections.',
-    badge: 'Application in progress',
+    badge: 'Draft application exists',
     spotlightTitle: 'Resume your application',
     spotlightCopy: 'Complete the remaining sections and review everything before you submit.',
     metadata: [
@@ -421,8 +422,9 @@ export const APPLICANT_DASHBOARD_STATES: Record<
     journeyItems: [],
     guideTitle: 'After Your Internship Guide',
     guideItems: ['Access your certificate', 'Complete any outstanding feedback', 'Build or update your resume entry', 'Share your experience on LinkedIn (optional)'],
-    activity: [{ title: 'Certificate available', date: activityTime.certificateAvailable }, { title: 'Internship completed', date: activityTime.internshipCompleted }, { title: 'Offboarding completed', date: activityTime.offboardingCompleted }],
+    activity: [{ title: 'Recommendation letter available', date: activityTime.recommendationLetterAvailable }, { title: 'Certificate available', date: activityTime.certificateAvailable }, { title: 'Internship completed', date: activityTime.internshipCompleted }],
     postInternshipItems: [
+      { title: 'Recommendation letter', status: 'Available from Marcus Tan', action: 'View and download', route: '/apply/applicant-recommendation-letter' },
       { title: 'Feedback', status: 'Completed', action: 'View', route: '/apply/internship' },
       { title: 'Resume entry', status: 'Ready to generate', action: 'Generate', route: '/apply/applicant-testimonial-request' },
       { title: 'Certificate', status: 'Available', action: 'View', route: '/apply/certification' },

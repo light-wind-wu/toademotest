@@ -67,10 +67,10 @@
       "detailMeta": [{ "label": "Application window", "value": "Open now" }, { "label": "Closes", "value": "30 Sep 2026" }],
       "tasksKicker": "Take the first step",
       "tasksTitle": "Explore your options",
-      "tasksDeadline": "Applications close 30 Sep 2026",
+      "tasksDeadline": "",
       "tasks": [
-        { "title": "Explore programmes", "body": "Compare internship pathways and eligibility.", "cta": "Explore", "route": "/join-us/student/internships", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
-        { "title": "Discover your Defender Archetype", "body": "Take a short quiz to discover areas and projects that may match your interests.", "cta": "Take Quiz", "route": "/apply/project-fit", "imageDesktop": "/images/archetype-quiz-illustration.svg", "imageMobile": "/images/archetype-quiz-illustration.svg" }
+        { "title": "Complete your profile", "body": "Tell us a little more about yourself so we can guide you to the right programme.", "cta": "Update", "route": "/apply/profile", "imageDesktop": "/images/programme-scientists-icon.svg", "imageMobile": "/images/programme-scientists-icon.svg" },
+        { "title": "Discover your archetype", "body": "Find projects that match your interests.", "cta": "Take Quiz", "route": "/apply/project-fit", "imageDesktop": "/images/programme-cyber-icon.svg", "imageMobile": "/images/programme-cyber-icon.svg" }
       ],
       "activity": []
     },
@@ -451,7 +451,7 @@
       "tasksDeadline": "Available any time",
       "tasks": [
         { "title": "Download certificate", "body": "Save your official internship certificate.", "cta": "View Certificate", "route": "/apply/certification", "imageDesktop": "/images/contact-details.jpg", "imageMobile": "/images/contact-details-m.jpg" },
-        { "title": "View recommendation", "body": "Review the recommendation shared by your mentor.", "cta": "View Letter", "route": "/apply/internship", "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
+        { "title": "View recommendation", "body": "Review and download the recommendation shared by your mentor.", "cta": "View Letter", "route": "/apply/applicant-recommendation-letter", "imageDesktop": "/images/additional-information.jpg", "imageMobile": "/images/additional-information-m.jpg" }
       ],
       "activity": [
         { "title": "Certificate issued", "body": "Your internship certificate is ready.", "date": "18 Dec 2026", "tone": "accent" },

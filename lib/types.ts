@@ -1210,6 +1210,24 @@ export interface ApplicantWorkflowDetail {
   value: string;
 }
 
+export type ApplicantOnboardingTaskId = 'bank' | 'additional' | 'declarations';
+
+export interface ApplicantOnboardingDraft {
+  bankName: string;
+  bankAccountNumber: string;
+  bankAccountHolderName: string;
+  bankSupportingDocumentName: string;
+  profilePhotographRequired: boolean;
+  profilePhotographName: string;
+  bringingMobileDevice: boolean;
+  mobileDeviceImeiNumber: string;
+  mobileDeclarationAccepted: boolean;
+  acceptableUsePolicyAccepted: boolean;
+  completedTasks: ApplicantOnboardingTaskId[];
+  updatedAt?: string;
+  submittedAt?: string;
+}
+
 export interface ApplicantOfferPeriod {
   offerId: string;
   applicationId: string;

@@ -8,7 +8,6 @@ export const APPLICANT_HOME_SCENARIOS: ReadonlyArray<{
   label: string;
   group: 'Overview' | 'Application' | 'Interview' | 'Offer and onboarding' | 'Closed outcomes' | 'Internship and completion';
 }> = [
-  { value: 'multiple-applications', label: 'Multiple active applications', group: 'Overview' },
   { value: 'no-application', label: 'No application yet', group: 'Overview' },
   { value: 'draft-application', label: 'Draft application', group: 'Application' },
   { value: 'submitted', label: 'Application submitted', group: 'Application' },
