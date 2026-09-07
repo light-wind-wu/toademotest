@@ -49,14 +49,30 @@ export default function LifecycleDashboardStage({
       />
     );
   }
-  if (config.state === 'application_submitted') {
+  if (
+    config.state === 'application_submitted' ||
+    config.state === 'application_under_review' ||
+    config.state === 'interview_invitation' ||
+    config.state === 'interview_pending_confirmation' ||
+    config.state === 'interview_confirmed' ||
+    config.state === 'interview_rescheduling' ||
+    config.state === 'offer_received' ||
+    config.state === 'onboarding' ||
+    config.state === 'application_unsuccessful' ||
+    config.state === 'application_withdrawn' ||
+    config.state === 'offer_expired' ||
+    config.state === 'internship_in_progress' ||
+    config.state === 'offboarding_required' ||
+    config.state === 'internship_completed'
+  ) {
     return (
-      <SubmittedApplicationDashboard
+      <ApplicationMilestoneDashboard
         config={config}
         archetypeImage={archetypeImage}
         statusIllustration={statusIllustration}
         activityIllustration={activityIllustration}
         journeyTopDecoration={journeyTopDecoration}
+        onPrimaryAction={onPrimaryAction}
       />
     );
   }
@@ -70,9 +86,7 @@ export default function LifecycleDashboardStage({
     : journeyStages;
   const activityHeading = isClosed
     ? 'Application history'
-    : config.state === 'internship_in_progress' || config.state === 'offboarding_required' || config.state === 'internship_completed'
-      ? 'Recent internship activity'
-      : 'Recent application activity';
+    : 'Recent application activity';
 
   return (
     <section className="relative -mt-4 mx-auto w-full max-w-[1440px] px-4 pb-8 pt-0 lg:px-6" aria-label={`${config.badge} dashboard content`}>
@@ -280,61 +294,112 @@ export default function LifecycleDashboardStage({
   );
 }
 
-function SubmittedApplicationDashboard({
+function ApplicationMilestoneDashboard({
   config,
   archetypeImage,
   statusIllustration,
   activityIllustration,
   journeyTopDecoration,
+  onPrimaryAction,
 }: {
   config: ApplicantDashboardStateConfig;
   archetypeImage: string;
   statusIllustration: string;
   activityIllustration: string;
   journeyTopDecoration: string;
+  onPrimaryAction: () => void;
 }) {
   const router = useRouter();
-  const nextSteps = [
-    { label: 'Application review', image: '/images/programme-undergraduate-icon.svg' },
-    { label: 'Potential interview', image: '/images/programme-scientists-icon.svg' },
-    { label: 'Status updates', image: '/images/programme-cyber-icon.svg' },
+  const isSubmitted = config.state === 'application_submitted';
+  const isInterviewAction = config.state === 'interview_invitation';
+  const isInterviewConfirmed = config.state === 'interview_confirmed';
+  const isInterviewRescheduling = config.state === 'interview_rescheduling';
+  const isOfferAction = config.state === 'offer_received';
+  const isOnboarding = config.state === 'onboarding';
+  const isClosed = config.pattern === 'closed';
+  const isActiveInternship = config.state === 'internship_in_progress';
+  const isOffboarding = config.state === 'offboarding_required';
+  const isCompleted = config.state === 'internship_completed';
+  const usesWideSpotlight = isActiveInternship || isOffboarding || isCompleted;
+  const nextStepImages = [
+    '/images/programme-undergraduate-icon.svg',
+    '/images/programme-scientists-icon.svg',
+    '/images/programme-cyber-icon.svg',
   ];
+  const bannerTitle = isClosed ? 'Application closed' : isCompleted ? 'Journey completed' : isInterviewAction || isInterviewConfirmed || isInterviewRescheduling || isOfferAction || isOnboarding || isActiveInternship || isOffboarding ? 'Your next priority' : 'You’re all caught up';
+  const bannerCopy = isClosed
+    ? 'No further action is required. This record remains available to you.'
+    : isCompleted
+    ? 'Your completed record and resources remain available.'
+    : isOffboarding
+    ? 'Complete offboarding'
+    : isInterviewAction || isInterviewConfirmed || isInterviewRescheduling || isOfferAction || isOnboarding || isActiveInternship
+    ? `${config.primaryAction?.label ?? 'Review'}${config.dueText ? `, ${config.dueText}` : ''}`
+    : 'Nothing is required from you right now.';
+  const spotlightTitle = isSubmitted ? 'Resume your application' : config.spotlightTitle;
+  const spotlightCopy = isSubmitted
+    ? 'Complete the remaining sections and review everything before you submit.'
+    : config.spotlightCopy;
 
   return (
     <section className="relative mx-auto w-full max-w-[1440px] px-4 pb-8 md:px-6" aria-label={`${config.badge} dashboard content`}>
       <article className="relative overflow-hidden rounded-lg border border-border bg-surface p-6 shadow-sm">
         <div className="grid gap-6 md:grid-cols-[302px_minmax(0,1fr)] md:gap-10">
           <div className="relative min-h-[298px] overflow-hidden rounded-lg bg-accent text-accent-fg">
-            <Image src="/images/applicant-dashboard-priority-banner.png" alt="" fill className="object-cover" sizes="302px" priority />
+            {isClosed || isActiveInternship ? (
+              <div className="pointer-events-none absolute inset-0 overflow-hidden bg-gradient-to-r from-accent to-accent-hover" aria-hidden>
+                <span className="absolute -bottom-8 -right-14 h-14 w-56 -rotate-45 bg-accent-hover" />
+                <span className="absolute bottom-3 -right-16 h-10 w-56 -rotate-45 bg-info" />
+                <span className="absolute bottom-14 -right-20 h-8 w-56 -rotate-45 bg-warning" />
+                <span className="absolute -bottom-2 right-8 h-4 w-52 -rotate-45 bg-surface" />
+              </div>
+            ) : (
+              <Image src={config.spotlightImage ?? '/images/applicant-dashboard-priority-banner.png'} alt="" fill className="object-cover" sizes="302px" priority />
+            )}
+            {(isClosed || isActiveInternship) && config.spotlightImage ? (
+              <span className={cn('pointer-events-none absolute bottom-0 right-0', isActiveInternship ? 'h-[174px] w-[190px]' : 'h-[186px] w-[182px]')} aria-hidden>
+                <Image src={config.spotlightImage} alt="" fill className="object-contain object-right-bottom" sizes="182px" />
+              </span>
+            ) : null}
             <div className="relative z-[1] max-w-[178px] p-6">
-              <p className="text-[24px] font-semibold leading-[29px] tracking-[-0.48px]">You’re all<br />caught up</p>
-              <p className="mt-4 text-[14px] leading-[20px] text-accent-fg/80">Nothing is required from you right now.</p>
+              <p className="text-[24px] font-semibold leading-[29px] tracking-[-0.48px]">{bannerTitle}</p>
+              <p className="mt-4 whitespace-pre-line text-[14px] leading-[20px] text-accent-fg/80">{bannerCopy}</p>
             </div>
           </div>
 
           <div className="relative min-w-0 py-1 md:min-h-[298px]">
-            <div className="pointer-events-none absolute bottom-[-10px] right-0 hidden h-[250px] w-[354px] md:block" aria-hidden>
-              <Image src={statusIllustration} alt="" fill className="object-contain object-right-bottom" sizes="354px" />
-            </div>
-            <div className="relative z-[1] max-w-[600px]">
+            {!usesWideSpotlight ? (
+              <div className="pointer-events-none absolute bottom-[-10px] right-0 hidden h-[250px] w-[354px] md:block" aria-hidden>
+                <Image src={statusIllustration} alt="" fill className="object-contain object-right-bottom" sizes="354px" />
+              </div>
+            ) : null}
+            <div className={cn('relative z-[1]', usesWideSpotlight ? 'max-w-[900px]' : 'max-w-[600px]')}>
               <p className="text-[14px] leading-5 text-fg-muted">Primary spotlight</p>
-              <h2 className="mt-4 text-[24px] font-semibold leading-[29px] tracking-[-0.48px] text-fg">Resume your application</h2>
-              <p className="mt-1 text-[14px] leading-6 text-fg-muted">Complete the remaining sections and review everything before you submit.</p>
+              <h2 className="mt-4 text-[24px] font-semibold leading-[29px] tracking-[-0.48px] text-fg">{spotlightTitle}</h2>
+              <p className="mt-1 text-[14px] leading-6 text-fg-muted">{spotlightCopy}</p>
 
-              <dl className="mt-8 grid max-w-[600px] grid-cols-2 gap-x-4 gap-y-4">
+              <dl className={cn('mt-8 grid gap-x-4 gap-y-4', usesWideSpotlight ? 'max-w-[900px] grid-cols-2 md:grid-cols-3' : 'max-w-[600px] grid-cols-2')}>
                 {config.metadata.map((item, index) => (
-                  <div key={`${item.label}-${item.value}`} className={cn('min-w-0', index === 1 && 'border-l border-border pl-4')}>
+                  <div key={`${item.label}-${item.value}`} className={cn('min-w-0', usesWideSpotlight ? index % 3 !== 0 && index < 3 && 'border-l border-border pl-4' : index === 1 && 'border-l border-border pl-4')}>
                     <dt className="text-[14px] leading-5 text-fg-muted">{item.label}</dt>
                     <dd className="mt-1 text-[14px] font-medium leading-5 text-fg">{item.value}</dd>
                   </div>
                 ))}
               </dl>
 
-              {config.secondaryAction?.route ? (
-                <Button variant="outline" className="mt-7" onClick={() => router.push(config.secondaryAction!.route!)}>
-                  {config.secondaryAction.label}
-                </Button>
-              ) : null}
+              <div className="mt-7 flex flex-wrap gap-2">
+                {config.primaryAction ? (
+                  <Button onClick={onPrimaryAction}>
+                    {config.primaryAction.label}
+                    {!isInterviewConfirmed && !isInterviewRescheduling && !isOnboarding && !isOffboarding ? <ArrowRight className="size-4" strokeWidth={1.5} aria-hidden /> : null}
+                  </Button>
+                ) : null}
+                {config.secondaryAction?.route ? (
+                  <Button variant="outline" onClick={() => router.push(config.secondaryAction!.route!)}>{config.secondaryAction.label}</Button>
+                ) : config.secondaryAction ? (
+                  <OutOfScopeTooltip><Button variant="outline">{config.secondaryAction.label}</Button></OutOfScopeTooltip>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
@@ -353,29 +418,45 @@ function SubmittedApplicationDashboard({
 
             <div className="relative z-[1] grid gap-6 px-6 pb-6 pt-3 md:grid-cols-[143px_minmax(0,1fr)] md:gap-10">
               <ol className="flex flex-col" aria-label="Applicant journey progress">
-                {journeyStages.map((stage, index) => (
-                  <li key={stage.id} className="relative flex min-h-[74px] items-start gap-2 last:min-h-0" aria-current={index === 0 ? 'step' : undefined}>
-                    {index < journeyStages.length - 1 ? <span className="absolute left-[11.5px] top-7 h-[46px] w-px bg-border" aria-hidden /> : null}
-                    <span className={cn('relative z-[1] inline-flex size-6 shrink-0 items-center justify-center rounded-full border text-[12px]', index === 0 ? 'border-success bg-success text-accent-fg' : 'border-border bg-bg text-fg-muted')}>
-                      {index === 0 ? <Check className="size-4" strokeWidth={2} aria-hidden /> : index + 1}
+                {(config.terminalStage
+                  ? journeyStages.slice(0, journeyStages.findIndex((stage) => stage.id === config.terminalStage) + 1)
+                  : journeyStages
+                ).map((stage, index, stages) => {
+                  const done = config.completedStages.includes(stage.id);
+                  const current = config.journeyStage === stage.id;
+                  const terminal = config.terminalStage === stage.id;
+                  return (
+                  <li key={stage.id} className="relative flex min-h-[74px] items-start gap-2 last:min-h-0" aria-current={current ? 'step' : undefined}>
+                    {index < stages.length - 1 ? <span className="absolute left-[11.5px] top-7 h-[46px] w-px bg-border" aria-hidden /> : null}
+                    <span className={cn('relative z-[1] inline-flex size-6 shrink-0 items-center justify-center rounded-full border text-[12px]', done ? 'border-success bg-success text-accent-fg' : terminal ? 'border-danger bg-danger text-accent-fg' : current ? 'border-accent bg-accent text-accent-fg' : 'border-border bg-bg text-fg-muted')}>
+                      {done ? <Check className="size-4" strokeWidth={2} aria-hidden /> : terminal ? <X className="size-4" strokeWidth={2} aria-hidden /> : index + 1}
                     </span>
-                    <span className={cn('pt-0.5 text-[11px] leading-4', index === 0 ? 'font-medium text-fg' : 'text-fg-muted')}>{stage.label}</span>
+                    <span className={cn('pt-0.5 text-[11px] leading-4', done || current || terminal ? 'font-medium text-fg' : 'text-fg-muted')}>{terminal ? config.terminalLabel : stage.label}</span>
                   </li>
-                ))}
+                  );
+                })}
               </ol>
 
               <div className="rounded-lg border border-border bg-surface p-6">
-                <h3 className="text-[18px] font-medium leading-[18px] tracking-[-0.45px] text-fg">What happens next</h3>
-                <ol className="mt-6 grid gap-4 sm:grid-cols-2">
-                  {nextSteps.map((step, index) => (
-                    <li key={step.label} className="relative flex min-h-[72px] items-center rounded-md border border-border bg-surface px-4 py-3 pr-[76px]">
-                      <span className="text-[14px] font-medium leading-5 text-fg">{index + 1}. {step.label}</span>
-                      <span className="absolute right-4 top-1/2 size-14 -translate-y-1/2 overflow-hidden" aria-hidden>
-                        <Image src={step.image} alt="" fill className="object-contain" sizes="56px" />
-                      </span>
-                    </li>
-                  ))}
-                </ol>
+                <h3 className="text-[18px] font-medium leading-[18px] tracking-[-0.45px] text-fg">
+                  {isClosed || isActiveInternship || isOffboarding || isCompleted ? config.journeyTitle : 'What happens next'}
+                </h3>
+                {config.postInternshipItems ? (
+                  <PostInternshipRows items={config.postInternshipItems} />
+                ) : (
+                  <ol className="mt-6 grid gap-4 sm:grid-cols-2">
+                    {config.journeyItems.map((step, index) => (
+                      <li key={step} className={cn('relative flex min-h-[72px] items-center rounded-md border border-border bg-surface px-4 py-3', !isOffboarding && 'pr-[76px]')}>
+                        <span className="text-[14px] font-medium leading-5 text-fg">{index + 1}. {step}</span>
+                        {!isOffboarding ? (
+                          <span className="absolute right-4 top-1/2 size-14 -translate-y-1/2 overflow-hidden" aria-hidden>
+                            <Image src={nextStepImages[index] ?? nextStepImages[0]} alt="" fill className="object-contain" sizes="56px" />
+                          </span>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ol>
+                )}
               </div>
             </div>
           </article>
@@ -386,7 +467,9 @@ function SubmittedApplicationDashboard({
             </div>
             <header className="relative z-[1] px-6 pb-4 pt-6">
               <p className="text-[14px] leading-5 text-fg-muted">Latest activity</p>
-              <h2 className="mt-1.5 text-[18px] font-semibold leading-[18px] text-fg">Recent application activity</h2>
+              <h2 className="mt-1.5 text-[18px] font-semibold leading-[18px] text-fg">
+                {isClosed ? 'Application history' : isActiveInternship || isOffboarding ? 'Recent internship activity' : 'Recent application activity'}
+              </h2>
             </header>
             <ol className="relative z-[1] max-w-[676px] space-y-8 px-6 py-5">
               {config.activity.map((item, index) => (
@@ -406,7 +489,7 @@ function SubmittedApplicationDashboard({
         <div className="space-y-5">
           <aside className="rounded-lg border border-border bg-surface p-6 shadow-sm" aria-labelledby="submitted-guide-title">
             <p className="text-[14px] leading-5 text-fg-muted">Task guide</p>
-            <h2 id="submitted-guide-title" className="mt-1.5 text-[18px] font-medium leading-[23px] text-fg">What to expect after<br className="hidden md:block" /> submission</h2>
+            <h2 id="submitted-guide-title" className="mt-1.5 text-[18px] font-medium leading-[23px] text-fg">{config.guideTitle}</h2>
             <ul className="mt-6 space-y-3">
               {config.guideItems.map((item) => (
                 <li key={item} className="flex gap-3 text-[13px] leading-5 text-fg">
@@ -620,9 +703,9 @@ function DraftApplicationDashboard({
 function PostInternshipRows({ items }: { items: readonly ApplicantDashboardPostInternshipItem[] }) {
   const router = useRouter();
   return (
-    <div className="mt-4 divide-y divide-border rounded-xl border border-border">
+    <div className="mt-4 space-y-2">
       {items.map((item) => (
-        <div key={item.title} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div key={item.title} className="flex flex-col gap-3 rounded-lg border border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-[14px] font-medium leading-5 text-fg">{item.title}</p>
             <p className="mt-1 text-[12px] leading-4 text-fg-muted">{item.status}{item.optional ? ', optional' : ''}</p>

@@ -184,7 +184,7 @@ export default function ApplyDashboardV1({
               'relative z-0 w-full overflow-hidden lg:overflow-visible',
               scenario === 'no-application'
                 ? 'max-lg:aspect-[780/1108] lg:h-[323px]'
-                : scenario === 'draft-application' || scenario === 'submitted'
+                : scenario === 'draft-application' || scenario === 'submitted' || scenario === 'under-review' || scenario === 'interview-action' || scenario === 'interview-pending-confirmation' || scenario === 'interview-scheduled' || scenario === 'interview-rescheduling' || scenario === 'offer-action' || scenario === 'onboarding-action' || scenario === 'application-unsuccessful' || scenario === 'application-withdrawn' || scenario === 'offer-expired' || scenario === 'active-internship' || scenario === 'completion-action' || scenario === 'journey-completed'
                   ? 'h-[300px] md:h-[299px]'
                 : 'h-[300px] lg:h-[345px]',
             )}
@@ -192,10 +192,10 @@ export default function ApplyDashboardV1({
           >
             <div className="relative mx-auto h-full w-full max-w-[1440px]">
               {/* Desktop ship bg + radar share one contain frame (sidebar-safe) */}
-              <div className={cn('ship-float pointer-events-none absolute inset-0 z-0 hidden', scenario === 'draft-application' || scenario === 'submitted' ? 'md:block' : 'lg:block')}>
+              <div className={cn('ship-float pointer-events-none absolute inset-0 z-0 hidden', scenario === 'draft-application' || scenario === 'submitted' || scenario === 'under-review' || scenario === 'interview-action' || scenario === 'interview-pending-confirmation' || scenario === 'interview-scheduled' || scenario === 'interview-rescheduling' || scenario === 'offer-action' || scenario === 'onboarding-action' || scenario === 'application-unsuccessful' || scenario === 'application-withdrawn' || scenario === 'offer-expired' || scenario === 'active-internship' || scenario === 'completion-action' || scenario === 'journey-completed' ? 'md:block' : 'lg:block')}>
                 {visualVariant === 'v2' ? <HeroV2Bg /> : <HeroRadarOverlay />}
               </div>
-              <div className={cn('pointer-events-none absolute inset-0 z-0 overflow-hidden', scenario === 'draft-application' || scenario === 'submitted' ? 'md:hidden' : 'lg:hidden')}>
+              <div className={cn('pointer-events-none absolute inset-0 z-0 overflow-hidden', scenario === 'draft-application' || scenario === 'submitted' || scenario === 'under-review' || scenario === 'interview-action' || scenario === 'interview-pending-confirmation' || scenario === 'interview-scheduled' || scenario === 'interview-rescheduling' || scenario === 'offer-action' || scenario === 'onboarding-action' || scenario === 'application-unsuccessful' || scenario === 'application-withdrawn' || scenario === 'offer-expired' || scenario === 'active-internship' || scenario === 'completion-action' || scenario === 'journey-completed' ? 'md:hidden' : 'lg:hidden')}>
                 <Image
                   src={assets.heroMobile[visualVariant]}
                   alt=""
@@ -206,11 +206,11 @@ export default function ApplyDashboardV1({
                 />
               </div>
 
-              <div className={cn('absolute inset-x-0 top-0 z-10 px-4 pt-10 lg:inset-x-auto lg:left-16 lg:top-[60px] lg:h-[200px] lg:w-[760px] lg:px-0 lg:pt-0', (scenario === 'draft-application' || scenario === 'submitted') && 'md:inset-x-auto md:left-16 md:top-[60px] md:h-[200px] md:w-[600px] md:px-0 md:pt-0')}>
+              <div className={cn('absolute inset-x-0 top-0 z-10 px-4 pt-10 lg:inset-x-auto lg:left-16 lg:top-[60px] lg:h-[200px] lg:w-[760px] lg:px-0 lg:pt-0', (scenario === 'draft-application' || scenario === 'submitted' || scenario === 'under-review' || scenario === 'interview-action' || scenario === 'interview-pending-confirmation' || scenario === 'interview-scheduled' || scenario === 'interview-rescheduling' || scenario === 'offer-action' || scenario === 'onboarding-action' || scenario === 'application-unsuccessful' || scenario === 'application-withdrawn' || scenario === 'offer-expired' || scenario === 'active-internship' || scenario === 'completion-action' || scenario === 'journey-completed') && 'md:inset-x-auto md:left-16 md:top-[60px] md:h-[200px] md:w-[760px] md:px-0 md:pt-0')}>
                 <h1
                   className={cn(
                     'text-[28px] font-semibold leading-8 tracking-[-0.48px] lg:text-[48px] lg:leading-[47px]',
-                    (scenario === 'draft-application' || scenario === 'submitted') && 'md:text-[48px] md:leading-[47px]',
+                    (scenario === 'draft-application' || scenario === 'submitted' || scenario === 'under-review' || scenario === 'interview-action' || scenario === 'interview-pending-confirmation' || scenario === 'interview-scheduled' || scenario === 'interview-rescheduling' || scenario === 'offer-action' || scenario === 'onboarding-action' || scenario === 'application-unsuccessful' || scenario === 'application-withdrawn' || scenario === 'offer-expired' || scenario === 'active-internship' || scenario === 'completion-action' || scenario === 'journey-completed') && 'md:text-[48px] md:leading-[47px]',
                   )}
                   style={{ color: 'rgba(15, 23, 43, 1)' }}
                 >
@@ -219,7 +219,7 @@ export default function ApplyDashboardV1({
                 <p
                   className={cn(
                     'mt-2 text-[14px] font-normal lg:mt-4 lg:text-[16px]',
-                    (scenario === 'draft-application' || scenario === 'submitted') && 'md:mt-4 md:text-[16px]',
+                    (scenario === 'draft-application' || scenario === 'submitted' || scenario === 'under-review' || scenario === 'interview-action' || scenario === 'interview-pending-confirmation' || scenario === 'interview-scheduled' || scenario === 'interview-rescheduling' || scenario === 'offer-action' || scenario === 'onboarding-action' || scenario === 'application-unsuccessful' || scenario === 'application-withdrawn' || scenario === 'offer-expired' || scenario === 'active-internship' || scenario === 'completion-action' || scenario === 'journey-completed') && 'md:mt-4 md:text-[16px]',
                     lifecycleConfig || isMultipleApplications ? 'max-w-[680px] leading-5 lg:leading-6' : 'leading-[100%]',
                   )}
                   style={{ color: 'rgba(74, 85, 104, 1)' }}
@@ -230,11 +230,12 @@ export default function ApplyDashboardV1({
                   <span
                     className={cn(
                       'mt-6 inline-flex h-[22px] items-center gap-1.5 rounded-full px-2.5 text-[12px] font-normal leading-4 lg:mt-4',
-                      (scenario === 'draft-application' || scenario === 'submitted') && 'md:mt-4',
+                      (scenario === 'draft-application' || scenario === 'submitted' || scenario === 'under-review' || scenario === 'interview-action' || scenario === 'interview-pending-confirmation' || scenario === 'interview-scheduled' || scenario === 'interview-rescheduling' || scenario === 'offer-action' || scenario === 'onboarding-action' || scenario === 'application-unsuccessful' || scenario === 'application-withdrawn' || scenario === 'offer-expired' || scenario === 'active-internship' || scenario === 'completion-action' || scenario === 'journey-completed') && 'md:mt-4',
+                      scenario === 'interview-pending-confirmation' && 'gap-2 px-[9px] py-[3px]',
                     )}
                     style={{
-                      background: 'rgba(0, 166, 244, 0.15)',
-                      color: 'rgba(0, 105, 168, 1)',
+                      background: scenario === 'journey-completed' ? 'rgba(34, 197, 94, 0.15)' : scenario === 'interview-pending-confirmation' ? 'rgba(254, 154, 0, 0.15)' : scenario === 'application-unsuccessful' || scenario === 'application-withdrawn' || scenario === 'offer-expired' ? 'rgba(244, 67, 54, 0.15)' : 'rgba(0, 166, 244, 0.15)',
+                      color: scenario === 'journey-completed' ? 'rgba(21, 128, 61, 1)' : scenario === 'interview-pending-confirmation' ? 'rgba(187, 77, 0, 1)' : scenario === 'application-unsuccessful' || scenario === 'application-withdrawn' || scenario === 'offer-expired' ? 'rgba(204, 0, 0, 1)' : 'rgba(0, 105, 168, 1)',
                     }}
                   >
                     <span className="size-1.5 rounded-full bg-current" aria-hidden />
