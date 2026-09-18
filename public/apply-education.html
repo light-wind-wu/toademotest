@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en" data-zone="enterprise" data-mode="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Education | DSTA Talent Outreach &amp; Acquisition</title>
+  <style>
+    :root {
+      --bg: #fbfaf6;
+      --surface: #fff;
+      --surface-muted: #f9f8f4;
+      --fg: #0f172b;
+      --fg-muted: #4a5568;
+      --border: #e7e4dd;
+      --accent: #1b65f8;
+      --accent-fg: #fff;
+      --success: #12a995;
+      --danger: #c10007;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--fg);
+      background: var(--bg);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    [hidden] { display: none !important; }
+    .topbar { position: sticky; top: 0; z-index: 5; height: 69px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 32px; background: #0e1b2b; color: #fff; }
+    .brand { display: flex; align-items: center; gap: 14px; min-width: 0; white-space: nowrap; font-size: 18px; font-weight: 650; }
+    .brand img { width: 68px; height: 38px; object-fit: contain; }
+    .top-actions { display: flex; align-items: center; gap: 19px; }
+    .search { width: 280px; padding: 10px 13px; border: 1px solid #455163; border-radius: 8px; background: #263343; color: #cbd3df; font-size: 14px; }
+    .profile { display: flex; align-items: center; gap: 13px; padding-left: 20px; border-left: 1px solid #39475a; text-align: right; white-space: nowrap; }
+    .profile strong, .profile small { display: block; }
+    .profile strong { font-size: 14px; }.profile small { color: #d6dce6; font-size: 13px; }
+    .avatar { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%; background: #2876f4; color: #fff; font-size: 14px; font-weight: 700; }
+    .shell { display: grid; grid-template-columns: 254px minmax(0, 1fr); min-height: calc(100vh - 69px); }
+    .steps { padding: 24px 26px; border-right: 1px solid var(--border); background: var(--surface); }
+    .steps ol { margin: 0; padding: 0; list-style: none; }
+    .steps li { position: relative; display: flex; align-items: center; gap: 14px; min-height: 116px; color: var(--fg-muted); font-size: 15px; }
+    .steps li:last-child { min-height: 32px; }
+    .steps li:not(:last-child)::after { content: ""; position: absolute; top: 38px; left: 12px; width: 1px; height: 72px; background: #aeb7c3; }
+    .steps li.done:not(:last-child)::after { background: #67758c; }
+    .step-number { display: grid; width: 25px; height: 25px; flex: none; place-items: center; border: 1px solid var(--border); border-radius: 50%; background: #eeece7; color: #62748e; font-size: 14px; }
+    .steps li.active { color: var(--fg); }.steps li.active .step-number { border-color: var(--accent); background: var(--accent); color: #fff; }
+    .steps li.done { color: var(--fg); }.steps li.done .step-number { border-color: var(--success); background: var(--success); color: #fff; }
+    .steps li.done img { width: 25px; height: 25px; flex: none; }
+    .stage { min-width: 0; display: flex; flex-direction: column; }
+    .content { width: 100%; max-width: 1220px; margin: 0 auto; padding: 32px 34px 48px; flex: 1; }
+    h1, h2, h3, p { margin: 0; }
+    .application-context { margin-bottom: 12px; color: var(--fg-muted); font-size: 13px; line-height: 1.5; }
+    .application-context span { font-weight: 500; }
+    h1 { font-size: 28px; line-height: 1.2; font-weight: 650; letter-spacing: -.03em; }
+    .subtitle { margin-top: 4px; color: var(--fg-muted); font-size: 16px; line-height: 1.4; }
+    .cards { display: grid; gap: 24px; margin-top: 25px; }
+    .card { padding: 24px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); box-shadow: 0 2px 8px rgba(20, 35, 55, .025); }
+    .card h2 { margin-bottom: 16px; font-size: 20px; line-height: 1.25; font-weight: 650; letter-spacing: -.025em; }
+    .required { color: var(--danger); }
+    .card .education-heading { margin-bottom: 7px; }
+    .card-intro { color: var(--fg-muted); font-size: 14px; line-height: 1.5; }
+    .entry-method { display: flex; flex-wrap: wrap; gap: 10px 24px; margin: 18px 0; padding: 0; border: 0; }
+    .entry-method label { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; cursor: pointer; font-size: 14px; }
+    .entry-method input { width: 17px; height: 17px; margin: 0; accent-color: var(--accent); }
+    .entry-method label:has(input:checked) { font-weight: 600; }
+    .upload-zone { display: flex; width: 100%; min-height: 152px; flex-direction: column; align-items: center; justify-content: center; gap: 21px; padding: 24px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--fg); text-align: center; }
+    .upload-zone.dragover { background: var(--surface-muted); border-color: var(--accent); }
+    .upload-icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%; background: var(--surface-muted); }
+    .upload-icon img { width: 20px; height: 20px; }
+    .upload-button { min-height: 32px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-muted); color: var(--fg); font-size: 12px; line-height: 1.4; }
+    .upload-button:hover { border-color: var(--fg-muted); }
+    .file-format { margin-top: 9px; color: var(--fg-muted); font-size: 12px; line-height: 1.5; }
+    .optional { margin-left: 7px; color: var(--fg-muted); font-size: 13px; font-weight: 400; letter-spacing: normal; }
+    .file-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 7px; font-size: 14px; }
+    .file-row strong { display: block; overflow-wrap: anywhere; font-weight: 500; }.file-row small { display: block; margin-top: 3px; color: var(--fg-muted); font-size: 12px; }
+    .text-action { flex: none; padding: 6px; border: 0; background: transparent; color: var(--fg); font-size: 13px; }.text-action:hover { color: var(--danger); text-decoration: underline; }
+    .details { margin-top: 16px; padding: 17px 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-muted); }
+    .details h3 { margin-bottom: 18px; font-size: 16px; font-weight: 650; }
+    .details-note { margin: -8px 0 18px; color: var(--fg-muted); font-size: 13px; }
+    .transcript-confirmation { margin: 0 0 20px; padding: 12px 14px; border: 1px solid var(--border); border-left: 3px solid var(--success); border-radius: 6px; background: var(--surface); font-size: 13px; line-height: 1.5; }
+    .transcript-confirmation p { color: var(--fg-muted); }
+    .fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 16px; }
+    .field { display: flex; min-width: 0; flex-direction: column; gap: 7px; font-size: 13px; font-weight: 500; }
+    .field input, .field select, .grades input, .grades select { width: 100%; min-width: 0; height: 37px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--fg); font-size: 14px; font-weight: 400; }
+    .field input::placeholder { color: #8490a0; }
+    .grades-wrap { overflow-x: auto; margin-top: 18px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); }
+    .grades { width: 100%; min-width: 670px; border-collapse: collapse; text-align: left; font-size: 13px; }
+    .grades th { padding: 11px 12px; color: var(--fg-muted); font-weight: 500; }.grades td { padding: 8px 12px; border-top: 1px solid var(--border); }
+    .grades th:nth-child(1) { width: 34%; }.grades th:nth-child(2) { width: 15%; }.grades th:nth-child(3) { width: 36%; }
+    .grades .level { color: var(--fg-muted); }.grades .delete-grade { padding: 6px 0; border: 0; background: transparent; color: var(--fg-muted); font-size: 12px; }.grades .delete-grade:hover { color: var(--danger); }
+    .grades tfoot td { background: #fcfbf9; font-weight: 500; }
+    .add-grade { margin-top: 12px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--accent); font-size: 13px; }
+    .footer { position: sticky; bottom: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 77px; padding: 12px 34px; border-top: 1px solid var(--border); background: var(--surface); }
+    .footer-actions { display: flex; gap: 9px; }.button { min-height: 42px; padding: 9px 20px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--fg); font-size: 14px; }
+    .button:hover { background: var(--surface-muted); }.button.primary { border-color: var(--accent); background: var(--accent); color: var(--accent-fg); }.button.primary:hover { background: #1555d8; }
+    .button:disabled { cursor: not-allowed; border-color: #92b1f2; background: #92b1f2; color: #fff; }
+    .notice { position: fixed; right: 24px; bottom: 96px; z-index: 10; max-width: min(420px, calc(100vw - 48px)); padding: 13px 18px; border: 1px solid #b9ded2; border-radius: 8px; background: #f4fcf8; color: #146d51; box-shadow: 0 8px 30px rgba(20, 35, 55, .1); font-size: 14px; }
+    .error { margin-top: 10px; color: var(--danger); font-size: 13px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    @media (max-width: 900px) {
+      .search { display: none; }.shell { grid-template-columns: 190px minmax(0, 1fr); }.steps { padding: 36px 18px; }.content { padding: 42px 24px; }.fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 650px) {
+      .topbar { height: 62px; padding: 0 17px; }.brand { gap: 9px; font-size: 13px; }.brand img { width: 53px; height: 30px; }.profile { gap: 8px; padding-left: 0; border: 0; }.profile div:first-child { display: none; }.avatar { width: 33px; height: 33px; }
+      .shell { display: block; min-height: calc(100vh - 62px); }.steps { overflow-x: auto; padding: 16px; border-right: 0; border-bottom: 1px solid var(--border); }.steps ol { display: flex; min-width: max-content; gap: 16px; }.steps li, .steps li:last-child { min-height: 25px; gap: 6px; font-size: 12px; }.steps li::after { display: none; }.steps li:nth-child(n+4) { display: none; }
+      .content { padding: 30px 16px 32px; } h1 { font-size: 24px; }.subtitle { font-size: 14px; }.cards { gap: 16px; margin-top: 22px; }.card { padding: 19px; }.card h2 { font-size: 18px; }.upload-zone { min-height: 155px; padding: 18px; }.fields { grid-template-columns: 1fr; gap: 14px; }.footer { min-height: 68px; padding: 10px 16px; }.footer-actions .button { padding: 8px 11px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><img src="images/dsta-logo-white.svg" alt="DSTA"><span>Talent Outreach &amp; Acquisition</span></div>
+    <div class="top-actions"><div class="search" aria-hidden="true">Search candidates…</div><div class="profile"><div><strong>Jenny Aw</strong><small>Internship Applicant</small></div><span class="avatar" aria-hidden="true">JA</span></div></div>
+  </header>
+  <div class="shell">
+    <nav class="steps" aria-label="Application progress"><ol>
+      <li class="done"><img src="images/step-complete.svg" alt="Completed"><span>Personal Detail</span></li>
+      <li class="active" aria-current="step"><span class="step-number">2</span><span>Education</span></li>
+      <li><span class="step-number">3</span><span>Availability</span></li>
+      <li><span class="step-number">4</span><span>Find Projects</span></li>
+      <li><span class="step-number">5</span><span>Additional Details</span></li>
+      <li><span class="step-number">6</span><span>Review</span></li>
+    </ol></nav>
+    <div class="stage">
+      <main class="content">
+        <header>
+          <p class="application-context">Application for <span>Undergraduate Internship 2027 programme</span></p>
+          <h1>Tell us about your education</h1>
+          <p class="subtitle">Provide your education details and add your CV.</p>
+        </header>
+        <div class="cards">
+          <section class="card" aria-labelledby="transcript-title">
+            <h2 class="education-heading" id="transcript-title">Education details <span class="required" aria-label="required">*</span></h2>
+            <p class="card-intro">Upload your academic transcript or enter your details manually.</p>
+            <fieldset class="entry-method">
+              <legend class="sr-only">How would you like to provide your education details?</legend>
+              <label><input type="radio" name="entry-method" id="upload-mode" value="upload" checked>Upload transcript</label>
+              <label><input type="radio" name="entry-method" id="manual-mode" value="manual">Enter manually</label>
+            </fieldset>
+            <div id="transcript-upload-panel">
+            <input class="sr-only" id="transcript-file" type="file" accept=".pdf,.doc,.docx,application/pdf" aria-label="Upload academic transcript">
+            <div class="upload-zone" id="transcript-zone">
+              <span class="upload-icon"><img src="images/education-upload.svg" alt=""></span>
+              <button class="upload-button" type="button" id="transcript-label" aria-describedby="transcript-format">Upload Academic Transcript</button>
+            </div>
+            <p class="file-format" id="transcript-format">PDF, DOC or DOCX · up to 10MB. You can also drag and drop a file here.</p>
+            <p class="error" id="transcript-error" role="alert" hidden></p>
+            <div class="file-row" id="transcript-row" hidden><div><strong id="transcript-name"></strong><small id="transcript-size"></small></div><button class="text-action" id="transcript-delete" type="button">Delete</button></div>
+            </div>
+            <section class="details" id="education-details" aria-labelledby="details-title" hidden>
+              <h3 id="details-title">Check your education details</h3>
+              <div class="transcript-confirmation" id="transcript-confirmation" role="status" hidden>
+                <p>The details below are from your latest transcript for your highest qualification. Please review them and correct any information if needed.</p>
+              </div>
+              <p class="details-note" id="details-note">Enter your education details before continuing.</p>
+              <div class="fields">
+                <label class="field"><span>Educational Qualification <span class="required">*</span></span><select id="qualification" required><option value="">Select qualification</option><option>A-level</option><option>Diploma</option><option>Undergraduate degree</option><option>Other</option></select></label>
+                <label class="field"><span>Institution <span class="required">*</span></span><input id="institution" autocomplete="organization" placeholder="e.g. Raffles Institution" required></label>
+                <label class="field"><span>Current Year <span class="required">*</span></span><select id="current-year" required><option value="">Select year</option><option>Year 1</option><option>Year 2</option><option>Year 3</option><option>Year 4</option><option>Graduated</option></select></label>
+                <label class="field"><span>Country <span class="required">*</span></span><select id="country" required><option value="">Select country</option><option>Singapore</option><option>Other</option></select></label>
+                <label class="field"><span>Course of Study <span class="required">*</span></span><input id="course" placeholder="e.g. Computer Science" required></label>
+                <label class="field">Second Course of Study <input id="second-course" placeholder="Optional"></label>
+                <label class="field"><span>Start Date <span class="required">*</span></span><input id="start-date" type="month" required></label>
+                <label class="field"><span>Expected Graduation Date <span class="required">*</span></span><input id="graduation-date" type="month" required></label>
+                <label class="field"><span>Scoring System <span class="required">*</span></span><input id="scoring" placeholder="e.g. GPA / grades" required></label>
+              </div>
+              <div class="grades-wrap"><table class="grades"><thead><tr><th scope="col">Subject</th><th scope="col">Level</th><th scope="col">Grade / Score</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead><tbody id="grades-body"></tbody><tfoot><tr><td colspan="2">Final Cumulative GPA</td><td><input id="final-gpa" inputmode="decimal" aria-label="Final cumulative GPA" placeholder="Optional"></td><td></td></tr></tfoot></table></div>
+              <button class="add-grade" id="add-grade" type="button">Add subject</button>
+            </section>
+          </section>
+          <section class="card" aria-labelledby="cv-title">
+            <h2 id="cv-title">Curriculum Vitae</h2>
+            <input class="sr-only" id="cv-file" type="file" accept=".pdf,.doc,.docx,application/pdf" aria-label="Upload curriculum vitae">
+            <div class="upload-zone" id="cv-zone"><span class="upload-icon"><img src="images/education-upload.svg" alt=""></span><button class="upload-button" type="button" id="cv-label" aria-describedby="cv-format">Upload Curriculum Vitae</button></div>
+            <p class="file-format" id="cv-format">PDF, DOC or DOCX · up to 10MB. You can also drag and drop a file here.</p>
+            <p class="error" id="cv-error" role="alert" hidden></p>
+            <div class="file-row" id="cv-row" hidden><div><strong id="cv-name"></strong><small id="cv-size"></small></div><button class="text-action" id="cv-delete" type="button">Delete</button></div>
+          </section>
+        </div>
+      </main>
+      <footer class="footer"><button class="button" id="back" type="button">Back</button><div class="footer-actions"><button class="button" id="save" type="button">Save As Draft</button><button class="button primary" id="next" type="button" disabled>Next</button></div></footer>
+    </div>
+  </div>
+  <div class="notice" id="notice" role="status" hidden></div>
+  <script>
+    (() => {
+      const $ = (id) => document.getElementById(id);
+      const fields = ['qualification', 'institution', 'current-year', 'country', 'course', 'second-course', 'start-date', 'graduation-date', 'scoring', 'final-gpa'];
+      const storageKey = 'dsta_education_html_preview';
+      let transcript = null;
+      let cv = null;
+      let manual = false;
+      let toastTimer;
+
+      function notice(message) {
+        $('notice').textContent = message;
+        $('notice').hidden = false;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { $('notice').hidden = true; }, 4500);
+      }
+      function fileSummary(file) { return `${(file.size / 1048576).toFixed(1)} MB · ${file.type || 'Document'}`; }
+      function update() {
+        $('education-details').hidden = !(manual || transcript);
+        $('transcript-upload-panel').hidden = manual;
+        $('upload-mode').checked = !manual;
+        $('manual-mode').checked = manual;
+        $('details-title').textContent = manual ? 'Enter your education details' : 'Check your education details';
+        $('transcript-confirmation').hidden = manual || !transcript;
+        $('details-note').hidden = !manual && Boolean(transcript);
+        $('transcript-row').hidden = !transcript;
+        $('cv-row').hidden = !cv;
+        $('transcript-name').textContent = transcript?.name || '';
+        $('transcript-size').textContent = transcript ? fileSummary(transcript) : '';
+        $('cv-name').textContent = cv?.name || '';
+        $('cv-size').textContent = cv ? fileSummary(cv) : '';
+        $('transcript-label').textContent = transcript ? 'Replace Academic Transcript' : 'Upload Academic Transcript';
+        $('cv-label').textContent = cv ? 'Replace Curriculum Vitae' : 'Upload Curriculum Vitae';
+        const hasRequiredDetails = $('qualification').value && $('institution').value.trim() && $('course').value.trim() && $('current-year').value && $('country').value && $('start-date').value && $('graduation-date').value && $('scoring').value.trim();
+        $('next').disabled = !(manual || transcript) || !hasRequiredDetails;
+      }
+      function fillExample() {
+        const example = { qualification: 'A-level', institution: 'Raffles Institution', 'current-year': 'Year 1', country: 'Singapore', course: 'Computing', 'start-date': '2024-01', 'graduation-date': '2027-07', scoring: 'GPA', 'final-gpa': '4.6' };
+        for (const [id, value] of Object.entries(example)) $(id).value = value;
+        if (!$('grades-body').children.length) ['General Paper', 'Mathematics', 'Computing', 'Physics', 'Economics'].forEach((subject) => addGrade(subject, '4.6'));
+      }
+      function addGrade(subject = '', score = '') {
+        const row = document.createElement('tr');
+        row.innerHTML = '<td><input class="subject" aria-label="Subject" placeholder="Subject"></td><td class="level">N/A</td><td><input class="score" aria-label="Grade or score" placeholder="Grade / score"></td><td><button class="delete-grade" type="button">Delete</button></td>';
+        row.querySelector('.subject').value = subject;
+        row.querySelector('.score').value = score;
+        row.querySelector('.delete-grade').addEventListener('click', () => row.remove());
+        $('grades-body').append(row);
+      }
+      function acceptFile(kind, file) {
+        if (!file) return;
+        const valid = /\.(pdf|doc|docx)$/i.test(file.name) && file.size <= 10 * 1048576;
+        const error = $(`${kind}-error`);
+        if (!valid) {
+          error.textContent = 'Choose a PDF, DOC or DOCX file up to 10MB.';
+          error.hidden = false;
+          return;
+        }
+        error.hidden = true;
+        if (kind === 'transcript') {
+          transcript = file;
+          manual = false;
+          $('details-note').textContent = 'Example details shown for this prototype. Review and correct them before continuing.';
+          if (!$('qualification').value) fillExample();
+        } else cv = file;
+        update();
+        notice(kind === 'transcript' ? 'Academic transcript uploaded successfully.' : 'Curriculum vitae uploaded successfully.');
+      }
+      for (const kind of ['transcript', 'cv']) {
+        const input = $(`${kind}-file`);
+        const zone = $(`${kind}-zone`);
+        $(`${kind}-label`).addEventListener('click', () => input.click());
+        zone.addEventListener('dragover', (event) => { event.preventDefault(); zone.classList.add('dragover'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+        zone.addEventListener('drop', (event) => { event.preventDefault(); zone.classList.remove('dragover'); acceptFile(kind, event.dataTransfer.files[0]); });
+        input.addEventListener('change', () => { acceptFile(kind, input.files[0]); input.value = ''; });
+        $(`${kind}-delete`).addEventListener('click', () => { if (kind === 'transcript') transcript = null; else cv = null; update(); });
+      }
+      for (const method of ['upload', 'manual']) {
+        $(`${method}-mode`).addEventListener('change', () => {
+          manual = method === 'manual';
+          $('details-note').textContent = manual ? 'No transcript upload is needed. Fields marked * are required.' : 'Review your education details before continuing.';
+          update();
+        });
+      }
+      $('education-details').addEventListener('input', update);
+      $('education-details').addEventListener('change', update);
+      $('add-grade').addEventListener('click', () => addGrade());
+      $('save').addEventListener('click', () => {
+        const values = Object.fromEntries(fields.map(id => [id, $(id).value]));
+        const grades = [...$('grades-body').querySelectorAll('tr')].map(row => ({ subject: row.querySelector('.subject').value, score: row.querySelector('.score').value }));
+        localStorage.setItem(storageKey, JSON.stringify({ values, grades, manual, transcriptName: transcript?.name || '', cvName: cv?.name || '' }));
+        notice('Draft saved in this browser. Files must be selected again when you return.');
+      });
+      $('next').addEventListener('click', () => notice('Education details are ready. This standalone HTML preview does not submit an application.'));
+      $('back').addEventListener('click', () => { if (history.length > 1) history.back(); else notice('This is a standalone education-page preview.'); });
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
+        if (saved) {
+          fields.forEach(id => { if (saved.values?.[id]) $(id).value = saved.values[id]; });
+          (saved.grades || []).forEach(row => addGrade(row.subject, row.score));
+          manual = Boolean(saved.manual || saved.transcriptName);
+          if (manual) $('details-note').textContent = 'Review your saved details. Re-upload documents if needed.';
+        }
+      } catch { /* Ignore malformed prototype-only draft data. */ }
+      update();
+    })();
+  </script>
+</body>
+</html>
