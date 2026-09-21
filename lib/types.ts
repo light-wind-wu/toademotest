@@ -778,6 +778,40 @@ export interface ApplicantApplicationDocument {
   kind: 'resume' | 'transcript' | 'portfolio';
 }
 
+export interface ApplicantSubmissionDetails {
+  personal: {
+    name: string;
+    nric: string;
+    nationality: string;
+    residentialStatus: string;
+    sex: string;
+    dateOfBirth: string;
+    race: string;
+    photo: string;
+    mobile: string;
+    email: string;
+    registeredAddress: string;
+  };
+  education: {
+    institution: string;
+    course: string;
+    yearOfStudy: string;
+    gpa: string;
+    expectedGraduation: string;
+  };
+  availability: { startDate: string; endDate: string };
+  interests: string[];
+  projectPreferences: string[];
+  additional: {
+    bondedScholarship: boolean | null;
+    scholarshipName: string;
+    creditBearing: boolean;
+    creditModuleCode: string;
+  };
+  declarations: { text: string; acceptedAt: string | null }[];
+  documents: ApplicantApplicationDocument[];
+}
+
 export interface ApplicantApplicationRecord {
   id: string;
   programmeName: string;
@@ -827,6 +861,7 @@ export interface ApplicantApplicationRecord {
   contactEmail: string;
   timeline: ApplicantApplicationTimelineEvent[];
   documents: ApplicantApplicationDocument[];
+  submissionDetails?: ApplicantSubmissionDetails;
   summary: {
     personal: string;
     education: string;
@@ -1005,6 +1040,10 @@ export type ApplicantScenarioId =
   | 'S01' | 'S02' | 'S03' | 'S04' | 'S05' | 'S06'
   | 'S07' | 'S08' | 'S09' | 'S10' | 'S11';
 
+export type ApplicantApplicationCardAction =
+  | 'continue-application' | 'choose-timeslot' | 'view-interview'
+  | 'review-offer' | 'complete-onboarding' | 'view-internship' | 'view-application';
+
 export interface ApplicantScenarioApplicationRecord {
   applicationId: string;
   programme: string;
@@ -1012,6 +1051,9 @@ export interface ApplicantScenarioApplicationRecord {
   tabGroup: 'in-progress' | 'closed';
   cardMessage: string;
   actionDeadline: string | null;
+  deadlineLabel?: string;
+  primaryAction: ApplicantApplicationCardAction;
+  secondaryAction?: ApplicantApplicationCardAction | null;
   primaryCta: string;
   secondaryCta: string | null;
   focal: boolean;

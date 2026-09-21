@@ -1,7 +1,26 @@
 import applicantApplicationsSeed from '@/data/applicant-applications.json';
+import submissionSeed from '@/data/applicant-submission-details.json';
 import type { ApplicantApplicationRecord } from '@/lib/types';
 
 export const APPLICANT_APPLICATIONS_KEY = 'dsta_applicant_application_records';
+
+function withSubmissionDetails(record: ApplicantApplicationRecord): ApplicantApplicationRecord {
+  if (record.submissionDetails) return record;
+  const details = submissionSeed.applications[record.id as keyof typeof submissionSeed.applications];
+  if (!details) return record;
+  // Seed each application's own snapshot, never the live profile or current draft.
+  return {
+    ...record,
+    submissionDetails: {
+      ...details,
+      personal: { ...submissionSeed.personal },
+      interests: [...record.summary.interests],
+      projectPreferences: [...record.summary.projectPreferences],
+      documents: record.documents.map((document) => ({ ...document })),
+      declarations: submissionSeed.declarations.map((text) => ({ text, acceptedAt: record.submittedAt })),
+    },
+  };
+}
 
 function normalizeOneHourInterviewText(value: string): string {
   return value
@@ -29,7 +48,8 @@ function hideInternalApplicantStatuses(record: ApplicantApplicationRecord): Appl
 }
 
 export function loadApplicantApplications(): ApplicantApplicationRecord[] {
-  if (typeof window === 'undefined') return applicantApplicationsSeed as ApplicantApplicationRecord[];
+  const seeds = (applicantApplicationsSeed as ApplicantApplicationRecord[]).map(withSubmissionDetails);
+  if (typeof window === 'undefined') return seeds;
 
   try {
     const stored = localStorage.getItem(APPLICANT_APPLICATIONS_KEY);
@@ -42,14 +62,22 @@ export function loadApplicantApplications(): ApplicantApplicationRecord[] {
         interviewDetails: savedById.get(seedRecord.id)?.interviewDetails ?? seedRecord.interviewDetails,
       }));
       const seedIds = new Set(merged.map((record) => record.id));
-      return [...merged, ...savedRecords.filter((record) => !seedIds.has(record.id))].map(hideInternalApplicantStatuses);
+      const records = [...merged, ...savedRecords.filter((record) => !seedIds.has(record.id))].map(withSubmissionDetails);
+      if (records.some((record) => record.submissionDetails && !savedById.get(record.id)?.submissionDetails)) {
+        try {
+          localStorage.setItem(APPLICANT_APPLICATIONS_KEY, JSON.stringify(records));
+        } catch {
+          // Keep the saved application visible even if snapshot migration cannot be persisted.
+        }
+      }
+      return records.map(hideInternalApplicantStatuses);
     }
-    localStorage.setItem(APPLICANT_APPLICATIONS_KEY, JSON.stringify(applicantApplicationsSeed));
+    localStorage.setItem(APPLICANT_APPLICATIONS_KEY, JSON.stringify(seeds));
   } catch {
-    return applicantApplicationsSeed as ApplicantApplicationRecord[];
+    return seeds.map(hideInternalApplicantStatuses);
   }
 
-  return (applicantApplicationsSeed as ApplicantApplicationRecord[]).map(hideInternalApplicantStatuses);
+  return seeds.map(hideInternalApplicantStatuses);
 }
 
 export function saveApplicantApplications(records: ApplicantApplicationRecord[]) {

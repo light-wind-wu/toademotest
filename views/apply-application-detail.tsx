@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -19,6 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import Shell from '@/components/layout/shell';
+import SubmittedApplicationDetails from '@/components/apply/submitted-application-details';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -138,7 +138,7 @@ function DetailValue({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <dt className="text-[13px] leading-5 text-fg-muted">{label}</dt>
-      <dd className="mt-1 text-[14px] font-medium leading-5 text-fg">{value}</dd>
+      <dd className="mt-1 break-words text-[14px] font-medium leading-5 text-fg">{value}</dd>
     </div>
   );
 }
@@ -374,12 +374,8 @@ export default function ApplyApplicationDetail() {
                 <Badge variant={statusVariant(record.status)}>{formatStatusLabel(record.status)}</Badge>
               </div>
               <p className="mt-2 text-[14px] leading-5 text-fg-muted">
-                {record.intake} · {record.applicationId}
+                {record.applicationId}
               </p>
-            </div>
-            <div className="sm:text-right">
-              <p className="text-[12px] text-fg-muted">Current next step</p>
-              <p className="mt-1 max-w-sm text-[14px] font-medium leading-5 text-fg">{record.nextStep}</p>
             </div>
           </div>
 
@@ -419,7 +415,7 @@ export default function ApplyApplicationDetail() {
 
         <div className="mx-auto w-full max-w-[1440px] px-[clamp(24px,2.6vw,40px)] py-8">
           <div className="grid gap-4 xl:grid-cols-[minmax(0,2.2fr)_minmax(300px,1fr)]">
-            <div className="space-y-4">
+            <div className="min-w-0 space-y-4">
               {record.interviewDetails ? (
                 <InterviewDetailsCard
                   record={record}
@@ -428,64 +424,9 @@ export default function ApplyApplicationDetail() {
                 />
               ) : null}
 
-              <Card className="shadow-none">
-                <CardHeader>
-                  <CardTitle className="text-[18px]">Application timeline</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ol aria-label="Application timeline">
-                    {record.timeline.map((event, index) => (
-                      <li key={`${event.title}-${event.date}`} className="flex gap-5">
-                        <div className="flex w-3 shrink-0 flex-col items-center">
-                          <span
-                            className={cn(
-                              'mt-1 size-3 shrink-0 rounded-full',
-                              event.tone === 'current' && 'bg-accent',
-                              event.tone === 'complete' && 'bg-success',
-                              event.tone === 'neutral' && 'bg-border-strong',
-                            )}
-                            aria-hidden
-                          />
-                          {index < record.timeline.length - 1 ? <span className="min-h-12 w-px flex-1 bg-border" aria-hidden /> : null}
-                        </div>
-                        <div className={cn('flex min-w-0 flex-1 flex-col gap-2 pb-7 sm:flex-row sm:justify-between', index === record.timeline.length - 1 && 'pb-0')}>
-                          <div>
-                            <h2 className="text-[16px] font-medium leading-6 text-fg">{event.title}</h2>
-                            <p className="mt-1 text-[13px] leading-5 text-fg-muted">{event.description}</p>
-                          </div>
-                          <span className="inline-flex shrink-0 items-center gap-1.5 text-[12px] text-fg-muted">
-                            <CalendarDays className="size-4" aria-hidden />
-                            {event.date}
-                          </span>
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-none">
-                <CardHeader>
-                  <CardTitle className="text-[18px]">Documents</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {record.documents.map((document) => (
-                    <div key={document.fileName} className="flex items-center gap-4 rounded-lg border border-border bg-bg p-4">
-                      <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-bg-muted text-accent">
-                        <FileText className="size-5" aria-hidden />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[14px] font-medium text-fg">{document.label}</p>
-                        <p className="mt-1 truncate text-[12px] text-fg-muted">{document.fileName} · {document.meta}</p>
-                      </div>
-                      <Button variant="ghost" size="icon" aria-label={`Download ${document.label}`} onClick={() => downloadMockDocument(document.fileName)}>
-                        <Download className="size-4" aria-hidden />
-                      </Button>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
+              {record.submissionDetails ? (
+                <SubmittedApplicationDetails details={record.submissionDetails} draft={record.status === 'DRAFT'} />
+              ) : (
               <Card className="shadow-none">
                 <CardHeader>
                   <CardTitle className="text-[18px]">Application summary</CardTitle>
@@ -524,6 +465,30 @@ export default function ApplyApplicationDetail() {
                   </div>
                 </CardContent>
               </Card>
+              )}
+
+              <Card className="shadow-none">
+                <CardHeader>
+                  <CardTitle className="text-[18px]">Documents</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {(record.submissionDetails?.documents ?? record.documents).map((document) => (
+                    <div key={document.fileName} className="flex items-center gap-4 rounded-lg border border-border bg-bg p-4">
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-bg-muted text-accent">
+                        <FileText className="size-5" aria-hidden />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[14px] font-medium text-fg">{document.label}</p>
+                        <p className="mt-1 truncate text-[12px] text-fg-muted">{document.fileName} · {document.meta}</p>
+                      </div>
+                      <Button variant="ghost" size="icon" aria-label={`Download ${document.label}`} onClick={() => downloadMockDocument(document.fileName)}>
+                        <Download className="size-4" aria-hidden />
+                      </Button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
             </div>
 
             <aside className="space-y-4">
@@ -532,7 +497,6 @@ export default function ApplyApplicationDetail() {
                 <CardContent>
                   <dl className="grid grid-cols-2 gap-x-5 gap-y-5">
                     <div className="col-span-2"><DetailValue label="Programme" value={record.programmeName} /></div>
-                    <div className="col-span-2"><DetailValue label="Intake" value={record.intake} /></div>
                     <DetailValue label="Location" value={record.location} />
                     <DetailValue label="Type" value={record.type} />
                     <DetailValue label="Department" value={record.department} />
@@ -565,17 +529,6 @@ export default function ApplyApplicationDetail() {
                     {record.contactEmail}
                   </a>
                 </CardContent>
-              </Card>
-
-              <Card className="relative min-h-[220px] overflow-hidden shadow-none">
-                <CardContent className="relative z-[1] p-6 pr-32">
-                  <h2 className="text-[18px] font-semibold text-accent">Next steps</h2>
-                  <p className="mt-3 text-[14px] leading-5 text-fg-muted">{record.nextStep}</p>
-                  {record.deadline ? <p className="mt-3 text-[13px] font-medium text-warning">{record.deadline}</p> : null}
-                </CardContent>
-                <div className="pointer-events-none absolute bottom-0 right-0 h-[150px] w-[150px]" aria-hidden>
-                  <Image src="/images/activity-v1.png" alt="" fill className="object-contain object-right-bottom" sizes="150px" />
-                </div>
               </Card>
 
             </aside>

@@ -23,7 +23,7 @@ import type {
 
 type ScenarioCollection<T> = Record<ApplicantScenarioId, T>;
 
-const APPLICATIONS = applicationScenarios as ScenarioCollection<ApplicantScenarioApplicationRecord[]>;
+const APPLICATIONS = applicationScenarios as Record<string, ApplicantScenarioApplicationRecord[]>;
 const INTERVIEWS = interviewScenarios as ScenarioCollection<ApplicantScenarioInterviewRecord[]>;
 const OFFERS = offerScenarios as ScenarioCollection<ApplicantScenarioOfferRecord[]>;
 const INTERNSHIPS = internshipScenarios as ScenarioCollection<ApplicantScenarioInternshipRecord[]>;
@@ -77,10 +77,23 @@ export function useApplicantScenarioData() {
   return {
     homeScenario,
     scenarioId,
-    applications: scenarioId ? APPLICATIONS[scenarioId] : EMPTY_APPLICATIONS,
+    applications: applicationRecordsForHomeScenario(homeScenario),
     interviews: scenarioId ? INTERVIEWS[scenarioId] : EMPTY_INTERVIEWS,
     offers: scenarioId ? OFFERS[scenarioId] : EMPTY_OFFERS,
     internships: scenarioId ? INTERNSHIPS[scenarioId] : EMPTY_INTERNSHIPS,
     certification: scenarioId ? CERTIFICATION[scenarioId] : CERTIFICATION.S01,
   };
+}
+
+export function applicationRecordsForHomeScenario(scenario: ApplicantHomeScenario): ApplicantScenarioApplicationRecord[] {
+  // These application states need distinct copy; other journey views keep their own scenario mappings.
+  const overrides: Partial<Record<ApplicantHomeScenario, string>> = {
+    'interview-pending-confirmation': 'INTERVIEW_PENDING_CONFIRMATION',
+    'application-unsuccessful': 'UNSUCCESSFUL',
+    'application-withdrawn': 'WITHDRAWN',
+    'offer-declined': 'OFFER_DECLINED',
+    'offer-expired': 'OFFER_EXPIRED',
+  };
+  const key = overrides[scenario] ?? scenarioIdForApplicantHomeScenario(scenario);
+  return key ? APPLICATIONS[key] : EMPTY_APPLICATIONS;
 }

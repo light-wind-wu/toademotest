@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, CalendarDays, FileText } from 'lucide-react';
@@ -11,15 +12,14 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { loadApplicantApplications } from '@/lib/applicant-applications';
 import { useApplicantScenarioData } from '@/lib/applicant-scenario-data';
-import type { ApplicantScenarioApplicationRecord } from '@/lib/types';
+import type { ApplicantApplicationCardAction, ApplicantScenarioApplicationRecord } from '@/lib/types';
 import { formatStatusLabel } from '@/lib/status-label';
-import { cn } from '@/lib/utils';
 
 type ApplicationTab = ApplicantScenarioApplicationRecord['tabGroup'];
 
 const FILTERS: Array<{ value: ApplicationTab; label: string }> = [
   { value: 'in-progress', label: 'In progress' },
-  { value: 'closed', label: 'Closed' },
+  { value: 'closed', label: 'Completed' },
 ];
 
 function statusVariant(status: string) {
@@ -36,30 +36,24 @@ function routeRecordId(applicationId: string) {
 
 function ApplicationCard({ record }: { record: ApplicantScenarioApplicationRecord }) {
   const router = useRouter();
-  const isClosed = record.tabGroup === 'closed';
   const detailId = routeRecordId(record.applicationId);
-
-  function runAction(label: string) {
-    const action = label.toLowerCase();
-    if (action.includes('continue application')) return router.push('/apply/review');
-    if (action.includes('choose a timeslot')) return router.push(`/apply/applicant-interview-review?applicationId=${detailId}`);
-    if (action.includes('interview')) return router.push('/apply/interviews');
-    if (action.includes('offer')) return router.push(`/apply/applicant-offer-detail?applicationId=${detailId}`);
-    if (action.includes('onboarding')) return router.push('/apply/onboarding');
-    if (action.includes('internship')) return router.push('/apply/internship');
-    return router.push(`/apply/applications/${detailId}`);
-  }
+  const needsAction = ['continue-application', 'choose-timeslot', 'review-offer', 'complete-onboarding'].includes(record.primaryAction);
+  const destinations: Record<ApplicantApplicationCardAction, string> = {
+    'continue-application': '/apply/review',
+    'choose-timeslot': `/apply/applicant-interview-review?applicationId=${detailId}`,
+    'view-interview': '/apply/interviews',
+    'review-offer': `/apply/applicant-offer-detail?applicationId=${detailId}`,
+    'complete-onboarding': '/apply/onboarding',
+    'view-internship': '/apply/internship',
+    'view-application': `/apply/applications/${detailId}`,
+  };
+  const linkClass = 'inline-flex min-h-8 items-center gap-1.5 text-[13px] font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent';
 
   return (
-    <Card
-      className={cn(
-        'flex min-h-[260px] flex-col p-6 shadow-none transition-colors hover:border-border-strong',
-        isClosed && 'bg-bg-subtle text-fg-muted opacity-75',
-      )}
-    >
-      <div className="flex items-start justify-between gap-4">
+    <Card className="flex min-w-0 flex-col p-6 shadow-none">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
-          <h2 className="text-[18px] font-semibold leading-6 text-fg">{record.programme}</h2>
+          <h2 className="break-words text-[18px] font-semibold leading-6 text-fg">{record.programme}</h2>
           <p className="mt-1 text-[14px] leading-5 text-fg-muted">{record.applicationId}</p>
         </div>
         <Badge variant={statusVariant(record.statusBadge)} className="shrink-0 whitespace-nowrap">
@@ -67,27 +61,29 @@ function ApplicationCard({ record }: { record: ApplicantScenarioApplicationRecor
         </Badge>
       </div>
 
-      <p className="mt-7 text-[14px] leading-5 text-fg">{record.cardMessage}</p>
-      {record.actionDeadline ? (
-        <p className="mt-2 inline-flex items-center gap-1.5 text-[13px] font-medium text-warning">
-          <CalendarDays className="size-4" aria-hidden />
-          Action by {record.actionDeadline}
-        </p>
-      ) : null}
-
-      <div className="mt-auto border-t border-border pt-4">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] leading-4 text-fg-muted">
-          <span>{record.focal ? 'Current application' : 'Application history'}</span>
-        </div>
-        <div className="mt-5 flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => runAction(record.primaryCta)}>
-            {record.primaryCta}
-            <ArrowRight className="size-4" aria-hidden />
-          </Button>
-          {record.secondaryCta ? (
-            <Button variant="outline" size="sm" onClick={() => runAction(record.secondaryCta!)}>
-              {record.secondaryCta}
+      <p className="mt-5 text-[14px] leading-6 text-fg">{record.cardMessage}</p>
+      <div className="mt-auto pt-5">
+        {record.actionDeadline && needsAction ? (
+          <p className="mb-3 flex items-start gap-1.5 text-[13px] font-medium leading-5 text-fg-muted">
+            <CalendarDays className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <span>{record.deadlineLabel} {record.actionDeadline}</span>
+          </p>
+        ) : null}
+        <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-2">
+          {needsAction ? (
+            <Button size="sm" className="h-auto min-h-8 whitespace-normal py-1.5 text-left" onClick={() => router.push(destinations[record.primaryAction])}>
+              {record.primaryCta}
+              <ArrowRight className="size-4 shrink-0" aria-hidden />
             </Button>
+          ) : (
+            <Link className={linkClass} href={destinations[record.primaryAction]}>
+              {record.primaryCta}<ArrowRight className="size-3.5 shrink-0" aria-hidden />
+            </Link>
+          )}
+          {record.secondaryCta && record.secondaryAction && record.secondaryAction !== record.primaryAction ? (
+            <Link className={linkClass} href={destinations[record.secondaryAction]}>
+              {record.secondaryCta}<ArrowRight className="size-3.5 shrink-0" aria-hidden />
+            </Link>
           ) : null}
         </div>
       </div>
@@ -96,8 +92,10 @@ function ApplicationCard({ record }: { record: ApplicantScenarioApplicationRecor
 }
 
 export default function ApplyApplications() {
-  const { applications: records } = useApplicantScenarioData();
-  const [filter, setFilter] = useState<ApplicationTab>('in-progress');
+  const { applications: records, homeScenario } = useApplicantScenarioData();
+  const [selection, setSelection] = useState<{ scenario: string; tab: ApplicationTab } | null>(null);
+  const defaultTab = records.find((record) => record.focal)?.tabGroup ?? 'in-progress';
+  const filter = selection?.scenario === homeScenario ? selection.tab : defaultTab;
 
   const counts = useMemo(
     () => ({
@@ -125,7 +123,7 @@ export default function ApplyApplications() {
         </header>
 
         <div className="mx-auto w-full max-w-[1440px] px-[clamp(24px,2.6vw,40px)] py-8">
-          <Tabs value={filter} onValueChange={(value) => setFilter(value as ApplicationTab)}>
+          <Tabs value={filter} onValueChange={(value) => setSelection({ scenario: homeScenario, tab: value as ApplicationTab })}>
             <TabsList className="h-auto max-w-full justify-start overflow-x-auto bg-transparent p-0">
               {FILTERS.map((item) => (
                 <TabsTrigger

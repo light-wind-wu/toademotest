@@ -1,0 +1,61 @@
+{
+  "personal": {
+    "name": "Jenny Aw",
+    "nric": "S1234567A",
+    "nationality": "Singapore Citizen",
+    "residentialStatus": "Citizen",
+    "sex": "Female",
+    "dateOfBirth": "22 Aug 2003",
+    "race": "Chinese",
+    "photo": "Not provided",
+    "mobile": "+65 9123 4567",
+    "email": "jenny.aw@u.nus.edu",
+    "registeredAddress": "123 Clementi Ave 3, #12-34, Singapore 120123"
+  },
+  "declarations": [
+    "I consent to the collection, use and disclosure of my personal data for the assessment and administration of my internship application.",
+    "I declare that the information and supporting documents provided in this application are true and accurate."
+  ],
+  "applications": {
+    "app-ui-2027": {
+      "education": { "institution": "National University of Singapore", "course": "Computer Science", "yearOfStudy": "Year 3", "gpa": "4.6 / 5.0", "expectedGraduation": "May 2028" },
+      "availability": { "startDate": "5 Jan 2027", "endDate": "26 Mar 2027" },
+      "additional": { "bondedScholarship": false, "scholarshipName": "", "creditBearing": true, "creditModuleCode": "CP3880" }
+    },
+    "app-poly-2027": {
+      "education": { "institution": "Nanyang Polytechnic", "course": "Infocomm & Media Engineering", "yearOfStudy": "Year 3", "gpa": "3.8 / 4.0", "expectedGraduation": "Mar 2028" },
+      "availability": { "startDate": "6 Apr 2027", "endDate": "18 Sep 2027" },
+      "additional": { "bondedScholarship": null, "scholarshipName": "", "creditBearing": true, "creditModuleCode": "Not provided" }
+    },
+    "app-techup-2027": {
+      "education": { "institution": "National University of Singapore", "course": "Computer Science", "yearOfStudy": "Year 3", "gpa": "4.6 / 5.0", "expectedGraduation": "May 2028" },
+      "availability": { "startDate": "3 May 2027", "endDate": "23 Jul 2027" },
+      "additional": { "bondedScholarship": false, "scholarshipName": "", "creditBearing": false, "creditModuleCode": "" }
+    },
+    "app-experience-2027": {
+      "education": { "institution": "National Junior College", "course": "Science", "yearOfStudy": "Year 2", "gpa": "Not applicable", "expectedGraduation": "Dec 2027" },
+      "availability": { "startDate": "8 Nov 2027", "endDate": "17 Dec 2027" },
+      "additional": { "bondedScholarship": false, "scholarshipName": "", "creditBearing": false, "creditModuleCode": "" }
+    },
+    "app-design-2027": {
+      "education": { "institution": "National University of Singapore", "course": "Industrial Design", "yearOfStudy": "Year 3", "gpa": "4.5 / 5.0", "expectedGraduation": "May 2028" },
+      "availability": { "startDate": "5 Jan 2027", "endDate": "21 May 2027" },
+      "additional": { "bondedScholarship": false, "scholarshipName": "", "creditBearing": true, "creditModuleCode": "Not provided" }
+    },
+    "app-ai-2027": {
+      "education": { "institution": "National University of Singapore", "course": "Computer Science", "yearOfStudy": "Year 3", "gpa": "4.6 / 5.0", "expectedGraduation": "May 2028" },
+      "availability": { "startDate": "3 May 2027", "endDate": "23 Jul 2027" },
+      "additional": { "bondedScholarship": true, "scholarshipName": "DSTA Scholarship", "creditBearing": false, "creditModuleCode": "" }
+    },
+    "app-ui-2026": {
+      "education": { "institution": "National University of Singapore", "course": "Computer Science", "yearOfStudy": "Year 2", "gpa": "4.4 / 5.0", "expectedGraduation": "May 2028" },
+      "availability": { "startDate": "4 May 2026", "endDate": "24 Jul 2026" },
+      "additional": { "bondedScholarship": false, "scholarshipName": "", "creditBearing": true, "creditModuleCode": "CP3200" }
+    },
+    "app-techup-2026": {
+      "education": { "institution": "National University of Singapore", "course": "Computer Science", "yearOfStudy": "Year 2", "gpa": "4.4 / 5.0", "expectedGraduation": "May 2028" },
+      "availability": { "startDate": "4 May 2026", "endDate": "24 Jul 2026" },
+      "additional": { "bondedScholarship": false, "scholarshipName": "", "creditBearing": false, "creditModuleCode": "" }
+    }
+  }
+}
