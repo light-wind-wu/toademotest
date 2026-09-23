@@ -2,11 +2,14 @@
   "name": "dsta-talent-portal",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.34.5",
   "scripts": {
     "dev": "next dev",
     "dev:clean": "rm -rf .next && next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "node --test tests/*.test.cjs",
+    "test:production": "node scripts/check-production.cjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.99.0",
