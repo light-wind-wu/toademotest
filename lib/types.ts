@@ -812,6 +812,100 @@ export interface ApplicantSubmissionDetails {
   documents: ApplicantApplicationDocument[];
 }
 
+export type ProfileQualification = 'Undergraduate' | 'A-level' | 'Polytechnic' | 'NUS High' | 'IB' | 'O-level' | 'Secondary' | 'Other Qualification';
+export type ProfileStudyStatus = 'Currently studying' | 'Completed' | 'Discontinued';
+export interface ProfileEducation {
+  id: string;
+  qualification: ProfileQualification;
+  institution: string;
+  country: string;
+  status: ProfileStudyStatus;
+  currentYear: string;
+  startDate: string;
+  expectedGraduation: string;
+  endDate: string;
+  course: string;
+  major: string;
+  secondMajor: string;
+  minor: string;
+  legacyQualificationDetails?: Record<string, unknown>;
+  legacyGraduationYear?: string;
+}
+export interface ProfileTestScore {
+  id: string;
+  exam: 'SAT' | 'TOEFL' | 'GMAT' | 'GRE' | 'IELTS';
+  version: string;
+  testDate: string;
+  score: string;
+  maximumScore: string;
+}
+export type ProfileLanguageLevel = '' | 'Basic' | 'Intermediate' | 'Advanced';
+export interface ProfileEmployment {
+  id: string;
+  jobTitle: string;
+  organization: string;
+  location: string;
+  locationType: string;
+  employmentType: string;
+  current: boolean;
+  startMonth: string;
+  startYear: string;
+  endMonth: string;
+  endYear: string;
+  highlights: string;
+  skills: string[];
+}
+export interface ProfileLanguage {
+  language: string;
+  speaking: ProfileLanguageLevel;
+  reading: ProfileLanguageLevel;
+  writing: ProfileLanguageLevel;
+}
+export interface ProfileDocument {
+  id: string;
+  name: string;
+  uploadedAt: string;
+  size?: number;
+  mimeType?: string;
+  dataUrl?: string;
+  scanStatus?: 'demo-passed';
+}
+export interface ProfilePhoto {
+  dataUrl: string;
+  updatedAt: string;
+}
+export interface ProfilePhotoCrop { x: number; y: number; width: number; height: number }
+export type ProfilePersonalInformation = Pick<ApplicantEditableProfile,
+  'fullName' | 'nric' | 'nationality' | 'countryOfBirth' | 'dateOfBirth' | 'sex' | 'phone' | 'email' | 'residentialStatus' | 'registeredAddress'>;
+
+export interface ApplicantEditableProfile {
+  version: 2;
+  fullName: string;
+  email: string;
+  accountEmail?: string;
+  phone: string;
+  nationality: string;
+  nric: string;
+  countryOfBirth: string;
+  dateOfBirth: string;
+  sex: string;
+  residentialStatus: string;
+  registeredAddress: string;
+  education: ProfileEducation[];
+  testScores: ProfileTestScore[];
+  languages: ProfileLanguage[];
+  employment: ProfileEmployment[];
+  documents: ProfileDocument[];
+  photo?: ProfilePhoto;
+}
+
+export type ProfileEmailChangeStep = 'current' | 'new-email' | 'new-code';
+export interface ProfileEmailChallenge {
+  code: string;
+  expiresAt: number;
+  resendAt: number;
+}
+
 export interface ApplicantApplicationRecord {
   id: string;
   programmeName: string;
@@ -862,6 +956,11 @@ export interface ApplicantApplicationRecord {
   timeline: ApplicantApplicationTimelineEvent[];
   documents: ApplicantApplicationDocument[];
   submissionDetails?: ApplicantSubmissionDetails;
+  withdrawal?: {
+    reason: string;
+    details: string;
+    withdrawnAt: string;
+  };
   summary: {
     personal: string;
     education: string;
@@ -1369,4 +1468,13 @@ export interface ApplicantHomeDashboardData {
   assets: ApplicantHomeDashboardAssets;
   programmes: readonly ApplicantHomeProgrammeContent[];
   scenarios: Record<ApplicantHomeScenario, ApplicantHomeScenarioContent>;
+}
+export interface SettingsPasswordDraft {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ApplicantNotificationSettings {
+  eventsAndOpportunities: boolean;
 }

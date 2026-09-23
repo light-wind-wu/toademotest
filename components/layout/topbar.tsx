@@ -3,9 +3,11 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Search, Bell, Settings, HelpCircle, ChevronDown, LayoutGrid, ListTodo, PanelsTopLeft, Check, RotateCcw, MonitorUp } from 'lucide-react';
+import { Search, Bell, Settings, HelpCircle, ChevronDown, LayoutGrid, ListTodo, PanelsTopLeft, Check, RotateCcw, MonitorUp, LogOut, User } from 'lucide-react';
 import { useRole, ROLE_LABELS } from '@/lib/role';
 import { cn } from '@/lib/utils';
+import { useProfilePhoto } from '@/lib/use-profile-photo';
+import { useProfileEmail } from '@/lib/use-profile-email';
 
 import Image from 'next/image';
 import { signOut } from '@/lib/session';
@@ -68,6 +70,8 @@ export default function Topbar({
   const ref       = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
   const isApplicant = role === 'new-applicant' || role === 'existing-scholar-applicant';
+  const photoUrl = useProfilePhoto(profile.email, isApplicant);
+  const contactEmail = useProfileEmail(profile.email, profile.name, isApplicant);
 
   useEffect(() => {
     setHomeScenario(loadApplicantHomeScenario());
@@ -249,7 +253,7 @@ export default function Topbar({
               <p className="text-caption text-topbar-fg-muted">{ROLE_LABELS[role]}</p>
             </div>
             <div className="w-9 h-9 rounded-full bg-[rgba(27,101,248,1)] flex items-center justify-center text-surface font-bold text-body-sm shrink-0">
-              {profile.initials}
+              {photoUrl ? <img src={photoUrl} alt="Profile photo" className="size-full rounded-full object-cover" /> : profile.initials}
             </div>
             <ChevronDown size={16} className="text-topbar-fg-muted" />
           </button>
@@ -259,12 +263,12 @@ export default function Topbar({
               {/* Profile header */}
               <div className="flex items-center gap-3 p-4 bg-bg-subtle border-b border-border">
                 <div className="w-10 h-10 rounded-full bg-[rgba(27,101,248,1)] flex items-center justify-center text-surface font-bold text-body-sm shrink-0">
-                  {profile.initials}
+                  {photoUrl ? <img src={photoUrl} alt="Profile photo" className="size-full rounded-full object-cover" /> : profile.initials}
                 </div>
                 <div className="min-w-0">
                   <p className="font-semibold text-fg text-body-md">{profile.name}</p>
                   <p className="text-caption text-fg-muted">{ROLE_LABELS[role]}</p>
-                  <p className="text-caption text-accent truncate">{profile.email}</p>
+                  <p className="text-caption text-accent truncate">{contactEmail}</p>
                 </div>
               </div>
 
@@ -365,18 +369,37 @@ export default function Topbar({
                   <ListTodo size={18} className="shrink-0 text-fg-muted" />
                   Go Tasks
                 </button>
-                <button onClick={() => setOpen(false)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bg-subtle text-body-md text-fg transition-colors">
+                {isApplicant ? (
+                  <Link href="/apply/profile" onClick={() => setOpen(false)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bg-subtle text-body-md text-fg transition-colors">
+                    <User size={18} className="text-fg-muted shrink-0" aria-hidden />
+                    My Profile
+                  </Link>
+                ) : (
+                  <button type="button" onClick={() => setOpen(false)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bg-subtle text-body-md text-fg transition-colors">
+                    <User size={18} className="text-fg-muted shrink-0" aria-hidden />
+                    My Profile
+                  </button>
+                )}
+                <Link href={isApplicant ? '/apply/contact-us' : '/contact-us'} onClick={() => setOpen(false)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bg-subtle text-body-md text-fg transition-colors">
                   <HelpCircle size={18} className="text-fg-muted shrink-0" />
                   Help and Support
-                </button>
+                </Link>
                 <Link
-                  href="/settings"
+                  href={isApplicant ? '/apply/settings' : '/settings'}
                   onClick={() => setOpen(false)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bg-subtle text-body-md text-fg transition-colors"
                 >
                   <Settings size={18} className="text-fg-muted shrink-0" />
                   Settings
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bg-subtle text-body-md text-fg transition-colors"
+                >
+                  <LogOut size={18} className="text-fg-muted shrink-0" aria-hidden />
+                  Log out
+                </button>
               </div>
               <div className="border-t border-border p-1.5">
                 {isApplicant ? (

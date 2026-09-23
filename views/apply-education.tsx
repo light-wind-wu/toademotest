@@ -13,6 +13,7 @@ import {
   defaultEducationDetails,
   emptyEducationDetails,
   loadApplyDraft,
+  prefillNewApplyDraft,
   peekChapterIntro,
   saveApplyDraft,
   syncApplyDraftToVariant,
@@ -21,6 +22,8 @@ import {
 } from '@/lib/apply-application';
 import { loadUtApplicantVariant } from '@/lib/ut-track';
 import { isSignedIn } from '@/lib/session';
+import { useRole } from '@/lib/role';
+import { loadEditableApplicantProfile } from '@/lib/applicant-profile';
 
 function shouldShowSession1Intro(): boolean {
   if (typeof window === 'undefined') return false;
@@ -51,6 +54,7 @@ function isEducationFilled(
 
 export default function ApplyEducationPage() {
   const router = useRouter();
+  const { profile, roleReady } = useRole();
   const [ready, setReady] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [fromReview, setFromReview] = useState(false);
@@ -62,6 +66,7 @@ export default function ApplyEducationPage() {
   const introStarted = useRef(false);
 
   useEffect(() => {
+    if (!roleReady) return;
     if (!isSignedIn()) {
       router.replace('/login');
       return;
@@ -76,7 +81,16 @@ export default function ApplyEducationPage() {
       setShowIntro(introStarted.current);
     }
     /* Keep form values aligned with catalog applicant path — never wipe education. */
-    const synced = syncApplyDraftToVariant(loadApplyDraft(), variant);
+    let synced = syncApplyDraftToVariant(loadApplyDraft(), variant);
+    if (synced.profileEducationPrefillPending && !from) {
+      try {
+        const savedProfile = loadEditableApplicantProfile(profile.email, profile.name);
+        synced = prefillNewApplyDraft(synced, savedProfile.education, variant);
+      } catch {
+        // Keep the application usable if a saved profile cannot be read.
+        synced = { ...synced, profileEducationPrefillPending: false };
+      }
+    }
     saveApplyDraft(synced);
     setDraft(synced);
     /* Restore manual panel: saved flag, inferred fields, or Edit-from-review without upload. */
@@ -85,7 +99,7 @@ export default function ApplyEducationPage() {
         (!synced.transcriptName && from),
     );
     setReady(true);
-  }, [router]);
+  }, [router, roleReady, profile.email, profile.name]);
 
   const persist = useCallback((next: ApplySessionDraft) => {
     setDraft(next);

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type AriaAttributes } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /**
@@ -36,7 +37,7 @@ export function monthOrdinal(value: MonthValue): number {
   return value.year * 12 + value.month;
 }
 
-export interface MonthPickerProps {
+export interface MonthPickerProps extends Pick<AriaAttributes, 'aria-labelledby' | 'aria-describedby' | 'aria-invalid' | 'aria-required'> {
   value?: MonthValue;
   onChange: (value: MonthValue) => void;
   placeholder?: string;
@@ -44,6 +45,7 @@ export interface MonthPickerProps {
   id?: string;
   /** Disable months strictly before this one (e.g. the chosen start month). */
   min?: MonthValue;
+  onClear?: () => void;
 }
 
 export function MonthPicker({
@@ -53,6 +55,8 @@ export function MonthPicker({
   className,
   id,
   min,
+  onClear,
+  ...ariaProps
 }: MonthPickerProps) {
   const [open, setOpen] = useState(false);
   const [viewYear, setViewYear] = useState(
@@ -60,9 +64,14 @@ export function MonthPicker({
   );
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(next) => {
+      if (next) setViewYear(value?.year ?? min?.year ?? new Date().getFullYear());
+      setOpen(next);
+    }}>
       <PopoverTrigger
         id={id}
+        type="button"
+        {...ariaProps}
         className={cn(
           "flex h-9 w-full items-center justify-between rounded-md border border-border bg-surface px-3 py-1 text-sm shadow-sm",
           "hover:bg-bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
@@ -106,6 +115,7 @@ export function MonthPicker({
                 key={label}
                 type="button"
                 disabled={disabled}
+                aria-pressed={selected}
                 onClick={() => {
                   onChange({ year: viewYear, month: index });
                   setOpen(false);
@@ -122,6 +132,7 @@ export function MonthPicker({
             );
           })}
         </div>
+        {onClear && value && <div className="mt-3 border-t border-border pt-2"><Button variant="link" size="sm" onClick={() => { onClear(); setOpen(false); }}>Clear</Button></div>}
       </PopoverContent>
     </Popover>
   );

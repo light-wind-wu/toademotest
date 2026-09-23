@@ -2,12 +2,12 @@
 
 import { format, isValid, parse } from 'date-fns';
 import { CalendarDays, Lock } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type AriaAttributes } from 'react';
 import { Calendar } from '@/components/calendar';
 import { cn } from '@/lib/utils';
 import { Popover as BasePopover } from '@base-ui-components/react/popover';
 
-interface DatePickerProps {
+interface DatePickerProps extends Pick<AriaAttributes, 'aria-labelledby' | 'aria-describedby' | 'aria-invalid'> {
   id?: string;
   value: string;
   onChange: (v: string) => void;
@@ -52,6 +52,7 @@ export default function DatePicker({
   align = 'left',
   error = false,
   onClose,
+  ...ariaProps
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const selected = parseDate(value);
@@ -74,6 +75,7 @@ export default function DatePicker({
         type="button"
         aria-label={placeholder}
         aria-expanded={open}
+        {...ariaProps}
         className={cn(
           'flex h-9 w-full items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-1 text-sm shadow-sm',
           'outline-none transition-colors hover:border-border-strong',

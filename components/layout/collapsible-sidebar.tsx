@@ -127,13 +127,13 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
                       'flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
                       active
                         ? 'bg-nav-active-bg text-nav-active-fg'
-                        : 'text-[rgba(10,22,40,1)] hover:bg-bg-muted',
+                        : 'text-fg hover:bg-bg-muted',
                     )}
                   >
                     <span className="relative">
                       <Icon
                         size={20}
-                        className={active ? 'text-nav-active-fg' : 'text-[rgba(10,22,40,1)]'}
+                        className={active ? 'text-nav-active-fg' : 'text-fg'}
                       />
                       {n > 0 && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent" />}
                     </span>
@@ -186,7 +186,7 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
                     collapsed ? 'mx-auto h-11 w-11 justify-center p-2' : 'mx-3 gap-3 px-3 py-2.5',
                     active
                       ? 'bg-nav-active-bg text-nav-active-fg'
-                      : 'text-[rgba(10,22,40,1)] hover:bg-bg-muted',
+                      : 'text-fg hover:bg-bg-muted',
                   )}
                 >
                   {active && !collapsed && (
@@ -198,7 +198,7 @@ export default function CollapsibleSidebar({ activeRoute, collapsed, ready = fal
                   <span className="relative shrink-0">
                     <Icon
                       size={20}
-                      className={active ? 'text-nav-active-fg' : 'text-[rgba(10,22,40,1)]'}
+                      className={active ? 'text-nav-active-fg' : 'text-fg'}
                     />
                   </span>
                   {!collapsed && (

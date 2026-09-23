@@ -1,319 +1,227 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import Shell from '@/components/layout/shell';
 import { useRole } from '@/lib/role';
-import Button from '@/components/ui-legacy/button';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import ProfileTestDialog from '@/components/apply/profile-test-dialog';
+import ProfileEducationDialog from '@/components/apply/profile-education-dialog';
+import ProfileLanguages from '@/components/apply/profile-languages';
+import ProfileEmploymentSection from '@/components/apply/profile-employment';
+import ProfilePersonalEditor from '@/components/apply/profile-personal-editor';
+import ProfileDocuments from '@/components/apply/profile-documents';
+import ProfilePhotoEditor from '@/components/apply/profile-photo-editor';
+import ProfileEmailChange from '@/components/apply/profile-email-change';
 import {
-  User, Mail, Phone, GraduationCap,
-  Upload, FileText, Download, CheckCircle2, AlertCircle,
-} from 'lucide-react';
+  loadEditableApplicantProfile,
+  newProfileEducation, newProfileTest, hasProfileProgramme,
+  saveProfilePersonal, saveProfileEmployment, saveProfileEducation, saveProfileTestScore,
+  saveProfileLanguage, removeProfileLanguage, removeProfileRecord,
+} from '@/lib/applicant-profile';
+import type { ApplicantEditableProfile, ProfileEducation, ProfileTestScore } from '@/lib/types';
+import { format, isValid, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 
-const PROFILE_KEY = 'dsta_applicant_profile';
-
-interface ApplicantProfile {
-  fullName:       string;
-  email:          string;
-  phone:          string;
-  nationality:    string;
-  institution:    string;
-  course:         string;
-  yearOfStudy:    string;
-  graduationYear: string;
-  cgpa:           string;
-  documents: {
-    cv?:         { name: string; uploadedAt: string };
-    transcript?: { name: string; uploadedAt: string };
-    other?:      { name: string; uploadedAt: string };
-  };
-}
-
-function loadProfile(email: string, name: string): ApplicantProfile {
-  try {
-    const raw = localStorage.getItem(`${PROFILE_KEY}_${email}`);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-
-  // Bootstrap from submitted application form values
-  try {
-    const raw = localStorage.getItem('dsta_my_applications');
-    const apps: { submittedAt?: string; formValues?: Record<string, unknown> }[] = raw ? JSON.parse(raw) : [];
-    const latest = apps.sort((a, b) => (b.submittedAt ?? '').localeCompare(a.submittedAt ?? ''))[0];
-    if (latest?.formValues) {
-      const v = latest.formValues;
-      const str = (k: string) => typeof v[k] === 'string' ? v[k] as string : '';
-      const cvName         = str('cv_upload');
-      const transcriptName = str('transcript_upload');
-      return {
-        fullName:       str('name') || name,
-        email,
-        phone:          str('contact_number') || str('phone'),
-        nationality:    str('nationality') || 'Singaporean',
-        institution:    str('name_of_institution'),
-        course:         str('course_of_study'),
-        yearOfStudy:    str('year_of_study'),
-        graduationYear: str('expected_graduation_year') || str('graduation_year'),
-        cgpa:           str('gpa_cap_rank_points'),
-        documents: {
-          ...(cvName         ? { cv:         { name: cvName,         uploadedAt: latest.submittedAt ?? new Date().toISOString() } } : {}),
-          ...(transcriptName ? { transcript: { name: transcriptName, uploadedAt: latest.submittedAt ?? new Date().toISOString() } } : {}),
-        },
-      };
-    }
-  } catch {}
-
-  return {
-    fullName: name, email, phone: '', nationality: 'Singaporean',
-    institution: '', course: '', yearOfStudy: '', graduationYear: '', cgpa: '',
-    documents: {},
-  };
-}
-function saveProfile(email: string, data: ApplicantProfile) {
-  localStorage.setItem(`${PROFILE_KEY}_${email}`, JSON.stringify(data));
-}
-
-const NATIONALITIES = ['Singaporean', 'Singapore PR', 'Malaysian', 'Other'];
-const YEARS = ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Graduate'];
-
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="block text-[13px] font-bold uppercase tracking-widest text-fg-subtle mb-1.5">
-        {label}{required && <span className="text-danger">*</span>}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-const inputCls = 'w-full rounded-xl border border-border bg-bg-subtle px-3 py-2 text-body-sm text-fg focus:outline-none focus:ring-2 focus:ring-accent/40 transition-all';
-const selectCls = 'w-full rounded-xl border border-border bg-bg-subtle px-3 py-2 text-body-sm text-fg focus:outline-none focus:ring-2 focus:ring-accent/40 transition-all appearance-none';
-
-/* ── Document slot ───────────────────────────────────────────────────────── */
-function DocSlot({
-  label, hint, doc, onSimulateUpload,
-}: {
-  label: string;
-  hint: string;
-  doc?: { name: string; uploadedAt: string };
-  onSimulateUpload: () => void;
-}) {
-  return (
-    <div className="py-3 border-b border-border last:border-0">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-body-sm font-semibold text-fg">{label}</p>
-          {doc ? (
-            <>
-              <p className="text-body-sm text-fg-muted flex items-center gap-1 mt-0.5">
-                <FileText size={12} className="text-accent shrink-0" />
-                {doc.name}
-              </p>
-              <p className="text-[13px] text-fg-subtle mt-0.5">
-                Uploaded {new Date(doc.uploadedAt).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })}
-              </p>
-            </>
-          ) : (
-            <p className="text-body-sm text-fg-muted mt-0.5">{hint}</p>
-          )}
-        </div>
-        {doc ? (
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-body-sm font-semibold text-fg hover:bg-bg-subtle transition-colors cursor-not-allowed opacity-60"
-              title="Download not available in this mockup"
-              disabled
-            >
-              <Download size={13} /> Download
-            </button>
-            <button
-              onClick={onSimulateUpload}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-accent/30 text-body-sm font-semibold text-accent hover:bg-accent/5 transition-colors"
-            >
-              <Upload size={13} /> Update
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={onSimulateUpload}
-            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-body-sm font-semibold text-fg hover:bg-bg-subtle transition-colors"
-          >
-            <Upload size={13} /> Upload
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ── Main ────────────────────────────────────────────────────────────────── */
 export default function ApplyProfile() {
-  const { profile } = useRole();
-  const [form,    setForm]    = useState<ApplicantProfile | null>(null);
-  const [saved,   setSaved]   = useState(false);
-  const [dirty,   setDirty]   = useState(false);
+  const { profile, roleReady } = useRole();
+  const emailButtonRef = useRef<HTMLButtonElement>(null);
+  const personalButtonRef = useRef<HTMLButtonElement>(null);
+  const addEducationRef = useRef<HTMLButtonElement>(null);
+  const educationEditRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const addTestRef = useRef<HTMLButtonElement>(null);
+  const testEditRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [editingTest, setEditingTest] = useState<ProfileTestScore | null>(null);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailNotice, setEmailNotice] = useState('');
+  const [form, setForm] = useState<ApplicantEditableProfile | null>(null);
+  const [editingEducation, setEditingEducation] = useState<ProfileEducation | null>(null);
+  const [editingPersonal, setEditingPersonal] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [removeError, setRemoveError] = useState('');
+  const [removeSection, setRemoveSection] = useState<'education' | 'testScores'>('education');
+  const [removeId, setRemoveId] = useState<string | null>(null);
+  const [refreshPending, setRefreshPending] = useState(false);
 
   useEffect(() => {
-    setForm(loadProfile(profile.email, profile.name));
-  }, [profile.email, profile.name]);
+    if (!roleReady) return;
+    try {
+      const next = loadEditableApplicantProfile(profile.email, profile.name);
+      setForm(next); setLoadError(''); setEditingEducation(null);
+      setEditingPersonal(false);
+      setEditingTest(null);
+      setEmailOpen(false); setEmailNotice('');
+    } catch {
+      setForm(null);
+      setLoadError('Your saved profile could not be loaded. Your existing data has not been changed.');
+    }
+  }, [profile.email, profile.name, roleReady]);
 
-  if (!form) return null;
-
-  function set<K extends keyof ApplicantProfile>(key: K, val: ApplicantProfile[K]) {
-    setForm(f => f ? { ...f, [key]: val } : f);
-    setDirty(true);
-    setSaved(false);
+  useEffect(() => {
+    if (refreshPending) window.location.reload();
+  }, [refreshPending]);
+  function closeTest() {
+    const id = editingTest?.id;
+    setEditingTest(null);
+    requestAnimationFrame(() => (id && testEditRefs.current[id] ? testEditRefs.current[id] : addTestRef.current)?.focus());
   }
 
-  function handleSave() {
-    if (!form) return;
-    saveProfile(profile.email, form);
-    setDirty(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 6000);
+  function closeEmail() {
+    setEmailOpen(false);
+    requestAnimationFrame(() => emailButtonRef.current?.focus());
   }
-
-  function simulateUpload(docKey: keyof ApplicantProfile['documents']) {
-    if (!form) return;
-    const defaultNames: Record<string, string> = {
-      cv: 'CV_Resume.pdf', transcript: 'Academic_Transcript.pdf', other: 'Supporting_Document.pdf',
-    };
-    const existing = form.documents[docKey];
-    const filename  = existing?.name ?? defaultNames[docKey] ?? 'Document.pdf';
-    set('documents', { ...form.documents, [docKey]: { name: filename, uploadedAt: new Date().toISOString() } });
+  function closePersonal() {
+    setEditingPersonal(false);
+    requestAnimationFrame(() => personalButtonRef.current?.focus());
   }
-
-const inp = (key: keyof ApplicantProfile) => ({
-    value: form[key] as string,
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => set(key, e.target.value),
-  });
+  function closeEducation() {
+    const id = editingEducation?.id;
+    setEditingEducation(null);
+    requestAnimationFrame(() => (id && educationEditRefs.current[id] ? educationEditRefs.current[id] : addEducationRef.current)?.focus());
+  }
+  const changeEmailButton = <Button ref={emailButtonRef} variant="link" size="sm" className="h-auto shrink-0 p-0 text-sm" onClick={() => { setEmailNotice(''); setEmailOpen(true); }}>Change email</Button>;
 
   return (
     <Shell activeRoute="/apply/profile">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-        <div>
-          <h1 className="text-headline-lg text-fg">My Profile</h1>
-          <p className="text-body-md text-fg-muted mt-0.5">Personal information and documents attached to your applications.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {saved && (
-            <span className="flex items-center gap-1.5 text-body-sm font-semibold text-success">
-              <CheckCircle2 size={14} /> Saved
-            </span>
-          )}
-          <Button disabled={!dirty} onClick={handleSave}>Save Changes</Button>
-        </div>
+      <div className="mx-auto max-w-7xl pb-6 pt-6">
+        <h1 className="text-headline-lg text-fg">My Profile</h1>
+        {loadError && <p role="alert" className="mt-6 text-body-md text-danger">{loadError}</p>}
+        {form && <div className="grid gap-x-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <section aria-labelledby="profile-personal" className="order-1 mt-8 min-w-0 border-b border-border pb-8 lg:col-start-1">
+            <div className="mb-6 flex items-center gap-4">
+              <ProfilePhotoEditor key={form.email} profile={form} initials={profile.initials} onSaved={setForm} />
+              <div className="min-w-0"><h2 id="profile-personal" className="text-headline-sm text-fg">Personal information</h2></div>
+              <Button ref={personalButtonRef} variant="ghost" size="icon" className="ml-auto shrink-0" aria-label="Edit personal information" title="Edit personal information" aria-haspopup="dialog" onClick={() => setEditingPersonal(true)}><Pencil size={16} /></Button>
+            </div>
+            <dl id="profile-personal-fields" className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
+              {[
+                ['Name', form.fullName],
+                ['NRIC / FIN', form.nric],
+                ['Nationality', form.nationality],
+                ['Country of birth', form.countryOfBirth],
+                ['Date of birth', form.dateOfBirth && isValid(parseISO(form.dateOfBirth)) ? format(parseISO(form.dateOfBirth), 'dd MMM yyyy') : form.dateOfBirth],
+                ['Sex', form.sex],
+                ['Mobile number', form.phone],
+                ['Email', form.email],
+                ['Residential status', form.residentialStatus],
+                ['Registered address', form.registeredAddress],
+              ].map(([label, value]) => <div key={label} className={cn('min-w-0', label === 'Registered address' && 'sm:col-span-2')}>
+                <dt className="flex items-center justify-between gap-3 text-body-sm text-fg-muted"><span>{label}</span>{label === 'Email' && changeEmailButton}</dt>
+                <dd className="mt-2 break-words text-body-sm text-fg">{value || 'Not provided'}</dd>
+                {label === 'Email' && emailNotice && <dd role="status" className="mt-2 text-body-sm text-success">{emailNotice}</dd>}
+              </div>)}
+            </dl>
+          </section>
+
+          <aside className="order-2 mt-8 min-w-0 lg:col-start-2 lg:row-start-1 lg:row-span-2">
+            <ProfileDocuments key={form.email} profile={form} dirty={false} onSaved={(next, refresh) => {
+              setForm(next);
+              if (refresh) setRefreshPending(true);
+            }} />
+          </aside>
+          <div className="order-3 min-w-0 lg:col-start-1">
+          <section aria-labelledby="profile-education" className="border-b border-border py-8">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <h2 id="profile-education" className="text-headline-sm text-fg">Education <span className="ml-2 text-body-sm font-normal text-fg-muted">{form.education.length}</span></h2>
+              <Button ref={addEducationRef} variant="outline" size="sm" aria-haspopup="dialog" onClick={() => setEditingEducation(newProfileEducation())}><Plus size={16} aria-hidden />Add education</Button>
+            </div>
+            {!form.education.length && <p className="py-3 text-body-sm text-fg-muted">No education records.</p>}
+            <div className="space-y-4">
+              {form.education.map((education, index) => {
+                const displayMonth = (value: string) => value && isValid(parseISO(value)) ? format(parseISO(value), 'MMM yyyy') : '';
+                const start = displayMonth(education.startDate);
+                const end = displayMonth(education.status === 'Currently studying' ? education.expectedGraduation : education.endDate) || education.legacyGraduationYear;
+                const dates = start && end ? `${start} – ${end}` : start ? `From ${start}` : end ? `${education.status === 'Currently studying' ? 'Expected ' : ''}${end}` : '';
+                return (
+                  <div key={education.id} className="rounded-lg border border-border bg-surface" data-education-id={education.id}>
+                    <div className="flex items-start justify-between gap-3 p-5">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2"><h3 className="break-words text-body-md font-semibold text-fg">{education.institution || 'New education record'}</h3><Badge variant="subtle">{education.status}</Badge></div>
+                        <p className="mt-2 break-words text-body-sm text-fg">{education.qualification}{hasProfileProgramme(education.qualification) && education.course ? ` · ${education.course}` : ''}</p>
+                        {dates && <p className="mt-1 text-body-sm text-fg-muted">{dates}</p>}
+                        {education.status === 'Currently studying' && education.currentYear && <p className="mt-1 text-body-sm text-fg-muted">{education.currentYear}</p>}
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <Button ref={(element) => { educationEditRefs.current[education.id] = element; }} variant="ghost" size="icon" aria-label={`Edit education ${index + 1}`} title="Edit education" aria-haspopup="dialog"
+                          onClick={() => setEditingEducation(education)}>
+                          <Pencil size={16} />
+                        </Button>
+                        <Button variant="ghost" size="icon" aria-label={`Remove education ${index + 1}`} title="Remove education" className="text-danger" onClick={() => { setRemoveSection('education'); setRemoveError(''); setRemoveId(education.id); }}><Trash2 size={16} /></Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <ProfileEmploymentSection value={form.employment} onRemove={(id) => setForm(removeProfileRecord(profile.email, profile.name, 'employment', id))}
+            onSave={(value, adding) => setForm(saveProfileEmployment(profile.email, profile.name, value, adding))} />
+          <section aria-labelledby="profile-tests" className="border-b border-border py-8">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <h2 id="profile-tests" className="text-headline-sm text-fg">Additional Test Scores</h2>
+              <Button ref={addTestRef} variant="outline" size="sm" aria-haspopup="dialog" onClick={() => setEditingTest(newProfileTest())}><Plus size={16} aria-hidden />Add test score</Button>
+            </div>
+            {!form.testScores.length && <p className="py-3 text-body-sm text-fg-muted">No additional test scores.</p>}
+            <div className="space-y-4">
+              {form.testScores.map((test, index) => <div key={test.id} className="rounded-lg border border-border bg-surface p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="text-body-md font-semibold text-fg">{test.exam}</h3>
+                    <p className="mt-2 text-body-sm text-fg-muted">Test date: {test.testDate && isValid(parseISO(test.testDate)) ? format(parseISO(test.testDate), 'dd MMM yyyy') : 'Not provided'}</p>
+                    <p className="mt-1 break-words text-body-sm text-fg">Total score: {test.score || 'Not provided'}</p>
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    <Button ref={(element) => { testEditRefs.current[test.id] = element; }} variant="ghost" size="icon" aria-label={`Edit test ${index + 1}`} title="Edit test score" aria-haspopup="dialog" onClick={() => setEditingTest(test)}><Pencil size={16} /></Button>
+                    <Button variant="ghost" size="icon" aria-label={`Remove test ${index + 1}`} title="Remove test score" className="text-danger" onClick={() => { setRemoveSection('testScores'); setRemoveError(''); setRemoveId(test.id); }}><Trash2 size={16} /></Button>
+                  </div>
+                </div>
+              </div>)}
+            </div>
+          </section>
+
+          <ProfileLanguages value={form.languages}
+            onSave={(value, previous) => setForm(saveProfileLanguage(profile.email, profile.name, value, previous))}
+            onRemove={(value) => setForm(removeProfileLanguage(profile.email, profile.name, value))} />
+          </div>
+        </div>}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      {editingTest && form && <ProfileTestDialog key={editingTest.id} initial={editingTest} adding={!form.testScores.some((item) => item.id === editingTest.id)} onClose={closeTest} onSave={(value) => {
+        setForm(saveProfileTestScore(profile.email, profile.name, value, !form.testScores.some((item) => item.id === value.id)));
+        closeTest();
+      }} />}
 
-        {/* Personal info */}
-        <div className="lg:col-span-2 space-y-5">
-          <div className="card p-5">
-            <div className="flex items-center gap-2 mb-5">
-              <User size={16} className="text-accent" />
-              <h2 className="text-headline-sm font-bold text-fg">Personal Information</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Full Name" required>
-                <input className={inputCls} placeholder="As per NRIC" {...inp('fullName')} />
-              </Field>
-              <Field label="Email">
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-bg-subtle/60">
-                  <Mail size={13} className="text-fg-subtle shrink-0" />
-                  <span className="text-body-sm text-fg-muted">{form.email}</span>
-                </div>
-              </Field>
-              <Field label="Mobile Number">
-                <div className="flex">
-                  <span className="flex items-center px-3 border border-r-0 border-border rounded-l-xl bg-bg-subtle text-body-sm text-fg-muted">
-                    <Phone size={13} className="mr-1.5 text-fg-subtle" /> +65
-                  </span>
-                  <input className="flex-1 rounded-l-none rounded-r-xl border border-border bg-bg-subtle px-3 py-2 text-body-sm text-fg focus:outline-none focus:ring-2 focus:ring-accent/40"
-                    placeholder="9123 4567" {...inp('phone')} />
-                </div>
-              </Field>
-              <Field label="Nationality" required>
-                <select className={selectCls} {...inp('nationality')}>
-                  {NATIONALITIES.map(n => <option key={n}>{n}</option>)}
-                </select>
-              </Field>
-            </div>
-          </div>
+      {editingEducation && form && <ProfileEducationDialog key={editingEducation.id} initial={editingEducation} adding={!form.education.some((item) => item.id === editingEducation.id)} onClose={closeEducation} onSave={(value) => {
+        setForm(saveProfileEducation(profile.email, profile.name, value, !form.education.some((item) => item.id === value.id)));
+        closeEducation();
+      }} />}
 
-          {/* Academic info */}
-          <div className="card p-5">
-            <div className="flex items-center gap-2 mb-5">
-              <GraduationCap size={16} className="text-accent" />
-              <h2 className="text-headline-sm font-bold text-fg">Academic Information</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Institution" required>
-                <input className={inputCls} placeholder="e.g. NUS, NTU, SMU" {...inp('institution')} />
-              </Field>
-              <Field label="Course / Programme" required>
-                <input className={inputCls} placeholder="e.g. Computer Science" {...inp('course')} />
-              </Field>
-              <Field label="Year of Study">
-                <select className={selectCls} value={form.yearOfStudy} onChange={e => set('yearOfStudy', e.target.value)}>
-                  <option value="">Select year</option>
-                  {YEARS.map(y => <option key={y}>{y}</option>)}
-                </select>
-              </Field>
-              <Field label="Expected Graduation Year">
-                <input className={inputCls} placeholder="e.g. 2026" {...inp('graduationYear')} />
-              </Field>
-              <Field label="CGPA / GPA">
-                <input className={inputCls} placeholder="e.g. 4.25 / 5.00" {...inp('cgpa')} />
-              </Field>
-            </div>
-          </div>
-        </div>
+      {editingPersonal && form && <ProfilePersonalEditor initial={form} onClose={closePersonal} onSave={(value) => {
+        setForm(saveProfilePersonal(profile.email, profile.name, value)); closePersonal();
+      }} />}
 
-        {/* Documents */}
-        <div>
-          <div className="card p-5">
-            <div className="flex items-center gap-2 mb-1">
-              <FileText size={16} className="text-accent" />
-              <h2 className="text-headline-sm font-bold text-fg">Documents</h2>
-            </div>
-            <p className="text-body-sm text-fg-muted mb-4">PDF or Word, max 5 MB each.</p>
+      {emailOpen && form && <ProfileEmailChange profile={form} onClose={closeEmail} onSaved={(next) => {
+        setForm(next);
+        setEmailNotice('Email updated'); closeEmail();
+      }} />}
 
-            <div className="flex items-start gap-2 p-3 rounded-xl bg-info-bg border border-info/20 mb-4">
-              <AlertCircle size={14} className="text-info shrink-0 mt-0.5" />
-              <p className="text-body-sm text-info">Documents uploaded here are automatically attached to all your applications.</p>
-            </div>
-
-            <DocSlot
-              label="CV / Résumé" hint="Latest version"
-              doc={form.documents.cv}
-              onSimulateUpload={() => simulateUpload('cv')}
-            />
-            <DocSlot
-              label="Academic Transcript" hint="Most recent official transcript"
-              doc={form.documents.transcript}
-              onSimulateUpload={() => simulateUpload('transcript')}
-            />
-            <DocSlot
-              label="Supporting Document" hint="Portfolio, certificates, etc."
-              doc={form.documents.other}
-              onSimulateUpload={() => simulateUpload('other')}
-            />
-          </div>
-
-          <div className={cn('mt-3 p-3 rounded-xl border text-body-sm flex items-center gap-2',
-            Object.keys(form.documents).length === 0 ? 'bg-warning-bg border-warning/20 text-warning' : 'bg-success-bg border-success/20 text-success'
-          )}>
-            <CheckCircle2 size={14} className="shrink-0" />
-            {Object.keys(form.documents).length === 0
-              ? 'No documents uploaded yet'
-              : `${Object.keys(form.documents).length} document${Object.keys(form.documents).length !== 1 ? 's' : ''} uploaded`
-            }
-          </div>
-        </div>
-
-      </div>
+      <Dialog open={!!removeId} onOpenChange={(open) => { if (!open) setRemoveId(null); }}>
+        <DialogContent showCloseButton={false} className="w-[calc(100%-2rem)]">
+          <DialogTitle>Remove this record?</DialogTitle><DialogDescription>This record will be removed from your profile.</DialogDescription>
+          {removeError && <p role="alert" className="text-body-sm text-danger">{removeError}</p>}
+          <DialogFooter><Button variant="outline" onClick={() => setRemoveId(null)}>Keep record</Button><Button variant="danger" onClick={() => {
+            if (!removeId) return;
+            try {
+              setForm(removeProfileRecord(profile.email, profile.name, removeSection, removeId));
+              setRemoveId(null);
+              requestAnimationFrame(() => (removeSection === 'education' ? addEducationRef.current : addTestRef.current)?.focus());
+            } catch { setRemoveError('This record could not be removed. Please try again.'); }
+          }}>Remove record</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Shell>
   );
 }

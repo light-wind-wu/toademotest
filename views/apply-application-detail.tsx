@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   CalendarDays,
   Check,
-  CircleAlert,
   Clock3,
   Download,
   FileText,
@@ -22,8 +21,10 @@ import SubmittedApplicationDetails from '@/components/apply/submitted-applicatio
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import Modal from '@/components/ui-legacy/modal';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui-legacy/select';
+import { Textarea } from '@/components/ui/textarea';
+import { APPLICANT_WITHDRAWAL_REASONS, applicantWithdrawalSchema } from '@/lib/applicant-withdrawal';
 import { loadApplicantApplications, saveApplicantApplications } from '@/lib/applicant-applications';
 import { useApplicantScenarioData } from '@/lib/applicant-scenario-data';
 import { formatStatusLabel } from '@/lib/status-label';
@@ -242,7 +243,9 @@ export default function ApplyApplicationDetail() {
   const [record, setRecord] = useState<ApplicantApplicationRecord | null>(null);
   const [ready, setReady] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
-  const [withdrawAcknowledged, setWithdrawAcknowledged] = useState(false);
+  const [withdrawReason, setWithdrawReason] = useState('');
+  const [withdrawDetails, setWithdrawDetails] = useState('');
+  const [withdrawErrors, setWithdrawErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const records = loadApplicantApplications();
@@ -303,9 +306,18 @@ export default function ApplyApplicationDetail() {
   }, [record]);
 
   function withdrawApplication() {
-    if (!record) return;
+    if (!record || !canWithdraw) return;
+    const result = applicantWithdrawalSchema.safeParse({ reason: withdrawReason, details: withdrawDetails });
+    if (!result.success) {
+      setWithdrawErrors(Object.fromEntries(result.error.issues.map((issue) => [issue.path[0], issue.message])));
+      return;
+    }
+    const withdrawnAt = new Date().toISOString();
+    const date = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(withdrawnAt));
     const updated: ApplicantApplicationRecord = {
       ...record,
+      withdrawal: { ...result.data, withdrawnAt },
+      updatedAt: date,
       status: 'WITHDRAWN',
       filter: 'closed',
       statusMessage: 'You withdrew this application. It is now read-only.',
@@ -316,7 +328,7 @@ export default function ApplyApplicationDetail() {
         {
           title: 'Application withdrawn',
           description: 'You withdrew this application and cancelled any pending candidate actions.',
-          date: '19 Aug 2026',
+          date,
           tone: 'current',
         },
         ...record.timeline,
@@ -324,17 +336,20 @@ export default function ApplyApplicationDetail() {
     };
     saveApplicantApplications(loadApplicantApplications().map((item) => (item.id === record.id ? updated : item)));
     setRecord(updated);
-    setWithdrawOpen(false);
-    setWithdrawAcknowledged(false);
+    closeWithdrawDialog();
   }
 
   function openWithdrawDialog() {
-    setWithdrawAcknowledged(false);
+    setWithdrawReason('');
+    setWithdrawDetails('');
+    setWithdrawErrors({});
     setWithdrawOpen(true);
   }
 
   function closeWithdrawDialog() {
-    setWithdrawAcknowledged(false);
+    setWithdrawReason('');
+    setWithdrawDetails('');
+    setWithdrawErrors({});
     setWithdrawOpen(false);
   }
 
@@ -536,33 +551,46 @@ export default function ApplyApplicationDetail() {
         </div>
       </div>
 
-      <Modal open={withdrawOpen} onClose={closeWithdrawDialog} labelledBy="withdraw-title" destructive>
-        <h2 id="withdraw-title" className="text-[20px] font-semibold text-fg">Withdraw this application?</h2>
-        <p className="mt-2 text-[14px] leading-5 text-fg-muted">
-          This permanently closes your application for {record.programmeName} and cancels any pending interview or offer actions.
-        </p>
-        <div className="mt-5 flex gap-3 rounded-lg border border-danger/30 bg-danger/5 p-4">
-          <CircleAlert className="mt-0.5 size-5 shrink-0 text-danger" aria-hidden />
-          <div>
-            <p className="text-[14px] font-medium text-fg">This action cannot be undone.</p>
-            <p className="mt-1 text-[13px] leading-5 text-fg-muted">
-              You will still be able to view the application, but you cannot reopen or continue it.
-            </p>
-          </div>
-        </div>
-        <label className="mt-5 flex cursor-pointer items-start gap-3 text-[13px] leading-5 text-fg">
-          <Checkbox
-            className="mt-0.5"
-            checked={withdrawAcknowledged}
-            onCheckedChange={(checked) => setWithdrawAcknowledged(checked === true)}
-          />
-          <span>I understand that withdrawing this application is permanent.</span>
-        </label>
-        <div className="mt-6 flex justify-end gap-2">
-          <Button variant="outline" autoFocus onClick={closeWithdrawDialog}>Keep application</Button>
-          <Button variant="danger" disabled={!withdrawAcknowledged} onClick={withdrawApplication}>Withdraw application</Button>
-        </div>
-      </Modal>
+      <Dialog open={withdrawOpen} onOpenChange={(open) => { if (!open) closeWithdrawDialog(); }}>
+        <DialogContent showCloseButton={false} className="w-[calc(100%-2rem)] max-w-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto">
+          <DialogTitle className="text-[20px] tracking-normal">Withdraw application</DialogTitle>
+          <DialogDescription>Please fill in all mandatory fields marked with an asterisk (*).</DialogDescription>
+          <p className="text-body-md text-fg">
+            You are about to withdraw your application to <strong>{record.programmeName}</strong>
+          </p>
+          <form noValidate onSubmit={(event) => { event.preventDefault(); withdrawApplication(); }} className="space-y-6">
+            <div className="space-y-2">
+              <label id="withdraw-reason-label" htmlFor="withdraw-reason" className="block text-body-md text-fg">
+                Please indicate the reason for your withdrawal:*
+              </label>
+              <Select value={withdrawReason || null} onValueChange={(value) => {
+                setWithdrawReason(value ?? '');
+                setWithdrawErrors((errors) => ({ ...errors, reason: '' }));
+              }}>
+                <SelectTrigger id="withdraw-reason" aria-labelledby="withdraw-reason-label" aria-required="true" aria-invalid={!!withdrawErrors.reason} aria-describedby={withdrawErrors.reason ? 'withdraw-reason-error' : undefined} className="h-auto min-h-9 text-left">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {APPLICANT_WITHDRAWAL_REASONS.map((reason) => <SelectItem key={reason} value={reason}>{reason}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {withdrawErrors.reason && <p id="withdraw-reason-error" role="alert" className="text-body-sm text-danger">{withdrawErrors.reason}</p>}
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="withdraw-details" className="block text-body-md text-fg">Please provide details of your withdrawal:*</label>
+              <Textarea id="withdraw-details" rows={4} required value={withdrawDetails} onChange={(event) => {
+                setWithdrawDetails(event.target.value);
+                setWithdrawErrors((errors) => ({ ...errors, details: '' }));
+              }} aria-invalid={!!withdrawErrors.details} aria-describedby={withdrawErrors.details ? 'withdraw-details-error' : undefined} />
+              {withdrawErrors.details && <p id="withdraw-details-error" role="alert" className="text-body-sm text-danger">{withdrawErrors.details}</p>}
+            </div>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button type="submit" variant="danger">Withdraw application</Button>
+              <Button type="button" variant="outline" onClick={closeWithdrawDialog}>Cancel</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </Shell>
   );
 }

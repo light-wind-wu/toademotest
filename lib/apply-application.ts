@@ -55,6 +55,7 @@ export interface EducationDetails {
 }
 
 export interface ApplySessionDraft {
+  profileEducationPrefillPending?: boolean;
   transcriptName: string;
   cvName: string;
   education: EducationDetails;
@@ -177,6 +178,7 @@ export function seedApplyDraftForVariant(
       transcriptName: '',
       cvName: '',
       education: emptyEducationDetails(variant),
+      profileEducationPrefillPending: true,
       creditBearing: null,
       creditModuleCode: '',
       bondedScholarship: variant === 'polytechnic' ? false : null,
@@ -188,13 +190,40 @@ export function seedApplyDraftForVariant(
   return draft;
 }
 
+/** Only a fresh, untouched draft may receive profile data, once. */
+export function prefillNewApplyDraft(
+  draft: ApplySessionDraft,
+  education: import('@/lib/types').ProfileEducation[],
+  variant: 'polytechnic' | 'tech-up' | 'undergraduate' | null,
+): ApplySessionDraft {
+  if (!draft.profileEducationPrefillPending) return draft;
+  const next = { ...draft, profileEducationPrefillPending: false };
+  if (draft.transcriptName || draft.educationManual || Object.values(draft.education).some(Boolean)) return next;
+  const qualification = variant === 'polytechnic' ? 'Polytechnic' : 'Undergraduate';
+  const candidates = education.filter((entry) => entry.qualification === qualification && entry.status !== 'Discontinued' && entry.institution.trim() && entry.country.trim());
+  candidates.sort((a, b) => Number(b.status === 'Currently studying') - Number(a.status === 'Currently studying') || (b.startDate || b.endDate).localeCompare(a.startDate || a.endDate));
+  const entry = candidates[0];
+  if (!entry) return next;
+  return {
+    ...next,
+    educationManual: true,
+    education: {
+      ...draft.education,
+      institution: entry.institution,
+      course: entry.course,
+      yearOfStudy: entry.status === 'Currently studying' ? entry.currentYear : 'Graduate',
+      // The application requires a day; a profile month must not fabricate one.
+    },
+  };
+}
+
 export function loadApplyDraft(): ApplySessionDraft {
   if (typeof window === 'undefined') {
     return { ...EMPTY_DRAFT, education: { ...EMPTY_EDUCATION } };
   }
   try {
     const raw = localStorage.getItem(APPLY_DRAFT_KEY);
-    if (!raw) return { ...EMPTY_DRAFT, education: { ...EMPTY_EDUCATION } };
+    if (!raw) return { ...EMPTY_DRAFT, education: { ...EMPTY_EDUCATION }, profileEducationPrefillPending: true };
     const parsed = JSON.parse(raw) as Partial<ApplySessionDraft>;
     const education = {
       ...EMPTY_EDUCATION,

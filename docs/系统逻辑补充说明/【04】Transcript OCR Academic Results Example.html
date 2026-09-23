@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en" data-zone="enterprise" data-mode="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Academic Result Fields by Qualification</title>
+  <style>
+    :root {
+      --bg: #f7f7f5;
+      --surface: #ffffff;
+      --surface-muted: #f3f4f6;
+      --fg: #172033;
+      --fg-muted: #5c667a;
+      --border: #dfe3e8;
+      --border-strong: #c6cdd7;
+      --accent: #1769e0;
+      --accent-soft: #eaf2ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    button { font: inherit; }
+
+    main {
+      width: min(1040px, calc(100% - 32px));
+      margin: 32px auto;
+    }
+
+    h1 {
+      margin: 0 0 18px;
+      font-size: 24px;
+      line-height: 1.25;
+      letter-spacing: -.02em;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      overflow: hidden;
+    }
+
+    nav {
+      padding: 12px;
+      border-right: 1px solid var(--border);
+      background: var(--surface-muted);
+    }
+
+    .qualification-button {
+      display: block;
+      width: 100%;
+      min-height: 40px;
+      padding: 9px 11px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      color: var(--fg);
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .qualification-button:hover { background: var(--surface); }
+
+    .qualification-button.active {
+      border-color: #b9d1f5;
+      color: var(--accent);
+      background: var(--accent-soft);
+      font-weight: 650;
+    }
+
+    .content { padding: 24px; }
+
+    h2 {
+      margin: 0 0 20px;
+      font-size: 20px;
+      line-height: 1.3;
+    }
+
+    h3 {
+      margin: 0 0 9px;
+      font-size: 14px;
+    }
+
+    .field-section + .field-section { margin-top: 24px; }
+
+    .field-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border-top: 1px solid var(--border);
+      border-left: 1px solid var(--border);
+    }
+
+    .field-item {
+      min-height: 66px;
+      padding: 11px 13px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .field-name { font-weight: 620; }
+    .field-format { margin-top: 3px; color: var(--fg-muted); font-size: 12px; }
+
+    @media (max-width: 720px) {
+      main { margin: 18px auto; }
+      .layout { grid-template-columns: 1fr; }
+      nav {
+        display: flex;
+        gap: 7px;
+        overflow-x: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .qualification-button { width: auto; flex: 0 0 auto; white-space: nowrap; }
+      .content { padding: 18px; }
+      .field-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Academic Result Fields by Qualification</h1>
+
+    <div class="layout">
+      <nav id="qualification-list" aria-label="Academic qualifications"></nav>
+
+      <section class="content" aria-live="polite">
+        <h2 id="qualification-title"></h2>
+
+        <div class="field-section">
+          <h3>Overall fields</h3>
+          <div class="field-list" id="overall-fields"></div>
+        </div>
+
+        <div class="field-section">
+          <h3>Subject / module fields</h3>
+          <div class="field-list" id="detail-fields"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const QUALIFICATIONS = {
+      university: {
+        label: 'University',
+        overall: [
+          ['Institution', 'Educational Institution'],
+          ['Academic Qualification', 'University Undergraduate'],
+          ['Course / Major', 'Text'],
+          ['Year of Study', 'Year 1–4'],
+          ['Current GPA', 'Decimal number'],
+          ['Maximum GPA', 'Resolved from Institution'],
+          ['Academic Term / Year', 'Text'],
+          ['Grade Scale', 'Resolved from Institution']
+        ],
+        detail: []
+      },
+      polytechnic: {
+        label: 'Polytechnic Diploma',
+        overall: [
+          ['Institution', 'Educational Institution'],
+          ['Academic Qualification', 'Polytechnic Diploma'],
+          ['Diploma / Course', 'Text'],
+          ['Year of Study', 'Year'],
+          ['Current Cumulative GPA', 'Decimal number'],
+          ['Maximum GPA', '4.00'],
+          ['Grade Scale', 'Resolved from Institution']
+        ],
+        detail: [
+          ['Module Name', 'Repeatable text field'],
+          ['Academic Term', 'Text'],
+          ['Module Grade', 'Resolved Grade Scale']
+        ]
+      },
+      alevel: {
+        label: 'GCE A-Level',
+        overall: [
+          ['Institution', 'Educational Institution'],
+          ['Academic Qualification', 'GCE A-Level'],
+          ['Examination Year', 'Year']
+        ],
+        detail: [
+          ['Subject Name', 'Repeatable subject field'],
+          ['Subject Level', 'H1 / H2 / H3'],
+          ['Grade — H1/H2', 'A / B / C / D / E / S / Ungraded'],
+          ['Grade — H3', 'Distinction / Merit / Pass / Ungraded']
+        ]
+      },
+      ib: {
+        label: 'International Baccalaureate Diploma',
+        overall: [
+          ['Institution', 'Educational Institution'],
+          ['Academic Qualification', 'IB Diploma'],
+          ['IB Total Score', 'Integer, 0–45'],
+          ['Examination Session / Year', 'Text / Year']
+        ],
+        detail: [
+          ['Subject Name', 'Repeatable subject field'],
+          ['Subject Level', 'HL / SL'],
+          ['Subject Grade', '7 / 6 / 5 / 4 / 3 / 2 / 1']
+        ]
+      },
+      nushigh: {
+        label: 'NUS High School Diploma',
+        overall: [
+          ['Institution', 'NUS High School of Mathematics and Science'],
+          ['Academic Qualification', 'NUS High School Diploma'],
+          ['Academic Year', 'Year'],
+          ['CAP', 'Decimal number, 0.00–5.00'],
+          ['Grade Scale', 'Resolved Grade Scale']
+        ],
+        detail: [
+          ['Subject / Module Name', 'Repeatable text field'],
+          ['Grade', 'Resolved Grade Scale']
+        ]
+      },
+      olevel: {
+        label: 'GCE O-Level / SEC',
+        overall: [
+          ['Institution', 'Educational Institution'],
+          ['Academic Qualification', 'GCE O-Level / SEC'],
+          ['Examination Year', 'Year']
+        ],
+        detail: [
+          ['Subject Name', 'Repeatable subject field'],
+          ['Subject Level', 'G1 / G2 / G3'],
+          ['Grade — G3', 'A1 / A2 / B3 / B4 / C5 / C6 / D7 / E8 / 9'],
+          ['Grade — G2', '1 / 2 / 3 / 4 / 5 / 6'],
+          ['Grade — G1', 'A / B / C / D / E']
+        ]
+      },
+      ip: {
+        label: 'Integrated Programme',
+        overall: [
+          ['Institution', 'Educational Institution'],
+          ['Academic Qualification', 'Integrated Programme'],
+          ['Academic Year', 'Year'],
+          ['Institution Grade Scale', 'Resolved from Institution']
+        ],
+        detail: [
+          ['Subject Name', 'Repeatable subject field'],
+          ['Raw Grade', 'Grade shown on Transcript'],
+          ['Normalised Grade', 'System-mapped equivalent Grade']
+        ]
+      }
+    };
+
+    let activeQualification = 'university';
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>'"]/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      })[character]);
+    }
+
+    function fieldItem([name, format]) {
+      return '<div class="field-item">' +
+        '<div class="field-name">' + escapeHtml(name) + '</div>' +
+        '<div class="field-format">' + escapeHtml(format) + '</div>' +
+      '</div>';
+    }
+
+    function render() {
+      const selected = QUALIFICATIONS[activeQualification];
+      const navigation = document.getElementById('qualification-list');
+
+      navigation.innerHTML = Object.entries(QUALIFICATIONS).map(([key, qualification]) =>
+        '<button type="button" class="qualification-button' +
+        (key === activeQualification ? ' active' : '') +
+        '" data-key="' + key + '">' + escapeHtml(qualification.label) + '</button>'
+      ).join('');
+
+      navigation.querySelectorAll('button').forEach(button => {
+        button.addEventListener('click', () => {
+          activeQualification = button.dataset.key;
+          render();
+        });
+      });
+
+      document.getElementById('qualification-title').textContent = selected.label;
+      document.getElementById('overall-fields').innerHTML = selected.overall.map(fieldItem).join('');
+
+      const detailSection = document.getElementById('detail-fields').parentElement;
+      detailSection.hidden = selected.detail.length === 0;
+      document.getElementById('detail-fields').innerHTML = selected.detail.map(fieldItem).join('');
+    }
+
+    render();
+  </script>
+</body>
+</html>

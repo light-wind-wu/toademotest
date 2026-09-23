@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "jenny.aw@u.nus.edu": {
+      "cv": {
+        "phone": "+65 9123 4567",
+        "education": [{ "institution": "National University of Singapore", "qualification": "Undergraduate", "minor": "Mathematics" }]
+      },
+      "transcript": {
+        "education": [{ "institution": "National University of Singapore", "qualification": "Undergraduate", "resultsStatus": "Available", "scoringSystem": "GPA", "score": "4.7", "maximumScore": "5" }]
+      },
+      "other": {}
+    }
+  }
+}

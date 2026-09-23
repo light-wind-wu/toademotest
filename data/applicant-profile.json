@@ -1,0 +1,69 @@
+{
+  "employmentDefaults": { "jobTitle": "", "organization": "", "location": "", "locationType": "", "employmentType": "", "current": true, "startMonth": "", "startYear": "", "endMonth": "", "endYear": "", "highlights": "", "skills": [] },
+  "locationTypes": ["On-site", "Hybrid", "Remote"],
+  "employmentTypes": ["Permanent", "Part-time", "Contract", "Temporary", "Internship", "Apprenticeship", "Freelance", "Self-employed"],
+  "skillSuggestions": ["Product Design", "Digital Marketing", "Business Analysis", "Business Strategy", "Communication", "Project Management", "Data Analysis", "Software Development", "Research", "Teamwork"],
+  "languages": ["Afrikaans", "Albanian", "Amharic", "Arabic", "Armenian", "Bengali", "Burmese", "Cantonese", "Czech", "Danish", "Dutch", "English", "Filipino", "Finnish", "French", "German", "Greek", "Gujarati", "Hebrew", "Hindi", "Hokkien", "Hungarian", "Indonesian", "Italian", "Japanese", "Khmer", "Korean", "Lao", "Malay", "Malayalam", "Mandarin", "Marathi", "Nepali", "Norwegian", "Persian", "Polish", "Portuguese", "Punjabi", "Romanian", "Russian", "Sinhala", "Spanish", "Swahili", "Swedish", "Tamil", "Telugu", "Thai", "Turkish", "Ukrainian", "Urdu", "Vietnamese"],
+  "institutions": [
+    "National University of Singapore",
+    "Nanyang Technological University",
+    "Singapore Management University",
+    "Singapore University of Technology and Design",
+    "Singapore Institute of Technology",
+    "Singapore University of Social Sciences",
+    "Nanyang Polytechnic",
+    "Ngee Ann Polytechnic",
+    "Republic Polytechnic",
+    "Singapore Polytechnic",
+    "Temasek Polytechnic",
+    "NUS High School of Mathematics and Science"
+  ],
+  "countries": [
+    "Singapore",
+    "Malaysia",
+    "Australia",
+    "China",
+    "India",
+    "Indonesia",
+    "United Kingdom",
+    "United States"
+  ],
+  "educationDefaults": {
+    "qualification": "Undergraduate",
+    "institution": "",
+    "country": "",
+    "status": "Currently studying",
+    "currentYear": "",
+    "startDate": "",
+    "expectedGraduation": "",
+    "endDate": "",
+    "course": "",
+    "major": "",
+    "secondMajor": "",
+    "minor": ""
+  },
+  "profiles": {
+    "jenny.aw@u.nus.edu": {
+      "phone": "+65 9123 4567",
+      "nationality": "Singapore Citizen",
+      "nric": "S1234567A",
+      "countryOfBirth": "Singapore",
+      "dateOfBirth": "2003-08-22",
+      "sex": "Female",
+      "residentialStatus": "Citizen",
+      "registeredAddress": "123 Clementi Ave 3, #12-34, Singapore 120123",
+      "education": [
+        {
+          "id": "jenny-university",
+          "qualification": "Undergraduate",
+          "institution": "National University of Singapore",
+          "country": "Singapore",
+          "status": "Currently studying",
+          "currentYear": "Year 3",
+          "expectedGraduation": "2028-05",
+          "course": "Computer Science"
+        }
+      ]
+    }
+  }
+}
