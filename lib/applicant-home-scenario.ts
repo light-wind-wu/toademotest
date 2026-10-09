@@ -16,6 +16,7 @@ export const APPLICANT_HOME_SCENARIOS: ReadonlyArray<{
   { value: 'interview-pending-confirmation', label: 'Interview pending confirmation', group: 'Interview' },
   { value: 'interview-scheduled', label: 'Interview confirmed', group: 'Interview' },
   { value: 'interview-rescheduling', label: 'Interview rescheduling required', group: 'Interview' },
+  { value: 'interview-completed', label: 'Interview completed', group: 'Interview' },
   { value: 'offer-action', label: 'Offer action required', group: 'Offer and onboarding' },
   { value: 'onboarding-action', label: 'Onboarding action required', group: 'Offer and onboarding' },
   { value: 'application-unsuccessful', label: 'Application unsuccessful', group: 'Closed outcomes' },
@@ -25,6 +26,7 @@ export const APPLICANT_HOME_SCENARIOS: ReadonlyArray<{
   { value: 'active-internship', label: 'Active internship', group: 'Internship and completion' },
   { value: 'completion-action', label: 'Completion action required', group: 'Internship and completion' },
   { value: 'journey-completed', label: 'Journey completed', group: 'Internship and completion' },
+  { value: 'polytechnic-to-undergraduate', label: 'Polytechnic → Undergraduate', group: 'Internship and completion' },
 ];
 
 const VALID_SCENARIOS = new Set<ApplicantHomeScenario>(
@@ -39,7 +41,6 @@ export function loadApplicantHomeScenario(): ApplicantHomeScenario {
   if (typeof window === 'undefined') return 'interview-action';
   try {
     const value = localStorage.getItem(APPLICANT_HOME_SCENARIO_KEY);
-    if (value === 'interview-completed') return 'interview-pending-confirmation';
     return isApplicantHomeScenario(value) ? value : 'interview-action';
   } catch {
     return 'interview-action';

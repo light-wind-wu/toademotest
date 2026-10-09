@@ -1,6 +1,6 @@
 'use client';
 
-/* Shown after V1/V2 “Request another timeslot” Confirm — then continue to proposed flow. */
+/* A request is pending review, not a confirmed interview. */
 import { useEffect, useRef } from 'react';
 import {
   Dialog,
@@ -15,10 +15,12 @@ export default function AvailabilitySubmittedDialog({
   open,
   onOpenChange,
   onContinue,
+  availability,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Done or close — advance to the interview-proposed welcome page. */
+  availability: string;
+  /** Done or close returns to the pending-confirmation dashboard. */
   onContinue: () => void;
 }) {
   const continuedRef = useRef(false);
@@ -30,7 +32,6 @@ export default function AvailabilitySubmittedDialog({
   function finish() {
     if (continuedRef.current) return;
     continuedRef.current = true;
-    /* Parent paints a full-screen cover first, then navigates — don’t close first. */
     onContinue();
   }
 
@@ -64,7 +65,7 @@ export default function AvailabilitySubmittedDialog({
               color: 'rgba(15, 23, 43, 1)',
             }}
           >
-            Availability submitted
+            Comments submitted
           </DialogTitle>
           <DialogDescription
             className="mt-2 text-left"
@@ -75,10 +76,14 @@ export default function AvailabilitySubmittedDialog({
               color: 'rgba(69, 85, 108, 1)',
             }}
           >
-            Your preferred time has been sent to the mentor. You&apos;ll be notified
-            when a new interview timeslot is available.
+            Your comments have been submitted to the interview team for review.
+            Please wait for their response. Your interview is not confirmed yet.
           </DialogDescription>
         </DialogHeader>
+        <div className="mt-4 rounded-md border border-border bg-bg-subtle p-3">
+          <p className="text-xs font-medium text-fg-muted">Your comments</p>
+          <p className="mt-1 max-h-40 overflow-y-auto whitespace-pre-wrap break-words text-sm text-fg">{availability}</p>
+        </div>
 
         <DialogFooter className="mt-6">
           <button

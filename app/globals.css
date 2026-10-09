@@ -774,3 +774,15 @@
   initial-value: 0deg;
   inherits: false;
 }
+
+@keyframes badge-award-reveal {
+  0% { opacity: 0; transform: rotateY(-180deg) scale(.5) translateY(24px); }
+  60% { opacity: 1; transform: rotateY(12deg) scale(1.08) translateY(-6px); }
+  100% { opacity: 1; transform: rotateY(0) scale(1) translateY(0); }
+}
+.badge-award-reveal {
+  animation: badge-award-reveal 1400ms cubic-bezier(.22, 1, .36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .badge-award-reveal { animation: none; }
+}

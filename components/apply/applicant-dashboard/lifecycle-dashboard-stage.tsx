@@ -26,6 +26,7 @@ export default function LifecycleDashboardStage({
   activityIllustration,
   journeyTopDecoration,
   journeyTopMobileDecoration,
+  journeyBottomDecoration,
   onPrimaryAction,
 }: {
   config: ApplicantDashboardStateConfig;
@@ -34,9 +35,21 @@ export default function LifecycleDashboardStage({
   activityIllustration: string;
   journeyTopDecoration: string;
   journeyTopMobileDecoration: string;
+  journeyBottomDecoration: string;
   onPrimaryAction: () => void;
 }) {
   const router = useRouter();
+  if (config.state === 'application_submitted') {
+    return (
+      <SubmittedApplicationDashboard
+        config={config}
+        archetypeImage={archetypeImage}
+        journeyTopDecoration={journeyTopDecoration}
+        journeyBottomDecoration={journeyBottomDecoration}
+
+      />
+    );
+  }
   if (config.state === 'draft_application') {
     return (
       <DraftApplicationDashboard
@@ -45,12 +58,12 @@ export default function LifecycleDashboardStage({
         statusIllustration={statusIllustration}
         activityIllustration={activityIllustration}
         journeyTopDecoration={journeyTopDecoration}
+
         onPrimaryAction={onPrimaryAction}
       />
     );
   }
   if (
-    config.state === 'application_submitted' ||
     config.state === 'application_under_review' ||
     config.state === 'interview_invitation' ||
     config.state === 'interview_pending_confirmation' ||
@@ -72,6 +85,7 @@ export default function LifecycleDashboardStage({
         statusIllustration={statusIllustration}
         activityIllustration={activityIllustration}
         journeyTopDecoration={journeyTopDecoration}
+
         onPrimaryAction={onPrimaryAction}
       />
     );
@@ -261,22 +275,6 @@ export default function LifecycleDashboardStage({
         </div>
 
         <div className="space-y-5">
-          <aside className="rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6" aria-labelledby="task-guide-title">
-            <p className="text-[13px] text-fg-muted">Task guide</p>
-            <h2 id="task-guide-title" className="mt-1 text-[18px] font-semibold leading-6 text-fg">{config.guideTitle}</h2>
-            <ul className="mt-5 space-y-3">
-              {config.guideItems.map((item) => (
-                <li key={item} className="flex gap-3 text-[13px] leading-5 text-fg">
-                  <Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-            {config.guideActionLabel ? (
-              <OutOfScopeTooltip><Button variant="outline" className="mt-6 w-full">{config.guideActionLabel}</Button></OutOfScopeTooltip>
-            ) : null}
-          </aside>
-
           <aside className="relative min-h-[423px] overflow-hidden rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6" aria-labelledby="archetype-title">
             <div className="pointer-events-none absolute inset-0" aria-hidden>
               <Image src={archetypeImage} alt="" fill className="object-contain object-bottom lg:object-cover" sizes="(min-width: 1024px) 314px, 100vw" />
@@ -289,6 +287,107 @@ export default function LifecycleDashboardStage({
             <OutOfScopeTooltip><Button className="absolute bottom-6 left-5 z-[1] sm:left-6" size="sm">Play Quiz Again</Button></OutOfScopeTooltip>
           </aside>
         </div>
+      </div>
+    </section>
+  );
+}
+
+function SubmittedApplicationDashboard({
+  config,
+  archetypeImage,
+  journeyTopDecoration,
+  journeyBottomDecoration,
+}: {
+  config: ApplicantDashboardStateConfig;
+  archetypeImage: string;
+  journeyTopDecoration: string;
+  journeyBottomDecoration: string;
+}) {
+  const router = useRouter();
+  const applicationDetails = config.metadata.filter((item) => item.label !== 'Submitted');
+  const nextStepImages = [
+    '/images/programme-undergraduate-icon.svg',
+    '/images/programme-scientists-icon.svg',
+    '/images/programme-cyber-icon.svg',
+  ];
+
+  return (
+    <section className="relative mx-auto w-full max-w-[1440px] px-4 pb-8 md:px-6" aria-label="Submitted application dashboard content">
+      <article className="rounded-lg border border-border bg-surface p-6 shadow-sm">
+        <div className="grid gap-8">
+          <div className="min-w-0">
+            <p className="text-[14px] leading-5 text-fg-muted">Primary spotlight</p>
+            <h2 className="mt-3 text-[24px] font-semibold leading-8 tracking-[-0.48px] text-fg">{config.spotlightTitle}</h2>
+            <p className="mt-1 max-w-[620px] text-[14px] leading-6 text-fg-muted">{config.spotlightCopy}</p>
+
+            <dl className="mt-7 grid gap-4 border-t border-border pt-5 sm:grid-cols-2">
+              {applicationDetails.map((item) => (
+                <div key={`${item.label}-${item.value}`} className="min-w-0">
+                  <dt className="text-[13px] leading-5 text-fg-muted">{item.label}</dt>
+                  <dd className="mt-1 text-[14px] font-medium leading-5 text-fg">{item.value}</dd>
+                </div>
+              ))}
+            </dl>
+            {config.secondaryAction?.route ? (
+              <Button className="mt-6" variant="outline" onClick={() => router.push(config.secondaryAction!.route!)}>
+                {config.secondaryAction.label}
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </article>
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_314px] lg:items-start">
+        <article className="relative min-h-[442px] overflow-hidden rounded-lg border border-border bg-surface p-6 shadow-sm">
+          <div className="pointer-events-none absolute right-0 top-0 h-[116px] w-[370px]" aria-hidden>
+            <Image src={journeyTopDecoration} alt="" fill className="object-contain object-right-top" sizes="370px" />
+          </div>
+          <div className="pointer-events-none absolute bottom-0 right-0 hidden h-[115px] w-[230px] sm:block" aria-hidden>
+            <Image src={journeyBottomDecoration} alt="" fill className="object-contain object-right-bottom" sizes="230px" />
+          </div>
+          <div className="relative z-[1]">
+            <p className="text-[14px] leading-5 text-fg-muted">Application map</p>
+            <h2 className="mt-1.5 text-[20px] font-semibold leading-7 text-fg">Your journey</h2>
+            <div className="mt-7 grid gap-6 sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-7">
+              <ol className="flex flex-col" aria-label="Applicant journey progress">
+                {journeyStages.map((stage, index) => (
+                  <li key={stage.id} className="relative flex min-h-[74px] items-start gap-2.5 last:min-h-0" aria-current={index === 0 ? 'step' : undefined}>
+                    {index < journeyStages.length - 1 ? <span className="absolute left-[11.5px] top-6 h-[50px] w-px bg-border" aria-hidden /> : null}
+                    <span className={cn('relative z-[1] inline-flex size-6 shrink-0 items-center justify-center rounded-full border text-[12px] font-medium', index === 0 ? 'border-success bg-success text-accent-fg' : 'border-border bg-surface text-fg-muted')} aria-hidden>
+                      {index === 0 ? <Check className="size-4" strokeWidth={2} /> : index + 1}
+                    </span>
+                    <span className={cn('pt-0.5 text-[12px] leading-5', index === 0 ? 'font-semibold text-fg' : 'text-fg-muted')}>{stage.label}</span>
+                  </li>
+                ))}
+              </ol>
+              <div className="self-start rounded-lg border border-border bg-surface p-5 sm:p-6">
+                <h3 className="text-[18px] font-semibold leading-6 text-fg">What happens next</h3>
+                <ol className="mt-5 grid gap-3 md:grid-cols-2">
+                  {config.journeyItems.map((step, index) => (
+                    <li key={step} className="relative flex min-h-[72px] items-center rounded-md border border-border bg-surface px-4 py-3 pr-[76px]">
+                      <span className="text-[13px] font-medium leading-5 text-fg">{index + 1}. {step}</span>
+                      <span className="absolute right-3 top-1/2 size-14 -translate-y-1/2 overflow-hidden" aria-hidden>
+                        <Image src={nextStepImages[index]} alt="" fill className="object-contain" sizes="56px" />
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <aside className="relative min-h-[360px] overflow-hidden rounded-lg border border-border bg-surface p-6 shadow-sm" aria-labelledby="submitted-archetype-title">
+          <div className="pointer-events-none absolute inset-0" aria-hidden>
+            <Image src={archetypeImage} alt="" fill className="object-cover object-bottom" sizes="(min-width: 1024px) 314px, 100vw" />
+          </div>
+          <div className="relative z-[1]">
+            <p className="text-[14px] leading-6 text-fg-muted">Your defender archetype</p>
+            <h2 id="submitted-archetype-title" className="mt-0.5 text-[24px] font-semibold leading-8 text-warning">The Sentinel</h2>
+            <p className="mt-1 max-w-[235px] text-[14px] leading-5 text-fg">You protect what matters with intelligence and precision.</p>
+          </div>
+          <OutOfScopeTooltip><Button className="absolute bottom-6 left-6 z-[1]" size="sm">Play Quiz Again</Button></OutOfScopeTooltip>
+        </aside>
       </div>
     </section>
   );
@@ -310,7 +409,6 @@ function ApplicationMilestoneDashboard({
   onPrimaryAction: () => void;
 }) {
   const router = useRouter();
-  const isSubmitted = config.state === 'application_submitted';
   const isInterviewAction = config.state === 'interview_invitation';
   const isInterviewConfirmed = config.state === 'interview_confirmed';
   const isInterviewRescheduling = config.state === 'interview_rescheduling';
@@ -336,15 +434,13 @@ function ApplicationMilestoneDashboard({
     : isInterviewAction || isInterviewConfirmed || isInterviewRescheduling || isOfferAction || isOnboarding || isActiveInternship
     ? `${config.primaryAction?.label ?? 'Review'}${config.dueText ? `, ${config.dueText}` : ''}`
     : 'Nothing is required from you right now.';
-  const spotlightTitle = isSubmitted ? 'Resume your application' : config.spotlightTitle;
-  const spotlightCopy = isSubmitted
-    ? 'Complete the remaining sections and review everything before you submit.'
-    : config.spotlightCopy;
+  const spotlightTitle = config.spotlightTitle;
+  const spotlightCopy = config.spotlightCopy;
 
   return (
     <section className="relative mx-auto w-full max-w-[1440px] px-4 pb-8 md:px-6" aria-label={`${config.badge} dashboard content`}>
       <article className="relative overflow-hidden rounded-lg border border-border bg-surface p-6 shadow-sm">
-        <div className="grid gap-6 md:grid-cols-[302px_minmax(0,1fr)] md:gap-10">
+        <div className="grid gap-6 md:grid-cols-[270px_minmax(0,1fr)]">
           <div className="relative min-h-[298px] overflow-hidden rounded-lg bg-accent text-accent-fg">
             {isClosed || isActiveInternship ? (
               <div className="pointer-events-none absolute inset-0 overflow-hidden bg-gradient-to-r from-accent to-accent-hover" aria-hidden>
@@ -401,6 +497,7 @@ function ApplicationMilestoneDashboard({
                 ) : null}
               </div>
             </div>
+
           </div>
         </div>
       </article>
@@ -468,7 +565,7 @@ function ApplicationMilestoneDashboard({
             <header className="relative z-[1] px-6 pb-4 pt-6">
               <p className="text-[14px] leading-5 text-fg-muted">Latest activity</p>
               <h2 className="mt-1.5 text-[18px] font-semibold leading-[18px] text-fg">
-                {isClosed ? 'Application history' : isActiveInternship || isOffboarding ? 'Recent internship activity' : 'Recent application activity'}
+                {isClosed ? 'Application history' : isActiveInternship || isOffboarding || isCompleted ? 'Recent internship activity' : 'Recent application activity'}
               </h2>
             </header>
             <ol className="relative z-[1] max-w-[676px] space-y-8 px-6 py-5">
@@ -487,20 +584,6 @@ function ApplicationMilestoneDashboard({
         </div>
 
         <div className="space-y-5">
-          <aside className="rounded-lg border border-border bg-surface p-6 shadow-sm" aria-labelledby="submitted-guide-title">
-            <p className="text-[14px] leading-5 text-fg-muted">Task guide</p>
-            <h2 id="submitted-guide-title" className="mt-1.5 text-[18px] font-medium leading-[23px] text-fg">{config.guideTitle}</h2>
-            <ul className="mt-6 space-y-3">
-              {config.guideItems.map((item) => (
-                <li key={item} className="flex gap-3 text-[13px] leading-5 text-fg">
-                  <Check className="mt-0.5 size-4 shrink-0 text-success" strokeWidth={1.5} aria-hidden />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-            {config.guideActionLabel ? <OutOfScopeTooltip><Button variant="outline" className="mt-6">{config.guideActionLabel}</Button></OutOfScopeTooltip> : null}
-          </aside>
-
           <aside className="relative h-[389px] overflow-hidden rounded-lg border border-border bg-surface p-6 shadow-sm" aria-labelledby="submitted-archetype-title">
             <div className="pointer-events-none absolute inset-0" aria-hidden>
               <Image src={archetypeImage} alt="" fill className="object-cover object-bottom" sizes="314px" />
@@ -544,7 +627,7 @@ function DraftApplicationDashboard({
   return (
     <section className="relative mx-auto w-full max-w-[1440px] px-4 pb-8 md:px-6" aria-label={`${config.badge} dashboard content`}>
       <article className="relative overflow-hidden rounded-lg border border-border bg-surface p-6 shadow-sm">
-        <div className="grid gap-6 md:grid-cols-[300px_minmax(0,1fr)] md:gap-10">
+        <div className="grid gap-6 md:grid-cols-[270px_minmax(0,1fr)]">
           <div className="relative min-h-[300px] overflow-hidden rounded-lg bg-accent text-accent-fg">
             <Image
               src="/images/applicant-dashboard-priority-banner.png"
@@ -563,9 +646,6 @@ function DraftApplicationDashboard({
           </div>
 
           <div className="relative min-w-0 py-1 md:min-h-[300px]">
-            <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[354px] md:block" aria-hidden>
-              <Image src={statusIllustration} alt="" fill className="object-contain object-right-bottom" sizes="354px" />
-            </div>
             <div className="relative z-[1] max-w-[600px]">
               <p className="text-[14px] leading-5 text-fg-muted">Primary spotlight</p>
               <h2 className="mt-4 text-[24px] font-semibold leading-[29px] tracking-[-0.48px] text-fg">{config.spotlightTitle}</h2>
@@ -592,6 +672,7 @@ function DraftApplicationDashboard({
                 ) : null}
               </div>
             </div>
+
           </div>
         </div>
       </article>
@@ -667,22 +748,6 @@ function DraftApplicationDashboard({
         </div>
 
         <div className="space-y-5">
-          <aside className="rounded-lg border border-border bg-surface p-6 shadow-sm" aria-labelledby="draft-guide-title">
-            <p className="text-[14px] leading-5 text-fg-muted">Task guide</p>
-            <h2 id="draft-guide-title" className="mt-1.5 text-[18px] font-semibold leading-[18px] text-fg">{config.guideTitle}</h2>
-            <ul className="mt-6 space-y-3">
-              {config.guideItems.map((item) => (
-                <li key={item} className="flex gap-3 text-[13px] leading-5 text-fg">
-                  <Check className="mt-0.5 size-4 shrink-0 text-success" strokeWidth={1.5} aria-hidden />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-            {config.guideActionLabel ? (
-              <OutOfScopeTooltip><Button variant="outline" className="mt-6">{config.guideActionLabel}</Button></OutOfScopeTooltip>
-            ) : null}
-          </aside>
-
           <aside className="relative h-[389px] overflow-hidden rounded-lg border border-border bg-surface p-6 shadow-sm" aria-labelledby="draft-archetype-title">
             <div className="pointer-events-none absolute inset-0" aria-hidden>
               <Image src={archetypeImage} alt="" fill className="object-cover object-bottom" sizes="314px" />

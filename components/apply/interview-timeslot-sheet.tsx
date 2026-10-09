@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { flushSync } from 'react-dom';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { addDays, format } from 'date-fns';
+import { z } from 'zod';
 import { Loader2, X } from 'lucide-react';
 import {
   Sheet,
@@ -15,14 +14,8 @@ import {
   SheetTitle,
 } from '@/components/ui-legacy/sheet';
 import { RadioGroup, RadioGroupItem } from '@/components/ui-legacy/radio-group';
-import DatePicker from '@/components/ui-legacy/date-picker';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui-legacy/select';
+import { Textarea } from '@/components/ui/textarea';
+import { saveApplicantHomeScenario } from '@/lib/applicant-home-scenario';
 import TaskCompletedDialog from '@/components/apply/task-completed-dialog';
 import AvailabilitySubmittedDialog from '@/components/apply/availability-submitted-dialog';
 import { cn } from '@/lib/utils';
@@ -31,6 +24,8 @@ import { confirmApplicantMentorInterview } from '@/lib/applicant-mentor-intervie
 
 export const INTERVIEW_PROPOSED_FROM_KEY = 'dsta_interview_proposed_from';
 export const CUSTOM_SLOT_ID = 'custom';
+export const INTERVIEW_AVAILABILITY_KEY = 'dsta_interview_availability';
+const availabilitySchema = z.string().trim().min(1, 'Please enter your availability.').max(1000);
 
 type TimeSlot = {
   id: string;
@@ -43,8 +38,6 @@ const SLOTS: TimeSlot[] = [
   { id: '2', dateLabel: 'Fri, 28 Aug 2026', timeLabel: '9:30 AM - 10:30 AM' },
   { id: '3', dateLabel: 'Mon, 31 Aug 2026', timeLabel: '11:00 AM - 12:00 PM' },
 ];
-
-const TIME_WINDOWS = ['09:00 — 11:00', '11:00 — 12:00'] as const;
 
 const META = [
   ['Format', 'Microsoft Teams'],
@@ -77,8 +70,6 @@ export default function InterviewTimeslotSheet({
   projectName,
   /** V1/V2: show “Request another timeslot”. V3/V4: fixed slots only. */
   allowCustomRequest = true,
-  /** Which dashboard opened this sheet — used to route to V3/V4 after custom request. */
-  sourceVersion = 'v1',
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -87,57 +78,51 @@ export default function InterviewTimeslotSheet({
   sourceVersion?: ApplyDashboardBase;
 }) {
   const router = useRouter();
-  const minPreferredDate = useMemo(
-    () => format(addDays(new Date(), 1), 'yyyy-MM-dd'),
-    [],
-  );
-
-  useEffect(() => {
-    if (allowCustomRequest) router.prefetch('/apply/interview-proposed');
-  }, [allowCustomRequest, router]);
   const [selectedId, setSelectedId] = useState<string>('2');
-  const [preferredDate, setPreferredDate] = useState('');
-  const [availableTime, setAvailableTime] = useState('');
+  const [availability, setAvailability] = useState('');
+  const [submittedAvailability, setSubmittedAvailability] = useState('');
+  const [submissionError, setSubmissionError] = useState('');
   const [taskCompletedOpen, setTaskCompletedOpen] = useState(false);
   const [availabilityOpen, setAvailabilityOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const [leavingToProposed, setLeavingToProposed] = useState(false);
 
   const isCustom = allowCustomRequest && selectedId === CUSTOM_SLOT_ID;
   const canConfirm = isCustom
-    ? Boolean(preferredDate && availableTime)
+    ? availabilitySchema.safeParse(availability).success
     : Boolean(selectedId);
 
   function resetCustomFields() {
     setSelectedId('2');
-    setPreferredDate('');
-    setAvailableTime('');
+    setAvailability('');
   }
 
-  function goInterviewProposed() {
-    /* Paint the cover before the dialog unmounts so V1/V2 never flashes. */
-    flushSync(() => {
-      setLeavingToProposed(true);
-      setAvailabilityOpen(false);
-    });
-    try {
-      sessionStorage.setItem(INTERVIEW_PROPOSED_FROM_KEY, sourceVersion);
-    } catch {
-      /* ignore */
-    }
-    router.replace('/apply/interview-proposed');
+  function finishAvailabilityRequest() {
+    setAvailabilityOpen(false);
+    router.replace('/apply/dashboard?scenario=interview-pending-confirmation');
   }
 
   function handleConfirm() {
-    if (confirming) return;
+    if (confirming || !canConfirm) return;
 
     if (isCustom) {
+      const result = availabilitySchema.safeParse(availability);
+      if (!result.success) return;
+      setSubmissionError('');
       setConfirming(true);
       window.setTimeout(() => {
+        try {
+          localStorage.setItem(INTERVIEW_AVAILABILITY_KEY, result.data);
+        } catch {
+          setConfirming(false);
+          setSubmissionError('We could not save your request. Please try again.');
+          return;
+        }
+        setSubmittedAvailability(result.data);
         onOpenChange(false);
         setConfirming(false);
         resetCustomFields();
         setAvailabilityOpen(true);
+        saveApplicantHomeScenario('interview-pending-confirmation');
       }, 900);
       return;
     }
@@ -159,22 +144,7 @@ export default function InterviewTimeslotSheet({
 
   return (
     <>
-      {leavingToProposed && (
-        <div
-          className="fixed inset-0 z-[300] flex flex-col items-center justify-center gap-3"
-          style={{ background: 'rgba(248, 247, 242, 1)' }}
-          aria-live="polite"
-          aria-busy="true"
-        >
-          <Loader2
-            className="size-8 animate-spin text-accent"
-            strokeWidth={1.5}
-            aria-hidden
-          />
-          <span className="text-[14px] font-medium text-fg-muted">Continuing…</span>
-        </div>
-      )}
-      <Sheet open={open} onOpenChange={onOpenChange}>
+      <Sheet open={open} onOpenChange={(next) => { if (!confirming) onOpenChange(next); }}>
         <SheetContent
           side="right"
           showCloseButton={false}
@@ -342,12 +312,7 @@ export default function InterviewTimeslotSheet({
 
                 {allowCustomRequest && (
                   <div
-                    className={cn(
-                      'flex w-full flex-col gap-3 rounded-lg border px-4 py-3 text-left transition-colors',
-                      isCustom
-                        ? 'border-[rgba(26,101,248,1)] bg-[rgba(26,101,248,0.04)]'
-                        : 'border-[rgba(231,228,221,1)] bg-white',
-                    )}
+                    className="flex w-full flex-col gap-4 rounded-lg border border-border bg-surface px-6 py-5 text-left"
                   >
                     <div className="flex w-full items-center gap-3">
                       <button
@@ -361,55 +326,38 @@ export default function InterviewTimeslotSheet({
                       <RadioGroupItem
                         value={CUSTOM_SLOT_ID}
                         className="size-5 shrink-0"
+                        aria-label="Request another timeslot"
                       />
                     </div>
 
+                    <p className="-mt-3 text-sm leading-5 text-fg-muted">
+                      Tell the interview team which dates and time ranges work for you.
+                    </p>
                     {isCustom && (
-                      <div className="flex w-full flex-col gap-3">
-                        <div className="w-full max-w-[384px]">
-                          <p
-                            className="mb-1.5 text-[14px] font-medium leading-[18px]"
-                            style={{ color: 'rgba(15, 23, 43, 1)' }}
-                          >
-                            Preferred date <span className="text-danger">*</span>
-                          </p>
-                          <DatePicker
-                            value={preferredDate}
-                            onChange={setPreferredDate}
-                            minDate={minPreferredDate}
-                            placeholder="Select date"
-                          />
-                        </div>
-                        <div className="w-full max-w-[384px]">
-                          <p
-                            className="mb-1.5 text-[14px] font-medium leading-[18px]"
-                            style={{ color: 'rgba(15, 23, 43, 1)' }}
-                          >
-                            Available time <span className="text-danger">*</span>
-                          </p>
-                          <Select
-                            value={availableTime || null}
-                            onValueChange={(v) => {
-                              if (typeof v === 'string') setAvailableTime(v);
-                            }}
-                          >
-                            <SelectTrigger className="w-full bg-white">
-                              <SelectValue placeholder="Select time" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {TIME_WINDOWS.map((t) => (
-                                <SelectItem key={t} value={t}>
-                                  {t}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                      <div className="flex w-full flex-col gap-1.5">
+                        <label htmlFor="interview-availability" className="text-sm font-medium text-fg">
+                          Your availability <span className="text-danger">*</span>
+                        </label>
+                        <Textarea
+                          id="interview-availability"
+                          value={availability}
+                          onChange={(event) => setAvailability(event.target.value)}
+                          required
+                          maxLength={1000}
+                          rows={3}
+                          className="min-h-[84px] resize-y shadow-none"
+                          aria-describedby="interview-availability-hint"
+                          placeholder="For example: I am available on 1–3 Sep after 2:00 PM, or any time on 4 Sep."
+                        />
+                        <p id="interview-availability-hint" className="text-xs leading-5 text-fg-muted">
+                          Include at least one date and a preferred time range.
+                        </p>
                       </div>
                     )}
                   </div>
                 )}
               </RadioGroup>
+              {submissionError && <p role="alert" className="mt-3 text-sm text-danger">{submissionError}</p>}
             </div>
           </SheetBody>
 
@@ -430,7 +378,7 @@ export default function InterviewTimeslotSheet({
               className="h-9 min-w-0 cursor-pointer rounded-md px-4 text-[14px] text-white disabled:cursor-not-allowed disabled:opacity-50"
               style={{ background: 'rgba(26, 101, 248, 1)' }}
             >
-              Confirm
+              {isCustom ? 'Submit Request' : 'Confirm'}
             </button>
           </SheetFooter>
           </div>
@@ -440,7 +388,8 @@ export default function InterviewTimeslotSheet({
       <AvailabilitySubmittedDialog
         open={availabilityOpen}
         onOpenChange={setAvailabilityOpen}
-        onContinue={goInterviewProposed}
+        onContinue={finishAvailabilityRequest}
+        availability={submittedAvailability}
       />
       <TaskCompletedDialog
         open={taskCompletedOpen}

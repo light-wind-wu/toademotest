@@ -1,15 +1,18 @@
 'use client';
 
+import { ApplicantEmptyState } from '@/components/ui-legacy/applicant-empty-state';
+
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import Shell from '@/components/layout/shell';
 import Modal from '@/components/ui-legacy/modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  ArrowRight, Briefcase, CalendarDays, MapPin, Clock, User2,
+  ArrowLeft, ArrowRight, Briefcase, CalendarDays, MapPin, Clock, User2,
   Mail as MailIcon, Award, FileText,
   CheckCircle2, ShieldCheck, MessageSquareHeart, Share2, Sparkles, FileCheck2,
 } from 'lucide-react';
@@ -59,11 +62,16 @@ function InfoRow({ icon: Icon, label, value }: { icon: typeof Briefcase; label: 
 
 export default function ApplyInternship() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedId = searchParams.get('internship');
   const [showWelcomeLetter, setShowWelcomeLetter] = useState(false);
   const [recommendationAvailable, setRecommendationAvailable] = useState(false);
   const [onboardingSubmitted, setOnboardingSubmitted] = useState(false);
   const { homeScenario, internships } = useApplicantScenarioData();
-  const scenarioInternship = internships[0];
+  const scenarioInternship = internships.find((item) => item.internshipId === selectedId);
+  const listParams = new URLSearchParams(searchParams.toString());
+  listParams.delete('internship');
+  const listHref = `/apply/internship${listParams.size ? `?${listParams}` : ''}`;
 
   useEffect(() => {
     setOnboardingSubmitted(Boolean(loadApplicantOnboardingDraft().submittedAt));
@@ -78,18 +86,63 @@ export default function ApplyInternship() {
     return () => window.removeEventListener(NOTIF_CHANGED_EVENT, refreshRecommendationAvailability);
   }, []);
 
-  if (!scenarioInternship) {
+  if (!selectedId) {
     return (
       <Shell activeRoute="/apply/internship" flushTop>
         <div className="relative mx-[calc(-1*clamp(24px,2.6vw,40px))] min-h-[calc(100vh-64px)] bg-bg-subtle">
-          <header className="border-b border-border bg-bg px-[clamp(24px,2.6vw,40px)] py-10"><div className="mx-auto w-full max-w-[1440px]"><p className="text-[13px] font-medium text-fg-muted">Internship record</p><h1 className="mt-2 text-[38px] font-semibold leading-[44px] tracking-[-0.8px] text-fg">My Internship</h1></div></header>
-          <div className="mx-auto w-full max-w-[1440px] px-[clamp(24px,2.6vw,40px)] py-8"><Card className="shadow-none"><CardContent className="p-10 text-center"><p className="text-[18px] font-semibold text-fg">No internship record yet</p><p className="mt-2 text-[14px] text-fg-muted">Your internship record will appear after you accept an offer.</p><Button className="mt-5" variant="outline" onClick={() => router.push('/apply/applications')}>View My Applications</Button></CardContent></Card></div>
+          <header className="px-[clamp(24px,2.6vw,40px)] pt-6">
+            <div className="mx-auto w-full max-w-[1440px]">
+              <h1 className="text-2xl font-semibold text-fg">My Internships</h1>
+            </div>
+          </header>
+          <section aria-label="My internships" className="mx-auto w-full max-w-[1440px] px-[clamp(24px,2.6vw,40px)] py-8">
+            {internships.length > 0 && <p className="mb-4 text-sm text-fg-muted">{internships.length} {internships.length === 1 ? 'internship' : 'internships'}</p>}
+            <div className="grid gap-4 lg:grid-cols-2">
+              {internships.map((item) => {
+                const programmeName = item.programmeName;
+                const params = new URLSearchParams(listParams);
+                params.set('internship', item.internshipId);
+                const onboarded = item.status === 'UPCOMING — ONBOARDING' && onboardingSubmitted;
+                const tone = item.status === 'COMPLETED' || onboarded ? 'success' : item.status === 'ENDING SOON — ACTION REQUIRED' ? 'warning' : 'info';
+                return (
+                  <Card key={item.internshipId} className="shadow-none">
+                    <CardContent className="p-6">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div><p className="text-[12px] font-medium uppercase tracking-[0.08em] text-fg-muted">{item.internshipId}</p><h2 className="mt-2 text-[19px] font-semibold text-fg">{programmeName}</h2><p className="mt-1 text-[14px] text-fg-muted">{item.project}</p></div>
+                        <Badge variant={tone}>{formatStatusLabel(onboarded ? 'UPCOMING — ONBOARDING COMPLETE' : item.status)}</Badge>
+                      </div>
+                      <p className="mt-5 text-[14px] leading-6 text-fg">{onboarded ? 'Your onboarding is complete. You’re ready for your internship.' : item.statusMessage}</p>
+                      <dl className="mt-6 space-y-3 border-y border-border py-4">
+                        <div className="flex gap-3"><CalendarDays className="mt-0.5 size-4 text-fg-muted" aria-hidden /><div><dt className="text-[12px] text-fg-muted">Start date</dt><dd className="mt-1 text-[14px] font-medium text-fg">{fmtDateShort(item.startDate)}</dd></div></div>
+                        <div className="flex gap-3"><CalendarDays className="mt-0.5 size-4 text-fg-muted" aria-hidden /><div><dt className="text-[12px] text-fg-muted">End date</dt><dd className="mt-1 text-[14px] font-medium text-fg">{fmtDateShort(item.endDate)}</dd></div></div>
+                      </dl>
+                      <div className="mt-5 flex gap-2">
+                        <Button onClick={() => router.push(`/apply/internship?${params}`)} aria-label={`View ${programmeName} internship ${item.internshipId}`}>View Internship</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+              {internships.length === 0 && <ApplicantEmptyState type="internship" className="lg:col-span-2" />}
+            </div>
+          </section>
         </div>
       </Shell>
     );
   }
 
-  const phase = homeScenario === 'completion-action' || homeScenario === 'journey-completed' ? 'offboarding' : 'onboarding';
+  if (!scenarioInternship) {
+    return (
+      <Shell activeRoute="/apply/internship" flushTop>
+        <div className="relative mx-[calc(-1*clamp(24px,2.6vw,40px))] min-h-[calc(100vh-64px)] bg-bg-subtle">
+          <header className="border-b border-border bg-bg px-[clamp(24px,2.6vw,40px)] py-10"><div className="mx-auto w-full max-w-[1440px]"><p className="text-[13px] font-medium text-fg-muted">Internship record</p><h1 className="mt-2 text-[38px] font-semibold leading-[44px] tracking-[-0.8px] text-fg">My Internship</h1></div></header>
+          <div className="mx-auto w-full max-w-[1440px] px-[clamp(24px,2.6vw,40px)] py-8"><Card className="shadow-none"><CardContent className="p-10 text-center"><p className="text-[18px] font-semibold text-fg">Internship not found</p><p className="mt-2 text-[14px] text-fg-muted">This record is not available in your current internship list.</p><Button className="mt-5" variant="outline" onClick={() => router.push(listHref)}>Back to My Internships</Button></CardContent></Card></div>
+        </div>
+      </Shell>
+    );
+  }
+
+  const phase = homeScenario === 'completion-action' || homeScenario === 'journey-completed' || homeScenario === 'polytechnic-to-undergraduate' ? 'offboarding' : 'onboarding';
   const baseInternship = loadApplicantInternshipRecord(phase);
   const feedbackCompleted = Boolean(baseInternship.feedback);
   const isCompleted = scenarioInternship.status === 'COMPLETED';
@@ -99,7 +152,7 @@ export default function ApplyInternship() {
   const internship: ApplicantInternshipRecord = {
     ...baseInternship,
     applicationId: 'APP-UI27-00418',
-    programmeName: 'University Internship 2027',
+    programmeName: scenarioInternship.programmeName,
     statusLabel: isOnboardingComplete ? 'UPCOMING — ONBOARDING COMPLETE' : scenarioInternship.status,
     statusTone: isCompleted || isOnboardingComplete ? 'success' : isEnding ? 'warning' : 'info',
     internshipStartDate: scenarioInternship.startDate,
@@ -145,6 +198,7 @@ export default function ApplyInternship() {
         <header className="border-b border-border bg-bg px-[clamp(24px,2.6vw,40px)] py-10">
           <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
+              <Link href={listHref} className="mb-5 inline-flex items-center gap-2 text-sm text-fg-muted hover:text-accent"><ArrowLeft className="size-4" aria-hidden />My Internships</Link>
               <p className="text-[13px] font-medium text-fg-muted">Internship record</p>
               <h1 className="mt-2 text-[38px] font-semibold leading-[44px] tracking-[-0.8px] text-fg">My Internship</h1>
               <p className="mt-2 text-[16px] leading-6 text-fg-muted">{internship.programmeName}</p>

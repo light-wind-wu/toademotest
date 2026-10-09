@@ -1,0 +1,5 @@
+[
+  { "id": "slot-1", "dateLabel": "27 Aug 2026", "timeLabel": "2:30 PM - 3:30 PM", "displayDateTime": "27 Aug 2026 at 2:30 PM - 3:30 PM SGT" },
+  { "id": "slot-2", "dateLabel": "28 Aug 2026", "timeLabel": "10:00 AM - 11:00 AM", "displayDateTime": "28 Aug 2026 at 10:00 AM - 11:00 AM SGT" },
+  { "id": "slot-3", "dateLabel": "31 Aug 2026", "timeLabel": "4:00 PM - 5:00 PM", "displayDateTime": "31 Aug 2026 at 4:00 PM - 5:00 PM SGT" }
+]

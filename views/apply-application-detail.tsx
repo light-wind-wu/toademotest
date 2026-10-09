@@ -1,33 +1,20 @@
 'use client';
 
-import Image from 'next/image';
+import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import {
-  ArrowLeft,
-  CalendarDays,
-  Check,
-  CircleAlert,
-  Clock3,
-  Download,
-  FileText,
-  GraduationCap,
-  Mail,
-  MapPin,
-  UserRound,
-  Video,
-  X,
-} from 'lucide-react';
+import { CircleAlert, FileText, X } from 'lucide-react';
 import Shell from '@/components/layout/shell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import Modal from '@/components/ui-legacy/modal';
 import { loadApplicantApplications, saveApplicantApplications } from '@/lib/applicant-applications';
 import { useApplicantScenarioData } from '@/lib/applicant-scenario-data';
+import { saveApplicantHomeScenario } from '@/lib/applicant-home-scenario';
 import { formatStatusLabel } from '@/lib/status-label';
-import type { ApplicantApplicationRecord, CandidateApplicationStatus } from '@/lib/types';
+import type { ApplicantApplicationRecord, ApplicantScenarioInterviewRecord, CandidateApplicationStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 const JOURNEY_STEPS = ['Submitted', 'Under review', 'Interview', 'Outcome'] as const;
@@ -137,108 +124,56 @@ function downloadMockDocument(fileName: string) {
 function DetailValue({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-[13px] leading-5 text-fg-muted">{label}</dt>
+      <dt className="text-[14px] leading-5 text-fg-muted">{label}</dt>
       <dd className="mt-1 text-[14px] font-medium leading-5 text-fg">{value}</dd>
     </div>
   );
 }
 
-function InterviewDetailsCard({
-  record,
-  onManage,
-  onReschedule,
-}: {
+function DetailSection({ title, children }: { title: string; children: ReactNode }) {
+  return <section className="border-b border-border py-6 first:pt-0 last:border-0 last:pb-0">
+    <h2 className="mb-6 pt-1 text-lg font-semibold leading-[18px] text-fg">{title}</h2>
+    {children}
+  </section>;
+}
+
+function InterviewDetailsCard({ record, interview, onManage }: {
   record: ApplicantApplicationRecord;
+  interview?: ApplicantScenarioInterviewRecord;
   onManage: () => void;
-  onReschedule: () => void;
 }) {
   const details = record.interviewDetails;
-  if (!details) return null;
-
-  const isRescheduling = details.card === 'rescheduling';
-
-  return (
-    <Card className="overflow-hidden border-accent/30 shadow-none">
-      <div className={cn('h-1', isRescheduling ? 'bg-warning' : 'bg-accent')} aria-hidden />
-      <CardHeader className="pb-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-fg-muted">
-              Interview · {isRescheduling ? 'Time Change Requested' : 'Timeslot Selected'}
-            </p>
-            <CardTitle className="mt-2 text-[20px]">
-              {isRescheduling ? 'Interview Rescheduling' : 'Interview Scheduled'}
-            </CardTitle>
-          </div>
-          <Badge variant={isRescheduling ? 'warning' : 'info'}>
-            {isRescheduling ? 'Awaiting confirmation' : 'Timeslot selected'}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-lg bg-bg-muted p-4">
-          <p className="text-[12px] font-medium text-fg-muted">
-            {isRescheduling ? 'Suggested date & time' : 'Selected date & time'}
-          </p>
-          <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 text-[16px] font-semibold text-fg">
-            <span className="inline-flex items-center gap-2">
-              <CalendarDays className="size-4 text-accent" aria-hidden />
-              {details.selectedDate}
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <Clock3 className="size-4 text-accent" aria-hidden />
-              {details.selectedTime}
-            </span>
-          </div>
-          <p className="mt-2 text-[12px] text-fg-muted">{details.timezone}</p>
-        </div>
-
-        <dl className="mt-5 grid gap-5 sm:grid-cols-2">
-          <div className="flex gap-3">
-            <UserRound className="mt-0.5 size-5 shrink-0 text-fg-muted" aria-hidden />
-            <DetailValue label="Mentor" value={`${details.mentor} · ${details.mentorRole}`} />
-          </div>
-          <div className="flex gap-3">
-            <Video className="mt-0.5 size-5 shrink-0 text-fg-muted" aria-hidden />
-            <DetailValue label="Interview details" value={`${details.format} · ${details.location} · ${details.duration}`} />
-          </div>
-        </dl>
-
-        {isRescheduling ? (
-          <div className="mt-5 rounded-lg border border-border bg-bg px-4 py-3">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-[12px] text-fg-muted">Request status</p>
-                <p className="mt-1 text-[14px] font-medium text-warning">{details.requestStatus}</p>
-              </div>
-              <div className="sm:text-right">
-                <p className="text-[12px] text-fg-muted">Original slot</p>
-                <p className="mt-1 text-[14px] text-fg">
-                  {details.originalDate} · {details.originalTime}
-                </p>
-              </div>
-            </div>
-            <p className="mt-3 border-t border-border pt-3 text-[13px] leading-5 text-fg-muted">
-              No action is needed. We will notify you when the interviewer confirms the suggested time.
-            </p>
-          </div>
-        ) : null}
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          <Button onClick={onManage}>{isRescheduling ? 'View request details' : 'View / Manage Interview'}</Button>
-          {!isRescheduling ? (
-            <Button variant="outline" onClick={onReschedule}>Suggest another time</Button>
-          ) : null}
-        </div>
-      </CardContent>
-    </Card>
-  );
+  const state = interview?.status ?? (details?.card === 'rescheduling' ? 'AWAITING MENTOR CONFIRMATION' : record.interviewState === 'completed' ? 'COMPLETED' : record.interviewState === 'awaiting-confirmation' ? 'ACTION REQUIRED' : 'CONFIRMED');
+  const confirmed = state === 'CONFIRMED';
+  const pending = state === 'AWAITING MENTOR CONFIRMATION';
+  const completed = state === 'COMPLETED';
+  const dateTime = interview?.confirmedStart?.replace(/ SGT$/, '').split(/ at | (?=\d{1,2}:)/);
+  const date = confirmed || completed ? (interview ? dateTime?.[0] : details?.selectedDate) : undefined;
+  const time = confirmed || completed ? (interview ? dateTime?.slice(1).join(' ') : details?.selectedTime) : undefined;
+  return <Card className="p-6 shadow-none">
+    <h2 className="pt-1 text-lg font-semibold leading-[18px]">{confirmed ? 'Interview Scheduled' : pending ? 'Interview request under review' : completed ? 'Interview completed' : 'Interview invitation'}</h2>
+    {!confirmed && <p className="mt-6 text-sm leading-5 text-fg-muted">{interview?.statusMessage || record.statusMessage}</p>}
+    {date && <div className="mt-6 rounded-lg border border-border bg-bg/60 px-4 py-3">
+      <p className="text-sm leading-5 text-fg-muted">{completed ? 'Interview date & time' : 'Selected date & time'}</p>
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium leading-6">
+        <span className="inline-flex items-center gap-2"><img src="/images/application-detail-calendar.svg" alt="" />{date}</span>
+        {time && <><span className="h-4 w-px bg-border" aria-hidden /><span className="inline-flex items-center gap-2"><img src="/images/application-detail-clock.svg" alt="" />{time}</span></>}
+      </div>
+      <p className="text-xs leading-5 text-fg-muted">Singapore Time (SGT)</p>
+    </div>}
+    {pending && <div className="mt-6 rounded-lg border border-border bg-bg/60 p-4"><p className="text-sm text-fg-muted">Your comments</p><p className="mt-2 whitespace-pre-wrap text-sm leading-5">{interview?.applicantAlternativeAvailability || details?.availabilityNote || 'No comments provided.'}</p></div>}
+    <dl className="mt-6 grid gap-6 sm:grid-cols-2 sm:gap-8">
+      <div className="flex items-start gap-2"><img src="/images/application-detail-mentor.svg" alt="" className="shrink-0" /><DetailValue label="Mentor" value={details ? `${details.mentor} · ${details.mentorRole}` : 'Marcus Tan · Digital Hub'} /></div>
+      <div className="flex items-start gap-2 sm:border-l sm:border-border sm:pl-8"><img src="/images/application-detail-video.svg" alt="" className="shrink-0" /><DetailValue label="Interview details" value="Online interview · Microsoft Teams · 1 hour" /></div>
+    </dl>
+    <Button size="sm" className="mt-6 h-8 text-xs" onClick={onManage}>{confirmed ? 'Manage Interview' : pending ? 'View request' : completed ? 'View interview' : 'Choose a timeslot'}</Button>
+  </Card>;
 }
 
 export default function ApplyApplicationDetail() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { applications: scenarioApplications } = useApplicantScenarioData();
+  const { applications: scenarioApplications, interviews: scenarioInterviews } = useApplicantScenarioData();
   const [record, setRecord] = useState<ApplicantApplicationRecord | null>(null);
   const [ready, setReady] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
@@ -257,8 +192,12 @@ export default function ApplyApplicationDetail() {
       statusMessage: scenarioRecord.cardMessage,
       currentStep: TERMINAL_STATUSES.includes(scenarioRecord.statusBadge)
         ? reachedStepForTerminalStatus(storedRecord, scenarioRecord.statusBadge)
-        : currentStepForStatus(scenarioRecord.statusBadge),
-      nextStep: nextStepForStatus(scenarioRecord.statusBadge),
+        : scenarioRecord.focal && scenarioRecord.statusBadge === 'UNDER REVIEW' && scenarioInterviews.some(item => item.status === 'COMPLETED')
+          ? 4
+          : currentStepForStatus(scenarioRecord.statusBadge),
+      nextStep: scenarioRecord.focal && scenarioRecord.statusBadge === 'INTERVIEW'
+        ? scenarioInterviews[0]?.statusMessage ?? nextStepForStatus(scenarioRecord.statusBadge)
+        : nextStepForStatus(scenarioRecord.statusBadge),
       deadline: scenarioRecord.actionDeadline ?? undefined,
       timeline: timelineForStatus(
         { ...storedRecord, statusMessage: scenarioRecord.cardMessage },
@@ -266,7 +205,7 @@ export default function ApplyApplicationDetail() {
       ),
     } : storedRecord);
     setReady(true);
-  }, [params.id, scenarioApplications]);
+  }, [params.id, scenarioApplications, scenarioInterviews]);
 
   const canWithdraw = useMemo(
     () => !!record && ['SUBMITTED', 'UNDER REVIEW', 'INTERVIEW'].includes(record.status),
@@ -323,6 +262,9 @@ export default function ApplyApplicationDetail() {
       ],
     };
     saveApplicantApplications(loadApplicantApplications().map((item) => (item.id === record.id ? updated : item)));
+    if (scenarioApplications.some(item => item.focal && item.applicationId === record.applicationId)) {
+      saveApplicantHomeScenario('application-withdrawn');
+    }
     setRecord(updated);
     setWithdrawOpen(false);
     setWithdrawAcknowledged(false);
@@ -353,37 +295,30 @@ export default function ApplyApplicationDetail() {
     );
   }
 
+  const focal = scenarioApplications.find(item => item.applicationId === record.applicationId)?.focal;
+  const interview = focal ? scenarioInterviews[0] : undefined;
+  const closed = TERMINAL_STATUSES.includes(record.status);
+  const showInterview = !closed && (record.status === 'INTERVIEW' || (record.status === 'UNDER REVIEW' && interview?.status === 'COMPLETED'));
+  const fields = record.detailFields;
+  const fieldGrid = (items: Array<[string, string | undefined]>) => <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">{items.map(([label, value]) => <DetailValue key={label} label={label} value={value || 'Not provided'} />)}</dl>;
+  const stageTitle = record.status === 'DRAFT' ? 'Continue your application' : record.status === 'SUBMITTED' ? 'Application submitted' : record.status === 'UNDER REVIEW' ? 'Application under review' : record.status === 'OFFER RECEIVED' ? 'Your internship offer is ready' : record.status === 'OFFER ACCEPTED' ? 'Offer accepted' : closed ? terminalLabel(record.status) : 'Application status';
+  const stageAction = record.status === 'DRAFT' ? { label: 'Continue application', href: '/apply/review' } : record.status === 'OFFER RECEIVED' ? { label: 'Review offer', href: '/apply/applicant-offer-detail?applicationId=' + record.id } : record.status === 'OFFER ACCEPTED' ? { label: 'View internship', href: '/apply/internship' } : null;
+
   return (
     <Shell activeRoute="/apply/applications" flushTop>
-      <div className="relative mx-[calc(-1*clamp(24px,2.6vw,40px))] min-h-[calc(100vh-64px)] bg-bg-subtle">
-        <header className="bg-bg px-[clamp(24px,2.6vw,40px)] py-10">
-          <div className="mx-auto w-full max-w-[1440px]">
-            <button
-              type="button"
-              onClick={() => router.push('/apply/applications')}
-              className="inline-flex items-center gap-2 text-[14px] font-medium text-fg-muted hover:text-fg"
-            >
-              <ArrowLeft className="size-4" aria-hidden />
-              My Applications
-            </button>
-
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-[30px] font-semibold leading-9 tracking-[-0.5px] text-fg">{record.programmeName}</h1>
-                <Badge variant={statusVariant(record.status)}>{formatStatusLabel(record.status)}</Badge>
-              </div>
-              <p className="mt-2 text-[14px] leading-5 text-fg-muted">
-                {record.intake} · {record.applicationId}
-              </p>
+      <div className="relative mx-[calc(-1*clamp(24px,2.6vw,40px))] min-h-[calc(100vh-64px)] bg-bg">
+        <div className="mx-auto max-w-[1440px] px-6 pb-24 pt-5">
+          <header>
+            <nav aria-label="Breadcrumb" className="flex min-h-9 flex-wrap items-center gap-1.5 text-sm">
+              <button onClick={() => router.push('/apply/applications')} className="text-fg-muted hover:text-accent">My Applications</button>
+              <img src="/images/application-detail-breadcrumb.svg" alt="" />
+              <span className="font-medium" aria-current="page">{record.programmeName}</span>
+            </nav>
+            <div className="mt-4 pb-1.5">
+              <div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-semibold leading-7">{record.programmeName}</h1><Badge variant={statusVariant(record.status)}>{formatStatusLabel(record.status)}</Badge></div>
+              <p className="mt-2 text-sm text-fg-muted">{record.applicationId}</p>
             </div>
-            <div className="sm:text-right">
-              <p className="text-[12px] text-fg-muted">Current next step</p>
-              <p className="mt-1 max-w-sm text-[14px] font-medium leading-5 text-fg">{record.nextStep}</p>
-            </div>
-          </div>
-
-            <div className="mt-9 overflow-x-auto pb-2">
+            <div className="my-6 overflow-x-auto py-4">
               <ol className="flex min-w-[620px] items-center" aria-label="Application journey progress">
               {journeyItems.map((step, index) => {
                 const complete = step.state === 'complete';
@@ -393,194 +328,95 @@ export default function ApplyApplicationDetail() {
                   <li key={`${step.label}-${index}`} className={cn('flex items-center', index < journeyItems.length - 1 && 'flex-1')}>
                     <span
                       className={cn(
-                        'inline-flex size-6 shrink-0 items-center justify-center rounded-full border text-[12px] font-medium',
-                        complete && 'border-success bg-success text-accent-fg',
+                        'inline-flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-full border text-[12px] font-medium',
+                        complete && 'border-0',
                         current && 'border-accent bg-accent text-accent-fg',
                         terminal && 'border-danger bg-danger text-accent-fg',
                         !complete && !current && !terminal && 'border-border bg-bg-muted text-fg-muted',
                       )}
                     >
-                      {complete ? <Check className="size-4" aria-hidden /> : terminal ? <X className="size-4" aria-hidden /> : index + 1}
+                      {complete ? <img src="/images/application-detail-complete.svg" alt="" /> : terminal ? <X className="size-4" aria-hidden /> : index + 1}
                     </span>
                     <span className={cn('ml-2 whitespace-nowrap text-[14px]', complete || current || terminal ? 'text-fg' : 'text-fg-muted')}>
                       {step.label}
                       {step.hint ? <span className="block text-[11px] font-normal text-fg-muted">{step.hint}</span> : null}
                     </span>
                     {index < journeyItems.length - 1 ? (
-                      <span className={cn('mx-2 h-px min-w-8 flex-1 sm:mx-3', complete ? 'bg-success' : 'bg-border')} aria-hidden />
+                      <span className={cn('mx-2 h-px min-w-8 flex-1', complete ? 'bg-fg-muted/50' : 'bg-border')} aria-hidden />
                     ) : null}
                   </li>
                 );
               })}
               </ol>
             </div>
-          </div>
-        </header>
-
-        <div className="mx-auto w-full max-w-[1440px] px-[clamp(24px,2.6vw,40px)] py-8">
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,2.2fr)_minmax(300px,1fr)]">
-            <div className="space-y-4">
-              {record.interviewDetails ? (
-                <InterviewDetailsCard
-                  record={record}
-                  onManage={() => router.push('/apply/interviews')}
-                  onReschedule={() => router.push('/apply/interview-proposed')}
-                />
-              ) : null}
-
-              <Card className="shadow-none">
-                <CardHeader>
-                  <CardTitle className="text-[18px]">Application timeline</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ol aria-label="Application timeline">
-                    {record.timeline.map((event, index) => (
-                      <li key={`${event.title}-${event.date}`} className="flex gap-5">
-                        <div className="flex w-3 shrink-0 flex-col items-center">
-                          <span
-                            className={cn(
-                              'mt-1 size-3 shrink-0 rounded-full',
-                              event.tone === 'current' && 'bg-accent',
-                              event.tone === 'complete' && 'bg-success',
-                              event.tone === 'neutral' && 'bg-border-strong',
-                            )}
-                            aria-hidden
-                          />
-                          {index < record.timeline.length - 1 ? <span className="min-h-12 w-px flex-1 bg-border" aria-hidden /> : null}
-                        </div>
-                        <div className={cn('flex min-w-0 flex-1 flex-col gap-2 pb-7 sm:flex-row sm:justify-between', index === record.timeline.length - 1 && 'pb-0')}>
-                          <div>
-                            <h2 className="text-[16px] font-medium leading-6 text-fg">{event.title}</h2>
-                            <p className="mt-1 text-[13px] leading-5 text-fg-muted">{event.description}</p>
-                          </div>
-                          <span className="inline-flex shrink-0 items-center gap-1.5 text-[12px] text-fg-muted">
-                            <CalendarDays className="size-4" aria-hidden />
-                            {event.date}
-                          </span>
-                        </div>
-                      </li>
-                    ))}
+          </header>
+          <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,897fr)_minmax(280px,411fr)]">
+            <div className="min-w-0 space-y-4">
+              {showInterview ? <InterviewDetailsCard record={record} interview={interview} onManage={() => router.push('/apply/interviews')} /> : (
+                <Card className="p-6 shadow-none">
+                  <h2 className="text-lg font-semibold">{stageTitle}</h2>
+                  <p className="mt-3 text-sm leading-5 text-fg-muted">{record.statusMessage}</p>
+                  {record.deadline && !closed && <p className="mt-3 text-sm text-warning">{record.deadline}</p>}
+                  {stageAction && <Button size="sm" className="mt-6 h-8 text-xs" onClick={() => router.push(stageAction.href)}>{stageAction.label}</Button>}
+                </Card>
+              )}
+              <Card className="min-w-0 p-6 shadow-none">
+                <DetailSection title="Personal details">
+                  {fieldGrid([['Full name', fields?.personal.fullName || record.summary.personal.split(' · ')[0]], ['NRIC', fields?.personal.nric], ['Nationality', fields?.personal.nationality || record.summary.personal.split(' · ')[1]], ['Residential status', fields?.personal.residentialStatus], ['Sex', fields?.personal.sex], ['Date of birth', fields?.personal.dateOfBirth], ['Race', fields?.personal.race], ['Photo', fields?.personal.photo]])}
+                </DetailSection>
+                <DetailSection title="Contact details">
+                  {fieldGrid([['Mobile number', fields?.contact.mobile], ['Email', fields?.contact.email]])}
+                  <dl className="mt-4"><DetailValue label="Registered address" value={fields?.contact.address || 'Not provided'} /></dl>
+                </DetailSection>
+                <DetailSection title="Education">
+                  {fieldGrid([['Institution', fields?.education.institution || record.summary.education.split(' · ')[0]], ['Course of study', fields?.education.course || record.summary.education.split(' · ')[1]], ['Year of study', fields?.education.year || record.summary.education.split(' · ')[2]], ['GPA', fields?.education.gpa], ['Expected graduation', fields?.education.graduation]])}
+                </DetailSection>
+                <DetailSection title="Availability">
+                  {fields ? fieldGrid([['Preferred internship start date', fields.availability.start], ['Preferred internship end date', fields.availability.end]]) : <dl><DetailValue label="Preferred internship period" value={record.summary.availability} /></dl>}
+                </DetailSection>
+                <DetailSection title="Project preferences">
+                  <dl><DetailValue label="Areas of interest" value={record.summary.interests.join(', ') || 'Not provided'} /></dl>
+                  <p className="mb-2 mt-4 text-sm leading-5 text-fg-muted">Ranked project preferences</p>
+                  <ol className="space-y-4 rounded-lg border border-border bg-bg/60 p-4">
+                    {record.summary.projectPreferences.map((project, index) => <li key={project} className="flex items-center gap-4 text-sm font-medium"><span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-border bg-bg-muted text-sm font-normal">{index + 1}</span>{project}</li>)}
+                    {record.summary.projectPreferences.length === 0 && <li className="text-sm text-fg-muted">No projects selected.</li>}
                   </ol>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-none">
-                <CardHeader>
-                  <CardTitle className="text-[18px]">Documents</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {record.documents.map((document) => (
-                    <div key={document.fileName} className="flex items-center gap-4 rounded-lg border border-border bg-bg p-4">
-                      <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-bg-muted text-accent">
-                        <FileText className="size-5" aria-hidden />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[14px] font-medium text-fg">{document.label}</p>
-                        <p className="mt-1 truncate text-[12px] text-fg-muted">{document.fileName} · {document.meta}</p>
-                      </div>
-                      <Button variant="ghost" size="icon" aria-label={`Download ${document.label}`} onClick={() => downloadMockDocument(document.fileName)}>
-                        <Download className="size-4" aria-hidden />
-                      </Button>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-none">
-                <CardHeader>
-                  <CardTitle className="text-[18px]">Application summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <dl className="grid gap-5 md:grid-cols-3">
-                    <div className="flex gap-3">
-                      <UserRound className="mt-0.5 size-5 shrink-0 text-fg-muted" aria-hidden />
-                      <DetailValue label="Personal" value={record.summary.personal} />
-                    </div>
-                    <div className="flex gap-3">
-                      <GraduationCap className="mt-0.5 size-5 shrink-0 text-fg-muted" aria-hidden />
-                      <DetailValue label="Education" value={record.summary.education} />
-                    </div>
-                    <div className="flex gap-3">
-                      <CalendarDays className="mt-0.5 size-5 shrink-0 text-fg-muted" aria-hidden />
-                      <DetailValue label="Availability" value={record.summary.availability} />
-                    </div>
-                  </dl>
-                  <div className="border-t border-border pt-5">
-                    <p className="text-[13px] text-fg-muted">Areas of interest</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {record.summary.interests.map((interest) => <Badge key={interest} variant="subtle">{interest}</Badge>)}
-                    </div>
-                  </div>
-                  <div className="border-t border-border pt-5">
-                    <p className="text-[13px] text-fg-muted">Ranked project preferences</p>
-                    <ol className="mt-3 space-y-2">
-                      {record.summary.projectPreferences.map((project, index) => (
-                        <li key={project} className="flex items-center gap-3 rounded-md bg-bg-muted px-3 py-2 text-[14px] text-fg">
-                          <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-surface text-[11px] font-medium text-fg-muted">{index + 1}</span>
-                          {project}
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                </CardContent>
+                </DetailSection>
+                <DetailSection title="Additional details">
+                  {fieldGrid([['Bonded scholarship recipient', fields?.additional.scholarshipRecipient], ['Scholarship name', fields?.additional.scholarshipName], ['Credit-bearing internship', fields?.additional.creditBearing], ['School requirements / module code', fields?.additional.moduleCode]])}
+                </DetailSection>
+                <DetailSection title="Declarations">
+                  {fields && record.status !== 'DRAFT' ? <div className="space-y-4">
+                    <label className="flex items-start gap-3 text-sm leading-5"><Checkbox aria-label="Personal data consent declaration" checked={fields.declarations.consent} readOnly className="mt-0.5" /><span>I consent to the collection, use and disclosure of my personal data for the assessment and administration of my internship application.</span></label>
+                    <label className="flex items-start gap-3 text-sm leading-5"><Checkbox aria-label="Information accuracy declaration" checked={fields.declarations.accurate} readOnly className="mt-0.5" /><span>I declare that the information and supporting documents provided in this application are true and accurate.</span></label>
+                  </div> : <p className="text-sm text-fg-muted">{record.status === 'DRAFT' ? 'Complete your declarations before submitting your application.' : 'Declaration details are not available for this record.'}</p>}
+                </DetailSection>
+                <DetailSection title="Documents">
+                  <div className="space-y-2">{record.documents.map(document => <div key={document.fileName} className="flex min-h-[60px] items-center gap-3 rounded-lg border border-border bg-bg/60 px-4 py-3">
+                    <img src={`/images/application-detail-${document.kind === 'resume' ? 'resume' : document.kind === 'transcript' ? 'transcript' : 'portfolio'}.png`} alt="" className="h-[20px] w-[20px] shrink-0 object-cover mix-blend-multiply" />
+                    <div className="min-w-0 flex-1"><p className="text-xs font-medium leading-[14px]">{document.label}</p><p className="mt-1 break-words text-xs leading-4 text-fg-muted">{document.fileName} · {document.meta}</p></div>
+                    <Button size="sm" variant="ghost" className="h-auto shrink-0 gap-2 px-0 text-xs font-normal" aria-label={`Download ${document.label}`} onClick={() => downloadMockDocument(document.fileName)}><img src="/images/application-detail-download.svg" alt="" /><span className="hidden sm:inline">Download</span></Button>
+                  </div>)}</div>
+                  {record.documents.length === 0 && <p className="text-sm text-fg-muted">No documents uploaded.</p>}
+                </DetailSection>
               </Card>
             </div>
-
-            <aside className="space-y-4">
-              <Card className="shadow-none">
-                <CardHeader><CardTitle className="text-[18px]">Key details</CardTitle></CardHeader>
-                <CardContent>
-                  <dl className="grid grid-cols-2 gap-x-5 gap-y-5">
-                    <div className="col-span-2"><DetailValue label="Programme" value={record.programmeName} /></div>
-                    <div className="col-span-2"><DetailValue label="Intake" value={record.intake} /></div>
-                    <DetailValue label="Location" value={record.location} />
-                    <DetailValue label="Type" value={record.type} />
-                    <DetailValue label="Department" value={record.department} />
-                    <DetailValue label="Applied" value={record.submittedAt} />
-                    <DetailValue label="Last updated" value={record.updatedAt} />
-                    <DetailValue label="Application ID" value={record.applicationId} />
-                  </dl>
-                  {canWithdraw ? (
-                    <div className="mt-6 border-t border-border pt-5">
-                      <p className="text-[12px] font-medium text-fg-muted">Application actions</p>
-                      <Button
-                        variant="subtle"
-                        size="sm"
-                        className="mt-3 border border-danger/30 bg-danger/10 text-danger hover:bg-danger/15"
-                        onClick={openWithdrawDialog}
-                      >
-                        Withdraw application
-                      </Button>
-                    </div>
-                  ) : null}
-                </CardContent>
+            <aside className="min-w-0 space-y-4">
+              <Card className="p-6 shadow-none">
+                <h2 className="mb-6 text-lg font-semibold leading-[18px]">Key details</h2>
+                <dl className="mb-4"><DetailValue label="Programme" value={record.programmeName} /></dl>
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
+                  <DetailValue label="Location" value={record.location} /><DetailValue label="Type" value={record.type} />
+                  <DetailValue label="Department" value={record.department} /><DetailValue label={record.status === 'DRAFT' ? 'Created' : 'Applied'} value={record.submittedAt} />
+                  <DetailValue label="Last updated" value={record.updatedAt} /><DetailValue label="Application ID" value={record.applicationId} />
+                </dl>
+                {canWithdraw && <div className="mt-6 border-t border-border pt-6"><p className="mb-2 text-sm text-fg-muted">Application actions</p><Button size="sm" variant="danger" className="h-8 text-xs" onClick={openWithdrawDialog}>Withdraw Application</Button></div>}
               </Card>
-
-              <Card className="shadow-none">
-                <CardHeader><CardTitle className="text-[18px]">Contact</CardTitle></CardHeader>
-                <CardContent>
-                  <p className="text-[14px] leading-5 text-fg-muted">Questions about your application or its progress? Contact the internship team.</p>
-                  <a href={`mailto:${record.contactEmail}`} className="mt-5 flex items-center gap-3 rounded-lg border border-border bg-bg px-4 py-3 text-[14px] font-medium text-accent hover:bg-bg-muted">
-                    <Mail className="size-4" aria-hidden />
-                    {record.contactEmail}
-                  </a>
-                </CardContent>
-              </Card>
-
-              <Card className="relative min-h-[220px] overflow-hidden shadow-none">
-                <CardContent className="relative z-[1] p-6 pr-32">
-                  <h2 className="text-[18px] font-semibold text-accent">Next steps</h2>
-                  <p className="mt-3 text-[14px] leading-5 text-fg-muted">{record.nextStep}</p>
-                  {record.deadline ? <p className="mt-3 text-[13px] font-medium text-warning">{record.deadline}</p> : null}
-                </CardContent>
-                <div className="pointer-events-none absolute bottom-0 right-0 h-[150px] w-[150px]" aria-hidden>
-                  <Image src="/images/activity-v1.png" alt="" fill className="object-contain object-right-bottom" sizes="150px" />
-                </div>
-              </Card>
-
+              <Card className="p-6 shadow-none"><h2 className="text-lg font-semibold leading-[18px]">Need help?</h2><a href={`mailto:${record.contactEmail}`} className="mt-6 inline-block break-all text-sm leading-5 text-accent hover:underline">{record.contactEmail}</a></Card>
             </aside>
           </div>
         </div>
+        <footer className="sticky bottom-0 z-10 border-t border-border bg-surface px-6 py-4"><div className="mx-auto max-w-[1392px]"><Button variant="ghost" onClick={() => router.push('/apply/applications')}>Back</Button></div></footer>
       </div>
 
       <Modal open={withdrawOpen} onClose={closeWithdrawDialog} labelledBy="withdraw-title" destructive>

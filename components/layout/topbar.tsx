@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Search, Bell, Settings, HelpCircle, ChevronDown, LayoutGrid, ListTodo, PanelsTopLeft, Check, RotateCcw, MonitorUp } from 'lucide-react';
+import { Search, Bell, Settings, HelpCircle, ChevronDown, LayoutGrid, ListTodo, PanelsTopLeft, Check, RotateCcw, MonitorUp, GraduationCap } from 'lucide-react';
 import { useRole, ROLE_LABELS } from '@/lib/role';
 import { cn } from '@/lib/utils';
 
@@ -109,12 +109,12 @@ export default function Topbar({
   }, [homeScenario, isApplicant, profile.email]);
 
   useEffect(() => {
-    if (!isApplicant || homeScenario !== 'journey-completed') return;
+    if (!isApplicant || (homeScenario !== 'journey-completed' && homeScenario !== 'polytechnic-to-undergraduate')) return;
     ensureApplicantRecommendationLetterNotification(profile.email);
   }, [homeScenario, isApplicant, profile.email]);
 
   useEffect(() => {
-    if (!isApplicant || homeScenario !== 'interview-pending-confirmation') return;
+    if (!isApplicant || homeScenario !== 'interview-completed') return;
 
     // INT-07: notify the applicant that the interview is completed and no action is required.
     ensureApplicantInterviewCompletedNotification(
@@ -301,7 +301,7 @@ export default function Topbar({
                               onClick={() => {
                                 saveApplyDashboardVersion('v1');
                                 if (scenario.value === 'under-review') restartApplicantReviewTimer();
-                                if (scenario.value === 'interview-pending-confirmation') restartApplicantOfferTimer();
+                                if (scenario.value === 'interview-completed') restartApplicantOfferTimer();
                                 saveApplicantHomeScenario(scenario.value);
                                 setHomeScenario(scenario.value);
                                 setOpen(false);
@@ -379,6 +379,16 @@ export default function Topbar({
                 </Link>
               </div>
               <div className="border-t border-border p-1.5">
+                {isApplicant ? (
+                  <Link
+                    href="/join-us/student/internships"
+                    onClick={() => setOpen(false)}
+                    className="mb-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-body-md text-fg transition-colors hover:bg-bg-subtle"
+                  >
+                    <GraduationCap size={18} className="shrink-0 text-fg-muted" aria-hidden />
+                    Internship Programmes
+                  </Link>
+                ) : null}
                 {isApplicant ? (
                   <button
                     type="button"

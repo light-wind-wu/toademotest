@@ -1,0 +1,52 @@
+[
+  {
+    "applicationId": "DEMO-UI27-0101", "programme": "University Internship 2027", "statusBadge": "DRAFT", "stage": "draft", "stageLabel": "Draft", "tabGroup": "in-progress", "focal": false,
+    "cardMessage": "Your draft is saved. Add your education details and project preferences before submitting.", "actionDeadline": "30 Nov 2026", "primaryCta": "Continue application", "secondaryCta": "View application",
+    "previewTitle": "Continue your draft", "details": [{ "label": "Intake", "value": "May–August 2027" }, { "label": "Progress", "value": "2 of 5 sections complete" }, { "label": "Last saved", "value": "9 Oct 2026, 10:15 AM" }], "nextSteps": ["Complete education details", "Choose project preferences", "Review and submit your application"]
+  },
+  {
+    "applicationId": "DEMO-PI27-0102", "programme": "Polytechnic Internship 2027", "statusBadge": "DRAFT", "stage": "incomplete", "stageLabel": "Incomplete", "tabGroup": "in-progress", "focal": false,
+    "cardMessage": "Your application is not ready to submit. Upload your academic transcript and confirm your internship dates.", "actionDeadline": "20 Nov 2026", "primaryCta": "Complete application", "secondaryCta": "View application",
+    "previewTitle": "Complete the missing information", "details": [{ "label": "Intake", "value": "March–August 2027" }, { "label": "Missing document", "value": "Latest academic transcript" }, { "label": "Missing information", "value": "Preferred internship start and end dates" }], "nextSteps": ["Upload your latest academic transcript", "Enter your internship availability", "Review and submit — this application has not been submitted yet"]
+  },
+  {
+    "applicationId": "DEMO-JC27-0103", "programme": "JC Internship (June) 2027", "statusBadge": "SUBMITTED", "stage": "submitted", "stageLabel": "Submitted", "tabGroup": "in-progress", "focal": false,
+    "cardMessage": "Your application has been received. We’ll notify you when there is an update; no action is needed now.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": null,
+    "previewTitle": "Application received", "details": [{ "label": "Submitted", "value": "8 Oct 2026, 2:30 PM" }, { "label": "Internship period", "value": "June 2027 · 1 month" }, { "label": "Documents", "value": "CV and academic transcript received" }], "nextSteps": ["The internship team will review your application", "Keep your contact details up to date", "Watch for updates in the portal and by email"]
+  },
+  {
+    "applicationId": "DEMO-TU27-0104", "programme": "Tech UP Internship 2027", "statusBadge": "UNDER REVIEW", "stage": "review", "stageLabel": "Under review", "tabGroup": "in-progress", "focal": false,
+    "cardMessage": "The internship team is reviewing your application and project interests. We’ll contact you if anything else is needed.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": null,
+    "previewTitle": "Your application is under review", "details": [{ "label": "Submitted", "value": "2 Oct 2026" }, { "label": "Review started", "value": "7 Oct 2026" }, { "label": "Area of interest", "value": "Data analytics and digital services" }], "nextSteps": ["The team reviews your information", "You may be invited to a mentor interview", "No further action is needed unless we contact you"]
+  },
+  {
+    "applicationId": "DEMO-UI27-0105", "programme": "University Internship 2027", "statusBadge": "INTERVIEW", "stage": "interview-action", "stageLabel": "Interview · Action required", "tabGroup": "in-progress", "focal": false,
+    "cardMessage": "You’re invited to meet your mentor for the AI Threat Detection project. Choose an available interview timeslot.", "actionDeadline": "16 Oct 2026", "primaryCta": "Choose a timeslot", "secondaryCta": "View application",
+    "previewTitle": "Choose an interview timeslot", "details": [{ "label": "Project", "value": "AI Threat Detection" }, { "label": "Mentor", "value": "Marcus Tan · Digital Hub" }, { "label": "Format", "value": "Microsoft Teams · 1 hour · SGT" }, { "label": "Available times", "value": "19 Oct, 10:00–11:00 AM or 20 Oct, 2:00–3:00 PM" }], "nextSteps": ["Choose an available timeslot", "Request another time if none of the slots work for you", "Review the confirmation and meeting details"]
+  },
+  {
+    "applicationId": "DEMO-PI27-0106", "programme": "Polytechnic Internship 2027", "statusBadge": "INTERVIEW", "stage": "interview-pending", "stageLabel": "Interview · Pending confirmation", "tabGroup": "in-progress", "focal": false,
+    "cardMessage": "Your comments have been sent to the interview team. We’ll contact you with an update; your interview is not confirmed yet.", "actionDeadline": null, "primaryCta": "View request", "secondaryCta": "View application",
+    "previewTitle": "Your request is under review", "details": [{ "label": "Project", "value": "Autonomous Platform Interface" }, { "label": "Request submitted", "value": "9 Oct 2026, 9:20 AM" }, { "label": "Your comments", "value": "I have classes on Monday. Could we meet on Tuesday after 2 PM or Wednesday morning?" }], "nextSteps": ["The interview team reviews your comments", "You receive an update by email and in the portal", "Wait for confirmation before treating the interview as scheduled"]
+  },
+  {
+    "applicationId": "DEMO-UI27-0107", "programme": "University Internship 2027", "statusBadge": "INTERVIEW", "stage": "interview-confirmed", "stageLabel": "Interview · Confirmed", "tabGroup": "in-progress", "focal": false,
+    "cardMessage": "Your interview for Cyber Threat Detection is confirmed for 21 Oct 2026, 10:00–11:00 AM (SGT). View your meeting details.", "actionDeadline": null, "primaryCta": "View interview", "secondaryCta": "View application",
+    "previewTitle": "Your interview is confirmed", "details": [{ "label": "Project", "value": "Cyber Threat Detection" }, { "label": "Date and time", "value": "21 Oct 2026 · 10:00–11:00 AM (SGT)" }, { "label": "Mentor", "value": "Aisha Rahman · Cybersecurity" }, { "label": "Format", "value": "Microsoft Teams · Online interview" }], "nextSteps": ["Review the project and prepare relevant examples", "Check your camera, microphone and connection", "Join a few minutes before the interview begins"]
+  },
+  {
+    "applicationId": "DEMO-UI27-0108", "programme": "University Scholarship Internship 2027", "statusBadge": "OFFER RECEIVED", "stage": "offer", "stageLabel": "Offer received", "tabGroup": "in-progress", "focal": false,
+    "cardMessage": "Congratulations — you have an internship offer for Human-Centred AI Prototyping. Review the terms and respond by the deadline.", "actionDeadline": "23 Oct 2026", "primaryCta": "Review offer", "secondaryCta": "View application",
+    "previewTitle": "Review your internship offer", "details": [{ "label": "Project", "value": "Human-Centred AI Prototyping" }, { "label": "Internship period", "value": "4 January–26 March 2027" }, { "label": "Work arrangement", "value": "Hybrid · Singapore" }, { "label": "Respond by", "value": "23 Oct 2026" }], "nextSteps": ["Read the offer letter and internship terms", "Accept or decline before the response deadline", "If you accept, complete the onboarding requirements"]
+  },
+  {
+    "applicationId": "DEMO-JC26-0109", "programme": "JC Internship (December) 2026", "statusBadge": "UNSUCCESSFUL", "stage": "closed", "stageLabel": "Unsuccessful", "tabGroup": "closed", "focal": false,
+    "cardMessage": "Thank you for your interest. You were not selected for this intake, but you’re welcome to explore future opportunities.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": null,
+    "previewTitle": "Application outcome", "details": [{ "label": "Outcome issued", "value": "6 Oct 2026" }, { "label": "Status", "value": "Unsuccessful · Application closed" }], "nextSteps": ["Keep a copy of your application record", "Explore future internship programmes when you are ready"]
+  },
+  {
+    "applicationId": "DEMO-TU26-0110", "programme": "Tech UP Internship 2026", "statusBadge": "WITHDRAWN", "stage": "closed", "stageLabel": "Withdrawn", "tabGroup": "closed", "focal": false,
+    "cardMessage": "You withdrew this application on 5 Oct 2026. Your submitted information remains available for reference.", "actionDeadline": null, "primaryCta": "View application", "secondaryCta": null,
+    "previewTitle": "Application withdrawn", "details": [{ "label": "Withdrawn", "value": "5 Oct 2026, 11:45 AM" }, { "label": "Status", "value": "Withdrawn · No further action required" }], "nextSteps": ["Review your application record if needed", "You can explore other internship programmes"]
+  }
+]
