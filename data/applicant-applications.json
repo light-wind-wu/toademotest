@@ -1,6 +1,14 @@
 [
   {
     "id": "app-ui-2027",
+    "detailFields": {
+      "personal": { "fullName": "Jenny Aw", "nric": "S1234567A", "nationality": "Singapore Citizen", "residentialStatus": "Citizen", "sex": "Female", "dateOfBirth": "22 Aug 2003", "race": "Chinese", "photo": "Not provided" },
+      "contact": { "mobile": "+65 9123 4567", "email": "jenny.aw@u.nus.edu", "address": "123 Clementi Ave 3, #12-34, Singapore 120123" },
+      "education": { "institution": "National University of Singapore", "course": "Computer Science", "year": "Year 3", "gpa": "4.6 / 5.0", "graduation": "May 2028" },
+      "availability": { "start": "5 Jan 2027", "end": "26 Mar 2027" },
+      "additional": { "scholarshipRecipient": "No", "scholarshipName": "Not applicable", "creditBearing": "Yes", "moduleCode": "CP3880" },
+      "declarations": { "consent": true, "accurate": true }
+    },
     "programmeName": "University Internship 2027",
     "intake": "Jan–Jun 2027 Intake",
     "applicationWindow": "1 Jul–30 Sep 2026",

@@ -12,6 +12,7 @@ export const APPLICANT_DASHBOARD_STATE_TO_SCENARIO: Record<ApplicantDashboardSta
   application_under_review: 'under-review',
   interview_invitation: 'interview-action',
   interview_pending_confirmation: 'interview-pending-confirmation',
+  interview_completed: 'interview-completed',
   interview_confirmed: 'interview-scheduled',
   interview_rescheduling: 'interview-rescheduling',
   offer_received: 'offer-action',
@@ -35,7 +36,7 @@ export const APPLICANT_HOME_SCENARIO_TO_STATE: Record<ApplicantHomeScenario, App
   'interview-pending-confirmation': 'interview_pending_confirmation',
   'interview-scheduled': 'interview_confirmed',
   'interview-rescheduling': 'interview_rescheduling',
-  'interview-completed': 'interview_pending_confirmation',
+  'interview-completed': 'interview_completed',
   'offer-action': 'offer_received',
   'onboarding-action': 'onboarding',
   'application-unsuccessful': 'application_unsuccessful',
@@ -45,6 +46,7 @@ export const APPLICANT_HOME_SCENARIO_TO_STATE: Record<ApplicantHomeScenario, App
   'active-internship': 'internship_in_progress',
   'completion-action': 'offboarding_required',
   'journey-completed': 'internship_completed',
+  'polytechnic-to-undergraduate': 'internship_completed',
 };
 
 const shared = {
@@ -111,10 +113,10 @@ export const APPLICANT_DASHBOARD_STATES: Record<
   application_submitted: {
     state: 'application_submitted', pattern: 'waiting',
     heroLines: ['Application', 'submitted'],
-    heroCopy: 'Your application has been received successfully. We’ll let you know when the review begins or if any action is required.',
+    heroCopy: 'Follow your application and upcoming steps here.',
     badge: 'Submitted',
-    spotlightTitle: 'You’re all caught up',
-    spotlightCopy: 'Nothing is required from you right now. We’ll notify you when there’s an update.',
+    spotlightTitle: 'Nothing required from you right now',
+    spotlightCopy: 'We’ll notify you when review begins or if we need more information.',
     metadata: [
       { label: 'Programme', value: shared.programme },
       { label: 'Submitted', value: '30 Aug 2026' },
@@ -190,6 +192,23 @@ export const APPLICANT_DASHBOARD_STATES: Record<
     guideItems: ['Prepare while waiting for confirmation', 'Check your email and notifications', 'Keep your calendar available'],
     activity: [{ title: 'Interview availability submitted', date: activityTime.interviewAvailabilitySubmitted }, { title: 'Interview invitation received', date: activityTime.interviewInvitationReceived }],
   },
+  interview_completed: {
+    state: 'interview_completed', pattern: 'waiting',
+    heroLines: ['Your interview is', 'complete'],
+    heroCopy: 'The internship team is reviewing your interview outcome.',
+    badge: 'Interview completed',
+    spotlightTitle: 'Thank you for attending your interview',
+    spotlightCopy: 'No action is needed right now. We will notify you when there is an update.',
+    metadata: [{ label: 'Programme', value: shared.programme }, { label: 'Status', value: 'Awaiting outcome' }],
+    primaryAction: { label: 'View Interview', route: '/apply/interviews' },
+    secondaryAction: { label: 'View Application', route: '/apply/applications/app-ui-2027' },
+    journeyStage: 'interview', completedStages: ['application', 'review'],
+    journeyTitle: 'What happens next',
+    journeyItems: ['Interview outcome review', 'Application status update', 'Offer decision, if successful'],
+    guideTitle: 'After your interview',
+    guideItems: ['Check your email and portal notifications', 'Keep your contact details up to date'],
+    activity: [{ title: 'Interview completed', date: activityTime.interviewCompleted }],
+  },
   interview_confirmed: {
     state: 'interview_confirmed', pattern: 'progress',
     heroLines: ['Your interview is', 'confirmed'],
@@ -256,8 +275,8 @@ export const APPLICANT_DASHBOARD_STATES: Record<
     heroLines: ['Complete your onboarding', 'to get started'],
     heroCopy: 'Congratulations on accepting the offer. Complete the remaining onboarding tasks so we can prepare for your internship.',
     badge: 'Onboarding action required',
-    spotlightTitle: 'Review your offer and let us know your decision',
-    spotlightCopy: 'Review the offer letter, internship details and terms before responding.',
+    spotlightTitle: 'Get ready for your internship',
+    spotlightCopy: 'Your offer has been accepted. Complete your onboarding checklist before your internship starts.',
     spotlightImage: '/images/applicant-dashboard-offer-received.png',
     metadata: [
       { label: 'Programme', value: shared.programme }, { label: 'Role', value: shared.role },

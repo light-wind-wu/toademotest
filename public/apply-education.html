@@ -75,6 +75,7 @@
     .file-row strong { display: block; overflow-wrap: anywhere; font-weight: 500; }.file-row small { display: block; margin-top: 3px; color: var(--fg-muted); font-size: 12px; }
     .text-action { flex: none; padding: 6px; border: 0; background: transparent; color: var(--fg); font-size: 13px; }.text-action:hover { color: var(--danger); text-decoration: underline; }
     .details { margin-top: 16px; padding: 17px 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-muted); }
+    .details { scroll-margin-top: 88px; }
     .details h3 { margin-bottom: 18px; font-size: 16px; font-weight: 650; }
     .details-note { margin: -8px 0 18px; color: var(--fg-muted); font-size: 13px; }
     .transcript-confirmation { margin: 0 0 20px; padding: 12px 14px; border: 1px solid var(--border); border-left: 3px solid var(--success); border-radius: 6px; background: var(--surface); font-size: 13px; line-height: 1.5; }
@@ -83,6 +84,11 @@
     .field { display: flex; min-width: 0; flex-direction: column; gap: 7px; font-size: 13px; font-weight: 500; }
     .field input, .field select, .grades input, .grades select { width: 100%; min-width: 0; height: 37px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--fg); font-size: 14px; font-weight: 400; }
     .field input::placeholder { color: #8490a0; }
+    .field input[aria-invalid="true"], .field select[aria-invalid="true"] { border-color: var(--danger); }
+    .field-error { color: var(--danger); font-size: 12px; font-weight: 400; line-height: 1.4; }
+    .validation-summary { margin: 0 0 20px; padding: 12px 14px; border: 1px solid var(--danger); border-radius: 6px; background: var(--surface); font-size: 13px; line-height: 1.5; }
+    .validation-summary strong { display: block; margin-bottom: 4px; color: var(--danger); font-weight: 600; }
+    .validation-summary p { color: var(--fg-muted); }
     .grades-wrap { overflow-x: auto; margin-top: 18px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); }
     .grades { width: 100%; min-width: 670px; border-collapse: collapse; text-align: left; font-size: 13px; }
     .grades th { padding: 11px 12px; color: var(--fg-muted); font-weight: 500; }.grades td { padding: 8px 12px; border-top: 1px solid var(--border); }
@@ -153,6 +159,10 @@
                 <p>The details below are from your latest transcript for your highest qualification. Please review them and correct any information if needed.</p>
               </div>
               <p class="details-note" id="details-note">Enter your education details before continuing.</p>
+              <div class="validation-summary" id="education-validation" role="alert" hidden>
+                <strong>Some education details need your attention</strong>
+                <p id="education-validation-message"></p>
+              </div>
               <div class="fields">
                 <label class="field"><span>Educational Qualification <span class="required">*</span></span><select id="qualification" required><option value="">Select qualification</option><option>A-level</option><option>Diploma</option><option>Undergraduate degree</option><option>Other</option></select></label>
                 <label class="field"><span>Institution <span class="required">*</span></span><input id="institution" autocomplete="organization" placeholder="e.g. Raffles Institution" required></label>
@@ -186,7 +196,26 @@
     (() => {
       const $ = (id) => document.getElementById(id);
       const fields = ['qualification', 'institution', 'current-year', 'country', 'course', 'second-course', 'start-date', 'graduation-date', 'scoring', 'final-gpa'];
-      const storageKey = 'dsta_education_html_preview';
+      const incompleteUploadPreview = new URLSearchParams(location.search).get('state') === 'upload-incomplete';
+      const storageKey = incompleteUploadPreview ? 'dsta_education_html_incomplete_preview' : 'dsta_education_html_preview';
+      const requiredDetails = {
+        qualification: 'Select your educational qualification.',
+        institution: 'Enter your institution.',
+        'current-year': 'Select your current year.',
+        country: 'Select your country.',
+        course: 'Enter your course of study.',
+        'start-date': 'Enter your start date.',
+        'graduation-date': 'Enter your expected graduation date.',
+        scoring: 'Enter your scoring system.'
+      };
+      for (const [id, message] of Object.entries(requiredDetails)) {
+        const error = document.createElement('span');
+        error.id = `${id}-error`;
+        error.className = 'field-error';
+        error.textContent = message;
+        error.hidden = true;
+        $(id).parentElement.append(error);
+      }
       let transcript = null;
       let cv = null;
       let manual = false;
@@ -215,7 +244,18 @@
         $('cv-size').textContent = cv ? fileSummary(cv) : '';
         $('transcript-label').textContent = transcript ? 'Replace Academic Transcript' : 'Upload Academic Transcript';
         $('cv-label').textContent = cv ? 'Replace Curriculum Vitae' : 'Upload Curriculum Vitae';
-        const hasRequiredDetails = $('qualification').value && $('institution').value.trim() && $('course').value.trim() && $('current-year').value && $('country').value && $('start-date').value && $('graduation-date').value && $('scoring').value.trim();
+        const missingDetails = Object.keys(requiredDetails).filter(id => !$(id).value.trim());
+        const showMissingDetails = !manual && Boolean(transcript);
+        for (const id of Object.keys(requiredDetails)) {
+          const invalid = showMissingDetails && missingDetails.includes(id);
+          $(id).setAttribute('aria-invalid', String(invalid));
+          $(`${id}-error`).hidden = !invalid;
+          if (invalid) $(id).setAttribute('aria-describedby', `${id}-error`);
+          else $(id).removeAttribute('aria-describedby');
+        }
+        $('education-validation').hidden = !showMissingDetails || missingDetails.length === 0;
+        $('education-validation-message').textContent = `We couldn't read all the required information from your transcript. Complete the ${missingDetails.length} highlighted ${missingDetails.length === 1 ? 'field' : 'fields'} to continue.`;
+        const hasRequiredDetails = missingDetails.length === 0;
         $('next').disabled = !(manual || transcript) || !hasRequiredDetails;
       }
       function fillExample() {
@@ -279,7 +319,7 @@
       $('next').addEventListener('click', () => notice('Education details are ready. This standalone HTML preview does not submit an application.'));
       $('back').addEventListener('click', () => { if (history.length > 1) history.back(); else notice('This is a standalone education-page preview.'); });
       try {
-        const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
+        const saved = incompleteUploadPreview ? null : JSON.parse(localStorage.getItem(storageKey) || 'null');
         if (saved) {
           fields.forEach(id => { if (saved.values?.[id]) $(id).value = saved.values[id]; });
           (saved.grades || []).forEach(row => addGrade(row.subject, row.score));
@@ -287,6 +327,11 @@
           if (manual) $('details-note').textContent = 'Review your saved details. Re-upload documents if needed.';
         }
       } catch { /* Ignore malformed prototype-only draft data. */ }
+      if (incompleteUploadPreview) {
+        transcript = { name: 'Academic_Transcript_Jenny_Aw.pdf', size: 314573, type: 'application/pdf' };
+        fillExample();
+        ['current-year', 'start-date', 'scoring'].forEach(id => { $(id).value = ''; });
+      }
       update();
     })();
   </script>

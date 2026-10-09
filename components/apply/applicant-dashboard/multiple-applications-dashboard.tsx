@@ -163,18 +163,6 @@ export default function MultipleApplicationsDashboard({
         </div>
 
         <div className="space-y-5">
-          <aside className="rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6" aria-labelledby="multi-guide-title">
-            <p className="text-[13px] text-fg-muted">Task guide</p>
-            <h2 id="multi-guide-title" className="mt-1 text-[18px] font-semibold leading-6 text-fg">Interview Guide</h2>
-            <p className="mt-2 text-[13px] leading-5 text-fg-muted">For your highest-priority application task.</p>
-            <ul className="mt-5 space-y-3">
-              {['Understand the interview process', 'Prepare for your interview', 'Tips for a great interview'].map((item) => (
-                <li key={item} className="flex gap-3 text-[13px] leading-5 text-fg"><Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden /><span>{item}</span></li>
-              ))}
-            </ul>
-            <OutOfScopeTooltip><Button variant="outline" className="mt-6 w-full">View Interview Guide</Button></OutOfScopeTooltip>
-          </aside>
-
           <aside className="relative min-h-[423px] overflow-hidden rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6" aria-labelledby="multi-archetype-title">
             <div className="pointer-events-none absolute inset-0" aria-hidden><Image src={archetypeImage} alt="" fill className="object-contain object-bottom lg:object-cover" sizes="314px" /></div>
             <div className="relative z-[1]">

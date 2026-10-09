@@ -906,7 +906,17 @@ export interface ProfileEmailChallenge {
   resendAt: number;
 }
 
+export interface ApplicantApplicationDetailFields {
+  personal: { fullName: string; nric: string; nationality: string; residentialStatus: string; sex: string; dateOfBirth: string; race: string; photo: string };
+  contact: { mobile: string; email: string; address: string };
+  education: { institution: string; course: string; year: string; gpa: string; graduation: string };
+  availability: { start: string; end: string };
+  additional: { scholarshipRecipient: string; scholarshipName: string; creditBearing: string; moduleCode: string };
+  declarations: { consent: boolean; accurate: boolean };
+}
+
 export interface ApplicantApplicationRecord {
+  detailFields?: ApplicantApplicationDetailFields;
   id: string;
   programmeName: string;
   intake: string;
@@ -1050,7 +1060,8 @@ export type ApplicantHomeScenario =
   | 'offer-expired'
   | 'active-internship'
   | 'completion-action'
-  | 'journey-completed';
+  | 'journey-completed'
+  | 'polytechnic-to-undergraduate';
 
 export type ApplicantDashboardState =
   | 'multiple_active_applications'
@@ -1060,6 +1071,7 @@ export type ApplicantDashboardState =
   | 'application_under_review'
   | 'interview_invitation'
   | 'interview_pending_confirmation'
+  | 'interview_completed'
   | 'interview_confirmed'
   | 'interview_rescheduling'
   | 'offer_received'
@@ -1073,6 +1085,16 @@ export type ApplicantDashboardState =
   | 'internship_completed';
 
 export type ApplicantDashboardPattern = 'action' | 'waiting' | 'progress' | 'closed' | 'completed';
+
+export type InternBadgeStatus = 'preview' | 'eligible' | 'in_progress' | 'earned';
+
+export interface ApplicantInternBadge {
+  id: string;
+  name: string;
+  programmeName: string;
+  status: InternBadgeStatus;
+  earnedAt?: string;
+}
 
 export type ApplicantDashboardJourneyStage =
   | 'application'
@@ -1158,6 +1180,19 @@ export interface ApplicantScenarioApplicationRecord {
   focal: boolean;
 }
 
+export type ApplicantCardStage = 'draft' | 'incomplete' | 'submitted' | 'review' | 'interview-action' | 'interview-pending' | 'interview-confirmed' | 'offer' | 'closed';
+
+/** Isolated presentation fixtures; these never overwrite an applicant's records. */
+export interface ApplicantApplicationStageExample extends ApplicantScenarioApplicationRecord {
+  stage: ApplicantCardStage;
+  stageLabel: string;
+  previewTitle: string;
+  nextSteps: string[];
+  details: { label: string; value: string }[];
+}
+
+export type ApplicantWorkspaceKind = 'applications' | 'interviews' | 'offers' | 'internship';
+
 export interface ApplicantScenarioInterviewRecord {
   interviewId: string;
   project: string;
@@ -1185,6 +1220,7 @@ export interface ApplicantScenarioOfferRecord {
 
 export interface ApplicantScenarioInternshipRecord {
   internshipId: string;
+  programmeName: string;
   project: string;
   status: 'UPCOMING — ONBOARDING' | 'IN PROGRESS' | 'ENDING SOON — ACTION REQUIRED' | 'COMPLETED';
   startDate: string;
@@ -1245,9 +1281,13 @@ export interface PublicInternshipProject {
 
 export interface PublicInternshipProgramme {
   id: string;
+  projectProgrammeId?: string;
+  visibility: 'public' | 'exclusive';
+  overview: string;
   title: string;
   audience: string;
   period: string;
+  badgeEligible: boolean;
   status: PublicInternshipProgrammeStatus;
   statusLabel: string;
   availabilityLabel: string;
